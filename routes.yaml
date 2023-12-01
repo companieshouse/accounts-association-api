@@ -1,0 +1,6 @@
+app_name: authentication-service
+group: web
+
+weight: 100
+routes:
+  1: ^/authentication/*
