@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/baseLayout}">
+
+<head>
+    <title>Enter Email</title>
+</head>
+
+<body>
+<div id="authenticate-main-content" layout:fragment="content">
+    <form th:action="@{''}" th:object="${authenticatedEmailAddress}" method="post" class="form" enctype="form-data" onsubmit="enterEmailAddress()">
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-two-thirds">
+
+                <h1 id="page-title " class="govuk-heading-l">
+                    <span id="page-title-heading">Temporary Sign-in page</span>
+                </h1>
+
+                <div class="govuk-grid-column-two-thirds">
+                    <div class="govuk-form-group">
+
+                        <label id="enter-email" class="govuk-label" for="enterEmail-ref">
+                            Enter email address
+                        </label>
+
+                        <input class="govuk-enter-email"
+                               id="enterEmail-ref"
+                               th:field="*{emailAddress}"
+                               name="enterEmail-ref"
+                               type="email">
+                        <br>
+                        <br>
+
+                        <input id="enter-email-button" class="govuk-button" data-event-id="Submit" type="submit" role="button" value="Sign in"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>
