@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/baseLayout}">
+
+<head>
+    <title>Authentication Service</title>
+</head>
+<body>
+<p>Authenticate with GOV.UK One Login</p>
+<div id="authenticate-main-content" layout:fragment="content">
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+
+            <h1 id="page-title " class="govuk-heading-l">
+                <span id="page-title-heading">We have changed the way you sign in</span>
+            </h1>
+            <p class="govuk-body">
+                We'll ask you to sign in or create a GOV.UK One Login, which will allow you to access many government services using the same email address and password.
+            </p>
+            <h2 class="govuk-heading-m">
+                You can save your existing information
+            </h2>
+            <p class="govuk-body">
+                If you use the same email address for your GOV.UK One Login as your existing Companies House account, we'll save any information stored, such as
+            </p>
+            <ul class="govuk-list govuk-list--bullet">
+                <li>your filling history</li>
+                <li>companies you follow</li>
+            </ul>
+            <details class="govuk-details" role="group">
+                <summary class="govuk-details__summary" role="button" aria-controls="company-number-help-text"
+                         aria-expanded="false">
+                    <span class="govuk-details__summary-text">
+                        What is a Companies House account?
+                    </span>
+                </summary>
+                <div class="govuk-details__text">
+                    This is the account you can use to sign in to:
+                    <ul class="govuk-list govuk-list--bullet">
+                        <li>the Companies House register - sometimes known as 'Companies House service' or 'Find and update company information'</li>
+                        <li>some of our online services - for example, 'Register your company' or 'Upload a document to Companies House'</li>
+                    </ul>
+                </div>
+            </details>
+            <form method="post">
+                <input id="continue-button" class="govuk-button" data-event-id="Continue" type="submit" role="button" value="Continue >"/>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
