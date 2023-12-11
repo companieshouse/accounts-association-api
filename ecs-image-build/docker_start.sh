@@ -4,4 +4,4 @@
 
 PORT=8080
 
-exec java -jar -Dserver.port="${PORT}" "authentication-service.jar"
+exec java -jar -Dserver.port="${PORT}" "accounts-association-api.jar"
