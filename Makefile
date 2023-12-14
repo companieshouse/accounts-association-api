@@ -14,7 +14,7 @@ clean:
 
 .PHONY: security-check
 security-check:
-	mvn org.owasp:dependency-check-maven:purge
+	mvn org.owasp:dependency-check-maven:update-only
 	mvn org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=4 -DassemblyAnalyzerEnabled=false
 
 .PHONY: build
