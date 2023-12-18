@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Start script for authentication-service
+# Start script for accounts-association-service
 
 PORT=8080
 
