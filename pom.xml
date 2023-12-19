@@ -126,7 +126,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>uk.gov.companieshouse.authentication-service.authenticationServiceApplication
+                    <mainClass>uk.gov.companieshouse.accounts.association.AccountsAssociationServiceApplication
                     </mainClass>
                 </configuration>
                 <executions>
