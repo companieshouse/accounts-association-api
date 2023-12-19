@@ -1,33 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>uk.gov.companieshouse</groupId>
         <artifactId>companies-house-parent</artifactId>
         <version>2.1.4</version> <!-- lookup parent from repository -->
     </parent>
-    <artifactId>authentication-service</artifactId>
+    <artifactId>accounts-association-api</artifactId>
     <version>unversioned</version>
-    <name>authentication-service</name>
-    <description>User and Company Authentication. Handles integration with One Login</description>
+    <name>accounts-association-api</name>
+    <description>User and Company association.</description>
     <properties>
         <java.version>21</java.version>
-        <thymeleaf-layout-dialect.version>3.3.0</thymeleaf-layout-dialect.version>
-        <spring-boot-dependencies.version>3.1.6</spring-boot-dependencies.version>
-        <spring-boot-maven-plugin.version>3.1.6</spring-boot-maven-plugin.version>
+        <spring-boot.version>3.2.0</spring-boot.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
-        <structured-logging.version>2.0.1</structured-logging.version>
+        <maven-surefire-plugin.version>3.2.2</maven-surefire-plugin.version>
+        <structured-logging.version>3.0.1</structured-logging.version>
         <common-web-java.version>3.0.0</common-web-java.version>
         <log4j.version>2.20.0</log4j.version>
         <dependency-check-plugin.version>8.4.3</dependency-check-plugin.version>
         <sonar-maven-plugin.version>3.10.0.2594</sonar-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.10</jacoco-maven-plugin.version>
-        <redis-client.version>3.3.0</redis-client.version>
-        <oauth-signin-java.version>2.0.1</oauth-signin-java.version>
-        <encryption-java-library.version>2.0.2</encryption-java-library.version>
+        <encryption-java-library.version>2.0.3</encryption-java-library.version>
+        <rest-service-common-library-version>2.0.1</rest-service-common-library-version>
     </properties>
     <profiles>
         <profile>
@@ -49,28 +46,13 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot-dependencies.version}</version>
+                <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-thymeleaf</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.yaml</groupId>
-                    <artifactId>snakeyaml</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>nz.net.ultraq.thymeleaf</groupId>
-            <artifactId>thymeleaf-layout-dialect</artifactId>
-            <version>${thymeleaf-layout-dialect.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -92,17 +74,6 @@
         </dependency>
         <dependency>
             <groupId>uk.gov.companieshouse</groupId>
-            <artifactId>common-web-java</artifactId>
-            <version>${common-web-java.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.yaml</groupId>
-                    <artifactId>snakeyaml</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>uk.gov.companieshouse</groupId>
             <artifactId>encryption-java-library</artifactId>
             <version>${encryption-java-library.version}</version>
             <exclusions>
@@ -118,45 +89,14 @@
             <version>20231013</version>
         </dependency>
         <dependency>
-            <groupId>com.nimbusds</groupId>
-            <artifactId>oauth2-oidc-sdk</artifactId>
-            <version>11.5</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+            <version>${spring-boot.version}</version>
         </dependency>
         <dependency>
-            <artifactId>oauth-signin-java-library</artifactId>
             <groupId>uk.gov.companieshouse</groupId>
-            <version>${oauth-signin-java.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.netty</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.projectreactor.netty</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>redis.clients</groupId>
-            <artifactId>jedis</artifactId>
-            <version>${redis-client.version}</version>
-            <type>jar</type>
-            <scope>compile</scope>
-        </dependency>
-
-        <!-- Security dependencies -->
-        <dependency>
-            <artifactId>spring-security-core</artifactId>
-            <groupId>org.springframework.security</groupId>
-        </dependency>
-        <dependency>
-            <artifactId>spring-security-web</artifactId>
-            <groupId>org.springframework.security</groupId>
-        </dependency>
-        <dependency>
-            <artifactId>spring-security-config</artifactId>
-            <groupId>org.springframework.security</groupId>
+            <artifactId>rest-service-common-library</artifactId>
+            <version>${rest-service-common-library-version}</version>
         </dependency>
 
         <!-- Test dependencies -->
@@ -172,11 +112,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>uk.gov.companieshouse</groupId>
-            <artifactId>java-session-handler</artifactId>
-            <version>4.0.1</version>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.13.2</version>
@@ -189,7 +124,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring-boot-maven-plugin.version}</version>
+                <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>uk.gov.companieshouse.authentication-service.authenticationServiceApplication
                     </mainClass>
@@ -222,16 +157,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
-                <configuration>
-                    <environmentVariables>
-                        <CACHE_POOL_SIZE>10</CACHE_POOL_SIZE>
-                        <CACHE_SERVER>localhost:1234</CACHE_SERVER>
-                        <COOKIE_DOMAIN>.companieshouse.gov.uk</COOKIE_DOMAIN>
-                        <COOKIE_NAME>abc</COOKIE_NAME>
-                        <COOKIE_SECRET>iamasecret</COOKIE_SECRET>
-                        <DEFAULT_SESSION_EXPIRATION>3600</DEFAULT_SESSION_EXPIRATION>
-                    </environmentVariables>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
