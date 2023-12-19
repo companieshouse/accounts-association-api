@@ -1,6 +1,6 @@
-app_name: authentication-service
+app_name: accounts-association-api
 group: web
 
 weight: 100
 routes:
-  1: ^/authentication/*
+  1: ^/accounts-association/*

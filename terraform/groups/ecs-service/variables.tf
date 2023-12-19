@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------------------
 variable "environment" {
   type        = string
-  description = "The environment name, defined in envrionments vars."
+  description = "The environment name, defined in environments vars."
 }
 variable "aws_region" {
   default     = "eu-west-2"
@@ -55,7 +55,7 @@ variable "log_level" {
   type        = string
   description = "The log level for services to use: trace, debug, info or error"
 }
-variable "authentication_service_version" {
+variable "accounts_association_api_version" {
   type        = string
-  description = "The version of the authentication-service container to run."
+  description = "The version of the accounts-association-api container to run."
 }
