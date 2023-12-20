@@ -15,7 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Component
-    public class LoggingInterceptor implements HandlerInterceptor, RequestLogger {
+public class LoggingInterceptor implements HandlerInterceptor, RequestLogger {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(
             AccountsAssociationServiceApplication.APPLICATION_NAME_SPACE);
