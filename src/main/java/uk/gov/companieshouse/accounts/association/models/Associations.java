@@ -2,16 +2,19 @@ package uk.gov.companieshouse.accounts.association.models;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document
-@CompoundIndex( name = "company_user_idx", def = "{'companyNumber': 1, 'userId': 1}" )
+@CompoundIndex( name = "company_user_idx", def = "{'companyNumber': 1, 'userId': 1}", unique = true )
 public class Associations {
 
-    private String userId;
-
+    @Id
+    private String id;
     private String companyNumber;
+
+    private String userId;
 
     private String status;
 
