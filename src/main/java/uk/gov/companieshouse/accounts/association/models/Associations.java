@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.models;
 
+import jakarta.validation.constraints.NotNull;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.springframework.data.annotation.Id;
@@ -14,8 +15,10 @@ public class Associations {
     private String id;
     private String companyNumber;
 
+    @NotNull
     private String userId;
 
+    @NotNull
     private String status;
 
     private String creationTime;
