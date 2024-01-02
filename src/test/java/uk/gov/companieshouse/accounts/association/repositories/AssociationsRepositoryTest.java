@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @DataMongoTest()
 @ExtendWith(SpringExtension.class)
 @Tag("integration-test")
-public class AssociationsRepositoryTest {
+class AssociationsRepositoryTest {
 
     @Autowired
     MongoTemplate mongoTemplate;
@@ -56,26 +56,22 @@ public class AssociationsRepositoryTest {
 
 
     @Test
-    public void findAllUserId() {
+     void findAllUserId() {
 
         assertThat(associationsRepository.findAllByUserId("222")).hasSize(1);
 
-        //duplicate user
-        //duplicate company
-        //duplicate user and company
-        //invalid user
-        //invalid company
-        //null
     }
 
     @Test
-    void shouldNotAllowDuplicateAssociations() {
+    void shouldNotAllowDuplicateAssociations(){
+
+        final var associationOneUser = new Associations();
+        associationOneUser.setCompanyNumber("111111");
+        associationOneUser.setUserId("111");
+        associationsRepository.insert(associationOneUser);
 
         assertThrows(DuplicateKeyException.class, () -> {
-            final var associationOneUser = new Associations();
-            associationOneUser.setCompanyNumber("111111");
-            associationOneUser.setUserId("111");
-            associationsRepository.save(associationOneUser);
+
         });
 
     }
