@@ -8,7 +8,7 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 @Configuration
 @EnableMongoRepositories("uk.gov.companieshouse.accounts.association.repositories")
-public class MongoConfig {
+public class MongoEventListener {
 
     @Bean
     public ValidatingMongoEventListener validatingMongoEventListener(
