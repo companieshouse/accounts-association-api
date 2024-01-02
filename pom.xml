@@ -103,7 +103,11 @@
             <version>4.12.0</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>de.flapdoodle</groupId>
+            <artifactId>de.flapdoodle.os</artifactId>
+            <version>1.5.3</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -151,7 +155,7 @@
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
                     <systemPropertyVariables>
-                        <de.flapdoodle.os.override>Linux|X86_64|</de.flapdoodle.os.override>
+                        <de.flapdoodle.os.override>OS_X|X86_64|</de.flapdoodle.os.override>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
