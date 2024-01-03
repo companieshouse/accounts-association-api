@@ -25,11 +25,13 @@ build:
 
 .PHONY: test
 test: clean
+	cd /usr/lib64
+	sudo ln -s libssl.so.1.0.0 libssl.so.10
+	sudo ln -s libcrypto.so.1.0.0 libcrypto.so.10
 	mvn verify
 
 .PHONY: test-unit
 test-unit: clean
-	yum -y install libxcrypt-compat
 	mvn test -Dincluded.tests="unit-test"
 
 .PHONY: test-integration
