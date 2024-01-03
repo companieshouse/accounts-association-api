@@ -29,8 +29,6 @@ test: clean
 
 .PHONY: test-unit
 test-unit: clean
-	ln -s /usr/lib64/libssl.so.3.0.8 /usr/lib64/libssl.so.10
-	ln -s /usr/lib64/libcrypto.so.3.0.8 /usr/lib64/libcrypto.so.10
 	mvn test -Dincluded.tests="unit-test"
 
 .PHONY: test-integration
