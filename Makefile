@@ -30,8 +30,8 @@ test: clean
 .PHONY: test-unit
 test-unit: clean
 	yum install -y openssl-libs
-	find . -iname "libcrypto.so.*"
 	cd /usr/lib64
+	ls -a
 	ln -s libssl.so.1.0.0 libssl.so.10
 	ln -s libcrypto.so.1.0.0 libcrypto.so.10
 	mvn test -Dincluded.tests="unit-test"
