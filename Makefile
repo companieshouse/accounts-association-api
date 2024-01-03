@@ -29,10 +29,10 @@ test: clean
 
 .PHONY: test-unit
 test-unit: clean
-	sudo yum install -y opensll-libs
+	yum install -y opensll-libs
 	cd /usr/lib64
-	sudo ln -s libssl.so.1.0.0 libssl.so.10
-	sudo ln -s libcrypto.so.1.0.0 libcrypto.so.10
+	ln -s libssl.so.1.0.0 libssl.so.10
+	ln -s libcrypto.so.1.0.0 libcrypto.so.10
 	mvn test -Dincluded.tests="unit-test"
 
 .PHONY: test-integration
