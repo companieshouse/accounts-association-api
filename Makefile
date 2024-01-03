@@ -29,9 +29,8 @@ test: clean
 
 .PHONY: test-unit
 test-unit: clean
-	ls -la /usr/lib64 | grep -i libcrypto
-	yum install -y libxcrypt-compat
-	ls -la /usr/lib64 | grep -i libcrypto
+	ls -la /usr/lib | grep -i libcrypto
+	ln -s /usr/lib64/libcrypto.so.3.0.8 /usr/lib64/libcrypto.so.10
 	mvn test -Dincluded.tests="unit-test"
 
 .PHONY: test-integration
