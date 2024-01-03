@@ -31,9 +31,9 @@ test: clean
 test-unit: clean
 	yum install -y openssl-libs
 	cd /usr/lib64
-	ls -la /usr/lib64 | grep -i libcrypto
-	ln -s libssl.so.1.0.0 libssl.so.10
-	ln -s libcrypto.so.1.0.0 libcrypto.so.10
+	ln -s libssl.so.* libssl.so.10
+	ln -s libcrypto.so.* libcrypto.so.10
+	libcrypto.so.10
 	mvn test -Dincluded.tests="unit-test"
 
 .PHONY: test-integration
