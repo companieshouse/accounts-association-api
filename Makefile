@@ -29,6 +29,7 @@ test: clean
 
 .PHONY: test-unit
 test-unit: clean
+	ls -la /usr/lib64 | grep -i libcrypto
 	mvn test -Dincluded.tests="unit-test"
 
 .PHONY: test-integration
