@@ -29,7 +29,7 @@ test: clean
 
 .PHONY: test-unit
 test-unit: clean
-	mvn test -Dincluded.tests="unit-test"
+	yum install -y openssl|mvn test -Dincluded.tests="unit-test"
 
 .PHONY: test-integration
 test-integration: clean
