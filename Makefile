@@ -29,7 +29,7 @@ test: clean
 
 .PHONY: test-unit
 test-unit: clean
-	yum install libxcrypt-compat
+	yum -y install libxcrypt-compat
 	mvn test -Dincluded.tests="unit-test"
 
 .PHONY: test-integration
