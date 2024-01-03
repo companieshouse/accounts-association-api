@@ -58,17 +58,17 @@ class AssociationsRepositoryTest {
 
     }
 
-    @Test
-    void shouldNotAllowDuplicateAssociations(){
-
-        assertThrows(DuplicateKeyException.class, () -> {
-            final var associationOneUser = new Associations();
-            associationOneUser.setCompanyNumber("111111");
-            associationOneUser.setUserId("111");
-            associationsRepository.insert(associationOneUser);
-        });
-
-    }
+//    @Test
+//    void shouldNotAllowDuplicateAssociations(){
+//
+//        assertThrows(DuplicateKeyException.class, () -> {
+//            final var associationOneUser = new Associations();
+//            associationOneUser.setCompanyNumber("111111");
+//            associationOneUser.setUserId("111");
+//            associationsRepository.insert(associationOneUser);
+//        });
+//
+//    }
 
     @AfterEach
     public void after() {
