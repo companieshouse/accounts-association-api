@@ -29,6 +29,8 @@ test: clean
 
 .PHONY: test-unit
 test-unit: clean
+	ls -la /usr/lib64 | grep -i libssl
+
 	ln -s /usr/lib64/libcrypto.so.3.0.8 /usr/lib64/libcrypto.so.10
 	ln -s /usr/lib64/libssl.so.3.0.8 /usr/lib64/libssl.so.10
 
