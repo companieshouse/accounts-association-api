@@ -29,7 +29,7 @@ test: clean
 
 .PHONY: test-unit
 test-unit: clean
-	yum install -y openssl-libs-1.0.2
+	yum install -y openssl11
 	cd /usr/lib64
 	ls -la /usr/lib64 | grep -i libcrypto
 	ln -s libssl.so.* libssl.so.10
