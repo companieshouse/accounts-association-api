@@ -33,7 +33,6 @@ test-unit: clean
 	cd /usr/lib64
 	ln -s libssl.so.* libssl.so.10
 	ln -s libcrypto.so.* libcrypto.so.10
-	libcrypto.so.10
 	mvn test -Dincluded.tests="unit-test"
 
 .PHONY: test-integration
