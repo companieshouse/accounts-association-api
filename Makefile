@@ -29,7 +29,6 @@ test: clean
 
 .PHONY: test-unit
 test-unit: clean
-	openssl version
 	yum install -y openssl
 	mvn test -Dincluded.tests="unit-test"
 
