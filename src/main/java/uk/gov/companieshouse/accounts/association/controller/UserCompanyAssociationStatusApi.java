@@ -2,29 +2,36 @@ package uk.gov.companieshouse.accounts.association.controller;
 
 import static uk.gov.companieshouse.accounts.association.utils.Date.isBeforeNow;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import uk.gov.companieshouse.accounts.association.AccountsAssociationServiceApplication;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
+import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationStatusInterface;
+import uk.gov.companieshouse.logging.Logger;
+import uk.gov.companieshouse.logging.LoggerFactory;
 
 @RestController
 @RequestMapping( "/associations" )
-public class UserCompanyAssociationStatusApi {
+public class UserCompanyAssociationStatusApi implements UserCompanyAssociationStatusInterface {
 
     private final AssociationsService associationsService;
+
+    private static final Logger LOG = LoggerFactory.getLogger(AccountsAssociationServiceApplication.APPLICATION_NAME_SPACE);
 
     public UserCompanyAssociationStatusApi(AssociationsService associationsService) {
         this.associationsService = associationsService;
     }
 
-    @PutMapping( "/companies/{company_number}/users/{user_id}/{status}" )
-    public ResponseEntity<?> updateAssociationStatusForUserAndCompany(
-            @PathVariable("user_id") final String userId, @PathVariable("company_number") final String companyNumber,
-            @PathVariable("status") final String status, @RequestHeader( "X-Request-Id" ) String xRequestId ){
+    @Override
+    public ResponseEntity<Void> updateAssociationStatusForUserAndCompany(
+            @Pattern(regexp = "^[a-zA-Z0-9]*$") String userId,
+            @Pattern(regexp = "^[0-9]{0,64}$") String companyNumber,
+            String status, @NotNull String xRequestId) {
+
 
         try {
             final var association = associationsService.fetchConfirmationExpirationTime( userId, companyNumber );
@@ -43,5 +50,8 @@ public class UserCompanyAssociationStatusApi {
         }
 
     }
+
+
+    // TODO: add enum for status
 
 }
