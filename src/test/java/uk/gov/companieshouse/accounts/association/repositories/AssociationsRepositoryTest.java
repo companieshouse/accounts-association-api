@@ -3,6 +3,7 @@ package uk.gov.companieshouse.accounts.association.repositories;
 import jakarta.validation.ConstraintViolationException;
 import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Update;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -37,17 +39,17 @@ class AssociationsRepositoryTest {
         final var associationOne = new Associations();
         associationOne.setCompanyNumber("111111");
         associationOne.setUserId("111");
-        associationOne.setStatus("New");
+        associationOne.setStatus("Confirmed");
 
         final var associationTwo = new Associations();
         associationTwo.setCompanyNumber("222222");
         associationTwo.setUserId("111");
-        associationTwo.setStatus("New");
+        associationTwo.setStatus("Confirmed");
 
         final var associationThree = new Associations();
         associationThree.setCompanyNumber("111111");
         associationThree.setUserId("222");
-        associationThree.setStatus("New");
+        associationThree.setStatus("Confirmed");
 
         associationsRepository.insert(associationOne);
         associationsRepository.insert(associationTwo);
@@ -80,6 +82,79 @@ class AssociationsRepositoryTest {
 
         assertThat(associationsRepository.findAllByUserId("222")).hasSize(1);
 
+    }
+
+
+    @Test
+    void associationExistsWithInvalidUserIdOrCompanyNumberReturnsFalse(){
+        Assertions.assertFalse( associationsRepository.associationExists( null, "111111") );
+        Assertions.assertFalse( associationsRepository.associationExists( "", "111111") );
+        Assertions.assertFalse( associationsRepository.associationExists( "abc", "111111") );
+        Assertions.assertFalse( associationsRepository.associationExists( "111", null) );
+        Assertions.assertFalse( associationsRepository.associationExists( "111", "") );
+        Assertions.assertFalse( associationsRepository.associationExists( "111", "abc" ) );
+    }
+
+    @Test
+    void associationExistsWithNonexistentUserIdOrCompanyNumberReturnsFalse(){
+        Assertions.assertFalse( associationsRepository.associationExists( "333", "111111") );
+        Assertions.assertFalse( associationsRepository.associationExists( "111", "333333") );
+    }
+
+
+    @Test
+    void associationExistsReturnsTrueWhenAssociationExistsOrOtherwiseFalse(){
+        Assertions.assertTrue( associationsRepository.associationExists( "111", "111111") );
+        Assertions.assertFalse( associationsRepository.associationExists( "222", "222222") );
+    }
+
+    @Test
+    void updateAssociationWithNonExistentUserIdOrCompanyNumberShouldDoNothing(){
+        final var setStatusToDeleted = new Update()
+                .set( "status", "Deleted" );
+
+        associationsRepository.updateAssociation( null, "111111", setStatusToDeleted );
+        associationsRepository.updateAssociation( "", "111111", setStatusToDeleted );
+        associationsRepository.updateAssociation( "333", "111111", setStatusToDeleted );
+        associationsRepository.updateAssociation( "111", null, setStatusToDeleted );
+        associationsRepository.updateAssociation( "111", "", setStatusToDeleted );
+        associationsRepository.updateAssociation( "111", "333333", setStatusToDeleted );
+
+        for ( Associations association: associationsRepository.findAll() )
+            Assertions.assertEquals( "Confirmed", association.getStatus() );
+    }
+
+    @Test
+    void updateAssociationWithNullUpdateShouldThrowIllegalStateException() {
+        Assertions.assertThrows( IllegalStateException.class, () -> associationsRepository.updateAssociation( "111", "111111", null ) );
+    }
+
+    @Test
+    void updateAssociationShouldCreateNewKeyValuePairIfKeyDoesNotExist(){
+        final var setDeletionTime = new Update()
+                .set( "deletionTime", "1992-05-01T10:30:00.000000Z" );
+
+        associationsRepository.updateAssociation( "111", "111111", setDeletionTime );
+
+        for ( Associations association: associationsRepository.findAll() )
+            if ( association.getUserId().equals( "111" ) && association.getCompanyNumber().equals( "111111" ) )
+                Assertions.assertEquals( "1992-05-01T10:30:00.000000Z", association.getDeletionTime() );
+            else
+                Assertions.assertNull( association.getDeletionTime() );
+    }
+
+    @Test
+    void updateAssociationShouldOverwriteExistingValues(){
+        final var setStatusToDeleted = new Update()
+                .set( "status", "Deleted" );
+
+        associationsRepository.updateAssociation( "111", "111111", setStatusToDeleted );
+
+        for ( Associations association: associationsRepository.findAll() )
+            if ( association.getUserId().equals( "111" ) && association.getCompanyNumber().equals( "111111" ) )
+                Assertions.assertEquals( "Deleted", association.getStatus() );
+            else
+                Assertions.assertEquals( "Confirmed", association.getStatus() );
     }
 
     @Test
