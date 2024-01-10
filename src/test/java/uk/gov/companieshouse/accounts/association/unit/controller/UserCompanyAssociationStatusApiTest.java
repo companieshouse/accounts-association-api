@@ -69,8 +69,8 @@ public class UserCompanyAssociationStatusApiTest {
 
     @Test
     void updateAssociationStatusForUserAndCompanyWithMalformedInputReturnsBadRequest() throws Exception {
-//        mockMvc.perform( put( "/associations/companies/{company_number}/users/{user_email}/{status}", "111111", "123", "Confirmed" ).header("X-Request-Id", "theId") ).andExpect(status().isBadRequest());
-//        mockMvc.perform( put( "/associations/companies/{company_number}/users/{user_email}/{status}", "abc", "batman@gotham.city", "Confirmed" ).header("X-Request-Id", "theId") ).andExpect(status().isBadRequest());
+        mockMvc.perform( put( "/associations/companies/{company_number}/users/{user_email}/{status}", "111111", "123", "Confirmed" ).header("X-Request-Id", "theId") ).andExpect(status().isBadRequest());
+        mockMvc.perform( put( "/associations/companies/{company_number}/users/{user_email}/{status}", "abc", "batman@gotham.city", "Confirmed" ).header("X-Request-Id", "theId") ).andExpect(status().isBadRequest());
         mockMvc.perform( put( "/associations/companies/{company_number}/users/{user_email}/{status}", "111111", "batman@gotham.city", "Complicated" ).header("X-Request-Id", "theId") ).andExpect(status().isBadRequest());
     }
 
