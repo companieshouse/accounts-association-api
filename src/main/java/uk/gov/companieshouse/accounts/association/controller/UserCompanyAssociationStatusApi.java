@@ -62,5 +62,4 @@ public class UserCompanyAssociationStatusApi implements UserCompanyAssociationSt
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    // TODO: this class( email regex ), run tests for this class
 }
