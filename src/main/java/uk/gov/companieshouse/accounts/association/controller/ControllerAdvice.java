@@ -58,7 +58,7 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
     @ExceptionHandler(BadRequestRuntimeException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public Errors onBadRequestRuntimeException(NotFoundRuntimeException e, HttpServletRequest request) {
+    public Errors onBadRequestRuntimeException(BadRequestRuntimeException e, HttpServletRequest request) {
         String requestId = request.getHeader( "X-Request-Id" );
 
         Map<String, Object> contextMap = new HashMap<>();
@@ -68,7 +68,7 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
         LOG.errorContext(requestId, e.getMessage(), null, contextMap);
 
         Errors errors = new Errors();
-        errors.addError(Err.invalidBodyBuilderWithLocation(null).withError(e.getMessage()).build());
+        errors.addError(Err.invalidBodyBuilderWithLocation("accounts_association_api").withError(e.getMessage()).build());
         return errors;
     }
 
