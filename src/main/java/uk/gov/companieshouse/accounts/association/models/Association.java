@@ -10,9 +10,9 @@ import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 
-@Document
+@Document(collection = "user_company_associations")
 @CompoundIndex(name = "company_user_idx", def = "{'company_number': 1, 'user_id': 1}", unique = true)
-public class Associations {
+public class Association {
 
 
     @Id
@@ -39,6 +39,9 @@ public class Associations {
 
     @Field("deletion_time")
     private String deletionTime;
+
+
+    private boolean temporary;
 
     @Version
     private Integer version;
@@ -103,21 +106,30 @@ public class Associations {
         return version;
     }
 
-    private Associations(final String companyNumber, final String userId, final String status, final String confirmationExpirationTime, final String confirmationApprovalTime, final String deletionTime) {
+    public boolean isTemporary() {
+        return temporary;
+    }
+
+    public void setTemporary(boolean temporary) {
+        this.temporary = temporary;
+    }
+
+    private Association(final String companyNumber, final String userId, final String status, final String confirmationExpirationTime, final String confirmationApprovalTime, final String deletionTime, boolean temporary) {
         this.companyNumber = companyNumber;
         this.userId = userId;
         this.status = status;
         this.confirmationExpirationTime = confirmationExpirationTime;
         this.confirmationApprovalTime = confirmationApprovalTime;
         this.deletionTime = deletionTime;
+        this.temporary = temporary;
     }
 
-    public Associations() {
+    public Association() {
     }
 
     @Override
     public String toString() {
-        return "Associations{" +
+        return "Association{" +
                 "id='" + id + '\'' +
                 ", companyNumber='" + companyNumber + '\'' +
                 ", userId='" + userId + '\'' +
@@ -126,6 +138,7 @@ public class Associations {
                 ", confirmationExpirationTime='" + confirmationExpirationTime + '\'' +
                 ", confirmationApprovalTime='" + confirmationApprovalTime + '\'' +
                 ", deletionTime='" + deletionTime + '\'' +
+                ", temporary=" + temporary +
                 ", version=" + version +
                 '}';
     }

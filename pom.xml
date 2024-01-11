@@ -24,6 +24,8 @@
         <jacoco-maven-plugin.version>0.8.10</jacoco-maven-plugin.version>
         <encryption-java-library.version>2.0.3</encryption-java-library.version>
         <rest-service-common-library-version>2.0.1</rest-service-common-library-version>
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <jib-maven-plugin.version>3.4.0</jib-maven-plugin.version>
     </properties>
     <profiles>
         <profile>
@@ -75,6 +77,11 @@
             <version>${rest-service-common-library-version}</version>
         </dependency>
         <dependency>
+            <groupId>uk.gov.companieshouse</groupId>
+            <artifactId>private-api-sdk-java</artifactId>
+            <version>4.0.22</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
@@ -112,6 +119,11 @@
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -136,11 +148,20 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-maven-plugin</artifactId>
-                <version>3.4.0</version>
+                <version>${jib-maven-plugin.version}</version>
                 <configuration>
                     <from>
                         <image>416670754337.dkr.ecr.eu-west-2.amazonaws.com/ci-corretto-build-21</image>

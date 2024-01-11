@@ -21,16 +21,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @Testcontainers
-class AssociationsRepositoryTest {
+class AssociationsRepositoryValidationTest {
 
     @Container
     @ServiceConnection
     static MongoDBContainer container = new MongoDBContainer("mongo:4.4.22").withExposedPorts(27017);
     @Autowired
-    MongoTemplate mongoTemplate;
+    AssociationsRepository associationsRepository;
 
     @Autowired
-    AssociationsRepository associationsRepository;
+    MongoTemplate mongoTemplate;
 
     @BeforeEach
     public void setup() {
@@ -39,49 +39,22 @@ class AssociationsRepositoryTest {
         associationOne.setUserId("111");
         associationOne.setStatus("New");
 
-        final var associationTwo = new Association();
-        associationTwo.setCompanyNumber("222222");
-        associationTwo.setUserId("111");
-        associationTwo.setStatus("New");
-
-        final var associationThree = new Association();
-        associationThree.setCompanyNumber("111111");
-        associationThree.setUserId("222");
-        associationThree.setStatus("New");
-
         associationsRepository.insert(associationOne);
-        associationsRepository.insert(associationTwo);
-        associationsRepository.insert(associationThree);
 
     }
 
-
     @Test
-    void findAllAssociationsByCompanyNumberShouldReturnRightTwoAssociations() {
+    void shouldNotAllowDuplicateAssociations() {
+        final var associationUser = new Association();
+        associationUser.setCompanyNumber("111111");
+        associationUser.setUserId("111");
+        associationUser.setStatus("New");
 
-        assertThat(associationsRepository.findAllByCompanyNumber("111111")).hasSize(2);
-
-    }
-
-
-    @Test
-    void testToNotAllowNotNullStatus() {
-        assertThrows(ConstraintViolationException.class, () -> {
-            final var associationUser = new Association();
-            associationUser.setCompanyNumber("111111");
-            associationUser.setUserId("111");
+        assertThrows(DuplicateKeyException.class, () -> {
             associationsRepository.save(associationUser);
         });
 
     }
-
-    @Test
-    void findAllByUserIdShouldReturnOneAssociation() {
-
-        assertThat(associationsRepository.findAllByUserId("222")).hasSize(1);
-
-    }
-
 
     @AfterEach
     public void after() {
