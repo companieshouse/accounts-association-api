@@ -25,6 +25,7 @@ import uk.gov.companieshouse.service.rest.err.Errors;
 public class ControllerAdvice extends ResponseEntityExceptionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(AccountsAssociationServiceApplication.APPLICATION_NAME_SPACE);
+    public static final String X_REQUEST_ID = "X-Request-Id";
 
     private String getJsonStringFromErrors(String requestId, Errors errors) {
 
@@ -42,7 +43,7 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
     public Errors onNotFoundRuntimeException(NotFoundRuntimeException e, HttpServletRequest r) {
-        String requestId = r.getHeader( "X-Request-Id" );
+        String requestId = r.getHeader(X_REQUEST_ID);
 
         Map<String, Object> contextMap = new HashMap<>();
         contextMap.put("url", r.getRequestURL().toString());
@@ -59,7 +60,7 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
     public Errors onBadRequestRuntimeException(BadRequestRuntimeException e, HttpServletRequest request) {
-        String requestId = request.getHeader( "X-Request-Id" );
+        String requestId = request.getHeader(X_REQUEST_ID);
 
         Map<String, Object> contextMap = new HashMap<>();
         contextMap.put("url", request.getRequestURL().toString());
@@ -84,7 +85,7 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
             errors.addError(Err.invalidBodyBuilderWithLocation(location).withError(errorMessage).build());
         }
 
-        String requestId = request.getHeader( "X-Request-Id" );
+        String requestId = request.getHeader(X_REQUEST_ID);
         String errorsJsonString = getJsonStringFromErrors(requestId, errors);
         LOG.errorContext(requestId, String.format("Validation Failed with [%s]", errorsJsonString), exception, null );
 
