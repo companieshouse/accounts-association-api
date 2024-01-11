@@ -15,7 +15,7 @@ public class StatusEnumTest {
     @Test
     void containsWithValidAssociationStatusReturnsTrue(){
         Assertions.assertTrue( StatusEnum.contains( "Confirmed" ) );
-        Assertions.assertTrue( StatusEnum.contains( "Deleted" ) );
+        Assertions.assertTrue( StatusEnum.contains( "Removed" ) );
     }
 
 }
