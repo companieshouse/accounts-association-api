@@ -13,6 +13,8 @@ import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociatio
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
+import java.util.Optional;
+
 @RestController
 public class UserCompanyAssociationStatusApi implements UserCompanyAssociationStatusInterface {
 
@@ -33,39 +35,33 @@ public class UserCompanyAssociationStatusApi implements UserCompanyAssociationSt
 
         LOG.debug( String.format( "%s: Attempting to update association status between user (%s) and company (%s)...", xRequestId, userEmail, companyNumber ) );
 
-        if ( !( status.equals( StatusEnum.CONFIRMED.getValue() ) || status.equals( StatusEnum.REMOVED.getValue() ) ) ){
+        if ( !StatusEnum.contains( status ) ){
             LOG.error( String.format( "%s: Invalid status provided (%s)", xRequestId, status ) );
-            throw new BadRequestRuntimeException( "Status must be either 'Confirmed' or 'Removed'" );
+            throw new BadRequestRuntimeException( "Status must be either 'Confirmed' or 'Deleted'" );
         }
 
-        final var userInfoOptional = usersService.fetchUserInfo( userEmail );
-        final var userInfoExists = userInfoOptional.isPresent();
-        final var userId = !userInfoExists ? userEmail : userInfoOptional.get().getUserId();
+        final var userOptional = usersService.fetchUserId( userEmail );
+        if ( userOptional.isEmpty() ) {
+            LOG.error( String.format( "%s: Unable to find user with the email address: %s.", xRequestId, userEmail ) );
+            throw new NotFoundRuntimeException( "user_email", String.format( "Could not find user with email address: %s.", userEmail)  );
+        }
+        final var userId = userOptional.get().getId();
 
-        if ( !associationsService.associationExists( userId, companyNumber ) ) {
-            LOG.error( String.format( "%s: Unable to find association where companyNumber is %s, and userEmail is %s", xRequestId, companyNumber, userEmail ) );
+        if (associationsService.getByUserIdAndCompanyNumber(userId,companyNumber).isEmpty()) {
+            LOG.error( String.format( "%s: Unable to find association where companyNumber is %s, and userId is %s", xRequestId, companyNumber, userId ) );
             throw new NotFoundRuntimeException( "association", String.format( "Could not find association where companyNumber is %s, and userId is %s.", companyNumber, userId )  );
         }
 
-        if ( status.equals( StatusEnum.CONFIRMED.getValue() ) ){
-            if ( !userInfoExists ) {
-                LOG.error( String.format( "%s: User with email address (%s) does not exist.", xRequestId, userEmail ) );
-                throw new BadRequestRuntimeException(String.format("Unable to find user with email address (%s).", userEmail));
-            }
-
+        if ( status.equals( StatusEnum.CONFIRMED.getValue() ) )
             associationsService.confirmAssociation( userId, companyNumber );
-        } else if ( status.equals( StatusEnum.REMOVED.getValue() ) ){
-            associationsService.softDeleteAssociation( userId, companyNumber, userInfoExists );
-        }
+        else if ( status.equals( StatusEnum.REMOVED.getValue() ) )
+            associationsService.softDeleteAssociation( userId, companyNumber );
+        else
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 
         LOG.debug( String.format( "%s: Updated association status between user (%s) and company (%s)...", xRequestId, userEmail, companyNumber ) );
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-
-
-    // TODO: Address Questions/Comments:
-    // - In the flowchart, there is a field called association.temporary. Is this nullable?
-    // - This endpoint is for updating the status of an existing association, which means the userId must exist in the associations repository. This means that we don't need to persist the userId.
 }
