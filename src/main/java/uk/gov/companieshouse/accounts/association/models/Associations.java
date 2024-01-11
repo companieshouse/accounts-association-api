@@ -40,6 +40,8 @@ public class Associations {
     @Field("deletion_time")
     private String deletionTime;
 
+    private Boolean temporary;
+
     @Version
     private Integer version;
 
@@ -65,6 +67,10 @@ public class Associations {
 
     public void setDeletionTime(String deletionTime) {
         this.deletionTime = deletionTime;
+    }
+
+    public void setTemporary(Boolean temporary){
+        this.temporary = temporary;
     }
 
     public String getId() {
@@ -99,17 +105,22 @@ public class Associations {
         return deletionTime;
     }
 
+    public Boolean getTemporary(){
+        return temporary;
+    }
+
     public int getVersion() {
         return version;
     }
 
-    private Associations(final String companyNumber, final String userId, final String status, final String confirmationExpirationTime, final String confirmationApprovalTime, final String deletionTime) {
+    private Associations(final String companyNumber, final String userId, final String status, final String confirmationExpirationTime, final String confirmationApprovalTime, final String deletionTime, final Boolean temporary) {
         this.companyNumber = companyNumber;
         this.userId = userId;
         this.status = status;
         this.confirmationExpirationTime = confirmationExpirationTime;
         this.confirmationApprovalTime = confirmationApprovalTime;
         this.deletionTime = deletionTime;
+        this.temporary = temporary;
     }
 
     public Associations() {
@@ -126,6 +137,7 @@ public class Associations {
                 ", confirmationExpirationTime='" + confirmationExpirationTime + '\'' +
                 ", confirmationApprovalTime='" + confirmationApprovalTime + '\'' +
                 ", deletionTime='" + deletionTime + '\'' +
+                ", temporary='" + temporary + '\'' +
                 ", version=" + version +
                 '}';
     }

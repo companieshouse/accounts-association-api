@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum StatusEnum {
 
 
-    AWAITING_CONFIRMATION("Awaiting Confirmation"), DELETED("Deleted"), CONFIRMED("Confirmed");
+    AWAITING_CONFIRMATION("Awaiting Confirmation"), REMOVED("Removed"), CONFIRMED("Confirmed");
 
     private String value;
 
