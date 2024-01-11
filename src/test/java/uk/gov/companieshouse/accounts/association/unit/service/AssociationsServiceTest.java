@@ -57,12 +57,12 @@ public class AssociationsServiceTest {
     @Test
     void softDeleteAssociationWithNonExistentUserIdOrCompanyNumberDoesNothing(){
 
-        associationsService.softDeleteAssociation( null, "111111" );
-        associationsService.softDeleteAssociation( "", "111111" );
-        associationsService.softDeleteAssociation( "333", "111111" );
-        associationsService.softDeleteAssociation( "111", null );
-        associationsService.softDeleteAssociation( "111", "" );
-        associationsService.softDeleteAssociation( "111", "333333" );
+        associationsService.softDeleteAssociation( null, "111111", true );
+        associationsService.softDeleteAssociation( "", "111111", true );
+        associationsService.softDeleteAssociation( "333", "111111", true );
+        associationsService.softDeleteAssociation( "111", null, true );
+        associationsService.softDeleteAssociation( "111", "", true );
+        associationsService.softDeleteAssociation( "111", "333333", true );
 
         for ( Associations association: associationsRepository.findAll() ) {
             Assertions.assertEquals("Confirmed", association.getStatus());
@@ -71,16 +71,36 @@ public class AssociationsServiceTest {
     }
 
     @Test
-    void softDeleteAssociationShouldUpdateStatusAndDeletionTimeForSpecifiedAssociation() {
-        associationsService.softDeleteAssociation( "111", "111111" );
+    void softDeleteAssociationWithUserInfoExistsShouldUpdateStatusAndDeletionTimeAndTemporaryForSpecifiedAssociation() {
+        associationsService.softDeleteAssociation( "111", "111111", true );
 
         for ( Associations association: associationsRepository.findAll() ) {
             if ( association.getUserId().equals( "111" ) && association.getCompanyNumber().equals( "111111" ) ) {
-                Assertions.assertEquals("Deleted", association.getStatus());
+                Assertions.assertEquals("Removed", association.getStatus());
                 Assertions.assertNotNull(association.getDeletionTime());
+                Assertions.assertFalse( association.getTemporary() );
             } else {
                 Assertions.assertEquals("Confirmed", association.getStatus());
                 Assertions.assertNull(association.getDeletionTime());
+                Assertions.assertNull( association.getTemporary() );
+            }
+        }
+    }
+
+    @Test
+    void softDeleteAssociationWithUserInfoDoesNotExistShouldUpdateStatusAndDeletionTimeForSpecifiedAssociation() {
+        associationsService.softDeleteAssociation( "111", "111111", false );
+
+        for ( Associations association: associationsRepository.findAll() ) {
+            if ( association.getUserId().equals( "111" ) && association.getCompanyNumber().equals( "111111" ) ) {
+                Assertions.assertEquals("Removed", association.getStatus());
+                Assertions.assertNotNull(association.getDeletionTime());
+                Assertions.assertNull( association.getTemporary() );
+            } else {
+                Assertions.assertEquals("Confirmed", association.getStatus());
+                Assertions.assertNull(association.getDeletionTime());
+                Assertions.assertNull( association.getTemporary() );
+
             }
         }
     }
@@ -109,8 +129,10 @@ public class AssociationsServiceTest {
             Assertions.assertEquals("Confirmed", association.getStatus());
             if ( association.getUserId().equals( "111" ) && association.getCompanyNumber().equals( "111111" ) ) {
                 Assertions.assertNotNull(association.getConfirmationApprovalTime());
+                Assertions.assertFalse(association.getTemporary());
             } else {
                 Assertions.assertNull(association.getConfirmationApprovalTime());
+                Assertions.assertNull(association.getTemporary());
             }
         }
     }
