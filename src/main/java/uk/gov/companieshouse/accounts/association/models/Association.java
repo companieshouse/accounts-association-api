@@ -113,7 +113,10 @@ public class Association {
         return version;
     }
 
-    private Association(final String companyNumber, final String userId, final String status, final String confirmationExpirationTime, final String confirmationApprovalTime, final String deletionTime, final boolean temporary) {
+
+
+
+    public Association(final String companyNumber, final String userId, final String status, final String confirmationExpirationTime, final String confirmationApprovalTime, final String deletionTime, boolean temporary) {
         this.companyNumber = companyNumber;
         this.userId = userId;
         this.status = status;
