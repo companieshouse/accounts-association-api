@@ -5,11 +5,11 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum StatusEnum {
 
 
-    AWAITING_CONFIRMATION("Awaiting Confirmation"), DELETED("Deleted"), CONFIRMED("Confirmed");
+    AWAITING_CONFIRMATION("Awaiting Confirmation"), REMOVED("Removed"), CONFIRMED("Confirmed");
 
-    private String value;
+    private final String value;
 
-    private StatusEnum(String value) {
+    StatusEnum(String value) {
         this.value = value;
     }
 
@@ -18,6 +18,7 @@ public enum StatusEnum {
         return this.value;
     }
 
+    @Override
     public String toString() {
         return String.valueOf(this.value);
     }

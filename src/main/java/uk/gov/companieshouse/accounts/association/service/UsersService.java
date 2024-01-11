@@ -14,7 +14,7 @@ public class UsersService {
         this.usersRepository = usersRepository;
     }
 
-    public Optional<Users> fetchUserId( String email ){
+    public Optional<Users> fetchUserId( final String email ){
         return usersRepository.fetchUserId( email );
     }
 

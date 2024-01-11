@@ -13,6 +13,8 @@ import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociatio
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
+import java.util.Optional;
+
 @RestController
 public class UserCompanyAssociationStatusApi implements UserCompanyAssociationStatusInterface {
 
@@ -45,14 +47,14 @@ public class UserCompanyAssociationStatusApi implements UserCompanyAssociationSt
         }
         final var userId = userOptional.get().getId();
 
-        if ( !associationsService.associationExists( userId, companyNumber ) ) {
+        if (associationsService.getByUserIdAndCompanyNumber(userId,companyNumber).isEmpty()) {
             LOG.error( String.format( "%s: Unable to find association where companyNumber is %s, and userId is %s", xRequestId, companyNumber, userId ) );
             throw new NotFoundRuntimeException( "association", String.format( "Could not find association where companyNumber is %s, and userId is %s.", companyNumber, userId )  );
         }
 
         if ( status.equals( StatusEnum.CONFIRMED.getValue() ) )
             associationsService.confirmAssociation( userId, companyNumber );
-        else if ( status.equals( StatusEnum.DELETED.getValue() ) )
+        else if ( status.equals( StatusEnum.REMOVED.getValue() ) )
             associationsService.softDeleteAssociation( userId, companyNumber );
         else
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
