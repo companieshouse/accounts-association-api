@@ -42,7 +42,7 @@ public class UserCompanyAssociationStatusApi implements UserCompanyAssociationSt
         final var userInfoExists = userInfoOptional.isPresent();
         final var userId = !userInfoExists ? userEmail : userInfoOptional.get().getUserId();
 
-        if ( associationsService.getByUserIdAndCompanyNumber(userId,companyNumber).isEmpty() ) {
+        if (associationsService.getByUserIdAndCompanyNumber(userId,companyNumber).isEmpty()) {
             LOG.error( String.format( "%s: Unable to find association where companyNumber is %s, and userEmail is %s", xRequestId, companyNumber, userEmail ) );
             throw new NotFoundRuntimeException( "association", String.format( "Could not find association where companyNumber is %s, and userId is %s.", companyNumber, userId )  );
         }
