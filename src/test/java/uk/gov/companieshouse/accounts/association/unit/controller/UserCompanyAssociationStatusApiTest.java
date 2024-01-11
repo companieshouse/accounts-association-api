@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import uk.gov.companieshouse.accounts.association.enums.StatusEnum;
 import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 

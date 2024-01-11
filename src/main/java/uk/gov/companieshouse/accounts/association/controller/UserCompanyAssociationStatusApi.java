@@ -33,29 +33,30 @@ public class UserCompanyAssociationStatusApi implements UserCompanyAssociationSt
 
         LOG.debug( String.format( "%s: Attempting to update association status between user (%s) and company (%s)...", xRequestId, userEmail, companyNumber ) );
 
-        if ( !StatusEnum.contains( status ) ){
+        if ( !( status.equals( StatusEnum.CONFIRMED.getValue() ) || status.equals( StatusEnum.REMOVED.getValue() ) ) ){
             LOG.error( String.format( "%s: Invalid status provided (%s)", xRequestId, status ) );
-            throw new BadRequestRuntimeException( "Status must be either 'Confirmed' or 'Deleted'" );
+            throw new BadRequestRuntimeException( "Status must be either 'Confirmed' or 'Removed'" );
         }
 
-        final var userOptional = usersService.fetchUserId( userEmail );
-        if ( userOptional.isEmpty() ) {
-            LOG.error( String.format( "%s: Unable to find user with the email address: %s.", xRequestId, userEmail ) );
-            throw new NotFoundRuntimeException( "user_email", String.format( "Could not find user with email address: %s.", userEmail)  );
-        }
-        final var userId = userOptional.get().getId();
+        final var userInfoOptional = usersService.fetchUserInfo( userEmail );
+        final var userInfoExists = userInfoOptional.isPresent();
+        final var userId = !userInfoExists ? userEmail : userInfoOptional.get().getUserId();
 
         if (associationsService.getByUserIdAndCompanyNumber(userId,companyNumber).isEmpty()) {
-            LOG.error( String.format( "%s: Unable to find association where companyNumber is %s, and userId is %s", xRequestId, companyNumber, userId ) );
+            LOG.error( String.format( "%s: Unable to find association where companyNumber is %s, and userEmail is %s", xRequestId, companyNumber, userEmail ) );
             throw new NotFoundRuntimeException( "association", String.format( "Could not find association where companyNumber is %s, and userId is %s.", companyNumber, userId )  );
         }
 
-        if ( status.equals( StatusEnum.CONFIRMED.getValue() ) )
+        if ( status.equals( StatusEnum.CONFIRMED.getValue() ) ){
+            if ( !userInfoExists ) {
+                LOG.error( String.format( "%s: User with email address (%s) does not exist.", xRequestId, userEmail ) );
+                throw new BadRequestRuntimeException(String.format("Unable to find user with email address (%s).", userEmail));
+            }
+
             associationsService.confirmAssociation( userId, companyNumber );
-        else if ( status.equals( StatusEnum.REMOVED.getValue() ) )
-            associationsService.softDeleteAssociation( userId, companyNumber );
-        else
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } else if ( status.equals( StatusEnum.REMOVED.getValue() ) ){
+            associationsService.softDeleteAssociation( userId, companyNumber, userInfoExists );
+        }
 
         LOG.debug( String.format( "%s: Updated association status between user (%s) and company (%s)...", xRequestId, userEmail, companyNumber ) );
 

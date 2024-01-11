@@ -37,8 +37,8 @@ public class AssociationsService {
     public void confirmAssociation(final String userId, final String companyNumber) {
         final var update = new Update()
                 .set( "temporary", false )
-                .set("status", StatusEnum.CONFIRMED.getValue())
-                .set("confirmationApprovalTime", LocalDateTime.now());
+                .set( "status", StatusEnum.CONFIRMED.getValue() )
+                .set( "confirmationApprovalTime", LocalDateTime.now() );
 
         associationsRepository.updateAssociation(userId, companyNumber, update);
     }
