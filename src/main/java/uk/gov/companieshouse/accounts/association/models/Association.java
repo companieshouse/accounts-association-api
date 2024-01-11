@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 @Document
 @CompoundIndex(name = "company_user_idx", def = "{'company_number': 1, 'user_id': 1}", unique = true)
-public class Associations {
+public class Association {
 
 
     @Id
@@ -40,10 +40,10 @@ public class Associations {
     @Field("deletion_time")
     private String deletionTime;
 
-    private Boolean temporary;
-
     @Version
     private Integer version;
+
+    private boolean temporary;
 
     public void setCompanyNumber(String companyNumber) {
         this.companyNumber = companyNumber;
@@ -67,10 +67,6 @@ public class Associations {
 
     public void setDeletionTime(String deletionTime) {
         this.deletionTime = deletionTime;
-    }
-
-    public void setTemporary(Boolean temporary){
-        this.temporary = temporary;
     }
 
     public String getId() {
@@ -105,15 +101,20 @@ public class Associations {
         return deletionTime;
     }
 
-    public Boolean getTemporary(){
-        return temporary;
-    }
-
     public int getVersion() {
         return version;
     }
 
-    private Associations(final String companyNumber, final String userId, final String status, final String confirmationExpirationTime, final String confirmationApprovalTime, final String deletionTime, final Boolean temporary) {
+    public boolean isTemporary() {
+        return temporary;
+    }
+
+    public void setTemporary(boolean temporary) {
+        this.temporary = temporary;
+    }
+
+
+    public Association(final String companyNumber, final String userId, final String status, final String confirmationExpirationTime, final String confirmationApprovalTime, final String deletionTime, boolean temporary) {
         this.companyNumber = companyNumber;
         this.userId = userId;
         this.status = status;
@@ -123,7 +124,7 @@ public class Associations {
         this.temporary = temporary;
     }
 
-    public Associations() {
+    public Association() {
     }
 
     @Override
@@ -137,8 +138,8 @@ public class Associations {
                 ", confirmationExpirationTime='" + confirmationExpirationTime + '\'' +
                 ", confirmationApprovalTime='" + confirmationApprovalTime + '\'' +
                 ", deletionTime='" + deletionTime + '\'' +
-                ", temporary='" + temporary + '\'' +
                 ", version=" + version +
+                ", temporary=" + temporary +
                 '}';
     }
 }
