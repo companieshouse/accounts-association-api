@@ -110,15 +110,15 @@ class AssociationsRepositoryTest {
 
     @Test
     void updateAssociationWithNonExistentUserIdOrCompanyNumberShouldDoNothing(){
-        final var setStatusToDeleted = new Update()
-                .set( "status", "Deleted" );
+        final var setStatusToRemoved = new Update()
+                .set( "status", "Removed" );
 
-        associationsRepository.updateAssociation( null, "111111", setStatusToDeleted );
-        associationsRepository.updateAssociation( "", "111111", setStatusToDeleted );
-        associationsRepository.updateAssociation( "333", "111111", setStatusToDeleted );
-        associationsRepository.updateAssociation( "111", null, setStatusToDeleted );
-        associationsRepository.updateAssociation( "111", "", setStatusToDeleted );
-        associationsRepository.updateAssociation( "111", "333333", setStatusToDeleted );
+        associationsRepository.updateAssociation( null, "111111", setStatusToRemoved );
+        associationsRepository.updateAssociation( "", "111111", setStatusToRemoved );
+        associationsRepository.updateAssociation( "333", "111111", setStatusToRemoved );
+        associationsRepository.updateAssociation( "111", null, setStatusToRemoved );
+        associationsRepository.updateAssociation( "111", "", setStatusToRemoved );
+        associationsRepository.updateAssociation( "111", "333333", setStatusToRemoved );
 
         for ( Associations association: associationsRepository.findAll() )
             Assertions.assertEquals( "Confirmed", association.getStatus() );
@@ -145,14 +145,14 @@ class AssociationsRepositoryTest {
 
     @Test
     void updateAssociationShouldOverwriteExistingValues(){
-        final var setStatusToDeleted = new Update()
-                .set( "status", "Deleted" );
+        final var setStatusToRemoved = new Update()
+                .set( "status", "Removed" );
 
-        associationsRepository.updateAssociation( "111", "111111", setStatusToDeleted );
+        associationsRepository.updateAssociation( "111", "111111", setStatusToRemoved );
 
         for ( Associations association: associationsRepository.findAll() )
             if ( association.getUserId().equals( "111" ) && association.getCompanyNumber().equals( "111111" ) )
-                Assertions.assertEquals( "Deleted", association.getStatus() );
+                Assertions.assertEquals( "Removed", association.getStatus() );
             else
                 Assertions.assertEquals( "Confirmed", association.getStatus() );
     }
