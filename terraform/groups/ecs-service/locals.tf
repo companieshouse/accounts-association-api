@@ -18,11 +18,8 @@ locals {
   use_set_environment_files  = var.use_set_environment_files
   s3_config_bucket           = data.vault_generic_secret.shared_s3.data["config_bucket_name"]
   app_environment_filename   = "accounts-association-api.env"
-  parameter_store_secrets    = {
-    "vpc_name"                        = local.vpc_name
-  }
 
-  vpc_name                         = local.service_secrets["vpc_name"]
+  vpc_name                   = data.aws_ssm_parameter.secret[format("/%s/%s", local.name_prefix, "vpc-name")].value
 
   # Enable Eric
   use_eric_reverse_proxy    = true
@@ -66,15 +63,6 @@ locals {
       value = tostring(sec.version)
     }
   ]
-
-  # secrets to go in list
-  #  task_secrets = concat(local.global_secret_list, local.service_secret_list, [
-  #    { "name" : "COOKIE_SECRET", "valueFrom" : "${local.service_secrets_arn_map.cookie_secret}" },
-  #    { "name" : "CHS_DEVELOPER_CLIENT_SECRET", "valueFrom" : "${local.service_secrets_arn_map.chs_developer_client_secret}" },
-  #    { "name" : "CHS_DEVELOPER_CLIENT_ID", "valueFrom" : "${local.service_secrets_arn_map.chs_developer_client_id}" },
-  #    { "name" : "OAUTH2_REQUEST_KEY", "valueFrom" : "${local.service_secrets_arn_map.oauth2_request_key}" },
-  #    { "name" : "DEVELOPER_OAUTH2_REQUEST_KEY", "valueFrom" : "${local.service_secrets_arn_map.developer_oauth2_request_key}" },
-  #  ])
 
   # TODO: task_secrets don't seem to correspond with 'parameter_store_secrets'. What is the difference?
   task_secrets = concat(local.global_secret_list, local.service_secret_list)
