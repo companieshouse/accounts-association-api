@@ -29,11 +29,11 @@ test: clean
 
 .PHONY: test-unit
 test-unit: clean
-    mvn test -DexcludedGroups="integration-test"
+	mvn test -DexcludedGroups="integration-test"
 
 .PHONY: test-integration
 test-integration: clean
-    mvn test -Dgroups="unit-test, integration-test"
+	mvn test -Dgroups="unit-test, integration-test"
 
 .PHONY: package
 package:
