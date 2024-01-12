@@ -33,7 +33,7 @@ public class UserCompanyAssociationStatusApi implements UserCompanyAssociationSt
 
         LOG.debug( String.format( "%s: Attempting to update association status between user (%s) and company (%s)...", xRequestId, userEmail, companyNumber ) );
 
-        if ( !StatusEnum.contains( status ) ){
+        if ( !( status.equals( StatusEnum.CONFIRMED.getValue() ) || status.equals( StatusEnum.REMOVED.getValue() ) ) ){
             LOG.error( String.format( "%s: Invalid status provided (%s)", xRequestId, status ) );
             throw new BadRequestRuntimeException( "Status must be either 'Confirmed' or 'Removed'" );
         }
@@ -56,9 +56,6 @@ public class UserCompanyAssociationStatusApi implements UserCompanyAssociationSt
             associationsService.confirmAssociation( userId, companyNumber );
         } else if ( status.equals( StatusEnum.REMOVED.getValue() ) ){
             associationsService.softDeleteAssociation( userId, companyNumber, userInfoExists );
-        } else {
-            LOG.error( String.format( "%s: Invalid status provided (%s)", xRequestId, status ) );
-            throw new BadRequestRuntimeException( "Status must be either 'Confirmed' or 'Removed'" );
         }
 
         LOG.debug( String.format( "%s: Updated association status between user (%s) and company (%s)...", xRequestId, userEmail, companyNumber ) );
