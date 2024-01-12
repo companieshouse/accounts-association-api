@@ -46,7 +46,9 @@ public class UserInfoMockEndpoint {
     }
 
     public Optional<UserInfo> fetchUserInfo( String userEmail ){
-        return Optional.of( mockUsers.get( userEmail ) )
+        return Optional.of( mockUsers )
+                .filter( mockUsers -> mockUsers.containsKey( userEmail ) )
+                .map( mockUsers -> mockUsers.get( userEmail ) )
                 .map( Supplier::get );
     }
 
