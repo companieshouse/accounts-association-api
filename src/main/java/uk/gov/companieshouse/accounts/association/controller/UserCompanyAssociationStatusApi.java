@@ -13,8 +13,6 @@ import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociatio
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
-import java.util.Optional;
-
 @RestController
 public class UserCompanyAssociationStatusApi implements UserCompanyAssociationStatusInterface {
 

@@ -40,10 +40,10 @@ public class Association {
     @Field("deletion_time")
     private String deletionTime;
 
+    private boolean temporary;
+
     @Version
     private Integer version;
-
-    private boolean temporary;
 
     public void setCompanyNumber(String companyNumber) {
         this.companyNumber = companyNumber;
@@ -67,6 +67,10 @@ public class Association {
 
     public void setDeletionTime(String deletionTime) {
         this.deletionTime = deletionTime;
+    }
+
+    public void setTemporary(boolean temporary){
+        this.temporary = temporary;
     }
 
     public String getId() {
@@ -101,20 +105,15 @@ public class Association {
         return deletionTime;
     }
 
+    public boolean isTemporary(){
+        return temporary;
+    }
+
     public int getVersion() {
         return version;
     }
 
-    public boolean isTemporary() {
-        return temporary;
-    }
-
-    public void setTemporary(boolean temporary) {
-        this.temporary = temporary;
-    }
-
-
-    public Association(final String companyNumber, final String userId, final String status, final String confirmationExpirationTime, final String confirmationApprovalTime, final String deletionTime, boolean temporary) {
+    private Association(final String companyNumber, final String userId, final String status, final String confirmationExpirationTime, final String confirmationApprovalTime, final String deletionTime, final boolean temporary) {
         this.companyNumber = companyNumber;
         this.userId = userId;
         this.status = status;
@@ -138,8 +137,8 @@ public class Association {
                 ", confirmationExpirationTime='" + confirmationExpirationTime + '\'' +
                 ", confirmationApprovalTime='" + confirmationApprovalTime + '\'' +
                 ", deletionTime='" + deletionTime + '\'' +
+                ", temporary='" + temporary + '\'' +
                 ", version=" + version +
-                ", temporary=" + temporary +
                 '}';
     }
 }
