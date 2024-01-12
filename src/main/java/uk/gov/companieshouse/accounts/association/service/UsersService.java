@@ -1,29 +1,24 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import java.util.Optional;
 import org.springframework.stereotype.Service;
-import uk.gov.companieshouse.accounts.association.models.UserInfo;
-import uk.gov.companieshouse.accounts.association.models.Users;
-import uk.gov.companieshouse.accounts.association.repositories.UsersRepository;
+
+
 import uk.gov.companieshouse.accounts.association.rest.UserInfoMockEndpoint;
+import uk.gov.companieshouse.api.accounts.associations.model.UserInfo;
+
+import java.util.Optional;
 
 @Service
 public class UsersService {
 
-    private final UsersRepository usersRepository;
     private final UserInfoMockEndpoint userInfoMockEndpoint;
 
-    public UsersService(UsersRepository usersRepository, UserInfoMockEndpoint userInfoMockEndpoint) {
-        this.usersRepository = usersRepository;
+    public UsersService(UserInfoMockEndpoint userInfoMockEndpoint) {
         this.userInfoMockEndpoint = userInfoMockEndpoint;
     }
 
-    public Optional<Users> fetchUserId( final String email ){
-        return usersRepository.fetchUserId( email );
-    }
-
-    public Optional<UserInfo> fetchUserInfo( final String userEmail ){
-        return userInfoMockEndpoint.fetchUserInfo( userEmail );
+    public Optional<UserInfo> fetchUserInfo(final String userEmail) {
+        return userInfoMockEndpoint.fetchUserInfo(userEmail);
     }
 
 }
