@@ -29,7 +29,7 @@ public class UserCompanyAssociationStatusApi implements UserCompanyAssociationSt
 
     @Override
     public ResponseEntity<Void> updateAssociationStatusForUserAndCompany(
-           String userEmail, String companyNumber, String status, String xRequestId) {
+           final String userEmail, final String companyNumber, final String status, final String xRequestId) {
 
         LOG.debug( String.format( "%s: Attempting to update association status between user (%s) and company (%s)...", xRequestId, userEmail, companyNumber ) );
 
@@ -54,7 +54,9 @@ public class UserCompanyAssociationStatusApi implements UserCompanyAssociationSt
             }
 
             associationsService.confirmAssociation( userId, companyNumber );
-        } else if ( status.equals( StatusEnum.REMOVED.getValue() ) ){
+        }
+
+        if ( status.equals( StatusEnum.REMOVED.getValue() ) ){
             associationsService.softDeleteAssociation( userId, companyNumber, userInfoExists );
         }
 
