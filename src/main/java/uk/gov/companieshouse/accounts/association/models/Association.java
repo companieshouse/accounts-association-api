@@ -40,7 +40,7 @@ public class Association {
     @Field("deletion_time")
     private String deletionTime;
 
-    private Boolean temporary;
+    private boolean temporary;
 
     @Version
     private Integer version;
@@ -69,7 +69,7 @@ public class Association {
         this.deletionTime = deletionTime;
     }
 
-    public void setTemporary(Boolean temporary){
+    public void setTemporary(boolean temporary){
         this.temporary = temporary;
     }
 
@@ -105,7 +105,7 @@ public class Association {
         return deletionTime;
     }
 
-    public Boolean getTemporary(){
+    public boolean isTemporary(){
         return temporary;
     }
 
@@ -113,7 +113,7 @@ public class Association {
         return version;
     }
 
-    private Associations(final String companyNumber, final String userId, final String status, final String confirmationExpirationTime, final String confirmationApprovalTime, final String deletionTime, final Boolean temporary) {
+    private Association(final String companyNumber, final String userId, final String status, final String confirmationExpirationTime, final String confirmationApprovalTime, final String deletionTime, final boolean temporary) {
         this.companyNumber = companyNumber;
         this.userId = userId;
         this.status = status;

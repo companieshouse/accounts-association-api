@@ -13,8 +13,6 @@ import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociatio
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
-import java.util.Optional;
-
 @RestController
 public class UserCompanyAssociationStatusApi implements UserCompanyAssociationStatusInterface {
 
@@ -65,9 +63,4 @@ public class UserCompanyAssociationStatusApi implements UserCompanyAssociationSt
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-
-
-    // TODO: Address Questions/Comments:
-    // - In the flowchart, there is a field called association.temporary. Is this nullable?
-    // - This endpoint is for updating the status of an existing association, which means the userId must exist in the associations repository. This means that we don't need to persist the userId.
 }

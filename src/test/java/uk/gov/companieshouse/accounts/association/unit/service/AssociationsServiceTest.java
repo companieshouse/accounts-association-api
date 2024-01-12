@@ -78,11 +78,11 @@ public class AssociationsServiceTest {
             if ( association.getUserId().equals( "111" ) && association.getCompanyNumber().equals( "111111" ) ) {
                 Assertions.assertEquals("Removed", association.getStatus());
                 Assertions.assertNotNull(association.getDeletionTime());
-                Assertions.assertFalse( association.getTemporary() );
+                Assertions.assertFalse( association.isTemporary() );
             } else {
                 Assertions.assertEquals("Confirmed", association.getStatus());
                 Assertions.assertNull(association.getDeletionTime());
-                Assertions.assertNull( association.getTemporary() );
+                Assertions.assertFalse( association.isTemporary() );
             }
         }
     }
@@ -91,15 +91,15 @@ public class AssociationsServiceTest {
     void softDeleteAssociationWithUserInfoDoesNotExistShouldUpdateStatusAndDeletionTimeForSpecifiedAssociation() {
         associationsService.softDeleteAssociation( "111", "111111", false );
 
-        for ( Associations association: associationsRepository.findAll() ) {
+        for ( Association association: associationsRepository.findAll() ) {
             if ( association.getUserId().equals( "111" ) && association.getCompanyNumber().equals( "111111" ) ) {
                 Assertions.assertEquals("Removed", association.getStatus());
                 Assertions.assertNotNull(association.getDeletionTime());
-                Assertions.assertNull( association.getTemporary() );
+                Assertions.assertFalse( association.isTemporary() );
             } else {
                 Assertions.assertEquals("Confirmed", association.getStatus());
                 Assertions.assertNull(association.getDeletionTime());
-                Assertions.assertNull( association.getTemporary() );
+                Assertions.assertFalse( association.isTemporary() );
 
             }
         }
@@ -129,10 +129,10 @@ public class AssociationsServiceTest {
             Assertions.assertEquals("Confirmed", association.getStatus());
             if ( association.getUserId().equals( "111" ) && association.getCompanyNumber().equals( "111111" ) ) {
                 Assertions.assertNotNull(association.getConfirmationApprovalTime());
-                Assertions.assertFalse(association.getTemporary());
+                Assertions.assertFalse(association.isTemporary());
             } else {
                 Assertions.assertNull(association.getConfirmationApprovalTime());
-                Assertions.assertNull(association.getTemporary());
+                Assertions.assertFalse(association.isTemporary());
             }
         }
     }

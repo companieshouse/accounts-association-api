@@ -16,7 +16,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import uk.gov.companieshouse.accounts.association.enums.StatusEnum;
 import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 
@@ -40,7 +39,7 @@ public class UserCompanyAssociationStatusApiTest {
 
     @BeforeEach
     public void setup() {
-        final var associationWithUserId = new Associations();
+        final var associationWithUserId = new Association();
         associationWithUserId.setCompanyNumber( "111111" );
         associationWithUserId.setUserId( "111" );
         associationWithUserId.setStatus( "Awaiting approval" );
@@ -97,7 +96,7 @@ public class UserCompanyAssociationStatusApiTest {
 
         Assertions.assertEquals("Confirmed", updatedAssociation.getStatus());
         Assertions.assertNotNull(updatedAssociation.getConfirmationApprovalTime());
-        Assertions.assertFalse(updatedAssociation.getTemporary());
+        Assertions.assertFalse(updatedAssociation.isTemporary());
     }
 
     @Test
@@ -113,7 +112,7 @@ public class UserCompanyAssociationStatusApiTest {
 
         Assertions.assertEquals( "Removed", updatedAssociation.getStatus() );
         Assertions.assertNotNull( updatedAssociation.getDeletionTime() );
-        Assertions.assertNull( updatedAssociation.getTemporary() );
+        Assertions.assertFalse( updatedAssociation.isTemporary() );
     }
 
     @Test
@@ -129,7 +128,7 @@ public class UserCompanyAssociationStatusApiTest {
 
         Assertions.assertEquals( "Removed", updatedAssociation.getStatus() );
         Assertions.assertNotNull( updatedAssociation.getDeletionTime() );
-        Assertions.assertFalse( updatedAssociation.getTemporary() );
+        Assertions.assertFalse( updatedAssociation.isTemporary() );
     }
 
     @AfterEach

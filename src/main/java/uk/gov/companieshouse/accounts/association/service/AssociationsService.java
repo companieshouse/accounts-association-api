@@ -25,7 +25,7 @@ public class AssociationsService {
 
     public void softDeleteAssociation( final String userId, final String companyNumber, final boolean userInfoExists ){
         var update = new Update()
-                .set( "status", "Removed" )
+                .set( "status", StatusEnum.REMOVED.getValue() )
                 .set( "deletionTime", LocalDateTime.now() );
 
         if ( userInfoExists )
