@@ -13,7 +13,7 @@
     <description>User and Company association.</description>
     <properties>
         <java.version>21</java.version>
-        <spring-boot.version>3.1.3</spring-boot.version>
+        <spring-boot.version>3.1.7</spring-boot.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.2.2</maven-surefire-plugin.version>
@@ -174,11 +174,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
-<!--                <configuration>-->
-<!--                    <systemPropertyVariables>-->
-<!--                        <de.flapdoodle.os.override>Linux|X86_64|Ubuntu|Ubuntu_22_04</de.flapdoodle.os.override>-->
-<!--                    </systemPropertyVariables>-->
-<!--                </configuration>-->
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
