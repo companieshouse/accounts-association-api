@@ -1,4 +1,4 @@
-package uk.gov.companieshouse.accounts.association.unit.enums;
+package uk.gov.companieshouse.accounts.association.enums;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

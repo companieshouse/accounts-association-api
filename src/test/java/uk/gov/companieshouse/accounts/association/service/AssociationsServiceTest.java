@@ -1,4 +1,4 @@
-package uk.gov.companieshouse.accounts.association.unit.service;
+package uk.gov.companieshouse.accounts.association.service;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
