@@ -13,6 +13,8 @@ import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociatio
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
+import java.util.Optional;
+
 @RestController
 public class UserCompanyAssociationStatusApi implements UserCompanyAssociationStatusInterface {
 
@@ -42,7 +44,7 @@ public class UserCompanyAssociationStatusApi implements UserCompanyAssociationSt
         final var userInfoExists = userInfoOptional.isPresent();
         final var userId = !userInfoExists ? userEmail : userInfoOptional.get().getUserId();
 
-        if ( !associationsService.associationExists( userId, companyNumber ) ) {
+        if ( associationsService.getByUserIdAndCompanyNumber(userId,companyNumber).isEmpty() ) {
             LOG.error( String.format( "%s: Unable to find association where companyNumber is %s, and userEmail is %s", xRequestId, companyNumber, userEmail ) );
             throw new NotFoundRuntimeException( "association", String.format( "Could not find association where companyNumber is %s, and userId is %s.", companyNumber, userId )  );
         }

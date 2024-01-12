@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import uk.gov.companieshouse.accounts.association.models.Associations;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 
@@ -34,17 +34,17 @@ public class AssociationsServiceTest {
 
     @BeforeEach
     public void setup() {
-        final var associationOne = new Associations();
+        final var associationOne = new Association();
         associationOne.setCompanyNumber("111111");
         associationOne.setUserId("111");
         associationOne.setStatus( "Confirmed" );
 
-        final var associationTwo = new Associations();
+        final var associationTwo = new Association();
         associationTwo.setCompanyNumber("222222");
         associationTwo.setUserId("111");
         associationTwo.setStatus( "Confirmed" );
 
-        final var associationThree = new Associations();
+        final var associationThree = new Association();
         associationThree.setCompanyNumber("111111");
         associationThree.setUserId("222");
         associationThree.setStatus( "Confirmed" );
@@ -64,7 +64,7 @@ public class AssociationsServiceTest {
         associationsService.softDeleteAssociation( "111", "", true );
         associationsService.softDeleteAssociation( "111", "333333", true );
 
-        for ( Associations association: associationsRepository.findAll() ) {
+        for ( Association association: associationsRepository.findAll() ) {
             Assertions.assertEquals("Confirmed", association.getStatus());
             Assertions.assertNull( association.getDeletionTime() );
         }
@@ -74,7 +74,7 @@ public class AssociationsServiceTest {
     void softDeleteAssociationWithUserInfoExistsShouldUpdateStatusAndDeletionTimeAndTemporaryForSpecifiedAssociation() {
         associationsService.softDeleteAssociation( "111", "111111", true );
 
-        for ( Associations association: associationsRepository.findAll() ) {
+        for ( Association association: associationsRepository.findAll() ) {
             if ( association.getUserId().equals( "111" ) && association.getCompanyNumber().equals( "111111" ) ) {
                 Assertions.assertEquals("Removed", association.getStatus());
                 Assertions.assertNotNull(association.getDeletionTime());
@@ -115,7 +115,7 @@ public class AssociationsServiceTest {
         associationsService.confirmAssociation( "111", "" );
         associationsService.confirmAssociation( "111", "333333" );
 
-        for ( Associations association: associationsRepository.findAll() ) {
+        for ( Association association: associationsRepository.findAll() ) {
             Assertions.assertEquals("Confirmed", association.getStatus());
             Assertions.assertNull( association.getConfirmationApprovalTime() );
         }
@@ -125,7 +125,7 @@ public class AssociationsServiceTest {
     void confirmAssociationShouldUpdateStatusAndConfirmationApprovalTimeForSpecifiedAssociation() {
         associationsService.confirmAssociation( "111", "111111" );
 
-        for ( Associations association: associationsRepository.findAll() ) {
+        for ( Association association: associationsRepository.findAll() ) {
             Assertions.assertEquals("Confirmed", association.getStatus());
             if ( association.getUserId().equals( "111" ) && association.getCompanyNumber().equals( "111111" ) ) {
                 Assertions.assertNotNull(association.getConfirmationApprovalTime());
@@ -139,7 +139,7 @@ public class AssociationsServiceTest {
 
     @AfterEach
     public void after() {
-        mongoTemplate.dropCollection(Associations.class);
+        mongoTemplate.dropCollection(Association.class);
     }
 
 }

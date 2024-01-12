@@ -16,7 +16,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import uk.gov.companieshouse.accounts.association.models.Associations;
+import uk.gov.companieshouse.accounts.association.enums.StatusEnum;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 
 @AutoConfigureMockMvc
@@ -44,7 +45,7 @@ public class UserCompanyAssociationStatusApiTest {
         associationWithUserId.setUserId( "111" );
         associationWithUserId.setStatus( "Awaiting approval" );
 
-        final var associationWithEmailId = new Associations();
+        final var associationWithEmailId = new Association();
         associationWithEmailId.setCompanyNumber( "222222" );
         associationWithEmailId.setUserId( "ronnie.osullivan@snooker.com" );
         associationWithEmailId.setStatus( "Awaiting approval" );
@@ -133,7 +134,7 @@ public class UserCompanyAssociationStatusApiTest {
 
     @AfterEach
     public void after() {
-        mongoTemplate.dropCollection(Associations.class);
+        mongoTemplate.dropCollection(Association.class);
     }
 
 }

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 @Document
 @CompoundIndex(name = "company_user_idx", def = "{'company_number': 1, 'user_id': 1}", unique = true)
-public class Associations {
+public class Association {
 
 
     @Id
@@ -123,7 +123,7 @@ public class Associations {
         this.temporary = temporary;
     }
 
-    public Associations() {
+    public Association() {
     }
 
     @Override
