@@ -3,6 +3,7 @@ package uk.gov.companieshouse.accounts.association.unit.service;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +18,7 @@ import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 
 @SpringBootTest
 @Testcontainers
+@Tag("integration-test")
 public class AssociationsServiceTest {
 
     @Container
