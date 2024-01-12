@@ -29,7 +29,7 @@ test: clean
 
 .PHONY: test-unit
 test-unit: clean
-	mvn test -DexcludedGroups="integration-test"
+	mvn test
 
 .PHONY: test-integration
 test-integration: clean
