@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 
-@Document
+@Document("user_company_associations")
 @CompoundIndex(name = "company_user_idx", def = "{'company_number': 1, 'user_id': 1}", unique = true)
 public class Association {
 
