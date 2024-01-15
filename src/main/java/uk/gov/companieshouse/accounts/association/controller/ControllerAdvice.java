@@ -24,7 +24,7 @@ import uk.gov.companieshouse.service.rest.err.Errors;
 @org.springframework.web.bind.annotation.ControllerAdvice
 public class ControllerAdvice extends ResponseEntityExceptionHandler {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AccountsAssociationServiceApplication.APPLICATION_NAME_SPACE);
+    private static final Logger LOG = LoggerFactory.getLogger(AccountsAssociationServiceApplication.applicationNameSpace);
     public static final String X_REQUEST_ID = "X-Request-Id";
 
     private String getJsonStringFromErrors(String requestId, Errors errors) {

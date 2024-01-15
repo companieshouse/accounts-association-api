@@ -19,7 +19,7 @@ public class UserCompanyAssociationStatusApi implements UserCompanyAssociationSt
     private final AssociationsService associationsService;
     private final UsersService usersService;
 
-    private static final Logger LOG = LoggerFactory.getLogger(AccountsAssociationServiceApplication.APPLICATION_NAME_SPACE);
+    private static final Logger LOG = LoggerFactory.getLogger(AccountsAssociationServiceApplication.applicationNameSpace);
 
     public UserCompanyAssociationStatusApi(AssociationsService associationsService,
             UsersService usersService) {
