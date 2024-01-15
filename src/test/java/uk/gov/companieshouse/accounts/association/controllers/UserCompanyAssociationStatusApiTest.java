@@ -37,7 +37,7 @@ public class UserCompanyAssociationStatusApiTest {
     @Autowired
     public MockMvc mockMvc;
 
-    @MockBean
+    @Autowired
     AssociationsRepository associationsRepository;
 
     @BeforeEach
