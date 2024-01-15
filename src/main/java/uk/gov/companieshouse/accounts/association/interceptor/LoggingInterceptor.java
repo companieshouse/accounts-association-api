@@ -1,6 +1,5 @@
 package uk.gov.companieshouse.accounts.association.interceptor;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
@@ -18,7 +17,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class LoggingInterceptor implements HandlerInterceptor, RequestLogger {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(
-            AccountsAssociationServiceApplication.APPLICATION_NAME_SPACE);
+            AccountsAssociationServiceApplication.applicationNameSpace);
 
     @Override
     public boolean preHandle(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) {
