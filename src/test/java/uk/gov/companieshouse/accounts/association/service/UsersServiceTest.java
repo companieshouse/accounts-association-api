@@ -1,26 +1,30 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import static org.mockito.ArgumentMatchers.any;
-
-import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import uk.gov.companieshouse.accounts.association.rest.UserInfoMockEndpoint;
 import uk.gov.companieshouse.api.accounts.associations.model.UserInfo;
 
-@SpringBootTest
-@Tag("unit-test")
-public class UsersServiceTest {
+import java.util.Optional;
 
-    @Autowired
+import static org.mockito.ArgumentMatchers.any;
+
+@ExtendWith(MockitoExtension.class)
+@Tag("unit-test")
+class UsersServiceTest {
+
+    @InjectMocks
     UsersService usersService;
 
-    @MockBean
+    @Mock
     UserInfoMockEndpoint userInfoMockEndpoint;
 
     @Test
