@@ -100,4 +100,11 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
         };
     }
 
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public void onException(Exception e, HttpServletRequest r) {
+        String requestId = r.getHeader(X_REQUEST_ID);
+        String msg = r.getRequestURL() + (r.getQueryString()!=null ? "?"+r.getQueryString() : "") + ". " + e.getMessage();
+        LOG.errorContext(requestId, msg, e, null);
+    }
 }
