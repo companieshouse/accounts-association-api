@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @Tag("unit-test")
 @WebMvcTest( UserCompanyAssociationStatusApi.class )
-public class ControllerAdviceTest {
+public class ControllerAdviceUnitTest {
 
     @Autowired
     private MockMvc mockMvc;

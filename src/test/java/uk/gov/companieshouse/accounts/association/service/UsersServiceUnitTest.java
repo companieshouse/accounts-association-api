@@ -8,8 +8,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import uk.gov.companieshouse.accounts.association.rest.UserInfoMockEndpoint;
 import uk.gov.companieshouse.api.accounts.associations.model.UserInfo;
 
@@ -19,7 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-class UsersServiceTest {
+class UsersServiceUnitTest {
 
     @InjectMocks
     UsersService usersService;
