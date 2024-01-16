@@ -1,4 +1,4 @@
-package uk.gov.companieshouse.accounts.association.service;
+package uk.gov.companieshouse.accounts.association.integration;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -19,7 +19,7 @@ import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 @SpringBootTest
 @Testcontainers
 @Tag("integration-test")
-public class AssociationsServiceTest {
+public class AssociationsServiceIntegrationTest {
 
     @Container
     @ServiceConnection

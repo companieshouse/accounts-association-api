@@ -2,9 +2,11 @@ package uk.gov.companieshouse.accounts.association.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-class CamelCaseSnakeCaseTest {
+@Tag("unit-test")
+class CamelCaseSnakeCaseUnitTest {
 
     @Test
     void testToSnakeCase() {

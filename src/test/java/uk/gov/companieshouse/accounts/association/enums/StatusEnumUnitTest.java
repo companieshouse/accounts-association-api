@@ -1,9 +1,11 @@
 package uk.gov.companieshouse.accounts.association.enums;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-class StatusEnumTest {
+@Tag("unit-test")
+class StatusEnumUnitTest {
 
     @Test
     void containsWithInvalidAssociationStatusReturnsFalse() {
