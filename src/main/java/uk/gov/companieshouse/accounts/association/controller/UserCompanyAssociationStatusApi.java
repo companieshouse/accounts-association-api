@@ -35,7 +35,7 @@ public class UserCompanyAssociationStatusApi implements UserCompanyAssociationSt
 
         if ( !( status.equals( StatusEnum.CONFIRMED.getValue() ) || status.equals( StatusEnum.REMOVED.getValue() ) ) ){
             LOG.error( String.format( "%s: Invalid status provided (%s)", xRequestId, status ) );
-            throw new BadRequestRuntimeException( "Status must be either 'Confirmed' or 'Removed'" );
+            throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
 
         final var userInfoOptional = usersService.fetchUserInfo( userEmail );
@@ -44,13 +44,13 @@ public class UserCompanyAssociationStatusApi implements UserCompanyAssociationSt
 
         if (associationsService.getByUserIdAndCompanyNumber(userId,companyNumber).isEmpty()) {
             LOG.error( String.format( "%s: Unable to find association where companyNumber is %s, and userEmail is %s", xRequestId, companyNumber, userEmail ) );
-            throw new NotFoundRuntimeException( "association", String.format( "Could not find association where companyNumber is %s, and userId is %s.", companyNumber, userId )  );
+            throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
 
         if ( status.equals( StatusEnum.CONFIRMED.getValue() ) ){
             if ( !userInfoExists ) {
                 LOG.error( String.format( "%s: User with email address (%s) does not exist.", xRequestId, userEmail ) );
-                throw new BadRequestRuntimeException(String.format("Unable to find user with email address (%s).", userEmail));
+                throw new BadRequestRuntimeException("Please check the request and try again");
             }
 
             associationsService.confirmAssociation( userId, companyNumber );

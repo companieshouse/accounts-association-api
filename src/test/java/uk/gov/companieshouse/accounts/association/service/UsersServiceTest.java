@@ -35,13 +35,12 @@ public class UsersServiceTest {
     }
 
     @Test
-    void fetchUserInfoWithReturnsUserInfoForEmail(){
+    void fetchUserInfoReturnsUserInfoForEmail(){
         final var userEmail = "ronald@mcdonald.com";
         final var userId = "111";
 
         Mockito.doReturn( Optional.of( new UserInfo().userId( userId ) ) )
                 .when( userInfoMockEndpoint ).fetchUserInfo( userEmail );
-
 
         Assertions.assertEquals( "111", usersService.fetchUserInfo( userEmail ).get().getUserId() );
     }
