@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("unit-test")
-class CamelCaseSnakeCaseUnitTest {
+class CamelCaseSnakeCaseTest {
 
     @Test
     void testToSnakeCase() {

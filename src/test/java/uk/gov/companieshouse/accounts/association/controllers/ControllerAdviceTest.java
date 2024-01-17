@@ -5,7 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import java.util.Optional;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
@@ -21,9 +23,10 @@ import uk.gov.companieshouse.api.accounts.associations.model.UserInfo;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
 @WebMvcTest( UserCompanyAssociationStatusApi.class )
-public class ControllerAdviceUnitTest {
+public class ControllerAdviceTest {
 
     @Autowired
     private MockMvc mockMvc;

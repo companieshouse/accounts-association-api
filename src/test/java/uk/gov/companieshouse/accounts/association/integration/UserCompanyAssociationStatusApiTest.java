@@ -24,7 +24,7 @@ import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepos
 @SpringBootTest
 @Testcontainers
 @Tag("integration-test")
-class UserCompanyAssociationStatusApiIntegrationTest {
+class UserCompanyAssociationStatusApiTest {
 
     @Container
     @ServiceConnection

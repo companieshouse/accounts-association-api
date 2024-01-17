@@ -9,7 +9,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,10 +22,11 @@ import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.model.UserInfo;
 
+@ExtendWith(MockitoExtension.class)
 @AutoConfigureMockMvc
 @SpringBootTest
 @Tag("unit-test")
-public class UserCompanyAssociationStatusApiUnitTest {
+public class UserCompanyAssociationStatusApiTest {
 
     @Autowired
     public MockMvc mockMvc;
