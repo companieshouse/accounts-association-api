@@ -1,7 +1,5 @@
 package uk.gov.companieshouse.accounts.association.configuration;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -11,8 +9,12 @@ import uk.gov.companieshouse.accounts.association.interceptor.LoggingInterceptor
 @Configuration
 public class InterceptorConfig implements WebMvcConfigurer {
 
-    @Autowired
-    private LoggingInterceptor loggingInterceptor;
+
+    private final LoggingInterceptor loggingInterceptor;
+
+    public InterceptorConfig(LoggingInterceptor loggingInterceptor) {
+        this.loggingInterceptor = loggingInterceptor;
+    }
 
     /**
      * Setup the interceptors to run against endpoints when the endpoints are called
@@ -27,6 +29,7 @@ public class InterceptorConfig implements WebMvcConfigurer {
 
     /**
      * Interceptor that logs all calls to endpoints
+     *
      * @param registry The spring interceptor registry
      */
     private void addLoggingInterceptor(InterceptorRegistry registry) {
