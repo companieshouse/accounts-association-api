@@ -33,7 +33,7 @@ test-unit: clean
 
 .PHONY: test-integration
 test-integration: clean
-	mvn test -Dgroups="unit-test, integration-test"
+	mvn test -Dgroups="integration-test"
 
 .PHONY: package
 package:
