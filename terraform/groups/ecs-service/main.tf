@@ -42,6 +42,13 @@ module "ecs-service" {
   lb_listener_arn           = data.aws_lb_listener.service_lb_listener.arn
   lb_listener_rule_priority = local.lb_listener_rule_priority
   lb_listener_paths         = local.lb_listener_paths
+  health_check_grace_period_seconds = 240
+  healthcheck_healthy_threshold     = "2"
+
+  # ECS Task container health check
+  use_task_container_healthcheck = true
+  healthcheck_path               = local.healthcheck_path
+  healthcheck_matcher            = local.healthcheck_matcher
 
   # Docker container details
   docker_registry   = var.docker_registry
@@ -83,7 +90,7 @@ module "ecs-service" {
 
 
   # Eric variables
-  use_eric_reverse_proxy    = local.use_eric_reverse_proxy
+  use_eric_reverse_proxy    = true
   eric_port                 = local.eric_port
   eric_environment_filename = local.eric_environment_filename
   eric_secrets              = local.eric_secrets
