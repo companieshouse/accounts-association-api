@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SpringBootTest
 @Testcontainers(parallel = true)
 @Tag("integration-test")
-class AssociationsRepositoryIntegrationTest {
+class AssociationsRepositoryTest {
 
     @Container
     @ServiceConnection

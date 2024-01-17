@@ -17,7 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-class UsersServiceUnitTest {
+class UsersServiceTest {
 
     @InjectMocks
     UsersService usersService;

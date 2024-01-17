@@ -19,7 +19,7 @@ import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 @SpringBootTest
 @Testcontainers
 @Tag("integration-test")
-public class AssociationsServiceIntegrationTest {
+public class AssociationsServiceTest {
 
     @Container
     @ServiceConnection

@@ -10,8 +10,10 @@ import org.bson.Document;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -20,9 +22,10 @@ import uk.gov.companieshouse.accounts.association.enums.StatusEnum;
 import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 
+@ExtendWith(MockitoExtension.class)
 @SpringBootTest
 @Tag("unit-test")
-public class AssociationsServiceUnitTest {
+public class AssociationsServiceTest {
 
     @Autowired
     AssociationsService associationsService;
