@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @Testcontainers
+@Tag("integration-test")
 class AssociationsRepositoryTest {
 
     @Container
