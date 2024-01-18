@@ -1,6 +1,7 @@
 package uk.gov.companieshouse.accounts.association.repositories;
 
 import jakarta.validation.ConstraintViolationException;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -175,6 +176,83 @@ class AssociationsRepositoryTest {
             associationsRepository.save(associationUser);
         });
 
+    }
+
+    @Test
+    void findAllByUserIdWithMalformedOrNonexistentUserIdReturnsEmptyList(){
+        Assertions.assertEquals( List.of(), associationsRepository.findAllByUserId( null ) );
+        Assertions.assertEquals( List.of(), associationsRepository.findAllByUserId( "" ) );
+        Assertions.assertEquals( List.of(), associationsRepository.findAllByUserId( "abc" ) );
+        Assertions.assertEquals( List.of(), associationsRepository.findAllByUserId( "333" ) );
+    }
+
+    @Test
+    void findAllByUserIdWithOneAssociationReturnsUsersAssociation(){
+        final var associations = associationsRepository.findAllByUserId( "222" );
+        Assertions.assertEquals( 1, associations.size() );
+        Assertions.assertEquals( "111111", associations.get( 0 ).getCompanyNumber() );
+    }
+
+    @Test
+    void findAllByUserIdWithMultipleAssociationsReturnsAllUsersAssociations(){
+        final var associations = associationsRepository.findAllByUserId( "111" );
+
+        Assertions.assertEquals( 2, associations.size() );
+
+        final var companyNumbers =
+        associations.stream()
+                    .map( Association::getCompanyNumber )
+                    .toList();
+
+        Assertions.assertTrue( companyNumbers.containsAll( List.of( "111111", "222222" ) ) );
+    }
+
+    @Test
+    void findAllConfirmedAndAwaitingAssociationsByUserIdWithMalformedOrNonexistentUserIdReturnsEmptyList(){
+        Assertions.assertEquals( List.of(), associationsRepository.findAllConfirmedAndAwaitingAssociationsByUserId( null ) );
+        Assertions.assertEquals( List.of(), associationsRepository.findAllConfirmedAndAwaitingAssociationsByUserId( "" ) );
+        Assertions.assertEquals( List.of(), associationsRepository.findAllConfirmedAndAwaitingAssociationsByUserId( "abc" ) );
+        Assertions.assertEquals( List.of(), associationsRepository.findAllConfirmedAndAwaitingAssociationsByUserId( "333" ) );
+    }
+
+    @Test
+    void findAllConfirmedAndAwaitingAssociationsByUserIdWithUserThatOnlyHasRemovedCompaniesReturnsEmptyList(){
+        final var removedAssociation = new Association();
+        removedAssociation.setCompanyNumber("333333");
+        removedAssociation.setUserId("333");
+        removedAssociation.setStatus("Removed");
+
+        associationsRepository.insert( List.of( removedAssociation ) );
+
+        final var associations = associationsRepository.findAllConfirmedAndAwaitingAssociationsByUserId( "333" );
+
+        Assertions.assertTrue(  associations.isEmpty() );
+    }
+
+    @Test
+    void findAllConfirmedAndAwaitingAssociationsByUserIdRetrievesAllNonRemovedUsersAssociations(){
+        final var awaitingAssociation = new Association();
+        awaitingAssociation.setCompanyNumber("333333");
+        awaitingAssociation.setUserId("111");
+        awaitingAssociation.setStatus("Awaiting Confirmation");
+
+        final var removedAssociation = new Association();
+        removedAssociation.setCompanyNumber("444444");
+        removedAssociation.setUserId("111");
+        removedAssociation.setStatus("Removed");
+
+        associationsRepository.insert( List.of( awaitingAssociation, removedAssociation ) );
+
+        final var associations = associationsRepository.findAllConfirmedAndAwaitingAssociationsByUserId( "111" );
+
+        Assertions.assertEquals( 3, associations.size() );
+
+        final var companyNumbers =
+                associations.stream()
+                        .map( Association::getCompanyNumber )
+                        .toList();
+
+        Assertions.assertTrue( companyNumbers.containsAll( List.of( "111111", "222222", "333333" ) ) );
     }
 
     @AfterEach
