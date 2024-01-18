@@ -94,9 +94,7 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
 
     private String getConstraintViolationExceptionErrorMessage(String location) {
         return switch (location) {
-            case "update_association_status_for_user_and_company.arg0" -> "Please check the request and try again.";
-            case "update_association_status_for_user_and_company.arg1" -> "Please check the request and try again.";
-            default -> "One of the inputs is incorrectly formatted";
+            default -> "Please check the request and try again.";
         };
     }
 

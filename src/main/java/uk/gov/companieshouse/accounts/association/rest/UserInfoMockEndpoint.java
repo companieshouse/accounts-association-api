@@ -42,9 +42,19 @@ public class UserInfoMockEndpoint {
             return mrBlobbyUserInfo;
         };
 
+        final Supplier<UserInfo> devilSupplier = () -> {
+            final var devilUserInfo = new UserInfo();
+            devilUserInfo.setUserId("666");
+            devilUserInfo.setDisplayName("The Devil");
+            devilUserInfo.setUserEmail("devil@hell.com");
+            devilUserInfo.setAuthorisationStatus(StatusEnum.CONFIRMED.getValue());
+            return devilUserInfo;
+        };
+
         mockUsers.put( "bruce.wayne@gotham.city", batmanSupplier );
         mockUsers.put( "michael.jackson@singer.com", michaelJacksonSupplier );
         mockUsers.put( "mr.blobby@nightmare.co.uk", mrBlobbySupplier );
+        mockUsers.put( "devil@hell.com", devilSupplier );
     }
 
     public Optional<UserInfo> fetchUserInfo( String userEmail ){
