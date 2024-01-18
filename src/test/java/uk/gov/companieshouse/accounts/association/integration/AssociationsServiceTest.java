@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -137,6 +138,86 @@ class AssociationsServiceTest {
                 Assertions.assertFalse(association.isTemporary());
             }
         }
+    }
+
+    @Test
+    void findAllByUserIdWithMalformedOrNonexistentUserIdReturnsEmptyList(){
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( null, true ) );
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( "", true ) );
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( "abc", true ) );
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( "333", true ) );
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( null, false ) );
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( "", false ) );
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( "abc", false ) );
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( "333", false ) );
+    }
+
+    @Test
+    void findAllByUserIdWithOneRemovedAssociationReturnsUsersAssociationIfIncludeUnauthorisedIsTrueOtherwiseReturnsEmptyList(){
+        final var removedAssociation = new Association();
+        removedAssociation.setCompanyNumber("333333");
+        removedAssociation.setUserId("333");
+        removedAssociation.setStatus("Removed");
+
+        associationsRepository.insert( List.of( removedAssociation ) );
+
+        Assertions.assertTrue( associationsService.findAllByUserId( "333", false ).isEmpty() );
+
+        final var associations = associationsService.findAllByUserId( "333", true );
+        Assertions.assertEquals( 1, associations.size() );
+        Assertions.assertEquals( "333333", associations.get( 0 ).getCompanyNumber() );
+    }
+
+    @Test
+    void findAllByUserIdWithIncludeUnauthorisedIsTrueAndMultipleAssociationsReturnsAllUsersAssociations(){
+        final var awaitingAssociation = new Association();
+        awaitingAssociation.setCompanyNumber("333333");
+        awaitingAssociation.setUserId("111");
+        awaitingAssociation.setStatus("Awaiting Confirmation");
+
+        final var removedAssociation = new Association();
+        removedAssociation.setCompanyNumber("444444");
+        removedAssociation.setUserId("111");
+        removedAssociation.setStatus("Removed");
+
+        associationsRepository.insert( List.of( awaitingAssociation, removedAssociation ) );
+
+        final var associations = associationsService.findAllByUserId( "111", true );
+
+        Assertions.assertEquals( 4, associations.size() );
+
+        final var companyNumbers =
+                associations.stream()
+                        .map( Association::getCompanyNumber )
+                        .toList();
+
+        Assertions.assertTrue( companyNumbers.containsAll( List.of( "111111", "222222", "333333", "444444" ) ) );
+    }
+
+    @Test
+    void findAllByUserIdWithUnauthorisedIsFalseAndMultipleAssociationsReturnsAllAwaitingConfirmationAndConfirmedUsersAssociations(){
+        final var awaitingAssociation = new Association();
+        awaitingAssociation.setCompanyNumber("333333");
+        awaitingAssociation.setUserId("111");
+        awaitingAssociation.setStatus("Awaiting Confirmation");
+
+        final var removedAssociation = new Association();
+        removedAssociation.setCompanyNumber("444444");
+        removedAssociation.setUserId("111");
+        removedAssociation.setStatus("Removed");
+
+        associationsRepository.insert( List.of( awaitingAssociation, removedAssociation ) );
+
+        final var associations = associationsService.findAllByUserId( "111", false );
+
+        Assertions.assertEquals( 3, associations.size() );
+
+        final var companyNumbers =
+                associations.stream()
+                        .map( Association::getCompanyNumber )
+                        .toList();
+
+        Assertions.assertTrue( companyNumbers.containsAll( List.of( "111111", "222222", "333333" ) ) );
     }
 
     @AfterEach

@@ -1,7 +1,9 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import java.util.List;
 import org.bson.Document;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,36 @@ class AssociationsServiceTest {
 
     @Mock
     AssociationsRepository associationsRepository;
+
+
+    private Association associationOne;
+    private Association associationTwo;
+    private Association awaitingAssociation;
+    private Association removedAssociation;
+
+
+    @BeforeEach
+    public void setup(){
+        associationOne = new Association();
+        associationOne.setCompanyNumber("111111");
+        associationOne.setUserId("111");
+        associationOne.setStatus( "Confirmed" );
+
+        associationTwo = new Association();
+        associationTwo.setCompanyNumber("222222");
+        associationTwo.setUserId("111");
+        associationTwo.setStatus( "Confirmed" );
+
+        awaitingAssociation = new Association();
+        awaitingAssociation.setCompanyNumber("333333");
+        awaitingAssociation.setUserId("111");
+        awaitingAssociation.setStatus("Awaiting Confirmation");
+
+        removedAssociation = new Association();
+        removedAssociation.setCompanyNumber("444444");
+        removedAssociation.setUserId("111");
+        removedAssociation.setStatus("Removed");
+    }
 
     @Test
     void getByUserIdAndCompanyNumberWithInvalidUserIdOrCompanyNumberReturnsNothing() {
@@ -132,6 +164,70 @@ class AssociationsServiceTest {
     void confirmAssociationRunsQuery() {
         associationsService.confirmAssociation("111", "111111");
         Mockito.verify(associationsRepository).updateAssociation(eq("111"), eq("111111"), argThat(associationStatusUpdateParametersMatch(StatusEnum.CONFIRMED.getValue(), "confirmationApprovalTime", false)));
+    }
+
+    @Test
+    void findAllByUserIdWithMalformedOrNonexistentUserIdReturnsEmptyList(){
+        Mockito.doReturn( List.of() ).when( associationsRepository ).findAllByUserId( any() );
+        Mockito.doReturn( List.of() ).when( associationsRepository ).findAllConfirmedAndAwaitingAssociationsByUserId( any() );
+
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( null, true ) );
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( "", true ) );
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( "abc", true ) );
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( "333", true ) );
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( null, false ) );
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( "", false ) );
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( "abc", false ) );
+        Assertions.assertEquals( List.of(), associationsService.findAllByUserId( "333", false ) );
+    }
+
+    @Test
+    void findAllByUserIdWithOneRemovedAssociationReturnsUsersAssociationIfIncludeUnauthorisedIsTrueOtherwiseReturnsEmptyList(){
+        final var removedAssociation = new Association();
+        removedAssociation.setCompanyNumber("333333");
+        removedAssociation.setUserId("333");
+        removedAssociation.setStatus("Removed");
+
+        Mockito.doReturn( List.of( removedAssociation ) ).when( associationsRepository ).findAllByUserId( any() );
+        Mockito.doReturn( List.of() ).when( associationsRepository ).findAllConfirmedAndAwaitingAssociationsByUserId( any() );
+
+        Assertions.assertTrue( associationsService.findAllByUserId( "333", false ).isEmpty() );
+
+        final var associations = associationsService.findAllByUserId( "333", true );
+        Assertions.assertEquals( 1, associations.size() );
+        Assertions.assertEquals( "333333", associations.get( 0 ).getCompanyNumber() );
+    }
+
+    @Test
+    void findAllByUserIdWithIncludeUnauthorisedIsTrueAndMultipleAssociationsReturnsAllUsersAssociations(){
+        Mockito.doReturn( List.of( associationOne, associationTwo, awaitingAssociation, removedAssociation ) ).when( associationsRepository ).findAllByUserId( any() );
+
+        final var associations = associationsService.findAllByUserId( "111", true );
+
+        Assertions.assertEquals( 4, associations.size() );
+
+        final var companyNumbers =
+                associations.stream()
+                        .map( Association::getCompanyNumber )
+                        .toList();
+
+        Assertions.assertTrue( companyNumbers.containsAll( List.of( "111111", "222222", "333333", "444444" ) ) );
+    }
+
+    @Test
+    void findAllByUserIdWithUnauthorisedIsFalseAndMultipleAssociationsReturnsAllAwaitingConfirmationAndConfirmedUsersAssociations(){
+        Mockito.doReturn( List.of( associationOne, associationTwo, awaitingAssociation ) ).when( associationsRepository ).findAllConfirmedAndAwaitingAssociationsByUserId( any() );
+
+        final var associations = associationsService.findAllByUserId( "111", false );
+
+        Assertions.assertEquals( 3, associations.size() );
+
+        final var companyNumbers =
+                associations.stream()
+                        .map( Association::getCompanyNumber )
+                        .toList();
+
+        Assertions.assertTrue( companyNumbers.containsAll( List.of( "111111", "222222", "333333" ) ) );
     }
 
 }

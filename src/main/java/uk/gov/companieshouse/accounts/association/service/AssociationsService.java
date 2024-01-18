@@ -1,6 +1,7 @@
 package uk.gov.companieshouse.accounts.association.service;
 
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import uk.gov.companieshouse.accounts.association.enums.StatusEnum;
 import uk.gov.companieshouse.accounts.association.models.Association;
@@ -41,6 +42,11 @@ public class AssociationsService {
                 .set( "confirmationApprovalTime", LocalDateTime.now() );
 
         associationsRepository.updateAssociation(userId, companyNumber, update);
+    }
+
+    public List<Association> findAllByUserId( final String userId, Boolean includeUnauthorised ){
+        return includeUnauthorised ? associationsRepository.findAllByUserId( userId )
+                                   : associationsRepository.findAllConfirmedAndAwaitingAssociationsByUserId( userId );
     }
 
 }
