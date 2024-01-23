@@ -51,11 +51,20 @@ module "ecs-service" {
   container_port    = local.container_port
 
   # Service configuration
-  service_name = local.service_name
-  name_prefix  = local.name_prefix
-  use_fargate  = var.use_fargate
-  fargate_subnets           = local.application_subnet_ids
-  service_autoscale_enabled = var.service_autoscale_enabled
+  service_name                       = local.service_name
+  name_prefix                        = local.name_prefix
+  desired_task_count                 = var.desired_task_count
+  max_task_count                     = var.max_task_count
+  required_cpus                      = var.required_cpus
+  required_memory                    = var.required_memory
+  service_autoscale_enabled          = var.service_autoscale_enabled
+  service_autoscale_target_value_cpu = var.service_autoscale_target_value_cpu
+  service_scaledown_schedule         = var.service_scaledown_schedule
+  service_scaleup_schedule           = var.service_scaleup_schedule
+  use_fargate                        = var.use_fargate
+  fargate_subnets                    = local.application_subnet_ids
+  use_capacity_provider              = var.use_capacity_provider
+
 
   # Service Healthcheck configuration
   use_task_container_healthcheck    = true
@@ -64,21 +73,13 @@ module "ecs-service" {
   healthcheck_healthy_threshold     = "2"
   health_check_grace_period_seconds = 240
 
-  # Service performance and scaling configs
-  desired_task_count = var.desired_task_count
-  required_cpus      = var.required_cpus
-  required_memory    = var.required_memory
-  service_autoscale_target_value_cpu = var.service_autoscale_target_value_cpu
-  service_scaledown_schedule         = var.service_scaledown_schedule
-  service_scaleup_schedule           = var.service_scaleup_schedule
-  use_capacity_provider              = var.use_capacity_provider
 
   # Cloudwatch
   cloudwatch_alarms_enabled = var.cloudwatch_alarms_enabled
 
   # Service environment variable and secret configs
-  task_environment = local.task_environment
-  task_secrets     = local.task_secrets
+  task_environment          = local.task_environment
+  task_secrets              = local.task_secrets
   app_environment_filename  = local.app_environment_filename
   use_set_environment_files = local.use_set_environment_files
 
