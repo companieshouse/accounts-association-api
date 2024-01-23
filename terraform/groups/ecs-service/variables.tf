@@ -78,6 +78,12 @@ variable "service_scaleup_schedule" {
   default     = ""
 }
 
+variable "max_task_count" {
+  type        = number
+  description = "The maximum number of tasks for this service."
+  default     = 3
+}
+
 # ----------------------------------------------------------------------
 # Cloudwatch alerts
 # ----------------------------------------------------------------------
