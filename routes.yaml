@@ -3,4 +3,4 @@ group: web
 
 weight: 100
 routes:
-  1: ^/accounts-association/*
+  1: ^/associations/*
