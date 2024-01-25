@@ -4,4 +4,3 @@ group: api
 weight: 100
 routes:
   1: ^/associations/*
-  2: ^/accounts-association-api/healthcheck
