@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfig;
 import uk.gov.companieshouse.accounts.association.controller.UserCompanyAssociationStatusApi;
 import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
@@ -37,6 +38,9 @@ class UserCompanyAssociationStatusApiTest {
     private Association ronnieOSullivanAssociation;
     private Association batmanAssociation;
 
+    @MockBean
+    InterceptorConfig interceptorConfig;
+
     @BeforeEach
     void setup() {
         batmanAssociation = new Association();
@@ -48,6 +52,8 @@ class UserCompanyAssociationStatusApiTest {
         ronnieOSullivanAssociation.setCompanyNumber("222222");
         ronnieOSullivanAssociation.setUserId("ronnie.osullivan@snooker.com");
         ronnieOSullivanAssociation.setStatus("Awaiting approval");
+
+        Mockito.doNothing().when(interceptorConfig).addInterceptors( any() );
     }
 
     @Test
