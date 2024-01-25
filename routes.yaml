@@ -1,5 +1,5 @@
 app_name: accounts-association-api
-group: web
+group: api
 
 weight: 100
 routes:

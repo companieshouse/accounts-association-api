@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.controllers;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -9,6 +10,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.HttpServerErrorException;
+import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfig;
 import uk.gov.companieshouse.accounts.association.controller.UserCompanyAssociationStatusApi;
 import uk.gov.companieshouse.accounts.association.enums.StatusEnum;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
@@ -35,6 +37,14 @@ class ControllerAdviceTest {
 
     @MockBean
     private AssociationsService associationsService;
+
+    @MockBean
+    InterceptorConfig interceptorConfig;
+
+    @BeforeEach
+    void setup() {
+        Mockito.doNothing().when(interceptorConfig).addInterceptors( any() );
+    }
 
     @Test
     void testNotFoundRuntimeError() throws Exception {
