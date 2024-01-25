@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -8,15 +9,18 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfig;
 import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 
@@ -39,6 +43,9 @@ class UserCompanyAssociationStatusApiTest {
     @Autowired
     AssociationsRepository associationsRepository;
 
+    @MockBean
+    InterceptorConfig interceptorConfig;
+
     @BeforeEach
     public void setup() {
         final var associationWithUserId = new Association();
@@ -53,6 +60,8 @@ class UserCompanyAssociationStatusApiTest {
 
         associationsRepository.insert( associationWithUserId );
         associationsRepository.insert( associationWithEmailId );
+
+        Mockito.doNothing().when(interceptorConfig).addInterceptors( any() );
     }
 
     @Test
