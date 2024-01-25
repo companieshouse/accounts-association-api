@@ -42,8 +42,14 @@ public class InterceptorConfig implements WebMvcConfigurer {
     }
 
     private void addEricInterceptors( final InterceptorRegistry registry){
-        registry.addInterceptor(new UserAuthenticationInterceptor( Collections.EMPTY_LIST, Collections.singletonList("oauth2"),
-                new InternalUserInterceptor(AccountsAssociationServiceApplication.applicationNameSpace) ) );
+        registry.addInterceptor(
+                new UserAuthenticationInterceptor(
+                        Collections.EMPTY_LIST,
+                        Collections.singletonList("oauth2"),
+                        new InternalUserInterceptor(
+                                AccountsAssociationServiceApplication.applicationNameSpace)
+                )
+        ).excludePathPatterns("/*/healthcheck");
     }
 
 }
