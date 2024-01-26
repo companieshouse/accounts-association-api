@@ -139,6 +139,14 @@ class AssociationsServiceTest {
         }
     }
 
+
+    @Test
+    void test(){
+        associationsService.findAllByUserId( "111", 0, 2 );
+    }
+
+
+
     @AfterEach
     public void after() {
         mongoTemplate.dropCollection(Association.class);

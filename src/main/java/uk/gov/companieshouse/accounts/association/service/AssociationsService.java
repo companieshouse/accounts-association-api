@@ -1,7 +1,11 @@
 package uk.gov.companieshouse.accounts.association.service;
 
 import jakarta.validation.constraints.NotNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.companieshouse.accounts.association.enums.StatusEnum;
 import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
@@ -34,6 +38,7 @@ public class AssociationsService {
         associationsRepository.updateAssociation(userId, companyNumber, update);
     }
 
+    @Transactional
     public void confirmAssociation(final String userId, final String companyNumber) {
         final var update = new Update()
                 .set( "temporary", false )
@@ -41,6 +46,11 @@ public class AssociationsService {
                 .set( "confirmationApprovalTime", LocalDateTime.now() );
 
         associationsRepository.updateAssociation(userId, companyNumber, update);
+    }
+
+    public Page<Association> findAllByUserId( final String userId, final int pageNumber, final int pageSize ){
+        final Pageable pageable = PageRequest.of( pageNumber, pageSize );
+        return associationsRepository.findAllByUserId( userId, pageable );
     }
 
 }
