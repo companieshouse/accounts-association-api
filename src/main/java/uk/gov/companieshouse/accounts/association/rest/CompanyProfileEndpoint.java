@@ -1,13 +1,13 @@
 package uk.gov.companieshouse.accounts.association.rest;
 
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 import uk.gov.companieshouse.api.InternalApiClient;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.api.model.ApiResponse;
 import uk.gov.companieshouse.api.model.company.CompanyProfileApi;
 
-@Repository
+@Service
 public class CompanyProfileEndpoint {
 
     private final InternalApiClient internalApiClient;
