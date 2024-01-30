@@ -3,12 +3,12 @@ package uk.gov.companieshouse.accounts.association.rest;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.function.Supplier;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 import uk.gov.companieshouse.accounts.association.enums.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.UserInfo;
 
 
-@Repository
+@Service
 public class UserInfoMockEndpoint {
 
     private final HashMap<String, Supplier<UserInfo>> mockUsers = new HashMap<>();

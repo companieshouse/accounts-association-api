@@ -1,4 +1,4 @@
-package uk.gov.companieshouse.accounts.association.controller;
+package uk.gov.companieshouse.accounts.association.controllers.manual;
 
 import java.io.IOException;
 import org.springframework.http.ResponseEntity;
