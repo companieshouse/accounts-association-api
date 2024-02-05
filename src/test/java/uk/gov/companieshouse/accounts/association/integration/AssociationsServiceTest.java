@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.testcontainers.containers.MongoDBContainer;
@@ -15,15 +16,22 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
+import uk.gov.companieshouse.api.InternalApiClient;
+import uk.gov.companieshouse.api.sdk.ApiClientService;
 
 @SpringBootTest
 @Testcontainers
 @Tag("integration-test")
 class AssociationsServiceTest {
 
+    @MockBean
+    ApiClientService apiClientService;
+
+    @MockBean
+    InternalApiClient internalApiClient;
     @Container
     @ServiceConnection
-    static MongoDBContainer container = new MongoDBContainer("mongo:4.4.22");
+    static MongoDBContainer container = new MongoDBContainer("mongo:5");
 
     @Autowired
     MongoTemplate mongoTemplate;
