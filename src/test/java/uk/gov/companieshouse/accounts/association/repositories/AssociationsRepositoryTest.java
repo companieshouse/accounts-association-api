@@ -1,15 +1,13 @@
 package uk.gov.companieshouse.accounts.association.repositories;
 
 import jakarta.validation.ConstraintViolationException;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.test.annotation.DirtiesContext;
@@ -17,6 +15,8 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import uk.gov.companieshouse.accounts.association.models.Association;
+import uk.gov.companieshouse.api.InternalApiClient;
+import uk.gov.companieshouse.api.sdk.ApiClientService;
 
 import java.util.Optional;
 
@@ -31,12 +31,19 @@ class AssociationsRepositoryTest {
 
     @Container
     @ServiceConnection
-    static MongoDBContainer container = new MongoDBContainer("mongo:4.4.22");
+    static MongoDBContainer container = new MongoDBContainer("mongo:5");
     @Autowired
     MongoTemplate mongoTemplate;
 
     @Autowired
     AssociationsRepository associationsRepository;
+
+    @MockBean
+    ApiClientService apiClientService;
+
+    @MockBean
+    InternalApiClient internalApiClient;
+
 
     @BeforeEach
     public void setup() {
@@ -65,7 +72,7 @@ class AssociationsRepositoryTest {
     @Test
     void findAllAssociationsByCompanyNumberShouldReturnRightTwoAssociations() {
 
-        assertThat(associationsRepository.findAllByCompanyNumber("111111")).hasSize(2);
+        assertThat(associationsRepository.findByCompanyNumberLike("111", Pageable.ofSize(2))).hasSize(2);
 
     }
 
@@ -89,77 +96,84 @@ class AssociationsRepositoryTest {
 
     }
 
-
     @Test
-    void findByUserIdAndCompanyNumberWithInvalidUserIdOrCompanyNumberReturnsFalse(){
-        Assertions.assertFalse(Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber( null, "111111")).isEmpty() );
-        Assertions.assertFalse( Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber( "", "111111")).isEmpty() );
-        Assertions.assertFalse( Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber( "abc", "111111")).isEmpty() );
-        Assertions.assertFalse( Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber( "111", null)).isEmpty() );
-        Assertions.assertFalse( Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber( "111", "")).isEmpty() );
-        Assertions.assertFalse( Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber( "111", "abc" )).isEmpty() );
+    void findByCompanyNumberSearchQueryShouldReturnTwoAssociations() {
+
+
+        assertThat(associationsRepository.findByCompanyNumberLike("111", Pageable.ofSize(1)).getTotalElements()).isEqualTo(2);
+
     }
 
     @Test
-    void findByUserIdAndCompanyNumberWithNonexistentUserIdOrCompanyNumberReturnsFalse(){
-        Assertions.assertFalse( Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber( "333", "111111")).isEmpty() );
-        Assertions.assertFalse( Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber( "111", "333333")).isEmpty() );
+    void findByUserIdAndCompanyNumberWithInvalidUserIdOrCompanyNumberReturnsFalse() {
+        Assertions.assertFalse(Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber(null, "111111")).isEmpty());
+        Assertions.assertFalse(Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber("", "111111")).isEmpty());
+        Assertions.assertFalse(Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber("abc", "111111")).isEmpty());
+        Assertions.assertFalse(Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber("111", null)).isEmpty());
+        Assertions.assertFalse(Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber("111", "")).isEmpty());
+        Assertions.assertFalse(Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber("111", "abc")).isEmpty());
+    }
+
+    @Test
+    void findByUserIdAndCompanyNumberWithNonexistentUserIdOrCompanyNumberReturnsFalse() {
+        Assertions.assertFalse(Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber("333", "111111")).isEmpty());
+        Assertions.assertFalse(Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber("111", "333333")).isEmpty());
     }
 
 
     @Test
-    void findByUserIdAndCompanyNumberReturnsTrueWhenfindByUserIdAndCompanyNumberOrOtherwiseFalse(){
-        Assertions.assertTrue(Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber( "111", "111111") ).isPresent());
-        Assertions.assertFalse( Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber( "222", "222222") ).isEmpty());
+    void findByUserIdAndCompanyNumberReturnsTrueWhenfindByUserIdAndCompanyNumberOrOtherwiseFalse() {
+        Assertions.assertTrue(Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber("111", "111111")).isPresent());
+        Assertions.assertFalse(Optional.ofNullable(associationsRepository.findByUserIdAndCompanyNumber("222", "222222")).isEmpty());
     }
 
     @Test
-    void updateAssociationWithNonExistentUserIdOrCompanyNumberShouldDoNothing(){
+    void updateAssociationWithNonExistentUserIdOrCompanyNumberShouldDoNothing() {
         final var setStatusToRemoved = new Update()
-                .set( "status", "Removed" );
+                .set("status", "Removed");
 
-        associationsRepository.updateAssociation( null, "111111", setStatusToRemoved );
-        associationsRepository.updateAssociation( "", "111111", setStatusToRemoved );
-        associationsRepository.updateAssociation( "333", "111111", setStatusToRemoved );
-        associationsRepository.updateAssociation( "111", null, setStatusToRemoved );
-        associationsRepository.updateAssociation( "111", "", setStatusToRemoved );
-        associationsRepository.updateAssociation( "111", "333333", setStatusToRemoved );
+        associationsRepository.updateAssociation(null, "111111", setStatusToRemoved);
+        associationsRepository.updateAssociation("", "111111", setStatusToRemoved);
+        associationsRepository.updateAssociation("333", "111111", setStatusToRemoved);
+        associationsRepository.updateAssociation("111", null, setStatusToRemoved);
+        associationsRepository.updateAssociation("111", "", setStatusToRemoved);
+        associationsRepository.updateAssociation("111", "333333", setStatusToRemoved);
 
-        for ( Association association: associationsRepository.findAll() )
-            Assertions.assertEquals( "Confirmed", association.getStatus() );
+        for (Association association : associationsRepository.findAll())
+            Assertions.assertEquals("Confirmed", association.getStatus());
     }
 
     @Test
     void updateAssociationWithNullUpdateShouldThrowIllegalStateException() {
-        Assertions.assertThrows( IllegalStateException.class, () -> associationsRepository.updateAssociation( "111", "111111", null ) );
+        Assertions.assertThrows(IllegalStateException.class, () -> associationsRepository.updateAssociation("111", "111111", null));
     }
 
     @Test
-    void updateAssociationShouldCreateNewKeyValuePairIfKeyDoesNotExist(){
+    void updateAssociationShouldCreateNewKeyValuePairIfKeyDoesNotExist() {
         final var setDeletionTime = new Update()
-                .set( "deletionTime", "1992-05-01T10:30:00.000000Z" );
+                .set("deletionTime", "1992-05-01T10:30:00.000000Z");
 
-        associationsRepository.updateAssociation( "111", "111111", setDeletionTime );
+        associationsRepository.updateAssociation("111", "111111", setDeletionTime);
 
-        for ( Association association: associationsRepository.findAll() )
-            if ( association.getUserId().equals( "111" ) && association.getCompanyNumber().equals( "111111" ) )
-                Assertions.assertEquals( "1992-05-01T10:30:00.000000Z", association.getDeletionTime() );
+        for (Association association : associationsRepository.findAll())
+            if (association.getUserId().equals("111") && association.getCompanyNumber().equals("111111"))
+                Assertions.assertEquals("1992-05-01T10:30:00.000000Z", association.getDeletionTime());
             else
-                Assertions.assertNull( association.getDeletionTime() );
+                Assertions.assertNull(association.getDeletionTime());
     }
 
     @Test
-    void updateAssociationShouldOverwriteExistingValues(){
+    void updateAssociationShouldOverwriteExistingValues() {
         final var setStatusToRemoved = new Update()
-                .set( "status", "Removed" );
+                .set("status", "Removed");
 
-        associationsRepository.updateAssociation( "111", "111111", setStatusToRemoved );
+        associationsRepository.updateAssociation("111", "111111", setStatusToRemoved);
 
-        for ( Association association: associationsRepository.findAll() )
-            if ( association.getUserId().equals( "111" ) && association.getCompanyNumber().equals( "111111" ) )
-                Assertions.assertEquals( "Removed", association.getStatus() );
+        for (Association association : associationsRepository.findAll())
+            if (association.getUserId().equals("111") && association.getCompanyNumber().equals("111111"))
+                Assertions.assertEquals("Removed", association.getStatus());
             else
-                Assertions.assertEquals( "Confirmed", association.getStatus() );
+                Assertions.assertEquals("Confirmed", association.getStatus());
     }
 
     @Test
