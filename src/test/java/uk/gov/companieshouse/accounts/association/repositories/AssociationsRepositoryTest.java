@@ -72,7 +72,7 @@ class AssociationsRepositoryTest {
     @Test
     void findAllAssociationsByCompanyNumberShouldReturnRightTwoAssociations() {
 
-        assertThat(associationsRepository.findByCompanyNumberLike("111", Pageable.ofSize(2))).hasSize(2);
+        assertThat(associationsRepository.findAllByCompanyNumber("111111")).hasSize(2);
 
     }
 
@@ -98,9 +98,25 @@ class AssociationsRepositoryTest {
 
     @Test
     void findByCompanyNumberSearchQueryShouldReturnTwoAssociations() {
+        final var association4 = new Association();
+        association4.setCompanyNumber("1112222");
+        association4.setUserId("111");
+        association4.setStatus("Confirmed");
+        associationsRepository.insert(association4);
 
+        assertThat(associationsRepository.findByUserIdAndCompanyNumberLike("111","111", Pageable.ofSize(1)).getTotalElements()).isEqualTo(2);
 
-        assertThat(associationsRepository.findByCompanyNumberLike("111", Pageable.ofSize(1)).getTotalElements()).isEqualTo(2);
+    }
+
+    @Test
+    void findByCompanyNumberSearchQueryShouldReturnTwoAssociationsWhenNoCompanyNumberProvided() {
+        final var association4 = new Association();
+        association4.setCompanyNumber("1112222");
+        association4.setUserId("111");
+        association4.setStatus("Confirmed");
+        associationsRepository.insert(association4);
+
+        assertThat(associationsRepository.findByUserIdAndCompanyNumberLike("111","", Pageable.ofSize(1)).getTotalElements()).isEqualTo(3);
 
     }
 
