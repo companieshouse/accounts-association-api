@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.repositories;
 
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -16,7 +17,7 @@ public interface AssociationsRepository extends MongoRepository<Association, Str
 
     Iterable<Association> findAllByCompanyNumber(final String companyNumber );
 
-    Page<Association> findByCompanyNumberLike(final String companyNumber, final Pageable pageable);
+    Page<Association> findByUserIdAndCompanyNumberLike(final String userId, @NotNull final String companyNumber, final Pageable pageable);
 
     Iterable<Association> findAllByUserId(final String userId );
 
