@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import uk.gov.companieshouse.accounts.association.AccountsAssociationServiceApplication;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
-import uk.gov.companieshouse.accounts.association.utils.CamelCaseSnakeCase;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 import uk.gov.companieshouse.service.rest.err.Err;
@@ -26,6 +26,7 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(AccountsAssociationServiceApplication.applicationNameSpace);
     public static final String X_REQUEST_ID = "X-Request-Id";
+    public static final String ACCOUNTS_ASSOCIATION_API = "accounts_association_api";
 
     private String getJsonStringFromErrors(String requestId, Errors errors) {
 
@@ -69,7 +70,24 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
         LOG.errorContext(requestId, e.getMessage(), null, contextMap);
 
         Errors errors = new Errors();
-        errors.addError(Err.invalidBodyBuilderWithLocation("accounts_association_api").withError(e.getMessage()).build());
+        errors.addError(Err.invalidBodyBuilderWithLocation(ACCOUNTS_ASSOCIATION_API).withError(e.getMessage()).build());
+        return errors;
+    }
+
+    @ExceptionHandler(InternalServerErrorRuntimeException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseBody
+    public Errors onInternalServerErrorRuntimeException(InternalServerErrorRuntimeException e, HttpServletRequest request) {
+        String requestId = request.getHeader(X_REQUEST_ID);
+
+        Map<String, Object> contextMap = new HashMap<>();
+        contextMap.put("url", request.getRequestURL().toString());
+        contextMap.put("query-parameters", request.getQueryString() != null ? "?" + request.getQueryString() : "");
+
+        LOG.errorContext(requestId, e.getMessage(), null, contextMap);
+
+        Errors errors = new Errors();
+        errors.addError(Err.invalidBodyBuilderWithLocation(ACCOUNTS_ASSOCIATION_API).withError(e.getMessage()).build());
         return errors;
     }
 
@@ -80,9 +98,8 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
 
         Errors errors = new Errors();
         for (ConstraintViolation<?> constraintViolation : exception.getConstraintViolations()) {
-            final var location = CamelCaseSnakeCase.toSnakeCase(constraintViolation.getPropertyPath().toString());
-            var errorMessage = getConstraintViolationExceptionErrorMessage( location );
-            errors.addError(Err.invalidBodyBuilderWithLocation(location).withError(errorMessage).build());
+            var errorMessage = "Please check the request and try again";
+            errors.addError(Err.invalidBodyBuilderWithLocation(ACCOUNTS_ASSOCIATION_API).withError(errorMessage).build());
         }
 
         String requestId = request.getHeader(X_REQUEST_ID);
@@ -90,14 +107,6 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
         LOG.errorContext(requestId, String.format("Validation Failed with [%s]", errorsJsonString), exception, null );
 
         return errors;
-    }
-
-    private String getConstraintViolationExceptionErrorMessage(String location) {
-        return switch (location) {
-            case "update_association_status_for_user_and_company.arg0" -> "Please check the request and try again.";
-            case "update_association_status_for_user_and_company.arg1" -> "Please check the request and try again.";
-            default -> "One of the inputs is incorrectly formatted";
-        };
     }
 
     @ExceptionHandler(Exception.class)
