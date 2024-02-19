@@ -168,12 +168,15 @@ public class AccountsUserEndpointTest {
     }
 
     @Test
-    void getUserRolesWithNonexistentUserReturnsNotFound() throws Exception {
+    void getUserRolesWithNonexistentUserReturnsNoContent() throws Exception {
         Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
         Mockito.doReturn( privateAccountsUserRolesGet ).when( privateAccountsUserResourceHandler ).getUserRoles( any() );
-        Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( privateAccountsUserRolesGet ).execute();
+        Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new RolesList() ) ).when( privateAccountsUserRolesGet ).execute();
 
-        Assertions.assertThrows( ApiErrorResponseException.class, () -> accountsUserEndpoint.getUserRoles( "666" ) );
+        final var response = accountsUserEndpoint.getUserRoles( "666" );
+
+        Assertions.assertEquals( 204, response.getStatusCode() );
+        Assertions.assertTrue( response.getData().isEmpty() );
     }
 
     @Test
