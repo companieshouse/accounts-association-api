@@ -9,11 +9,11 @@ import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 
 @RestController
-public class TestController {
+public class CompanyProfileTestController {
 
     private final CompanyProfileEndpoint companyProfileEndpoint;
 
-    public TestController(CompanyProfileEndpoint companyProfileEndpoint ) {
+    public CompanyProfileTestController(CompanyProfileEndpoint companyProfileEndpoint ) {
         this.companyProfileEndpoint = companyProfileEndpoint;
     }
 
