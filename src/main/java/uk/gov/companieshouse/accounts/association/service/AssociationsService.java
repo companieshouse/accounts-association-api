@@ -1,6 +1,9 @@
 package uk.gov.companieshouse.accounts.association.service;
 
 import jakarta.validation.constraints.NotNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import uk.gov.companieshouse.accounts.association.enums.StatusEnum;
 import uk.gov.companieshouse.accounts.association.models.Association;
@@ -8,6 +11,7 @@ import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepos
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Optional;
 
 @Service
@@ -41,6 +45,20 @@ public class AssociationsService {
                 .set( "confirmationApprovalTime", LocalDateTime.now() );
 
         associationsRepository.updateAssociation(userId, companyNumber, update);
+    }
+
+    public Page<Association> findByUserIdAndCompanyNumberLike(final String userId, final String companyNumber, final boolean includeRemoved, final int pageNumber, final int pageSize ){
+        final Pageable pageable = PageRequest.of( pageNumber, pageSize );
+        String statusRemove = StatusEnum.CONFIRMED.getValue();
+
+        if (includeRemoved) {
+            // If include_removed parameter is true, return associations with all statuses
+            return associationsRepository.findByUserIdAndCompanyNumberLike( userId, companyNumber, pageable );
+        } else {
+            // If include_removed parameter is false, return associations with statuses Confirmed and Awaiting Approval
+            return associationsRepository.findByUserIdAndCompanyNumberLikeAndStatusNotIn(userId, companyNumber, statusRemove, pageable);
+        }
+
     }
 
 }

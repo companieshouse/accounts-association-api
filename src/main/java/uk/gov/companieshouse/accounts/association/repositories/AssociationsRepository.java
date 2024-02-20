@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 import uk.gov.companieshouse.accounts.association.models.Association;
 import org.springframework.data.mongodb.core.query.Update;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,6 +19,8 @@ public interface AssociationsRepository extends MongoRepository<Association, Str
     Iterable<Association> findAllByCompanyNumber(final String companyNumber );
 
     Page<Association> findByUserIdAndCompanyNumberLike(final String userId, @NotNull final String companyNumber, final Pageable pageable);
+
+    Page<Association> findByUserIdAndCompanyNumberLikeAndStatusNotIn(final String userId, @NotNull final String companyNumber, final String includeRemoval, final Pageable pageable);
 
     Iterable<Association> findAllByUserId(final String userId );
 
