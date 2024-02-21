@@ -1,13 +1,17 @@
 package uk.gov.companieshouse.accounts.association.repositories;
 
 import jakarta.validation.ConstraintViolationException;
+import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.containers.MongoDBContainer;
@@ -60,10 +64,33 @@ class AssociationsRepositoryTest {
         associationThree.setUserId("222");
         associationThree.setStatus(StatusEnum.CONFIRMED);
 
-        associationsRepository.insert(associationOne);
-        associationsRepository.insert(associationTwo);
-        associationsRepository.insert(associationThree);
+        final var associationFour = new Association();
+        associationFour.setCompanyNumber("333333");
+        associationFour.setUserId("444");
+        associationFour.setStatus(StatusEnum.CONFIRMED);
 
+        final var associationFive = new Association();
+        associationFive.setCompanyNumber("333333");
+        associationFive.setUserId("555");
+        associationFive.setStatus(StatusEnum.CONFIRMED);
+
+        final var associationSix = new Association();
+        associationSix.setCompanyNumber("333333");
+        associationSix.setUserId("666");
+        associationSix.setStatus(StatusEnum.AWAITING_APPROVAL);
+
+        final var associationSeven = new Association();
+        associationSeven.setCompanyNumber("333333");
+        associationSeven.setUserId("777");
+        associationSeven.setStatus(StatusEnum.AWAITING_APPROVAL);
+
+        final var associationEight = new Association();
+        associationEight.setCompanyNumber("333333");
+        associationEight.setUserId("888");
+        associationEight.setStatus(StatusEnum.REMOVED);
+
+        associationsRepository.insert( List.of( associationOne, associationTwo, associationThree, associationFour,
+                associationFive, associationSix, associationSeven, associationEight ) );
     }
 
     @Test
@@ -115,6 +142,61 @@ class AssociationsRepositoryTest {
             associationsRepository.save(associationUser);
         });
 
+    }
+
+    @Test
+    void fetchAssociatedUsersWithNullOrMalformedOrNonexistentCompanyNumberReturnsEmptyPage(){
+        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( null, Set.of( StatusEnum.CONFIRMED ), PageRequest.of( 0, 3 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( "$", Set.of( StatusEnum.CONFIRMED ), PageRequest.of( 0, 3 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( "999999", Set.of( StatusEnum.CONFIRMED ), PageRequest.of( 0, 3 ) ).isEmpty() );
+    }
+
+    @Test
+    void fetchAssociatedUsersWithNullStatusesThrowsUncategorizedMongoDbException(){
+        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchAssociatedUsers( "111111", null, PageRequest.of( 0, 3 ) ) );
+    }
+
+    @Test
+    void fetchAssociatedUsersWithNullPageableReturnsAllAssociatedUsers(){
+        Assertions.assertEquals( 2, associationsRepository.fetchAssociatedUsers( "111111", Set.of( StatusEnum.CONFIRMED ), null ).getNumberOfElements() );
+    }
+
+    @Test
+    void fetchAssociatedUsersFiltersBasedOnSpecifiedStatuses(){
+        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( "333333", Set.of(),  PageRequest.of( 0, 15 ) ).isEmpty() );
+
+        final var queryWithConfirmedFilter =
+        associationsRepository.fetchAssociatedUsers( "333333", Set.of( StatusEnum.CONFIRMED ),  PageRequest.of( 0, 15 ) )
+                              .getContent()
+                              .stream()
+                              .map( Association::getUserId )
+                              .toList();
+        Assertions.assertEquals( 2, queryWithConfirmedFilter.size() );
+        Assertions.assertTrue( queryWithConfirmedFilter.containsAll( List.of( "444", "555" ) ) );
+
+        final var queryWithConfirmedAndAwaitingFilter =
+        associationsRepository.fetchAssociatedUsers( "333333", Set.of( StatusEnum.CONFIRMED, StatusEnum.AWAITING_APPROVAL ),  PageRequest.of( 0, 15 ) )
+                              .getContent()
+                              .stream()
+                              .map( Association::getUserId )
+                              .toList();
+        Assertions.assertEquals( 4, queryWithConfirmedAndAwaitingFilter.size() );
+        Assertions.assertTrue( queryWithConfirmedAndAwaitingFilter.containsAll( List.of( "444", "555", "666", "777" ) ) );
+    }
+
+    @Test
+    void fetchAssociatedUsersPaginatesCorrectly(){
+        final var secondPage = associationsRepository.fetchAssociatedUsers( "333333", Set.of( StatusEnum.CONFIRMED, StatusEnum.AWAITING_APPROVAL, StatusEnum.REMOVED ), PageRequest.of( 1, 2 ) );
+        final var secondPageContent =
+        secondPage.getContent()
+                  .stream()
+                  .map( Association::getUserId )
+                  .toList();
+
+        Assertions.assertEquals( 5, secondPage.getTotalElements() );
+        Assertions.assertEquals( 3, secondPage.getTotalPages() );
+        Assertions.assertEquals( 2, secondPageContent.size() );
+        Assertions.assertTrue( secondPageContent.containsAll( List.of( "666", "777" ) ) );
     }
 
     @AfterEach
