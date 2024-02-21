@@ -8,121 +8,179 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+
 import java.time.LocalDateTime;
 
 @Document("user_company_associations")
 @CompoundIndex(name = "company_user_idx", def = "{'company_number': 1, 'user_id': 1}", unique = true)
 public class Association {
 
-
     @Id
     private String id;
-    @NotNull
-    @Field("company_number")
-    private String companyNumber;
+
+    @Field("etag")
+    private String etag;
 
     @NotNull
     @Field("user_id")
     private String userId;
 
+    @Field("user_email")
+    private String userEmail;
+
+    @Field("display_name")
+    private String displayName;
+
     @NotNull
-    private String status;
+    @Field("company_number")
+    private String companyNumber;
 
-    @Field("creation_time")
+    @Field("company_name")
+    private String companyName;
+
+    @NotNull
+    private StatusEnum status;
+
+    @Field("created_at")
     @CreatedDate
-    private LocalDateTime creationTime;
+    private LocalDateTime createdAt;
 
-    @Field("confirmation_expiration_time")
-    private String confirmationExpirationTime;
-    @Field("confirmation_approval_time")
-    private String confirmationApprovalTime;
+    @Field("approved_at")
+    private LocalDateTime approvedAt;
 
-    @Field("deletion_time")
-    private String deletionTime;
+    @Field("removed_at")
+    private LocalDateTime removedAt;
+
+    @Field("kind")
+    private String kind;
+
+    // TODO: add approval_route, approval_expiry_at, invitations, notifications, links
 
     @Version
     private Integer version;
-
-    private boolean temporary;
-
-    public void setCompanyNumber(String companyNumber) {
-        this.companyNumber = companyNumber;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public void setConfirmationExpirationTime(String confirmationExpirationTime) {
-        this.confirmationExpirationTime = confirmationExpirationTime;
-    }
-
-    public void setConfirmationApprovalTime(String confirmationApprovalTime) {
-        this.confirmationApprovalTime = confirmationApprovalTime;
-    }
-
-    public void setDeletionTime(String deletionTime) {
-        this.deletionTime = deletionTime;
-    }
 
     public String getId() {
         return id;
     }
 
-    public String getCompanyNumber() {
-        return companyNumber;
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getEtag() {
+        return etag;
+    }
+
+    public void setEtag(String etag) {
+        this.etag = etag;
     }
 
     public String getUserId() {
         return userId;
     }
 
-    public String getStatus() {
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getUserEmail() {
+        return userEmail;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getCompanyNumber() {
+        return companyNumber;
+    }
+
+    public void setCompanyNumber(String companyNumber) {
+        this.companyNumber = companyNumber;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+    public StatusEnum getStatus() {
         return status;
     }
 
-    public LocalDateTime getCreationTime() {
-        return creationTime;
+    public void setStatus(
+            StatusEnum status) {
+        this.status = status;
     }
 
-    public String getConfirmationExpirationTime() {
-        return confirmationExpirationTime;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public String getConfirmationApprovalTime() {
-        return confirmationApprovalTime;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
-    public String getDeletionTime() {
-        return deletionTime;
+    public LocalDateTime getApprovedAt() {
+        return approvedAt;
     }
 
+    public void setApprovedAt(LocalDateTime approvedAt) {
+        this.approvedAt = approvedAt;
+    }
 
-    public int getVersion() {
+    public LocalDateTime getRemovedAt() {
+        return removedAt;
+    }
+
+    public void setRemovedAt(LocalDateTime removedAt) {
+        this.removedAt = removedAt;
+    }
+
+    public String getKind() {
+        return kind;
+    }
+
+    public void setKind(String kind) {
+        this.kind = kind;
+    }
+
+    public Integer getVersion() {
         return version;
     }
 
-    public boolean isTemporary() {
-        return temporary;
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 
-    public void setTemporary(boolean temporary) {
-        this.temporary = temporary;
-    }
-
-
-    public Association(final String companyNumber, final String userId, final String status, final String confirmationExpirationTime, final String confirmationApprovalTime, final String deletionTime, boolean temporary) {
-        this.companyNumber = companyNumber;
+    public Association(String id, String etag, String userId, String userEmail, String displayName,
+            String companyNumber, String companyName, StatusEnum status, LocalDateTime createdAt,
+            LocalDateTime approvedAt, LocalDateTime removedAt, String kind, Integer version) {
+        this.id = id;
+        this.etag = etag;
         this.userId = userId;
+        this.userEmail = userEmail;
+        this.displayName = displayName;
+        this.companyNumber = companyNumber;
+        this.companyName = companyName;
         this.status = status;
-        this.confirmationExpirationTime = confirmationExpirationTime;
-        this.confirmationApprovalTime = confirmationApprovalTime;
-        this.deletionTime = deletionTime;
-        this.temporary = temporary;
+        this.createdAt = createdAt;
+        this.approvedAt = approvedAt;
+        this.removedAt = removedAt;
+        this.kind = kind;
+        this.version = version;
     }
 
     public Association() {
@@ -130,16 +188,19 @@ public class Association {
 
     @Override
     public String toString() {
-        return "Associations{" +
+        return "Association{" +
                 "id='" + id + '\'' +
-                ", companyNumber='" + companyNumber + '\'' +
+                ", etag='" + etag + '\'' +
                 ", userId='" + userId + '\'' +
-                ", status='" + status + '\'' +
-                ", creationTime=" + creationTime +
-                ", confirmationExpirationTime='" + confirmationExpirationTime + '\'' +
-                ", confirmationApprovalTime='" + confirmationApprovalTime + '\'' +
-                ", deletionTime='" + deletionTime + '\'' +
-                ", temporary='" + temporary + '\'' +
+                ", userEmail='" + userEmail + '\'' +
+                ", displayName='" + displayName + '\'' +
+                ", companyNumber='" + companyNumber + '\'' +
+                ", companyName='" + companyName + '\'' +
+                ", status=" + status +
+                ", createdAt=" + createdAt +
+                ", approvedAt=" + approvedAt +
+                ", removedAt=" + removedAt +
+                ", kind='" + kind + '\'' +
                 ", version=" + version +
                 '}';
     }

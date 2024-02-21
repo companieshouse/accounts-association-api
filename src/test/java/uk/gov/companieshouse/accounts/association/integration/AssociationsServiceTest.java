@@ -15,6 +15,7 @@ import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.api.InternalApiClient;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.sdk.ApiClientService;
 
 @SpringBootTest
@@ -45,17 +46,17 @@ class AssociationsServiceTest {
         final var associationOne = new Association();
         associationOne.setCompanyNumber("111111");
         associationOne.setUserId("111");
-        associationOne.setStatus( "Confirmed" );
+        associationOne.setStatus( StatusEnum.CONFIRMED );
 
         final var associationTwo = new Association();
         associationTwo.setCompanyNumber("222222");
         associationTwo.setUserId("111");
-        associationTwo.setStatus( "Confirmed" );
+        associationTwo.setStatus( StatusEnum.CONFIRMED );
 
         final var associationThree = new Association();
         associationThree.setCompanyNumber("111111");
         associationThree.setUserId("222");
-        associationThree.setStatus( "Confirmed" );
+        associationThree.setStatus( StatusEnum.CONFIRMED );
 
         associationsRepository.insert(associationOne);
         associationsRepository.insert(associationTwo);

@@ -15,6 +15,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.api.InternalApiClient;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.sdk.ApiClientService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,17 +48,17 @@ class AssociationsRepositoryTest {
         final var associationOne = new Association();
         associationOne.setCompanyNumber("111111");
         associationOne.setUserId("111");
-        associationOne.setStatus("Confirmed");
+        associationOne.setStatus(StatusEnum.CONFIRMED);
 
         final var associationTwo = new Association();
         associationTwo.setCompanyNumber("222222");
         associationTwo.setUserId("111");
-        associationTwo.setStatus("Confirmed");
+        associationTwo.setStatus(StatusEnum.CONFIRMED);
 
         final var associationThree = new Association();
         associationThree.setCompanyNumber("111111");
         associationThree.setUserId("222");
-        associationThree.setStatus("Confirmed");
+        associationThree.setStatus(StatusEnum.CONFIRMED);
 
         associationsRepository.insert(associationOne);
         associationsRepository.insert(associationTwo);
@@ -82,7 +83,7 @@ class AssociationsRepositoryTest {
         final var association4 = new Association();
         association4.setCompanyNumber("1112222");
         association4.setUserId("111");
-        association4.setStatus("Confirmed");
+        association4.setStatus(StatusEnum.CONFIRMED);
         associationsRepository.insert(association4);
 
         assertThat(associationsRepository.findByUserIdAndCompanyNumberLike("111","111", Pageable.ofSize(1)).getTotalElements()).isEqualTo(2);
@@ -94,7 +95,7 @@ class AssociationsRepositoryTest {
         final var association4 = new Association();
         association4.setCompanyNumber("1112222");
         association4.setUserId("111");
-        association4.setStatus("Confirmed");
+        association4.setStatus(StatusEnum.CONFIRMED);
         associationsRepository.insert(association4);
 
         assertThat(associationsRepository.findByUserIdAndCompanyNumberLike("111","", Pageable.ofSize(1)).getTotalElements()).isEqualTo(3);
@@ -107,7 +108,7 @@ class AssociationsRepositoryTest {
         final var associationUser = new Association();
         associationUser.setCompanyNumber("111111");
         associationUser.setUserId("111");
-        associationUser.setStatus("New");
+        associationUser.setStatus(StatusEnum.CONFIRMED);
 
         assertThrows(DuplicateKeyException.class, () -> {
 
