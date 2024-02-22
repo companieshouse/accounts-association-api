@@ -1,8 +1,11 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -58,18 +61,79 @@ class AssociationsServiceTest {
         associationThree.setUserId("222");
         associationThree.setStatus( StatusEnum.CONFIRMED );
 
-        associationsRepository.insert(associationOne);
-        associationsRepository.insert(associationTwo);
-        associationsRepository.insert(associationThree);
+        final var associationFour = new Association();
+        associationFour.setCompanyNumber("333333");
+        associationFour.setUserId("444");
+        associationFour.setStatus(StatusEnum.CONFIRMED);
+
+        final var associationFive = new Association();
+        associationFive.setCompanyNumber("333333");
+        associationFive.setUserId("555");
+        associationFive.setStatus(StatusEnum.CONFIRMED);
+
+        final var associationSix = new Association();
+        associationSix.setCompanyNumber("333333");
+        associationSix.setUserId("666");
+        associationSix.setStatus(StatusEnum.AWAITING_APPROVAL);
+
+        final var associationSeven = new Association();
+        associationSeven.setCompanyNumber("333333");
+        associationSeven.setUserId("777");
+        associationSeven.setStatus(StatusEnum.AWAITING_APPROVAL);
+
+        final var associationEight = new Association();
+        associationEight.setCompanyNumber("333333");
+        associationEight.setUserId("888");
+        associationEight.setStatus(StatusEnum.REMOVED);
+
+        associationsRepository.insert( List.of( associationOne, associationTwo, associationThree, associationFour,
+                associationFive, associationSix, associationSeven, associationEight ) );
+
     }
 
+    @Test
+    void fetchAssociatedUsersWithNullOrMalformedOrNonexistentCompanyNumberReturnsEmptyPage(){
+        Assertions.assertTrue( associationsService.fetchAssociatedUsers( null, true, 15, 0 ).isEmpty() );
+        Assertions.assertTrue( associationsService.fetchAssociatedUsers( "$", true, 15, 0 ).isEmpty() );
+        Assertions.assertTrue( associationsService.fetchAssociatedUsers( "999999", true, 15, 0 ).isEmpty() );
+    }
 
+    @Test
+    void fetchAssociatedUsersAppliesIncludeRemovedFilterCorrectly(){
 
+        final var unfilteredPage =
+        associationsService.fetchAssociatedUsers( "333333", true, 15, 0 )
+                           .getContent()
+                           .stream()
+                           .map( Association::getUserId )
+                           .toList();
+        Assertions.assertEquals( 5, unfilteredPage.size() );
+        Assertions.assertTrue( unfilteredPage.containsAll( List.of( "444", "555", "666", "777", "888" ) ) );
 
+        final var filteredPage =
+        associationsService.fetchAssociatedUsers( "333333", false, 15, 0 )
+                           .getContent()
+                           .stream()
+                           .map( Association::getUserId )
+                           .toList();
+        Assertions.assertEquals( 4, filteredPage.size() );
+        Assertions.assertTrue( filteredPage.containsAll( List.of( "444", "555", "666", "777" ) ) );
+    }
 
+    @Test
+    void fetchAssociatedUsersPaginatesCorrectly(){
+        final var secondPage = associationsService.fetchAssociatedUsers( "333333", true, 2, 1 );
+        final var secondPageContent =
+        secondPage.getContent()
+                  .stream()
+                  .map( Association::getUserId )
+                  .toList();
 
-
-
+        Assertions.assertEquals( 5, secondPage.getTotalElements() );
+        Assertions.assertEquals( 3, secondPage.getTotalPages() );
+        Assertions.assertEquals( 2, secondPageContent.size() );
+        Assertions.assertTrue( secondPageContent.containsAll( List.of( "666", "777" ) ) );
+    }
 
     @AfterEach
     public void after() {
