@@ -15,16 +15,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.companieshouse.accounts.association.service.ApiClientService;
 import uk.gov.companieshouse.api.InternalApiClient;
-import uk.gov.companieshouse.api.accounts.user.model.Role;
-import uk.gov.companieshouse.api.accounts.user.model.RolesList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
 import uk.gov.companieshouse.api.handler.accountsuser.PrivateAccountsUserResourceHandler;
 import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserFindUserBasedOnEmailGet;
-import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserRolesGet;
-import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserRolesPut;
 import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserUserGet;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.api.model.ApiResponse;
@@ -32,6 +29,9 @@ import uk.gov.companieshouse.api.model.ApiResponse;
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
 public class AccountsUserEndpointTest {
+
+    @Mock
+    ApiClientService apiClientService;
 
     @Mock
     InternalApiClient internalApiClient;
@@ -44,12 +44,6 @@ public class AccountsUserEndpointTest {
 
     @Mock
     PrivateAccountsUserUserGet privateAccountsUserUserGet;
-
-    @Mock
-    PrivateAccountsUserRolesGet privateAccountsUserRolesGet;
-
-    @Mock
-    PrivateAccountsUserRolesPut privateAccountsUserRolesPut;
 
     @InjectMocks
     AccountsUserEndpoint accountsUserEndpoint;
@@ -64,6 +58,7 @@ public class AccountsUserEndpointTest {
         final var listWithNull = new ArrayList<String>( );
         listWithNull.add( null );
 
+        Mockito.doReturn( internalApiClient ).when( apiClientService ).getInternalApiClient();
         Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
         Mockito.doReturn( privateAccountsUserFindUserBasedOnEmailGet ).when( privateAccountsUserResourceHandler ).searchUserDetails( any() );
         Mockito.doThrow( new ApiErrorResponseException( new Builder( 400, "Bad request", new HttpHeaders() ) ) ).when( privateAccountsUserFindUserBasedOnEmailGet ).execute();
@@ -75,6 +70,7 @@ public class AccountsUserEndpointTest {
 
     @Test
     void searchUserDetailsFetchesSpecifiedUsers() throws ApiErrorResponseException, URIValidationException {
+        Mockito.doReturn( internalApiClient ).when( apiClientService ).getInternalApiClient();
         Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
         Mockito.doReturn( privateAccountsUserFindUserBasedOnEmailGet ).when( privateAccountsUserResourceHandler ).searchUserDetails( any() );
 
@@ -90,7 +86,7 @@ public class AccountsUserEndpointTest {
 
     @Test
     void searchUserDetailsWithNonexistentEmailReturnsNoContent() throws ApiErrorResponseException, URIValidationException {
-
+        Mockito.doReturn( internalApiClient ).when( apiClientService ).getInternalApiClient();
         Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
         Mockito.doReturn( privateAccountsUserFindUserBasedOnEmailGet ).when( privateAccountsUserResourceHandler ).searchUserDetails( any() );
 
@@ -109,6 +105,7 @@ public class AccountsUserEndpointTest {
 
     @Test
     void getUserDetailsWithMalformedInputReturnsBadRequest() throws Exception {
+        Mockito.doReturn( internalApiClient ).when( apiClientService ).getInternalApiClient();
         Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
         Mockito.doReturn( privateAccountsUserUserGet ).when( privateAccountsUserResourceHandler ).getUserDetails( any() );
         Mockito.doThrow( new ApiErrorResponseException( new Builder( 400, "Bad request", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet ).execute();
@@ -118,6 +115,7 @@ public class AccountsUserEndpointTest {
 
     @Test
     void getUserDetailsFetchesUser() throws Exception {
+        Mockito.doReturn( internalApiClient ).when( apiClientService ).getInternalApiClient();
         Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
         Mockito.doReturn( privateAccountsUserUserGet ).when( privateAccountsUserResourceHandler ).getUserDetails( any() );
 
@@ -131,109 +129,12 @@ public class AccountsUserEndpointTest {
 
     @Test
     void getUserDetailsWithNonexistentUserReturnsNotFound() throws Exception {
+        Mockito.doReturn( internalApiClient ).when( apiClientService ).getInternalApiClient();
         Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
         Mockito.doReturn( privateAccountsUserUserGet ).when( privateAccountsUserResourceHandler ).getUserDetails( any() );
         Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet ).execute();
 
         Assertions.assertThrows( ApiErrorResponseException.class, () -> accountsUserEndpoint.getUserDetails( "666" ) );
-    }
-
-    @Test
-    void getUserRolesWithNullInputThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> accountsUserEndpoint.getUserRoles( null ) );
-    }
-
-    @Test
-    void getUserRolesWithMalformedInputReturnsBadRequest() throws Exception {
-        Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
-        Mockito.doReturn( privateAccountsUserRolesGet ).when( privateAccountsUserResourceHandler ).getUserRoles( any() );
-        Mockito.doThrow( new ApiErrorResponseException( new Builder( 400, "Bad request", new HttpHeaders() ) ) ).when( privateAccountsUserRolesGet ).execute();
-
-        Assertions.assertThrows( ApiErrorResponseException.class, () -> accountsUserEndpoint.getUserRoles( "$" ) );
-    }
-
-    @Test
-    void getUserRolesFetchesRoles() throws Exception {
-        Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
-        Mockito.doReturn( privateAccountsUserRolesGet ).when( privateAccountsUserResourceHandler ).getUserRoles( any() );
-
-        final var rolesList = new RolesList();
-        rolesList.add(Role.BADOS_USER);
-        final var intendedResponse = new ApiResponse<>( 200, Map.of(), rolesList );
-        Mockito.doReturn( intendedResponse ).when( privateAccountsUserRolesGet ).execute();
-        final var response = accountsUserEndpoint.getUserRoles( "111" );
-
-        Assertions.assertEquals( 200, response.getStatusCode() );
-        Assertions.assertEquals( "bados-user", response.getData().get( 0 ).getValue() );
-    }
-
-    @Test
-    void getUserRolesWithNonexistentUserReturnsNoContent() throws Exception {
-        Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
-        Mockito.doReturn( privateAccountsUserRolesGet ).when( privateAccountsUserResourceHandler ).getUserRoles( any() );
-        Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new RolesList() ) ).when( privateAccountsUserRolesGet ).execute();
-
-        final var response = accountsUserEndpoint.getUserRoles( "666" );
-
-        Assertions.assertEquals( 204, response.getStatusCode() );
-        Assertions.assertTrue( response.getData().isEmpty() );
-    }
-
-    @Test
-    void setUserRolesWithNullInputsThrowsNullPointerException(){
-        final var roles = new RolesList();
-        roles.add( Role.BADOS_USER );
-
-        Assertions.assertThrows( NullPointerException.class, () -> accountsUserEndpoint.setUserRoles( null, roles ) );
-        Assertions.assertThrows( NullPointerException.class, () -> accountsUserEndpoint.setUserRoles( "111", null ) );
-    }
-
-    @Test
-    void setUserRolesWithMalformedUserIdOrEmptyRolesOrNullRoleReturnsBadRequest() throws ApiErrorResponseException, URIValidationException {
-        final var nullRoles = new RolesList();
-        nullRoles.add( null );
-
-        final var roles = new RolesList();
-        roles.add( Role.BADOS_USER );
-
-        Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
-        Mockito.doReturn( privateAccountsUserRolesPut ).when( privateAccountsUserResourceHandler ).putUserRoles( any(), any() );
-        Mockito.doThrow( new ApiErrorResponseException( new Builder( 400, "Bad request", new HttpHeaders() ) ) ).when( privateAccountsUserRolesPut ).execute();
-
-        Assertions.assertThrows( ApiErrorResponseException.class, () -> accountsUserEndpoint.setUserRoles( "$", roles ) );
-        Assertions.assertThrows( ApiErrorResponseException.class, () -> accountsUserEndpoint.setUserRoles( "111", new RolesList() ) );
-        Assertions.assertThrows( ApiErrorResponseException.class, () -> accountsUserEndpoint.setUserRoles( "111", nullRoles ) );
-    }
-
-    @Test
-    void setUserRolesReturnsOk() throws ApiErrorResponseException, URIValidationException {
-        final var oneRole = new RolesList();
-        oneRole.add( Role.BADOS_USER );
-
-        final var multipleRoles = new RolesList();
-        multipleRoles.add( Role.BADOS_USER );
-        multipleRoles.add( Role.APPEALS_TEAM );
-
-        Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
-        Mockito.doReturn( privateAccountsUserRolesPut ).when( privateAccountsUserResourceHandler ).putUserRoles( any(), any() );
-
-        final var intendedResponse = new ApiResponse<Void>( 200, Map.of() );
-        Mockito.doReturn( intendedResponse ).when( privateAccountsUserRolesPut ).execute();
-
-        Assertions.assertEquals( 200, accountsUserEndpoint.setUserRoles( "111", oneRole ).getStatusCode() );
-        Assertions.assertEquals( 200, accountsUserEndpoint.setUserRoles( "111", multipleRoles ).getStatusCode() );
-    }
-
-    @Test
-    void setUserRolesWithNonexistentUserIdReturnsNotFound() throws ApiErrorResponseException, URIValidationException {
-        final var roles = new RolesList();
-        roles.add( Role.BADOS_USER );
-
-        Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
-        Mockito.doReturn( privateAccountsUserRolesPut ).when( privateAccountsUserResourceHandler ).putUserRoles( any(), any() );
-        Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( privateAccountsUserRolesPut ).execute();
-
-        Assertions.assertThrows( ApiErrorResponseException.class, () -> accountsUserEndpoint.setUserRoles( "666", roles ).getStatusCode() );
     }
 
 }
