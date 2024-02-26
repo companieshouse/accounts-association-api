@@ -1,7 +1,6 @@
 package uk.gov.companieshouse.accounts.association.rest;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import uk.gov.companieshouse.accounts.association.service.ApiClientService;
 import uk.gov.companieshouse.api.accounts.user.model.User;
@@ -20,16 +19,10 @@ public class AccountsUserEndpoint {
     }
 
     public ApiResponse<UsersList> searchUserDetails( final List<String> emails ) throws ApiErrorResponseException, URIValidationException {
-        final var queryParams =
-        emails.stream()
-              .map( email -> String.format( "user_email=%s", email ) )
-              .collect( Collectors.joining( "&" ) );
-
-        final var searchUserDetailsUrl = String.format( "/users/search?%s", queryParams );
-
+        final var searchUserDetailsUrl = "/users/search";
         return apiClientService.getInternalApiClient()
                                .privateAccountsUserResourceHandler()
-                               .searchUserDetails( searchUserDetailsUrl )
+                               .searchUserDetails( searchUserDetailsUrl, emails )
                                .execute();
     }
 
