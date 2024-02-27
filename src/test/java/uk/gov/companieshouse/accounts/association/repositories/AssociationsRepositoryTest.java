@@ -18,9 +18,8 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import uk.gov.companieshouse.accounts.association.models.Association;
-import uk.gov.companieshouse.api.InternalApiClient;
+import uk.gov.companieshouse.accounts.association.service.ApiClientService;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.api.sdk.ApiClientService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,10 +41,6 @@ class AssociationsRepositoryTest {
 
     @MockBean
     ApiClientService apiClientService;
-
-    @MockBean
-    InternalApiClient internalApiClient;
-
 
     @BeforeEach
     public void setup() {

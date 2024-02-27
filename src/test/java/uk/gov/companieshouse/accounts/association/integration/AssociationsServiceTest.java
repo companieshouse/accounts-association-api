@@ -16,10 +16,9 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
+import uk.gov.companieshouse.accounts.association.service.ApiClientService;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
-import uk.gov.companieshouse.api.InternalApiClient;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.api.sdk.ApiClientService;
 
 @SpringBootTest
 @Testcontainers
@@ -29,8 +28,6 @@ class AssociationsServiceTest {
     @MockBean
     ApiClientService apiClientService;
 
-    @MockBean
-    InternalApiClient internalApiClient;
     @Container
     @ServiceConnection
     static MongoDBContainer container = new MongoDBContainer("mongo:5");
