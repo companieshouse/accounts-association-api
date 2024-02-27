@@ -37,7 +37,7 @@ public class AccountsUserTestController {
             System.err.println( "Test 2/3 passed" );
         }
 
-        if (accountsUserEndpoint.searchUserDetails(List.of("the.void@space.com")).getData().isEmpty())
+        if ( accountsUserEndpoint.searchUserDetails(List.of("the.void@space.com")).getData() == null )
             System.err.println("Test 3/3 passed");
         else
             System.err.println("Test 3/3 failed");
