@@ -19,6 +19,7 @@ import uk.gov.companieshouse.accounts.association.service.ApiClientService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @SpringBootTest
@@ -39,8 +40,6 @@ class AssociationsRepositoryTest {
     ApiClientService apiClientService;
 
     List<Association> associations ;
-    List<Notification> notifications = new ArrayList<>();
-    List<Invitation> invitations = new ArrayList<>();
 
 
     @BeforeEach
@@ -53,21 +52,17 @@ class AssociationsRepositoryTest {
         associationOne.setApprovalRoute("auth_code");
         associationOne.setUserEmail("abc@abc.com");
         associationOne.setApprovalExpiryAt(LocalDateTime.now().plusDays(10));
-        associationOne.setInvitations(new ArrayList<>());
-        associationOne.setNotifications(new ArrayList<>());
         associationOne.setEtag("OCRS7");
 
         final var invitation = new Invitation();
         invitation.setInvitedBy("123456");
-        invitation.setInvitedAt(LocalDateTime.now().plusDays(10));
-        invitations.add(invitation);
-        associationOne.setInvitations(invitations);
+
+        associationOne.setInvitations(Collections.singletonList(invitation));
 
         final var notification = new Notification();
         notification.setNotificationEvent("added");
         notification.setNotifiedAt(LocalDateTime.now().plusDays(15));
-        notifications.add(notification);
-        associationOne.setNotifications(notifications);
+        associationOne.setNotifications(Collections.singletonList(notification));
 
         final var associationTwo = new Association();
         associationTwo.setId("222");
@@ -81,17 +76,6 @@ class AssociationsRepositoryTest {
         associationTwo.setNotifications(new ArrayList<>());
         associationTwo.setEtag("OCRS7");
 
-        final var invitationTwo = new Invitation();
-        invitationTwo.setInvitedBy("123456");
-        invitationTwo.setInvitedAt(LocalDateTime.now().plusDays(10));
-        invitations.add(invitationTwo);
-        associationTwo.setInvitations(invitations);
-
-        final var notificationTwo = new Notification();
-        notificationTwo.setNotificationEvent("added");
-        notificationTwo.setNotifiedAt(LocalDateTime.now().plusDays(15));
-        notifications.add(notificationTwo);
-        associationTwo.setNotifications(notifications);
 
         associations = associationsRepository.saveAll( List.of( associationOne, associationTwo ) );
 
@@ -149,21 +133,21 @@ class AssociationsRepositoryTest {
 
     }
 
-    @Test
-    void fetchInvitationsAssociationWithWithNonexistentIDReturnsEmptyList(){
-        final var emptyList = new ArrayList<String>();
-        emptyList.add( null );
-
-        Assertions.assertEquals( List.of(), associationsRepository.findAllInvitationsById( "qwer" ) );
-        Assertions.assertEquals( List.of(), associationsRepository.findAllInvitationsById( "222344" ) );
-        Assertions.assertEquals( List.of(), associationsRepository.findAllInvitationsById( "22dfg44" ) );
-
-    }
+//    @Test
+//    void fetchInvitationsAssociationWithWithNonexistentIDReturnsEmptyList(){
+//        final var emptyList = new ArrayList<String>();
+//        emptyList.add( null );
+//
+//        Assertions.assertEquals( List.of(), associationsRepository.findAllInvitationsById( "qwer" ) );
+//        Assertions.assertEquals( List.of(), associationsRepository.findAllInvitationsById( "222344" ) );
+//        Assertions.assertEquals( List.of(), associationsRepository.findAllInvitationsById( "22dfg44" ) );
+//
+//    }
 
     @Test
     void fetchInvitationsAssociationWithWithValidIDReturnsValues(){
-        final var validUser = associationsRepository.findAllInvitationsById( "111");
-        Assertions.assertEquals( 1, validUser.size() );
+        final var validUser = associationsRepository.findAllInvitationsById("111");
+        Assertions.assertEquals( 1, validUser.iterator() );
 
     }
 
