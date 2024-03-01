@@ -1,24 +1,25 @@
 package uk.gov.companieshouse.accounts.association.repositories;
 
-import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.data.mongodb.core.query.Update;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import uk.gov.companieshouse.accounts.association.models.Association;
+import uk.gov.companieshouse.accounts.association.models.Invitation;
+import uk.gov.companieshouse.accounts.association.models.Notification;
 import uk.gov.companieshouse.accounts.association.service.ApiClientService;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @SpringBootTest
 @Testcontainers(parallel = true)
@@ -37,81 +38,132 @@ class AssociationsRepositoryTest {
     @MockBean
     ApiClientService apiClientService;
 
+    List<Association> associations ;
+    List<Notification> notifications = new ArrayList<>();
+    List<Invitation> invitations = new ArrayList<>();
+
+
     @BeforeEach
     public void setup() {
         final var associationOne = new Association();
-        associationOne.setCompanyNumber("111111");
-        associationOne.setUserId("111");
-        associationOne.setStatus("Confirmed");
+        associationOne.setId("111");
+        associationOne.setCompanyNumber("12345");
+        associationOne.setUserId("555");
+        associationOne.setStatus("confirmed");
+        associationOne.setApprovalRoute("auth_code");
+        associationOne.setUserEmail("abc@abc.com");
+        associationOne.setApprovalExpiryAt(LocalDateTime.now().plusDays(10));
+        associationOne.setInvitations(new ArrayList<>());
+        associationOne.setNotifications(new ArrayList<>());
+        associationOne.setEtag("OCRS7");
+
+        final var invitation = new Invitation();
+        invitation.setInvitedBy("123456");
+        invitation.setInvitedAt(LocalDateTime.now().plusDays(10));
+        invitations.add(invitation);
+        associationOne.setInvitations(invitations);
+
+        final var notification = new Notification();
+        notification.setNotificationEvent("added");
+        notification.setNotifiedAt(LocalDateTime.now().plusDays(15));
+        notifications.add(notification);
+        associationOne.setNotifications(notifications);
 
         final var associationTwo = new Association();
-        associationTwo.setCompanyNumber("222222");
-        associationTwo.setUserId("111");
-        associationTwo.setStatus("Confirmed");
+        associationTwo.setId("222");
+        associationTwo.setCompanyNumber("12345");
+        associationTwo.setUserId("666");
+        associationTwo.setStatus("confirmed");
+        associationTwo.setApprovalRoute("auth_code");
+        associationTwo.setUserEmail("abc@abc.com");
+        associationOne.setApprovalExpiryAt(LocalDateTime.now().plusDays(10));
+        associationTwo.setInvitations(new ArrayList<>());
+        associationTwo.setNotifications(new ArrayList<>());
+        associationTwo.setEtag("OCRS7");
 
-        final var associationThree = new Association();
-        associationThree.setCompanyNumber("111111");
-        associationThree.setUserId("222");
-        associationThree.setStatus("Confirmed");
+        final var invitationTwo = new Invitation();
+        invitationTwo.setInvitedBy("123456");
+        invitationTwo.setInvitedAt(LocalDateTime.now().plusDays(10));
+        invitations.add(invitationTwo);
+        associationTwo.setInvitations(invitations);
 
-        associationsRepository.insert(associationOne);
-        associationsRepository.insert(associationTwo);
-        associationsRepository.insert(associationThree);
+        final var notificationTwo = new Notification();
+        notificationTwo.setNotificationEvent("added");
+        notificationTwo.setNotifiedAt(LocalDateTime.now().plusDays(15));
+        notifications.add(notificationTwo);
+        associationTwo.setNotifications(notifications);
 
-    }
-
-
-
-
-    @Test
-    @DirtiesContext
-    void testToNotAllowNotNullStatus() {
-        assertThrows(ConstraintViolationException.class, () -> {
-            final var associationUser = new Association();
-            associationUser.setCompanyNumber("111111");
-            associationUser.setUserId("111");
-            associationsRepository.save(associationUser);
-        });
-
-    }
-
-
-    @Test
-    void findByCompanyNumberSearchQueryShouldReturnTwoAssociations() {
-        final var association4 = new Association();
-        association4.setCompanyNumber("1112222");
-        association4.setUserId("111");
-        association4.setStatus("Confirmed");
-        associationsRepository.insert(association4);
-
-        assertThat(associationsRepository.findByUserIdAndCompanyNumberLike("111","111", Pageable.ofSize(1)).getTotalElements()).isEqualTo(2);
+        associations = associationsRepository.saveAll( List.of( associationOne, associationTwo ) );
 
     }
 
     @Test
-    void findByCompanyNumberSearchQueryShouldReturnTwoAssociationsWhenNoCompanyNumberProvided() {
-        final var association4 = new Association();
-        association4.setCompanyNumber("1112222");
-        association4.setUserId("111");
-        association4.setStatus("Confirmed");
-        associationsRepository.insert(association4);
-
-        assertThat(associationsRepository.findByUserIdAndCompanyNumberLike("111","", Pageable.ofSize(1)).getTotalElements()).isEqualTo(3);
-
-    }
-
-    @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
-    void shouldNotAllowDuplicateAssociations() {
+    void testInsertAssociation() {
         final var associationUser = new Association();
-        associationUser.setCompanyNumber("111111");
-        associationUser.setUserId("111");
-        associationUser.setStatus("New");
+        Pageable pageable = PageRequest.of(1, 10);
+        associationUser.setCompanyNumber("1114422");
+        associationUser.setUserId("9999");
+        associationUser.setStatus("Confirmed");
+        associationUser.setApprovalRoute("auth_code");
+        associationUser.setEtag("OCRS7");
+        associationsRepository.insert(associationUser);
 
-        assertThrows(DuplicateKeyException.class, () -> {
+        Assertions.assertEquals( 1, associationsRepository.findAllByUserId( "9999" , pageable).getTotalElements() );
+    }
 
-            associationsRepository.save(associationUser);
-        });
+    @Test
+    void fetchAssociationWithInvalidUserID() {
+        Pageable pageable = PageRequest.of(1, 10);
+        Assertions.assertEquals( 0, associationsRepository.findAllByUserId( "567" , pageable).getTotalElements() );
+        Assertions.assertEquals( 0, associationsRepository.findAllByUserId( "@£@" , pageable).getTotalElements() );
+    }
+
+    @Test
+    void fetchAssociationWithValidUserID() {
+        Pageable pageable = PageRequest.of(1, 10);
+        Assertions.assertEquals( 1, associationsRepository.findAllByUserId( "666" , pageable).getTotalElements() );
+    }
+
+    @Test
+    void updateStatusBasedOnId(){
+        final var update = new Update().set("status", "Removed");
+        associationsRepository.updateUser( "111", update );
+        Assertions.assertEquals( "Removed", associationsRepository.findAllById( "111" ).get().getStatus() );
+    }
+
+    @Test
+    void fetchNotificationAssociationWithWithNonexistentIDReturnsEmptyList(){
+        final var emptyList = new ArrayList<String>();
+        emptyList.add( null );
+
+        Assertions.assertEquals( List.of(), associationsRepository.findAllNotificationsById( "xxxx" ) );
+        Assertions.assertEquals( List.of(), associationsRepository.findAllNotificationsById( "777" ) );
+        Assertions.assertEquals( List.of(), associationsRepository.findAllNotificationsById( "5rtQ" ) );
+
+    }
+
+    @Test
+    void fetchNotificationAssociationWithValidIDReturnsValues(){
+        final var validUser = associationsRepository.findAllNotificationsById("111");
+        Assertions.assertEquals( 1, validUser.size() );
+
+    }
+
+    @Test
+    void fetchInvitationsAssociationWithWithNonexistentIDReturnsEmptyList(){
+        final var emptyList = new ArrayList<String>();
+        emptyList.add( null );
+
+        Assertions.assertEquals( List.of(), associationsRepository.findAllInvitationsById( "qwer" ) );
+        Assertions.assertEquals( List.of(), associationsRepository.findAllInvitationsById( "222344" ) );
+        Assertions.assertEquals( List.of(), associationsRepository.findAllInvitationsById( "22dfg44" ) );
+
+    }
+
+    @Test
+    void fetchInvitationsAssociationWithWithValidIDReturnsValues(){
+        final var validUser = associationsRepository.findAllInvitationsById( "111");
+        Assertions.assertEquals( 1, validUser.size() );
 
     }
 
