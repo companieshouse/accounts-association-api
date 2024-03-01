@@ -9,10 +9,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Document("user_company_associations")
-
 public class Association {
     @Id
     private String id;
@@ -41,12 +41,13 @@ public class Association {
     private String userEmail;
     @Field("approval_expiry_at")
     private LocalDateTime approvalExpiryAt;
-    private List<Invitation> invitations;
-    private List<Notification> notifications;
+    private List<Invitation> invitations = new ArrayList<>(0);
+    private List<Notification> notifications = new ArrayList<>(0);
     @NotNull
     private String etag;
     @Version
     private Integer version;
+
     public Association() {
     }
 
@@ -111,7 +112,8 @@ public class Association {
     }
 
     public void setInvitations(List<Invitation> invitations) {
-        this.invitations = invitations;
+
+        this.invitations.addAll(invitations);
     }
 
     public List<Notification> getNotifications() {
@@ -119,13 +121,12 @@ public class Association {
     }
 
     public void setNotifications(List<Notification> notifications) {
-        this.notifications = notifications;
+        this.notifications.addAll(notifications);
     }
 
     public String getEtag() {
         return etag;
     }
-
 
 
     public LocalDateTime getApprovedAt() {
@@ -160,9 +161,6 @@ public class Association {
         return version;
     }
 
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
     @Override
     public String toString() {
         return "Association{" +

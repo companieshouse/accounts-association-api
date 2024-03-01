@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import org.aopalliance.intercept.Invocation;
 import org.springframework.stereotype.Service;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 
@@ -11,5 +12,6 @@ public class AssociationsService {
     public AssociationsService(AssociationsRepository associationsRepository) {
         this.associationsRepository = associationsRepository;
     }
+
 
 }

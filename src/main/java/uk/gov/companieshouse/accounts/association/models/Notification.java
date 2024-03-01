@@ -1,7 +1,5 @@
 package uk.gov.companieshouse.accounts.association.models;
 
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
@@ -9,7 +7,6 @@ import java.time.LocalDateTime;
 public class Notification {
 
 
-    @CreatedDate
     @Field("notified_at")
     public LocalDateTime notifiedAt;
 
@@ -36,12 +33,12 @@ public class Notification {
     }
 
 
-    @Override
-    public String toString() {
-        return "Notification{" +
-                "notifiedAt=" + notifiedAt +
-                ", notificationEvent='" + notificationEvent + '\'' +
-
-                '}';
-    }
+//    @Override
+//    public String toString() {
+//        return "Notification{" +
+//                "notifiedAt=" + notifiedAt +
+//                ", notificationEvent='" + notificationEvent + '\'' +
+//
+//                '}';
+//    }
 }

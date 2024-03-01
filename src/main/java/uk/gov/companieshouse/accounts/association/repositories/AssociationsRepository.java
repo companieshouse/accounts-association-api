@@ -21,8 +21,6 @@ public interface AssociationsRepository extends MongoRepository<Association, Str
     Page<Association> findAllByUserId(final String userId, final Pageable pageable);
     //Association findById(final String id);
     Optional<Association> findAllById(final String id);
-    List<Invitation> findAllInvitationsById(final String id);
-    List<Notification> findAllNotificationsById(final String id);
 
     @Query( "{ 'id': ?0 }" )
     int updateUser( String userId, Update update );
