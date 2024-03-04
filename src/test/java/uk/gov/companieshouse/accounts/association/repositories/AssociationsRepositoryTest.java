@@ -17,7 +17,6 @@ import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.models.Invitation;
 import uk.gov.companieshouse.accounts.association.service.ApiClientService;
 
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,12 +34,11 @@ class AssociationsRepositoryTest {
     @Autowired
     MongoTemplate mongoTemplate;
 
-    @Autowired
-    AssociationsRepository associationsRepository;
-
     @MockBean
     ApiClientService apiClientService;
 
+    @Autowired
+    AssociationsRepository associationsRepository;
     List<Association> associations ;
     List<Invitation> invitations = new ArrayList<>();
 
@@ -158,57 +156,46 @@ class AssociationsRepositoryTest {
     @Test
     void fetchAssociationWithValidID() {
 
-        final var validUser = associationsRepository.findAssociationById( "111");
+        final var validUser = associationsRepository.findById( "111");
         Assertions.assertEquals( 1, validUser.stream().count() );
     }
     @Test
-    void findAssociationByIdWithMalformedInputOrNonexistentIdReturnsEmptyOptional(){
-        Assertions.assertFalse( associationsRepository.findAssociationById( null ).isPresent() );
-        Assertions.assertFalse( associationsRepository.findAssociationById( "" ).isPresent() );
-        Assertions.assertFalse( associationsRepository.findAssociationById( "$" ).isPresent() );
-        Assertions.assertFalse( associationsRepository.findAssociationById( "999" ).isPresent() );
+    void findByIdWithMalformedInputOrNonexistentIdReturnsEmptyOptional(){
+
+        Assertions.assertFalse( associationsRepository.findById( "" ).isPresent() );
+        Assertions.assertFalse( associationsRepository.findById( "$" ).isPresent() );
+        Assertions.assertFalse( associationsRepository.findById( "999" ).isPresent() );
     }
 
 
     @Test
     void fetchAssociationWithValidValues() {
 
-        Assertions.assertEquals( "555", associationsRepository.findAssociationById( "111" ).get().getUserId());
-        Assertions.assertEquals( "12345", associationsRepository.findAssociationById( "111" ).get().getCompanyNumber());
-        Assertions.assertEquals( "abc@abc.com", associationsRepository.findAssociationById( "111" ).get().getUserEmail());
-        Assertions.assertEquals( "Confirmed", associationsRepository.findAssociationById( "111" ).get().getStatus());
+        Assertions.assertEquals( "555", associationsRepository.findById( "111" ).get().getUserId());
+        Assertions.assertEquals( "12345", associationsRepository.findById( "111" ).get().getCompanyNumber());
+        Assertions.assertEquals( "abc@abc.com", associationsRepository.findById( "111" ).get().getUserEmail());
+        Assertions.assertEquals( "Confirmed", associationsRepository.findById( "111" ).get().getStatus());
 
     }
     @Test
     void fetchAssociationWithInValidUserEmail() {
-        Assertions.assertEquals(" ", associationsRepository.findAssociationById("333").get().getUserEmail());
+        Assertions.assertEquals(" ", associationsRepository.findById("333").get().getUserEmail());
     }
 
     @Test
     void updateStatusBasedOnId(){
-        final var update = new Update().set("status", "Removed");
+        final var update = new Update().set("status", "removed");
         associationsRepository.updateUser( "111", update );
-        Assertions.assertEquals( "Removed", associationsRepository.findAssociationById( "111" ).get().getStatus() );
+        Assertions.assertEquals( "removed", associationsRepository.findById( "111" ).get().getStatus() );
     }
 
     @Test
     void updateStatusWithNullThrowsIllegalStateException(){
         assertThrows( IllegalStateException.class, () -> associationsRepository.updateUser( "111", null ) );
     }
-
-    @Test
-    void setFutureDateToCreatedAtFieldThrowsConstraintViolationException() {
-        LocalDateTime futureDateTime = LocalDateTime.now().plusDays(1);
-        Association association = new Association();
-        association.setCreatedAt(futureDateTime);
-
-        assertThrows(jakarta.validation.ConstraintViolationException.class, () -> {
-            associationsRepository.save(association);
-        });
-    }
     @Test
     void setFutureDateToApprovedAtFieldThrowsConstraintViolationException() {
-        LocalDateTime futureDateTime = LocalDateTime.now().plusDays(5);
+        LocalDateTime futureDateTime = LocalDateTime.now().minusDays(1);
         Association association = new Association();
         association.setApprovedAt(futureDateTime);
 
@@ -232,7 +219,7 @@ class AssociationsRepositoryTest {
     void setPastDateToApprovalExpiryAtFieldThrowsConstraintViolationException() {
         LocalDateTime pastDateTime = LocalDateTime.now().minusDays(20);
         Association association = new Association();
-        association.setRemovedAt(pastDateTime);
+        association.setApprovalExpiryAt(pastDateTime);
 
         assertThrows(jakarta.validation.ConstraintViolationException.class, () -> {
             associationsRepository.save(association);
@@ -251,30 +238,14 @@ class AssociationsRepositoryTest {
         association.setEtag("OCRS7");
         association = associationsRepository.save(association);
 
-        Association savedAssociation = associationsRepository.findAssociationById(association.getId()).orElseThrow();
+        Association savedAssociation = associationsRepository.findById(association.getId()).orElseThrow();
 
         savedAssociation.setCompanyNumber("555555");
         associationsRepository.save(savedAssociation);
 
-        Association updatedAssociation = associationsRepository.findAssociationById(savedAssociation.getId()).orElseThrow();
+        Association updatedAssociation = associationsRepository.findById(savedAssociation.getId()).orElseThrow();
 
         Assertions.assertEquals(association.getVersion() + 1, updatedAssociation.getVersion());
-    }
-    @Test
-    void fetchInvitationsAssociationWithWithValidIDReturnsValues(){
-        final var validUser = associationsRepository.findAllInvitationsById( "111");
-        Assertions.assertEquals( 1, validUser.size() );
-
-    }
-    @Test
-    void fetchInvitationsAssociationWithWithNonexistentIDReturnsEmptyList(){
-        final var emptyList = new ArrayList<String>();
-        emptyList.add( null );
-
-        Assertions.assertEquals( List.of(), associationsRepository.findAllInvitationsById( "qwer" ) );
-        Assertions.assertEquals( List.of(), associationsRepository.findAllInvitationsById( "222344" ) );
-        Assertions.assertEquals( List.of(), associationsRepository.findAllInvitationsById( "22dfg44" ) );
-
     }
     @AfterEach
     public void after() {

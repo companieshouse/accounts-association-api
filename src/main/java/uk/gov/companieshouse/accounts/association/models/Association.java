@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.models;
 
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -30,8 +31,10 @@ public class Association {
     @CreatedDate
     private LocalDateTime createdAt;
     @Field("approved_at")
+    @FutureOrPresent
     private LocalDateTime approvedAt;
     @Field("removed_at")
+    @FutureOrPresent
     private LocalDateTime removedAt;
     @NotNull
     @Field("approval_route")
@@ -40,14 +43,16 @@ public class Association {
     @Field("user_email")
     private String userEmail;
     @Field("approval_expiry_at")
+    @FutureOrPresent
     private LocalDateTime approvalExpiryAt;
-    private List<Invitation> invitations = new ArrayList<>(0);
+    private List<Invitation> invitations ;
     @NotNull
     private String etag;
     @Version
     private Integer version;
 
     public Association() {
+        invitations = new ArrayList<>();
     }
 
     public String getId() {
@@ -84,10 +89,6 @@ public class Association {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
     }
 
     public String getApprovalRoute() {

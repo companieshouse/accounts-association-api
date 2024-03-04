@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.models;
 
+import jakarta.validation.constraints.FutureOrPresent;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
@@ -8,6 +9,7 @@ public class Invitation {
     @Field("invited_by")
     private String invitedBy;
     @Field("invited_at")
+    @FutureOrPresent
     private LocalDateTime invitedAt;
 
     public Invitation() {
@@ -29,11 +31,11 @@ public class Invitation {
         this.invitedAt = invitedAt;
     }
 
-//    @Override
-//    public String toString() {
-//        return "Invitation{" +
-//                "invitedBy='" + invitedBy + '\'' +
-//                ", invitedAt=" + invitedAt +
-//                '}';
-//    }
+    @Override
+    public String toString() {
+        return "Invitation{" +
+                "invitedBy='" + invitedBy + '\'' +
+                ", invitedAt=" + invitedAt +
+                '}';
+    }
 }

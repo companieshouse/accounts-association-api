@@ -13,21 +13,22 @@
     <description>User and Company association.</description>
     <properties>
         <java.version>21</java.version>
-        <spring-boot.version>3.2.2</spring-boot.version>
+        <spring-boot.version>3.2.3</spring-boot.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.2.2</maven-surefire-plugin.version>
-        <structured-logging.version>3.0.1</structured-logging.version>
+        <structured-logging.version>3.0.3</structured-logging.version>
         <common-web-java.version>3.0.0</common-web-java.version>
         <dependency-check-plugin.version>8.4.3</dependency-check-plugin.version>
         <sonar-maven-plugin.version>3.10.0.2594</sonar-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.10</jacoco-maven-plugin.version>
         <encryption-java-library.version>2.0.3</encryption-java-library.version>
         <rest-service-common-library-version>2.0.2</rest-service-common-library-version>
-        <private-api-sdk-java.version>4.0.69</private-api-sdk-java.version>
+        <private-api-sdk-java.version>4.0.72</private-api-sdk-java.version>
         <api-sdk-manager-java-library.version>3.0.5</api-sdk-manager-java-library.version>
         <api-security-java-version>2.0.3</api-security-java-version>
         <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
+        <junit-jupiter.version>1.19.6</junit-jupiter.version>
     </properties>
     <profiles>
         <profile>
@@ -109,11 +110,13 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mongodb</artifactId>
+            <version>${junit-jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <version>${junit-jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -158,11 +161,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin.version}</version>
-            </plugin>
-            <plugin>
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-maven-plugin</artifactId>
                 <version>3.4.0</version>
@@ -187,6 +185,11 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco-maven-plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>${dependency-check-maven-plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
