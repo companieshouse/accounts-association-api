@@ -3,7 +3,9 @@ package uk.gov.companieshouse.accounts.association.repositories;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import uk.gov.companieshouse.accounts.association.models.Association;
 
@@ -11,5 +13,7 @@ import uk.gov.companieshouse.accounts.association.models.Association;
 public interface AssociationsRepository extends MongoRepository<Association, String>{
 
     Page<Association> findByUserIdAndCompanyNumberLike(final String userId, @NotNull final String companyNumber, final Pageable pageable);
-
+    Page<Association> findAllByUserId(final String userId, final Pageable pageable);
+    @Query( "{ 'id': ?0 }" )
+    int updateUser( String userId, Update update );
 }
