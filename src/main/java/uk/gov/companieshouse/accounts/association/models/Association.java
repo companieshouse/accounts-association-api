@@ -42,7 +42,6 @@ public class Association {
     @Field("approval_expiry_at")
     private LocalDateTime approvalExpiryAt;
     private List<Invitation> invitations;
-    private List<Notification> notifications;
     @NotNull
     private String etag;
     @Version
@@ -114,14 +113,6 @@ public class Association {
         this.invitations = invitations;
     }
 
-    public List<Notification> getNotifications() {
-        return notifications;
-    }
-
-    public void setNotifications(List<Notification> notifications) {
-        this.notifications = notifications;
-    }
-
     public String getEtag() {
         return etag;
     }
@@ -160,9 +151,6 @@ public class Association {
         return version;
     }
 
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
     @Override
     public String toString() {
         return "Association{" +
@@ -177,7 +165,6 @@ public class Association {
                 ", userEmail='" + userEmail + '\'' +
                 ", approvalExpiryAt=" + approvalExpiryAt +
                 ", invitations=" + invitations +
-                ", notifications=" + notifications +
                 ", etag='" + etag + '\'' +
                 ", version=" + version +
                 '}';
