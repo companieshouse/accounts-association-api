@@ -12,6 +12,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 
 @Document("user_company_associations")
 public class Association {
@@ -26,7 +28,7 @@ public class Association {
     @Field("user_id")
     private String userId;
     @NotNull
-    private String status;
+    private StatusEnum status;
     @Field("created_at")
     @CreatedDate
     private LocalDateTime createdAt;
@@ -38,13 +40,15 @@ public class Association {
     private LocalDateTime removedAt;
     @NotNull
     @Field("approval_route")
-    private String approvalRoute;
+    private ApprovalRouteEnum approvalRoute;
     @Indexed
     @Field("user_email")
     private String userEmail;
     @Field("approval_expiry_at")
     @FutureOrPresent
     private LocalDateTime approvalExpiryAt;
+
+    @Field("invitations")
     private List<Invitation> invitations ;
     @NotNull
     private String etag;
@@ -79,11 +83,11 @@ public class Association {
         this.userId = userId;
     }
 
-    public String getStatus() {
+    public StatusEnum getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(StatusEnum status) {
         this.status = status;
     }
 
@@ -91,11 +95,11 @@ public class Association {
         return createdAt;
     }
 
-    public String getApprovalRoute() {
+    public ApprovalRouteEnum getApprovalRoute() {
         return approvalRoute;
     }
 
-    public void setApprovalRoute(String approvalRoute) {
+    public void setApprovalRoute(ApprovalRouteEnum approvalRoute) {
         this.approvalRoute = approvalRoute;
     }
 
