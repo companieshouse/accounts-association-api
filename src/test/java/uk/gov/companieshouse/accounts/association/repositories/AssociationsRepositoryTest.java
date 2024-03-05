@@ -20,6 +20,8 @@ import uk.gov.companieshouse.accounts.association.service.ApiClientService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -49,8 +51,8 @@ class AssociationsRepositoryTest {
         associationOne.setId("111");
         associationOne.setCompanyNumber("12345");
         associationOne.setUserId("555");
-        associationOne.setStatus("Confirmed");
-        associationOne.setApprovalRoute("auth_code");
+        associationOne.setStatus(StatusEnum.CONFIRMED);
+        associationOne.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
         associationOne.setUserEmail("abc@abc.com");
         associationOne.setApprovalExpiryAt(LocalDateTime.now().plusDays(10));
         associationOne.setInvitations(new ArrayList<>());
@@ -66,8 +68,8 @@ class AssociationsRepositoryTest {
         associationTwo.setId("222");
         associationTwo.setCompanyNumber("12345");
         associationTwo.setUserId("666");
-        associationTwo.setStatus("Confirmed");
-        associationTwo.setApprovalRoute("auth_code");
+        associationTwo.setStatus(StatusEnum.CONFIRMED);
+        associationTwo.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
         associationTwo.setUserEmail("abc@abc.com");
         associationTwo.setApprovalExpiryAt(LocalDateTime.now().plusDays(10));
         associationTwo.setInvitations(new ArrayList<>());
@@ -83,8 +85,8 @@ class AssociationsRepositoryTest {
         associationThree.setId("333");
         associationThree.setCompanyNumber("10345");
         associationThree.setUserId("777");
-        associationThree.setStatus("Confirmed");
-        associationThree.setApprovalRoute("auth_code");
+        associationThree.setStatus(StatusEnum.CONFIRMED);
+        associationThree.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
         associationThree.setUserEmail(" ");
         associationThree.setEtag("OCRS7");
         associationThree.setApprovalExpiryAt(LocalDateTime.now().plusDays(10));
@@ -106,8 +108,8 @@ class AssociationsRepositoryTest {
         Pageable pageable = PageRequest.of(1, 10);
         associationUser.setCompanyNumber("1114422");
         associationUser.setUserId("9999");
-        associationUser.setStatus("Confirmed");
-        associationUser.setApprovalRoute("auth_code");
+        associationUser.setStatus(StatusEnum.CONFIRMED);
+        associationUser.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
         associationUser.setUserEmail("abc@abc.com");
         associationUser.setEtag("OCRS7");
         associationUser.setApprovalExpiryAt(LocalDateTime.now().plusDays(10));
@@ -174,7 +176,7 @@ class AssociationsRepositoryTest {
         Assertions.assertEquals( "555", associationsRepository.findById( "111" ).get().getUserId());
         Assertions.assertEquals( "12345", associationsRepository.findById( "111" ).get().getCompanyNumber());
         Assertions.assertEquals( "abc@abc.com", associationsRepository.findById( "111" ).get().getUserEmail());
-        Assertions.assertEquals( "Confirmed", associationsRepository.findById( "111" ).get().getStatus());
+        Assertions.assertEquals( StatusEnum.CONFIRMED, associationsRepository.findById( "111" ).get().getStatus());
 
     }
     @Test
@@ -184,9 +186,9 @@ class AssociationsRepositoryTest {
 
     @Test
     void updateStatusBasedOnId(){
-        final var update = new Update().set("status", "removed");
+        final var update = new Update().set("status", StatusEnum.REMOVED);
         associationsRepository.updateUser( "111", update );
-        Assertions.assertEquals( "removed", associationsRepository.findById( "111" ).get().getStatus() );
+        Assertions.assertEquals( StatusEnum.REMOVED, associationsRepository.findById( "111" ).get().getStatus() );
     }
 
     @Test
@@ -232,8 +234,8 @@ class AssociationsRepositoryTest {
         Association association = new Association();
         association.setCompanyNumber("1114422");
         association.setUserId("9999");
-        association.setStatus("Confirmed");
-        association.setApprovalRoute("auth_code");
+        association.setStatus(StatusEnum.CONFIRMED);
+        association.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
         association.setUserEmail("abc@abc.com");
         association.setEtag("OCRS7");
         association = associationsRepository.save(association);

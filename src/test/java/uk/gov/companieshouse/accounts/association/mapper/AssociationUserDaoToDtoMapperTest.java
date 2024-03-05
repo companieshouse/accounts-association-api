@@ -2,6 +2,8 @@ package uk.gov.companieshouse.accounts.association.mapper;
 
 import static org.mockito.ArgumentMatchers.any;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -12,6 +14,9 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
 @ExtendWith(MockitoExtension.class)
@@ -22,9 +27,10 @@ public class AssociationUserDaoToDtoMapperTest {
     private UsersService usersService;
 
     @InjectMocks
-    private AssociationUserDaoToDtoMapper associationUserDaoToDtoMapper = Mockito.mock(AssociationUserDaoToDtoMapper.class, Mockito.CALLS_REAL_METHODS);
+    private AssociationUserDaoToDtoMapper associationUserDaoToDtoMapper = new AssociationUserDaoToDtoMapperImpl();
 
     private static final String DEFAULT_DISPLAY_NAME = "Not provided";
+    private static final String DEFAULT_KIND = "association";
 
     @Test
     void enrichAssociationWithUserDetailsWithNullInputThrowsNullPointerException(){
@@ -55,11 +61,6 @@ public class AssociationUserDaoToDtoMapperTest {
         Assertions.assertEquals( "The Governess", association.getDisplayName() );
     }
 
-
-
-
-
-
     @Test
     void daoToDtoWithNullInputReturnsNull(){
         Assertions.assertNull( associationUserDaoToDtoMapper.daoToDto( null ) );
@@ -67,10 +68,77 @@ public class AssociationUserDaoToDtoMapperTest {
 
     @Test
     void daoToDtoWithOnlyMandatoryFieldsSuccessfullyPerformsMapping(){
+        final var dao = new uk.gov.companieshouse.accounts.association.models.Association();
+        dao.setId( "1" );
+        dao.setUserId( "111" );
+        dao.setCompanyNumber( "111111" );
 
+        final var user =
+        new User().email( "bruce.wayne@gotham.city" )
+                  .displayName( "Batman" );
+        Mockito.doReturn( user ).when( usersService ).fetchUserDetails( any() );
+
+        final var dto = associationUserDaoToDtoMapper.daoToDto( dao );
+        final var links = dto.getLinks();
+
+        Assertions.assertEquals( "1", dto.getId() );
+        Assertions.assertEquals( "111", dto.getUserId() );
+        Assertions.assertEquals( "111111", dto.getCompanyNumber() );
+        Assertions.assertEquals( "bruce.wayne@gotham.city", dto.getUserEmail() );
+        Assertions.assertEquals( "Batman", dto.getDisplayName() );
+        Assertions.assertEquals( "/1", links.getSelf() );
+        Assertions.assertEquals( DEFAULT_KIND, dto.getKind() );
     }
 
-    // TODO: test daoToDto
+    @Test
+    void daoToDtoWithAllFieldsSuccessfullyPerformsMapping(){
+        final var now = LocalDateTime.now();
+        final var threeDaysAgo = now.minusDays( 3 );
+        final var lastWeek = now.minusWeeks( 1 );
+        final var twoWeeksAgo = now.minusWeeks( 2 );
+
+        final var invitationDto = new Invitation();
+        invitationDto.setInvitedBy( "222" );
+        invitationDto.setInvitedAt( twoWeeksAgo.toString() );
+
+        final var invitationDao = new uk.gov.companieshouse.accounts.association.models.Invitation();
+        invitationDao.setInvitedBy( "222" );
+        invitationDao.setInvitedAt( twoWeeksAgo );
+
+        final var dao = new uk.gov.companieshouse.accounts.association.models.Association();
+        dao.setId( "1" );
+        dao.setUserId( "111" );
+        dao.setUserEmail( "bruce.wayne@gotham.city" );
+        dao.setCompanyNumber( "111111" );
+        dao.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE );
+        dao.setStatus( StatusEnum.REMOVED );
+        dao.setApprovedAt( lastWeek );
+        dao.setRemovedAt( now );
+        dao.setApprovalExpiryAt( threeDaysAgo );
+        dao.setInvitations( List.of( invitationDao ) );
+        dao.setEtag( "theTag" );
+
+        final var user = new User().email( "bruce.wayne@gotham.city" );
+        Mockito.doReturn( user ).when( usersService ).fetchUserDetails( any() );
+
+        final var dto = associationUserDaoToDtoMapper.daoToDto( dao );
+        final var links = dto.getLinks();
+
+        Assertions.assertEquals( "1", dto.getId() );
+        Assertions.assertEquals( "111", dto.getUserId() );
+        Assertions.assertEquals( "bruce.wayne@gotham.city", dto.getUserEmail() );
+        Assertions.assertEquals( "111111", dto.getCompanyNumber() );
+        Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE, dto.getApprovalRoute() );
+        Assertions.assertEquals( StatusEnum.REMOVED, dto.getStatus() );
+        Assertions.assertEquals( lastWeek, dto.getApprovedAt().toLocalDateTime() );
+        Assertions.assertEquals( now, dto.getRemovedAt().toLocalDateTime() );
+        Assertions.assertEquals( threeDaysAgo.toString(), dto.getApprovalExpiryAt() );
+        Assertions.assertEquals(List.of( invitationDto ), dto.getInvitations());
+        Assertions.assertEquals( "theTag", dto.getEtag() );
+        Assertions.assertEquals( DEFAULT_DISPLAY_NAME, dto.getDisplayName() );
+        Assertions.assertEquals( "/1", links.getSelf() );
+        Assertions.assertEquals( DEFAULT_KIND, dto.getKind() );
+    }
 
 
 }

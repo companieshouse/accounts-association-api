@@ -32,7 +32,7 @@ public abstract class AssociationsListCompanyDaoToDtoMapper extends Associations
     }
 
     @AfterMapping
-    protected void enrichWithItems( Page<uk.gov.companieshouse.accounts.association.models.Association> page, @MappingTarget AssociationsList list, Map<String, String> context ) {
+    protected void enrichWithItems( Page<uk.gov.companieshouse.accounts.association.models.Association> page, @MappingTarget AssociationsList list, @Context Map<String, String> context ) {
         final var companyNumber = context.get( "companyNumber" );
         final var pageContent = page.getContent();
         final var enrichWithCompanyName = enrichWithCompanyName( companyNumber );
