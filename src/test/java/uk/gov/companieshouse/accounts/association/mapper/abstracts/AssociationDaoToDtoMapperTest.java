@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.mapper.abstracts;
 
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,17 @@ public class AssociationDaoToDtoMapperTest {
 
         Assertions.assertEquals( "/111111", association.getLinks().getSelf() );
         Assertions.assertEquals( "Another kind", association.getKind() );
+    }
+
+    @Test
+    void localDateTimeToOffsetDateTimeWithNullReturnsNull(){
+        Assertions.assertNull( associationDaoToDtoMapper.localDateTimeToOffsetDateTime( null ) );
+    }
+
+    @Test
+    void localDateTimeToOffsetDateTimeReturnsOffsetDateTime(){
+        final var now = LocalDateTime.now();
+        Assertions.assertEquals( now, associationDaoToDtoMapper.localDateTimeToOffsetDateTime( now ).toLocalDateTime() );
     }
 
 }

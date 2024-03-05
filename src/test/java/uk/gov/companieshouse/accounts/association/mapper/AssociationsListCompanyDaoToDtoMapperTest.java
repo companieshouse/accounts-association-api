@@ -132,6 +132,68 @@ public class AssociationsListCompanyDaoToDtoMapperTest {
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getCompanyName).allMatch( companyName -> companyName.equals( "Wayne Enterprises") ) );
     }
 
-    // TODO: test daoToDto
+    @Test
+    void daoToDtoWithNullPageReturnsNull() {
+        Assertions.assertNull( associationsListCompanyDaoToDtoMapper.daoToDto(null, Map.of("companyNumber", "111111", "endpointUri", "/associations/companies/111111" )));
+    }
+
+    @Test
+    void daoToDtoWithNullContextThrowsNullPointerException() {
+        final var content = new ArrayList<Association>();
+        final var pageRequest = PageRequest.of(0, 15);
+        final var page = new PageImpl<>(content, pageRequest, content.size());
+
+        Assertions.assertThrows(NullPointerException.class, () -> associationsListCompanyDaoToDtoMapper.daoToDto(page, null));
+    }
+
+    @Test
+    void daoToDtoWithEmptyPageReturnsAssociationsList(){
+        final var content = new ArrayList<Association>();
+        final var pageRequest = PageRequest.of(0, 15);
+        final var page = new PageImpl<>(content, pageRequest, content.size());
+
+        final var company = new CompanyProfileApi();
+        company.setCompanyName( "Wayne Enterprises" );
+        Mockito.doReturn(company).when( companyService ).fetchCompanyProfile( any() );
+
+        final var associationsList = associationsListCompanyDaoToDtoMapper.daoToDto( page, Map.of("companyNumber", "111111", "endpointUri", "/associations/companies/111111" ) );
+        final var links = associationsList.getLinks();
+
+        Assertions.assertEquals( List.of(), associationsList.getItems() );
+        Assertions.assertEquals( String.format("%s/associations", internalApiUrl), links.getSelf() );
+        Assertions.assertEquals( "", links.getNext() );
+        Assertions.assertEquals( 0, associationsList.getPageNumber() );
+        Assertions.assertEquals( 15, associationsList.getItemsPerPage() );
+        Assertions.assertEquals( 0, associationsList.getTotalResults() );
+        Assertions.assertEquals( 0, associationsList.getTotalPages() );
+    }
+
+    @Test
+    void daoToDtoReturnsAssociationsList(){
+        final var content = new ArrayList<>( List.of(associationBatmanDao, associationAlfieDao) );
+        final var pageRequest = PageRequest.of( 0, 2 );
+        final var page = new PageImpl<>( content, pageRequest, 3 );
+
+        final var company = new CompanyProfileApi();
+        company.setCompanyName( "Wayne Enterprises" );
+        Mockito.doReturn(company).when( companyService ).fetchCompanyProfile( any() );
+
+        Mockito.doReturn( associationBatmanDto).when( associationUserDaoToDtoMapper ).daoToDto( argThat( associationDaoMatches("111") ));
+        Mockito.doReturn( associationAlfieDto).when( associationUserDaoToDtoMapper ).daoToDto( argThat( associationDaoMatches("222") ));
+
+        final var associationsList = associationsListCompanyDaoToDtoMapper.daoToDto( page, Map.of("companyNumber", "111111", "endpointUri", "/associations/companies/111111" ) );
+        final var items = associationsList.getItems();
+        final var links = associationsList.getLinks();
+
+        Assertions.assertEquals( 2, items.size() );
+        Assertions.assertTrue( items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getUserId).toList().containsAll( List.of("111","222") ) );
+        Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getCompanyName).allMatch( companyName -> companyName.equals( "Wayne Enterprises") ) );
+        Assertions.assertEquals( String.format("%s/associations", internalApiUrl), links.getSelf() );
+        Assertions.assertEquals( String.format("%s/associations/companies/111111?page_index=%d&items_per_page=%d", internalApiUrl, 1, 2), links.getNext() );
+        Assertions.assertEquals( 0, associationsList.getPageNumber() );
+        Assertions.assertEquals( 2, associationsList.getItemsPerPage() );
+        Assertions.assertEquals( 3, associationsList.getTotalResults() );
+        Assertions.assertEquals( 2, associationsList.getTotalPages() );
+    }
 
 }

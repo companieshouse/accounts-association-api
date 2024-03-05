@@ -1,5 +1,8 @@
 package uk.gov.companieshouse.accounts.association.mapper.abstracts;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Objects;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
@@ -24,5 +27,9 @@ public abstract class AssociationDaoToDtoMapper {
             association.setKind( DEFAULT_KIND );
         }
     }
+
+    protected OffsetDateTime localDateTimeToOffsetDateTime( LocalDateTime localDateTime ){
+        return Objects.isNull(localDateTime) ? null : OffsetDateTime.of( localDateTime, ZoneOffset.UTC );
+    };
 
 }

@@ -16,7 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import uk.gov.companieshouse.accounts.association.models.Association;
@@ -24,7 +24,6 @@ import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
-import uk.gov.companieshouse.api.model.company.CompanyProfileApi;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
@@ -38,6 +37,9 @@ public class AssociationsListUserDaoToDtoMapperTest {
 
     @InjectMocks
     AssociationsListUserDaoToDtoMapper associationsListUserDaoToDtoMapper = new AssociationsListUserDaoToDtoMapperImpl();
+
+    @Value("${internal.api.url}")
+    private String internalApiUrl;
 
     private Association associationBatmanDao;
 
@@ -153,8 +155,98 @@ public class AssociationsListUserDaoToDtoMapperTest {
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getDisplayName ).allMatch( displayName -> displayName.equals( DEFAULT_DISPLAY_NAME ) ) );
     }
 
+    @Test
+    void daoToDtoWithNullPageReturnsNull(){
+        Assertions.assertNull( associationsListUserDaoToDtoMapper.daoToDto(null, Map.of("userId", "111", "endpointUri", "/associations/companies/111111" )));
+    }
 
-    // TODO: test daoToDto
+    @Test
+    void daoToDtoWithNullContextThrowsNullPointerException() {
+        final var content = new ArrayList<Association>();
+        final var pageRequest = PageRequest.of(0, 15);
+        final var page = new PageImpl<>(content, pageRequest, content.size());
 
+        Assertions.assertThrows(NullPointerException.class, () -> associationsListUserDaoToDtoMapper.daoToDto(page, null));
+    }
+
+    @Test
+    void daoToDtoWithEmptyPageReturnsAssociationsList(){
+        final var content = new ArrayList<Association>();
+        final var pageRequest = PageRequest.of(0, 15);
+        final var page = new PageImpl<>(content, pageRequest, content.size());
+
+        final var user = new User().email( "bruce.wayne@gotham.city" );
+        Mockito.doReturn(user).when( usersService ).fetchUserDetails( any() );
+
+        final var associationsList = associationsListUserDaoToDtoMapper.daoToDto( page, Map.of("userId", "111", "endpointUri", "/associations/companies/111111" ) );
+        final var links = associationsList.getLinks();
+
+        Assertions.assertEquals( List.of(), associationsList.getItems() );
+        Assertions.assertEquals( String.format("%s/associations", internalApiUrl), links.getSelf() );
+        Assertions.assertEquals( "", links.getNext() );
+        Assertions.assertEquals( 0, associationsList.getPageNumber() );
+        Assertions.assertEquals( 15, associationsList.getItemsPerPage() );
+        Assertions.assertEquals( 0, associationsList.getTotalResults() );
+        Assertions.assertEquals( 0, associationsList.getTotalPages() );
+    }
+
+    @Test
+    void daoToDtoWithoutDisplayNameReturnsAssociationsList(){
+        final var content = new ArrayList<>( List.of(associationBatmanDao, associationAlfieDao) );
+        final var pageRequest = PageRequest.of( 0, 2 );
+        final var page = new PageImpl<>( content, pageRequest, 3 );
+
+        final var user = new User().email( "bruce.wayne@gotham.city" );
+        Mockito.doReturn(user).when( usersService ).fetchUserDetails( any() );
+
+        Mockito.doReturn( associationBatmanDto).when( associationCompanyDaoToDtoMapper ).daoToDto( argThat( associationDaoMatches("111") ));
+        Mockito.doReturn( associationAlfieDto).when( associationCompanyDaoToDtoMapper ).daoToDto( argThat( associationDaoMatches("222") ));
+
+        final var associationsList = associationsListUserDaoToDtoMapper.daoToDto( page, Map.of("userId", "111", "endpointUri", "/associations/companies/111111" ) );
+        final var items = associationsList.getItems();
+        final var links = associationsList.getLinks();
+
+        Assertions.assertEquals( 2, items.size() );
+        Assertions.assertTrue( items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getCompanyNumber).toList().containsAll( List.of("111111","222222") ) );
+        Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getUserEmail).allMatch( userEmail -> userEmail.equals( "bruce.wayne@gotham.city") ) );
+        Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getDisplayName ).allMatch( displayName -> displayName.equals( DEFAULT_DISPLAY_NAME ) ) );
+        Assertions.assertEquals( String.format("%s/associations", internalApiUrl), links.getSelf() );
+        Assertions.assertEquals( String.format("%s/associations/companies/111111?page_index=%d&items_per_page=%d", internalApiUrl, 1, 2), links.getNext() );
+        Assertions.assertEquals( 0, associationsList.getPageNumber() );
+        Assertions.assertEquals( 2, associationsList.getItemsPerPage() );
+        Assertions.assertEquals( 3, associationsList.getTotalResults() );
+        Assertions.assertEquals( 2, associationsList.getTotalPages() );
+    }
+
+    @Test
+    void daoToDtoWithDisplayNameReturnsAssociationsList(){
+        final var content = new ArrayList<>( List.of(associationBatmanDao, associationAlfieDao) );
+        final var pageRequest = PageRequest.of( 0, 2 );
+        final var page = new PageImpl<>( content, pageRequest, 3 );
+
+        final var user =
+        new User().email( "bruce.wayne@gotham.city" )
+                  .displayName( "Batman" );
+
+        Mockito.doReturn(user).when( usersService ).fetchUserDetails( any() );
+
+        Mockito.doReturn( associationBatmanDto).when( associationCompanyDaoToDtoMapper ).daoToDto( argThat( associationDaoMatches("111") ));
+        Mockito.doReturn( associationAlfieDto).when( associationCompanyDaoToDtoMapper ).daoToDto( argThat( associationDaoMatches("222") ));
+
+        final var associationsList = associationsListUserDaoToDtoMapper.daoToDto( page, Map.of("userId", "111", "endpointUri", "/associations/companies/111111" ) );
+        final var items = associationsList.getItems();
+        final var links = associationsList.getLinks();
+
+        Assertions.assertEquals( 2, items.size() );
+        Assertions.assertTrue( items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getCompanyNumber).toList().containsAll( List.of("111111","222222") ) );
+        Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getUserEmail).allMatch( userEmail -> userEmail.equals( "bruce.wayne@gotham.city") ) );
+        Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getDisplayName ).allMatch( displayName -> displayName.equals( "Batman" ) ) );
+        Assertions.assertEquals( String.format("%s/associations", internalApiUrl), links.getSelf() );
+        Assertions.assertEquals( String.format("%s/associations/companies/111111?page_index=%d&items_per_page=%d", internalApiUrl, 1, 2), links.getNext() );
+        Assertions.assertEquals( 0, associationsList.getPageNumber() );
+        Assertions.assertEquals( 2, associationsList.getItemsPerPage() );
+        Assertions.assertEquals( 3, associationsList.getTotalResults() );
+        Assertions.assertEquals( 2, associationsList.getTotalPages() );
+    }
 
 }
