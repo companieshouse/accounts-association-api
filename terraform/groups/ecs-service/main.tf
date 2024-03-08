@@ -19,7 +19,7 @@ terraform {
 }
 
 module "secrets" {
-  source = "git@github.com:companieshouse/terraform-modules//aws/ecs/secrets?ref=1.0.231"
+  source = "git@github.com:companieshouse/terraform-modules//aws/ecs/secrets?ref=1.0.251"
 
   name_prefix = "${local.service_name}-${var.environment}"
   environment = var.environment
@@ -28,7 +28,7 @@ module "secrets" {
 }
 
 module "ecs-service" {
-  source = "git@github.com:companieshouse/terraform-modules//aws/ecs/ecs-service?ref=1.0.235"
+  source = "git@github.com:companieshouse/terraform-modules//aws/ecs/ecs-service?ref=1.0.251"
 
   # Environmental configuration
   environment             = var.environment
@@ -39,10 +39,16 @@ module "ecs-service" {
   task_execution_role_arn = data.aws_iam_role.ecs_cluster_iam_role.arn
 
   # Load balancer configuration
-  lb_listener_arn           = data.aws_lb_listener.service_lb_listener.arn
-  lb_listener_rule_priority = local.lb_listener_rule_priority
-  lb_listener_paths         = local.lb_listener_paths
+  lb_listener_arn                   = data.aws_lb_listener.service_lb_listener.arn
+  lb_listener_rule_priority         = local.lb_listener_rule_priority
+  lb_listener_paths                 = local.lb_listener_paths
+  healthcheck_healthy_threshold     = "2"
+  health_check_grace_period_seconds = 240
 
+  # Service Healthcheck configuration
+  use_task_container_healthcheck    = true
+  healthcheck_path                  = local.healthcheck_path
+  healthcheck_matcher               = local.healthcheck_matcher
 
   # Docker container details
   docker_registry   = var.docker_registry
@@ -65,15 +71,6 @@ module "ecs-service" {
   fargate_subnets                    = local.application_subnet_ids
   use_capacity_provider              = var.use_capacity_provider
 
-
-  # Service Healthcheck configuration
-  use_task_container_healthcheck    = true
-  healthcheck_path                  = local.healthcheck_path
-  healthcheck_matcher               = local.healthcheck_matcher
-  healthcheck_healthy_threshold     = "2"
-  health_check_grace_period_seconds = 240
-
-
   # Cloudwatch
   cloudwatch_alarms_enabled = var.cloudwatch_alarms_enabled
 
@@ -82,7 +79,6 @@ module "ecs-service" {
   task_secrets              = local.task_secrets
   app_environment_filename  = local.app_environment_filename
   use_set_environment_files = local.use_set_environment_files
-
 
   # Eric variables
   use_eric_reverse_proxy    = true
