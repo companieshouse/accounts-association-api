@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import uk.gov.companieshouse.accounts.association.models.Association;
+import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.api.InternalApiClient;
@@ -43,20 +43,20 @@ class AssociationsServiceTest {
 
     @BeforeEach
     public void setup() {
-        final var associationOne = new Association();
+        final var associationOne = new AssociationDao();
         associationOne.setCompanyNumber("111111");
         associationOne.setUserId("111");
-        associationOne.setStatus( StatusEnum.CONFIRMED );
+        associationOne.setStatus( StatusEnum.CONFIRMED.getValue() );
 
-        final var associationTwo = new Association();
+        final var associationTwo = new AssociationDao();
         associationTwo.setCompanyNumber("222222");
         associationTwo.setUserId("111");
-        associationTwo.setStatus( StatusEnum.CONFIRMED );
+        associationTwo.setStatus( StatusEnum.CONFIRMED.getValue() );
 
-        final var associationThree = new Association();
+        final var associationThree = new AssociationDao();
         associationThree.setCompanyNumber("111111");
         associationThree.setUserId("222");
-        associationThree.setStatus( StatusEnum.CONFIRMED );
+        associationThree.setStatus( StatusEnum.CONFIRMED.getValue() );
 
         associationsRepository.insert(associationOne);
         associationsRepository.insert(associationTwo);
@@ -65,7 +65,7 @@ class AssociationsServiceTest {
 
     @AfterEach
     public void after() {
-        mongoTemplate.dropCollection(Association.class);
+        mongoTemplate.dropCollection(AssociationDao.class);
     }
 
 }

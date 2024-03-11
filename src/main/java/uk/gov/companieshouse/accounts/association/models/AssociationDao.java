@@ -13,10 +13,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 
 @Document("user_company_associations")
-public class Association {
+public class AssociationDao {
     @Id
     private String id;
     @Indexed
@@ -28,7 +27,7 @@ public class Association {
     @Field("user_id")
     private String userId;
     @NotNull
-    private StatusEnum status;
+    private String status;
     @Field("created_at")
     @CreatedDate
     private LocalDateTime createdAt;
@@ -48,15 +47,15 @@ public class Association {
     @FutureOrPresent
     private LocalDateTime approvalExpiryAt;
 
-    @Field("invitations")
-    private List<Invitation> invitations ;
+    @Field("invitationDaos")
+    private List<InvitationDao> invitationDaos;
     @NotNull
     private String etag;
     @Version
     private Integer version;
 
-    public Association() {
-        invitations = new ArrayList<>();
+    public AssociationDao() {
+        invitationDaos = new ArrayList<>();
     }
 
     public String getId() {
@@ -83,11 +82,11 @@ public class Association {
         this.userId = userId;
     }
 
-    public StatusEnum getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(StatusEnum status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 
@@ -111,13 +110,13 @@ public class Association {
         this.userEmail = userEmail;
     }
 
-    public List<Invitation> getInvitations() {
-        return invitations;
+    public List<InvitationDao> getInvitations() {
+        return invitationDaos;
     }
 
-    public void setInvitations(List<Invitation> invitations) {
+    public void setInvitations(List<InvitationDao> invitationDaos) {
 
-        this.invitations.addAll(invitations);
+        this.invitationDaos.addAll(invitationDaos);
     }
 
     public String getEtag() {
@@ -170,7 +169,7 @@ public class Association {
                 ", approvalRoute='" + approvalRoute + '\'' +
                 ", userEmail='" + userEmail + '\'' +
                 ", approvalExpiryAt=" + approvalExpiryAt +
-                ", invitations=" + invitations +
+                ", invitationDaos=" + invitationDaos +
                 ", etag='" + etag + '\'' +
                 ", version=" + version +
                 '}';
