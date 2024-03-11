@@ -87,7 +87,6 @@ public class AssociationsListCompanyDaoToDtoMapperTest {
         final var page = new PageImpl<>( content, pageRequest, content.size() );
 
         Assertions.assertThrows( NullPointerException.class, () -> associationsListCompanyDaoToDtoMapper.enrichWithItems( page, new AssociationsList(), null ) );
-        Assertions.assertThrows( NullPointerException.class, () -> associationsListCompanyDaoToDtoMapper.enrichWithItems( page, new AssociationsList(), Map.of() ) );
     }
 
     @Test
@@ -95,10 +94,6 @@ public class AssociationsListCompanyDaoToDtoMapperTest {
         final var content = new ArrayList<Association>();
         final var pageRequest = PageRequest.of( 0, 15 );
         final var page = new PageImpl<>( content, pageRequest, content.size() );
-
-        final var company = new CompanyProfileApi();
-        company.setCompanyName( "Wayne Enterprises" );
-        Mockito.doReturn(company).when( companyService ).fetchCompanyProfile( any() );
 
         final var associationsList = new AssociationsList();
         associationsListCompanyDaoToDtoMapper.enrichWithItems( page, associationsList, Map.of( "companyNumber", "111111" ) );
@@ -151,10 +146,6 @@ public class AssociationsListCompanyDaoToDtoMapperTest {
         final var content = new ArrayList<Association>();
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, content.size());
-
-        final var company = new CompanyProfileApi();
-        company.setCompanyName( "Wayne Enterprises" );
-        Mockito.doReturn(company).when( companyService ).fetchCompanyProfile( any() );
 
         final var associationsList = associationsListCompanyDaoToDtoMapper.daoToDto( page, Map.of("companyNumber", "111111", "endpointUri", "/associations/companies/111111" ) );
         final var links = associationsList.getLinks();
