@@ -413,8 +413,8 @@ public class AssociationsListForCompanyControllerTest {
         Mockito.doReturn( toGetUserDetailsApiResponse( "lisa.simpson@springfield.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "999" ) );
         Mockito.doReturn( toGetUserDetailsApiResponse( "maggie.simpson@springfield.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "1111" ) );
         Mockito.doReturn( toGetUserDetailsApiResponse( "crusty.the.clown@springfield.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "2222" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "itchy", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "3333" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "scratchy", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "4444" ) );
+        Mockito.doReturn( toGetUserDetailsApiResponse( "itchy@springfield.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "3333" ) );
+        Mockito.doReturn( toGetUserDetailsApiResponse( "scratchy@springfield.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "4444" ) );
         Mockito.doReturn( toGetUserDetailsApiResponse( "ross@friends.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "5555" ) );
         Mockito.doReturn( toGetUserDetailsApiResponse( "rachel@friends.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "6666" ) );
         Mockito.doReturn( toGetUserDetailsApiResponse( "chandler@friends.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "7777" ) );

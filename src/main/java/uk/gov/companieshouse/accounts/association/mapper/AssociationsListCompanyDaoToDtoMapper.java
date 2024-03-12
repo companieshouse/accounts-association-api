@@ -41,7 +41,7 @@ public abstract class AssociationsListCompanyDaoToDtoMapper extends Associations
         if ( !pageContent.isEmpty() ) {
             final var enrichWithCompanyName = enrichWithCompanyName(companyNumber);
 
-            items = pageContent.parallelStream()
+            items = pageContent.stream()
                                .map(associationUserDaoToDtoMapper::daoToDto)
                                .map(enrichWithCompanyName)
                                .toList();

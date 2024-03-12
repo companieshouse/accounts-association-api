@@ -51,7 +51,7 @@ public abstract class AssociationsListUserDaoToDtoMapper extends AssociationsLis
         List<Association> items = List.of();
         if ( !pageContent.isEmpty() ) {
             final var enrichWithUserEmailAndDisplayName = enrichWithUserEmailAndDisplayName(userId);
-            items = pageContent.parallelStream()
+            items = pageContent.stream()
                                .map(associationCompanyDaoToDtoMapper::daoToDto)
                                .map(enrichWithUserEmailAndDisplayName)
                                .toList();
