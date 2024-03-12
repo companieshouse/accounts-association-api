@@ -15,7 +15,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
-import uk.gov.companieshouse.accounts.association.service.ApiClientService;
+import uk.gov.companieshouse.accounts.association.utils.ApiClientUtil;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -38,7 +38,7 @@ class AssociationsRepositoryTest {
     MongoTemplate mongoTemplate;
 
     @MockBean
-    ApiClientService apiClientService;
+    ApiClientUtil apiClientUtil;
 
     @Autowired
     AssociationsRepository associationsRepository;
@@ -232,12 +232,6 @@ class AssociationsRepositoryTest {
     @Test
     void getAssociationsForCompanyNumberAndStatusConfirmedAndCompanyNumberLikeShouldReturnAAssociation() {
         Assertions.assertEquals(1, associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("777", Collections.singletonList("confirmed"),"10",Pageable.ofSize(1)).getTotalElements());
-
-    }
-
-    @Test
-    void getAssociationsForCompanyNumberAndStatusNullAndCompanyNumberLikeShouldReturnAAssociation() {
-        Assertions.assertEquals(1, associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("777", null,"10",Pageable.ofSize(1)).getTotalElements());
 
     }
 

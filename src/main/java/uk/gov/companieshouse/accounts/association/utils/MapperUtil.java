@@ -1,24 +1,26 @@
-package uk.gov.companieshouse.accounts.association.mapper;
+package uk.gov.companieshouse.accounts.association.utils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.mongodb.core.aggregation.ScriptOperators;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.annotation.RequestScope;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsListLinks;
+import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 @Component
+@RequestScope
 public class MapperUtil {
-
-    @Value("${internal.api.url}")
-    private String internalApiUrl;
 
     protected UsersService usersService;
 
@@ -28,7 +30,7 @@ public class MapperUtil {
     private static final String DEFAULT_DISPLAY_NAME = "Not provided";
 
     @Autowired
-    public MapperUtil(final UsersService usersService,final CompanyService companyService) {
+    public MapperUtil(final UsersService usersService, final CompanyService companyService) {
         this.usersService = usersService;
         this.companyService = companyService;
     }
@@ -52,8 +54,25 @@ public class MapperUtil {
         }
         association.setUserEmail(userEmail);
         association.setDisplayName(displayName);
+        enrichInvitations(association);
 
         return association;
+    }
+
+    private void enrichInvitations(final Association association) {
+        if (Objects.nonNull(association.getInvitations())) {
+            association.setInvitations(
+                    association.
+                            getInvitations()
+                            .stream()
+                            .map(this::enrichInvitation).toList());
+        }
+
+    }
+
+    private Invitation enrichInvitation(Invitation invitation) {
+        invitation.setInvitedBy(usersService.fetchUserDetails(invitation.getInvitedBy()).getEmail());
+        return invitation;
     }
 
     public Association enrichAssociationWithCompanyName(final Association association) {
@@ -72,8 +91,8 @@ public class MapperUtil {
         final var totalResults = page.getTotalElements();
         final var isLastPage = page.isLast();
 
-        final var self = String.format("%s/associations", internalApiUrl);
-        final var next = isLastPage ? "" : String.format("%s/%s?page_index=%d&items_per_page=%d",self, endpointUrl, pageIndex + 1, itemsPerPage);
+        final var self = "/associations";
+        final var next = isLastPage ? "" : String.format("%s%s?page_index=%d&items_per_page=%d", self, endpointUrl, pageIndex + 1, itemsPerPage);
         final var links = new AssociationsListLinks().self(self).next(next);
 
         list.setItems(page.getContent());

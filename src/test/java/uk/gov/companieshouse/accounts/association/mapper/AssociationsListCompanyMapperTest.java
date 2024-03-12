@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
@@ -65,7 +66,7 @@ public class AssociationsListCompanyMapperTest {
     void enrichWithItemsWithNullOrEmptyCompanyDetailsThrowsNullPointerException() {
         final var content = new ArrayList<AssociationDao>();
         final var pageRequest = PageRequest.of(0, 15);
-        final var page = new PageImpl<>(content, pageRequest, content.size());
+        final var page = new PageImpl<>(content, pageRequest, 0);
 
         Assertions.assertThrows(NullPointerException.class, () -> associationsListCompanyMapper.daoToDto(page, null));
         Assertions.assertThrows(NullPointerException.class, () -> associationsListCompanyMapper.daoToDto(page, new CompanyDetails()));
@@ -89,11 +90,11 @@ public class AssociationsListCompanyMapperTest {
         final var links = associationsList.getLinks();
 
         Assertions.assertEquals(2, items.size());
-        Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getUserId).toList().containsAll(List.of("111")));
+        Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getUserId).toList().contains("111"));
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getUserEmail).toList().containsAll(List.of("bruce.wayne@gotham.city", "batman@gotham.city")));
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getCompanyName).allMatch(companyName -> companyName.equals("Wayne Enterprises")));
-        Assertions.assertEquals("null/associations", links.getSelf());
-        Assertions.assertEquals(String.format("null/associations/companies/111111?page_index=%d&items_per_page=%d", 1, 2), links.getNext());
+        Assertions.assertEquals("/associations", links.getSelf());
+        Assertions.assertEquals(String.format("/associations/companies/111111?page_index=%d&items_per_page=%d", 1, 2), links.getNext());
         Assertions.assertEquals(0, associationsList.getPageNumber());
         Assertions.assertEquals(2, associationsList.getItemsPerPage());
         Assertions.assertEquals(3, associationsList.getTotalResults());

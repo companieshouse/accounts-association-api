@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
@@ -11,6 +12,7 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
 public class AssociationsListCompanyMapper {
 
 
+    private static final String END_POINT_URL = "/companies/";
     private final BaseMapper baseMapper;
 
     private final MapperUtil mapperUtil;
@@ -20,8 +22,6 @@ public class AssociationsListCompanyMapper {
         this.baseMapper = baseMapper;
         this.mapperUtil = mapperUtil;
     }
-
-    private static final String END_POINT_URL = "companies/";
 
 
     public AssociationsList daoToDto(final Page<AssociationDao> associationsList, final CompanyDetails companyDetails) {

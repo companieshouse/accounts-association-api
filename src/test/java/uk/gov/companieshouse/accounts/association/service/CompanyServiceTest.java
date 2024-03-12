@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
+import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.api.model.ApiResponse;
@@ -54,7 +55,7 @@ public class CompanyServiceTest {
 
     @Test
     void fetchCompanyProfileSuccessfullyFetchesCompanyData() throws ApiErrorResponseException, URIValidationException {
-        final var company = new CompanyProfileApi();
+        final var company = new CompanyDetails();
         company.setCompanyNumber( "111111" );
 
         final var intendedResponse = new ApiResponse<>( 200, Map.of(), company );
