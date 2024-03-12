@@ -2,8 +2,8 @@ package uk.gov.companieshouse.accounts.association.mapper;
 
 import static org.mockito.ArgumentMatchers.any;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,13 +17,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
+import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.model.company.CompanyProfileApi;
@@ -63,8 +59,8 @@ public class AssociationsListUserMapperTest {
         associationBatmanDao.setStatus("confirmed");
 
         associationAlfieDao = new AssociationDao();
-        associationAlfieDao.setUserEmail("batman@gotham.city");
-        associationAlfieDao.setCompanyNumber("111111");
+        associationAlfieDao.setUserEmail("111");
+        associationAlfieDao.setCompanyNumber("222222");
         associationAlfieDao.setStatus("awaiting-approval");
 
     }
@@ -128,18 +124,18 @@ public class AssociationsListUserMapperTest {
 
         final var content = new ArrayList<>(List.of(associationBatmanDao, associationAlfieDao));
         final var pageRequest = PageRequest.of(0, 2);
-        final var page = new PageImpl<>(content, pageRequest, 2);
-//        CompanyDetails companyDetails = new CompanyDetails();
-//        companyDetails.setCompanyName("Bruce Enterprise");
-//        companyDetails.setCompanyNumber("111111");
+        final var page = new PageImpl<>(content, pageRequest, 3);
+        CompanyDetails companyDetails = new CompanyDetails();
+        companyDetails.setCompanyName("Bruce Enterprise");
+        companyDetails.setCompanyNumber("111111");
 
-        CompanyProfileApi companyProfileApi = new CompanyProfileApi();
-
-        companyProfileApi.setCompanyName("Bruce Enterprise");
-        companyProfileApi.setCompanyNumber("111111");
+        CompanyDetails companyDetails2 = new CompanyDetails();
+        companyDetails2.setCompanyName("Alfi Company");
+        companyDetails2.setCompanyNumber("222222");
 
         final var user = new User().email( "bruce.wayne@gotham.city" ).userId("111");
-        Mockito.doReturn( companyProfileApi ).when( companyService ).fetchCompanyProfile( "111111" );
+        Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( "111111" );
+        Mockito.doReturn( companyDetails2 ).when( companyService ).fetchCompanyProfile( "222222" );
 
         final var dto = associationsListUserMapper.daoToDto( page,user );
         final var links = dto.getLinks();
@@ -148,13 +144,13 @@ public class AssociationsListUserMapperTest {
         Assertions.assertEquals(2, items.size());
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getUserId).toList().contains("111"));
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getUserEmail).toList().contains("bruce.wayne@gotham.city"));
-        Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getCompanyName).allMatch(companyName -> companyName.equals("Bruce Enterprise")));
-        Assertions.assertEquals("null/associations", links.getSelf());
-     //   Assertions.assertEquals(String.format("null/associations?page_index=%d&items_per_page=%d", 1, 2), links.getNext());
+        Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getCompanyName).toList().containsAll(Arrays.asList("Alfi Company","Bruce Enterprise")));
+        Assertions.assertEquals("/associations", links.getSelf());
+        Assertions.assertEquals(String.format("/associations?page_index=%d&items_per_page=%d", 1, 2), links.getNext());
         Assertions.assertEquals(0, dto.getPageNumber());
         Assertions.assertEquals(2, dto.getItemsPerPage());
-        Assertions.assertEquals(2, dto.getTotalResults());
-        Assertions.assertEquals(1, dto.getTotalPages());
+        Assertions.assertEquals(3, dto.getTotalResults());
+        Assertions.assertEquals(2, dto.getTotalPages());
     }
 
 

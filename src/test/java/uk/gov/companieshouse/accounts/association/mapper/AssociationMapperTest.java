@@ -1,6 +1,7 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,12 +13,13 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.user.model.User;
-import uk.gov.companieshouse.api.model.company.CompanyProfileApi;
+import uk.gov.companieshouse.api.company.CompanyDetails;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,11 +39,15 @@ public class AssociationMapperTest {
 
 
     @InjectMocks
-    private AssociationMapper associationUserDaoToDtoMapper = new AssociationMapperImpl();
+    private AssociationMapper associationUserDaoToDtoMapper ;
 
     private static final String DEFAULT_DISPLAY_NAME = "Not provided";
     private static final String DEFAULT_KIND = "association";
 
+    @BeforeEach
+    public void setup(){
+        associationUserDaoToDtoMapper = new AssociationMapper(new MapperUtil(usersService,companyService),new BaseMapperImpl());
+    }
 
     @Test
     void enrichAssociationWithUserDetailsWithNullInputThrowsNullPointerException() {
@@ -51,14 +57,13 @@ public class AssociationMapperTest {
     @Test
     void enrichAssociationWithUserDetailsWithoutDisplayNameSetsDefaultDisplayName() {
         final var association = new Association().userId("111");
-        final var company = new CompanyProfileApi();
+        final var company = new CompanyDetails();
         company.setCompanyNumber("111111");
         company.setCompanyName("Hogwarts");
         Mockito.doReturn(company).when(companyService).fetchCompanyProfile(any());
 
         final var user = new User().email("jason.manford@comedy.com");
         Mockito.doReturn(user).when(usersService).fetchUserDetails(any());
-        associationUserDaoToDtoMapper.setMapperUtil(new MapperUtil(usersService,companyService));
         associationUserDaoToDtoMapper.enrichAssociation(association);
 
         Assertions.assertEquals("jason.manford@comedy.com", association.getUserEmail());
@@ -71,11 +76,10 @@ public class AssociationMapperTest {
 
         final var user = new User().email("anne@the.chase.com").displayName("The Governess");
         Mockito.doReturn(user).when(usersService).fetchUserDetails(any());
-        final var company = new CompanyProfileApi();
+        final var company = new CompanyDetails();
         company.setCompanyNumber("111111");
         company.setCompanyName("Hogwarts");
         Mockito.doReturn(company).when(companyService).fetchCompanyProfile(any());
-        associationUserDaoToDtoMapper.setMapperUtil(new MapperUtil(usersService,companyService));
 
         associationUserDaoToDtoMapper.enrichAssociation(association);
 
@@ -95,7 +99,7 @@ public class AssociationMapperTest {
         dao.setUserId("111");
         dao.setCompanyNumber("111111");
         dao.setStatus(StatusEnum.CONFIRMED.getValue());
-        final var company = new CompanyProfileApi();
+        final var company = new CompanyDetails();
         company.setCompanyNumber("111111");
         company.setCompanyName("Hogwarts");
         Mockito.doReturn(company).when(companyService).fetchCompanyProfile(any());
@@ -104,7 +108,7 @@ public class AssociationMapperTest {
                 new User().email("bruce.wayne@gotham.city")
                         .displayName("Batman");
         Mockito.doReturn(user).when(usersService).fetchUserDetails(any());
-        associationUserDaoToDtoMapper.setMapperUtil(new MapperUtil(usersService,companyService));
+
 
         final var dto = associationUserDaoToDtoMapper.daoToDto(dao);
         final var links = dto.getLinks();
@@ -125,7 +129,7 @@ public class AssociationMapperTest {
         final var twoWeeksAgo = now.minusWeeks(2);
 
         final var invitationDto = new Invitation();
-        invitationDto.setInvitedBy("222");
+        invitationDto.setInvitedBy("bruce.wayne@gotham.city");
         invitationDto.setInvitedAt(twoWeeksAgo.toString());
 
         final var invitationDao = new InvitationDao();
@@ -143,13 +147,13 @@ public class AssociationMapperTest {
         dao.setInvitations(List.of(invitationDao));
         dao.setEtag("theTag");
 
-        final var company = new CompanyProfileApi();
+        final var company = new CompanyDetails();
         company.setCompanyName("Wayne Enterprises");
         Mockito.doReturn(company).when(companyService).fetchCompanyProfile(any());
 
         final var user = new User().email("bruce.wayne@gotham.city");
         Mockito.doReturn(user).when(usersService).fetchUserDetails(any());
-        associationUserDaoToDtoMapper.setMapperUtil(new MapperUtil(usersService,companyService));
+
 
         final var dto = associationUserDaoToDtoMapper.daoToDto(dao);
         final var links = dto.getLinks();
