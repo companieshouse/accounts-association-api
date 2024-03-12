@@ -33,7 +33,7 @@ public class InterceptorConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(@NonNull final InterceptorRegistry registry) {
         addLoggingInterceptor(registry);
-       // addEricInterceptors(registry);
+        addEricInterceptors(registry);
     }
 
     /**
