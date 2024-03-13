@@ -130,7 +130,9 @@ public class AssociationCompanyDaoToDtoMapperTest {
         Assertions.assertEquals( localDateTimeToNormalisedString( lastWeek ), localDateTimeToNormalisedString( dto.getApprovedAt().toLocalDateTime() ) );
         Assertions.assertEquals( localDateTimeToNormalisedString( now ), localDateTimeToNormalisedString( dto.getRemovedAt().toLocalDateTime() ) );
         Assertions.assertEquals( reduceTimestampResolution( threeDaysAgo.toString() ), reduceTimestampResolution( dto.getApprovalExpiryAt() ) );
-        Assertions.assertEquals(List.of( invitationDto ), dto.getInvitations());
+        Assertions.assertEquals( 1, dto.getInvitations().size() );
+        Assertions.assertEquals( invitationDto.getInvitedBy(), dto.getInvitations().get(0).getInvitedBy() );
+        Assertions.assertEquals( reduceTimestampResolution( invitationDto.getInvitedAt() ), reduceTimestampResolution( dto.getInvitations().get(0).getInvitedAt() ) );
         Assertions.assertEquals( "theTag", dto.getEtag() );
         Assertions.assertEquals( "Wayne Enterprises", dto.getCompanyName() );
         Assertions.assertEquals( "/1", links.getSelf() );
