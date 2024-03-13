@@ -91,7 +91,7 @@ public class AssociationUserDaoToDtoMapperTest {
     }
 
     private String reduceTimestampResolution( String timestamp ){
-        return timestamp.substring( 0, timestamp.lastIndexOf( "." ) );
+        return timestamp.substring( 0, timestamp.indexOf( ":" ) );
     }
 
     private String localDateTimeToNormalisedString( LocalDateTime localDateTime ){
