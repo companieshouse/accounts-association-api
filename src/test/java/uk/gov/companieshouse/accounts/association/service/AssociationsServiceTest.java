@@ -15,11 +15,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.health.HealthContributorRegistry;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyDaoToDtoMapper;
 import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.models.Invitation;
@@ -47,6 +49,12 @@ class AssociationsServiceTest {
 
     @Autowired
     AssociationsService associationsService;
+
+    @MockBean
+    HealthContributorRegistry healthContributorRegistry;
+
+    @MockBean
+    MongoTemplate mongoTemplate;
 
     private Association associationOne;
     private Association associationTwo;
