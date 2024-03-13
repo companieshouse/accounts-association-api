@@ -232,7 +232,7 @@ class AssociationsRepositoryTest {
     @Test
     void getAssociationsForCompanyNumberAndStatusConfirmedAndCompanyNumberLikeShouldReturnAAssociation() {
         Assertions.assertEquals(1, associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("777", Collections.singletonList("confirmed"),"10",Pageable.ofSize(1)).getTotalElements());
-
+        Assertions.assertEquals(1, associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("777", Collections.singletonList("confirmed"),"",Pageable.ofSize(1)).getTotalElements());
     }
 
     @Test

@@ -10,11 +10,14 @@ import org.springframework.web.context.annotation.RequestScope;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
+import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequestScope
@@ -34,19 +37,18 @@ public class AssociationsService {
 
     @Transactional(readOnly = true)
     public AssociationsList fetchAssociationsForUserStatusAndCompany(
-            @NotNull final User user, final List<String> status, final Integer pageIndex, final Integer itemsPerPage,
+            @NotNull final User user, List<String> status, final Integer pageIndex, final Integer itemsPerPage,
             final String companyNumber) {
-        Page<AssociationDao> results = null;
-        if (Objects.isNull(status) || status.isEmpty()) {
-            results = associationsRepository.findByUserIdAndCompanyNumberLike(
-                    user.getUserId(), companyNumber, PageRequest.of(pageIndex, itemsPerPage));
 
-        } else {
-            associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike(
-                    user.getUserId(), status, companyNumber, PageRequest.of(pageIndex, itemsPerPage));
+        if (Objects.isNull(status) || status.isEmpty()) {
+          status = Collections.singletonList(Association.StatusEnum.CONFIRMED.getValue());
+
         }
 
-        assert results != null;
+        Page<AssociationDao> results = associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike(
+                    user.getUserId(), status, Optional.ofNullable(companyNumber).orElse(""), PageRequest.of(pageIndex, itemsPerPage));
+
+
         return associationsListUserMapper.daoToDto(results, user);
     }
 }
