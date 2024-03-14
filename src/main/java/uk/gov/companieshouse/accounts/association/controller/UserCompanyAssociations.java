@@ -53,7 +53,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             @NotNull @Valid List<String> status,
             @Valid Integer pageIndex,
             @Valid Integer itemsPerPage,
-            @Pattern(regexp = "^[0-9A-Z]{6,10}$") @Valid String companyNumber) {
+            @Pattern(regexp = "^[0-9A-Z]{1,10}$") @Valid String companyNumber) {
 
         LOG.infoContext(xRequestId, "Trying to fetch associations data for user in session :".concat(ericIdentity), null);
 
