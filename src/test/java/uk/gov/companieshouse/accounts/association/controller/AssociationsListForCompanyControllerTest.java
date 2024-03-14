@@ -130,7 +130,7 @@ public class AssociationsListForCompanyControllerTest {
         expectedAssociationsList.setItemsPerPage( 15 );
         expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of());
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), eq( false ), eq( 15 ), eq( 0 ) );
 
         final var response =
         mockMvc.perform( get( "/associations/companies/{company_number}", "919191" ).header("X-Request-Id", "theId123") )
@@ -166,12 +166,12 @@ public class AssociationsListForCompanyControllerTest {
         expectedAssociationsList.setItemsPerPage( 15 );
         expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationOne ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), eq( false ), eq( 15 ), eq( 0 ) );
 
         mockMvc.perform( get( "/associations/companies/{company_number}", "111111" ).header("X-Request-Id", "theId123") )
                .andExpect(status().isOk());
 
-        Mockito.verify( associationsService ).fetchAssociatedUsers( eq( "111111" ), eq( "/associations/companies/111111" ), eq( false ), eq( 15 ), eq( 0 ) );
+        Mockito.verify( associationsService ).fetchAssociatedUsers( eq( "111111" ), eq( false ), eq( 15 ), eq( 0 ) );
     }
 
     @Test
@@ -183,13 +183,13 @@ public class AssociationsListForCompanyControllerTest {
         expectedAssociationsList.setItemsPerPage( 15 );
         expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationOne ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), eq( false ), eq( 15 ), eq( 0 ) );
 
 
         mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=false", "111111" ).header("X-Request-Id", "theId123") )
                .andExpect(status().isOk());
 
-        Mockito.verify( associationsService ).fetchAssociatedUsers( eq( "111111" ), eq( "/associations/companies/111111" ), eq( false ), eq( 15 ), eq( 0 ) );
+        Mockito.verify( associationsService ).fetchAssociatedUsers( eq( "111111" ), eq( false ), eq( 15 ), eq( 0 ) );
     }
 
     @Test
@@ -201,12 +201,12 @@ public class AssociationsListForCompanyControllerTest {
         expectedAssociationsList.setItemsPerPage( 15 );
         expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationOne, associationTwo ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 15 ), eq( 0 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), eq( true ), eq( 15 ), eq( 0 ) );
 
         mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=true", "111111" ).header("X-Request-Id", "theId123") )
                 .andExpect(status().isOk());
 
-        Mockito.verify( associationsService ).fetchAssociatedUsers( eq( "111111" ), eq( "/associations/companies/111111" ), eq( true ), eq( 15 ), eq( 0 ) );
+        Mockito.verify( associationsService ).fetchAssociatedUsers( eq( "111111" ), eq( true ), eq( 15 ), eq( 0 ) );
     }
 
     @Test
@@ -218,7 +218,7 @@ public class AssociationsListForCompanyControllerTest {
         expectedAssociationsList.setItemsPerPage( 1 );
         expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationTwo ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 1 ), eq( 1 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), eq( true ), eq( 1 ), eq( 1 ) );
 
         final var response =
         mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=true&items_per_page=1&page_index=1", "111111" ).header("X-Request-Id", "theId123") )
@@ -248,7 +248,7 @@ public class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyWhereEndpointsCannotFindDataReturnsNotFound() throws Exception {
-        Mockito.doThrow( new NotFoundRuntimeException( "accounts-association-api", "Not found" ) ).when( associationsService ).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
+        Mockito.doThrow( new NotFoundRuntimeException( "accounts-association-api", "Not found" ) ).when( associationsService ).fetchAssociatedUsers( any(), eq( false ), eq( 15 ), eq( 0 ) );
         mockMvc.perform( get( "/associations/companies/{company_number}", "222222" ).header("X-Request-Id", "theId123") )
                 .andExpect(status().isNotFound());
     }
@@ -272,7 +272,7 @@ public class AssociationsListForCompanyControllerTest {
         expectedAssociationsList.setItemsPerPage( 2 );
         expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationOne, associationTwo ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 2 ), eq( 0 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), eq( true ), eq( 2 ), eq( 0 ) );
 
         final var response =
         mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=true&items_per_page=2&page_index=0", "111111" ).header("X-Request-Id", "theId123") )

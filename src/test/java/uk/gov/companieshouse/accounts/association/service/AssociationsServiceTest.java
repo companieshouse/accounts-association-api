@@ -346,8 +346,7 @@ class AssociationsServiceTest {
 
     @Test
     void fetchAssociatedUsersWithNullInputsThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchAssociatedUsers( null, "/associations/company/111111", true, 15, 0 ) );
-        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchAssociatedUsers( "111111", null, true, 15, 0 ) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchAssociatedUsers( null,  true, 15, 0 ) );
     }
 
     private ArgumentMatcher<Page<Association>> associationsPageMatches( int totalElements, int totalPages, int numElementsOnPage, List<String> expectedAssociationIds ){
@@ -373,11 +372,11 @@ class AssociationsServiceTest {
 
         Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( any(), any(), any() );
 
-        associationsService.fetchAssociatedUsers( "$$$$$$", "/associations/company/$$$$$$", true, 15, 0 ) ;
-        Mockito.verify( associationsListCompanyDaoToDtoMapper ).daoToDto( argThat( associationsPageMatches(0, 0, 0, List.of()) ), eq( Map.of( "companyNumber", "$$$$$$", "endpointUri", "/associations/company/$$$$$$" ) ) );
+        associationsService.fetchAssociatedUsers( "$$$$$$", true, 15, 0 ) ;
+        Mockito.verify( associationsListCompanyDaoToDtoMapper ).daoToDto( argThat( associationsPageMatches(0, 0, 0, List.of()) ), eq( Map.of( "companyNumber", "$$$$$$", "endpointUri", "/associations/companies/$$$$$$" ) ) );
 
-        associationsService.fetchAssociatedUsers( "919191", "/associations/company/919191", true, 15, 0 ) ;
-        Mockito.verify( associationsListCompanyDaoToDtoMapper ).daoToDto( argThat( associationsPageMatches(0, 0, 0, List.of()) ), eq( Map.of( "companyNumber", "919191", "endpointUri", "/associations/company/919191" ) ) );
+        associationsService.fetchAssociatedUsers( "919191", true, 15, 0 ) ;
+        Mockito.verify( associationsListCompanyDaoToDtoMapper ).daoToDto( argThat( associationsPageMatches(0, 0, 0, List.of()) ), eq( Map.of( "companyNumber", "919191", "endpointUri", "/associations/companies/919191" ) ) );
     }
 
     @Test
@@ -388,9 +387,9 @@ class AssociationsServiceTest {
 
         Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( any(), any(), any() );
 
-        associationsService.fetchAssociatedUsers( "111111", "/associations/company/111111", true, 20, 0 );
+        associationsService.fetchAssociatedUsers( "111111",  true, 20, 0 );
         final var expectedAssociationIds = List.of( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" );
-        Mockito.verify( associationsListCompanyDaoToDtoMapper ).daoToDto( argThat( associationsPageMatches(16, 1, 16, expectedAssociationIds ) ), eq( Map.of( "companyNumber", "111111", "endpointUri", "/associations/company/111111" ) ) );
+        Mockito.verify( associationsListCompanyDaoToDtoMapper ).daoToDto( argThat( associationsPageMatches(16, 1, 16, expectedAssociationIds ) ), eq( Map.of( "companyNumber", "111111", "endpointUri", "/associations/companies/111111" ) ) );
     }
 
     @Test
@@ -401,9 +400,9 @@ class AssociationsServiceTest {
 
         Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( any(), any(), any() );
 
-        associationsService.fetchAssociatedUsers( "111111", "/associations/company/111111", false, 20, 0 );
+        associationsService.fetchAssociatedUsers( "111111",  false, 20, 0 );
         final var expectedAssociationIds = List.of( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13" );
-        Mockito.verify( associationsListCompanyDaoToDtoMapper ).daoToDto( argThat( associationsPageMatches(13, 1, 13, expectedAssociationIds ) ), eq( Map.of( "companyNumber", "111111", "endpointUri", "/associations/company/111111" ) ) );
+        Mockito.verify( associationsListCompanyDaoToDtoMapper ).daoToDto( argThat( associationsPageMatches(13, 1, 13, expectedAssociationIds ) ), eq( Map.of( "companyNumber", "111111", "endpointUri", "/associations/companies/111111" ) ) );
     }
 
     @Test
@@ -414,8 +413,8 @@ class AssociationsServiceTest {
 
         Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( any(), any(), any() );
 
-        associationsService.fetchAssociatedUsers( "111111", "/associations/company/111111", true, 15, 1 );
-        Mockito.verify( associationsListCompanyDaoToDtoMapper ).daoToDto( argThat( associationsPageMatches(16, 2, 1, List.of( "16" ) ) ), eq( Map.of( "companyNumber", "111111", "endpointUri", "/associations/company/111111" ) ) );
+        associationsService.fetchAssociatedUsers( "111111",  true, 15, 1 );
+        Mockito.verify( associationsListCompanyDaoToDtoMapper ).daoToDto( argThat( associationsPageMatches(16, 2, 1, List.of( "16" ) ) ), eq( Map.of( "companyNumber", "111111", "endpointUri", "/associations/companies/111111" ) ) );
     }
 
 }

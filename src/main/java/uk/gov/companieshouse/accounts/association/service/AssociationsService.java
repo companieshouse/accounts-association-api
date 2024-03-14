@@ -24,7 +24,7 @@ public class AssociationsService {
         this.associationsListCompanyDaoToDtoMapper = associationsListCompanyDaoToDtoMapper;
     }
 
-    public AssociationsList fetchAssociatedUsers( final String companyNumber, final String endpointUri, final boolean includeRemoved, final int itemsPerPage, final int pageIndex ){
+    public AssociationsList fetchAssociatedUsers( final String companyNumber, final boolean includeRemoved, final int itemsPerPage, final int pageIndex ){
         final Pageable pageable = PageRequest.of( pageIndex, itemsPerPage );
 
         final var statuses = new HashSet<>( Set.of( StatusEnum.CONFIRMED, StatusEnum.AWAITING_APPROVAL ) );
@@ -33,6 +33,7 @@ public class AssociationsService {
 
         final var associations = associationsRepository.fetchAssociatedUsers( companyNumber, statuses, pageable );
 
+        final var endpointUri = String.format( "/associations/companies/%s", companyNumber );
         final var companyNumberAndEndpointUri = Map.of( "companyNumber", companyNumber, "endpointUri", endpointUri );
 
         return associationsListCompanyDaoToDtoMapper.daoToDto( associations, companyNumberAndEndpointUri );

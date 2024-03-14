@@ -37,8 +37,7 @@ public class AssociationsListForCompanyController implements AssociationsListFor
             throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
 
-        final var endpointUri = String.format( "/associations/companies/%s", companyNumber );
-        final var associationsList = associationsService.fetchAssociatedUsers( companyNumber, endpointUri, includeRemoved, itemsPerPage, pageIndex );
+        final var associationsList = associationsService.fetchAssociatedUsers( companyNumber, includeRemoved, itemsPerPage, pageIndex );
         final var associationsListIsEmpty = associationsList.getItems().isEmpty();
 
         if ( associationsListIsEmpty ){
