@@ -1,6 +1,5 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
-import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,11 +26,6 @@ public class AssociationsListForCompanyController implements AssociationsListFor
     public ResponseEntity<AssociationsList> getAssociationsForCompany( final String companyNumber, final String xRequestId, final Boolean includeRemoved, final Integer pageIndex, final Integer itemsPerPage ) {
 
         LOG.debug( String.format( "%s: Attempting to fetch users that are associated with company %s. includeRemoved=%b, itemsPerPage=%d, and pageIndex=%d.", xRequestId, companyNumber, includeRemoved, itemsPerPage, pageIndex ) );
-
-        if ( Objects.isNull( xRequestId ) ){
-            LOG.error( "xRequestId was not provided" );
-            throw new BadRequestRuntimeException( "Please check the request and try again" );
-        }
 
         if ( pageIndex < 0 ){
             LOG.error( "pageIndex was less then 0" );
