@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import org.mapstruct.AfterMapping;
@@ -35,15 +36,17 @@ public abstract class AssociationsListCompanyDaoToDtoMapper extends Associations
     protected void enrichWithItems( Page<uk.gov.companieshouse.accounts.association.models.Association> page, @MappingTarget AssociationsList list, @Context Map<String, String> context ) {
         final var companyNumber = context.get( "companyNumber" );
         final var pageContent = page.getContent();
-        final var enrichWithCompanyName = enrichWithCompanyName( companyNumber );
 
-        final var items =
-        pageContent.parallelStream()
-                   .map( associationUserDaoToDtoMapper::daoToDto )
-                   .map( enrichWithCompanyName )
-                   .toList();
+        List<Association> items = List.of();
+        if ( !pageContent.isEmpty() ) {
+            final var enrichWithCompanyName = enrichWithCompanyName(companyNumber);
 
-        list.items( items );
+            items = pageContent.stream()
+                               .map(associationUserDaoToDtoMapper::daoToDto)
+                               .map(enrichWithCompanyName)
+                               .toList();
+        }
+        list.items(items);
     }
 
     public abstract AssociationsList daoToDto( Page<uk.gov.companieshouse.accounts.association.models.Association> page, @Context Map<String, String> companyNumberAndEndpointUri );

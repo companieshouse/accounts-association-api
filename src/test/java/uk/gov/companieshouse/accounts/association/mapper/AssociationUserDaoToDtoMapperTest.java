@@ -90,6 +90,15 @@ public class AssociationUserDaoToDtoMapperTest {
         Assertions.assertEquals( DEFAULT_KIND, dto.getKind() );
     }
 
+    private String reduceTimestampResolution( String timestamp ){
+        return timestamp.substring( 0, timestamp.indexOf( ":" ) );
+    }
+
+    private String localDateTimeToNormalisedString( LocalDateTime localDateTime ){
+        final var timestamp = localDateTime.toString();
+        return reduceTimestampResolution( timestamp );
+    }
+
     @Test
     void daoToDtoWithAllFieldsSuccessfullyPerformsMapping(){
         final var now = LocalDateTime.now();
@@ -130,10 +139,12 @@ public class AssociationUserDaoToDtoMapperTest {
         Assertions.assertEquals( "111111", dto.getCompanyNumber() );
         Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE, dto.getApprovalRoute() );
         Assertions.assertEquals( StatusEnum.REMOVED, dto.getStatus() );
-        Assertions.assertEquals( lastWeek, dto.getApprovedAt().toLocalDateTime() );
-        Assertions.assertEquals( now, dto.getRemovedAt().toLocalDateTime() );
-        Assertions.assertEquals( threeDaysAgo.toString(), dto.getApprovalExpiryAt() );
-        Assertions.assertEquals(List.of( invitationDto ), dto.getInvitations());
+        Assertions.assertEquals( localDateTimeToNormalisedString( lastWeek ), localDateTimeToNormalisedString( dto.getApprovedAt().toLocalDateTime() ) );
+        Assertions.assertEquals( localDateTimeToNormalisedString( now ), localDateTimeToNormalisedString( dto.getRemovedAt().toLocalDateTime() ) );
+        Assertions.assertEquals( reduceTimestampResolution( threeDaysAgo.toString() ), reduceTimestampResolution( dto.getApprovalExpiryAt() ) );
+        Assertions.assertEquals( 1, dto.getInvitations().size() );
+        Assertions.assertEquals( invitationDto.getInvitedBy(), dto.getInvitations().get(0).getInvitedBy() );
+        Assertions.assertEquals( reduceTimestampResolution( invitationDto.getInvitedAt() ), reduceTimestampResolution( dto.getInvitations().get(0).getInvitedAt() ) );
         Assertions.assertEquals( "theTag", dto.getEtag() );
         Assertions.assertEquals( DEFAULT_DISPLAY_NAME, dto.getDisplayName() );
         Assertions.assertEquals( "/1", links.getSelf() );

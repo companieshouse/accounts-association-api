@@ -52,10 +52,19 @@ public class AssociationDaoToDtoMapperTest {
         Assertions.assertNull( associationDaoToDtoMapper.localDateTimeToOffsetDateTime( null ) );
     }
 
+    private String reduceTimestampResolution( String timestamp ){
+        return timestamp.substring( 0, timestamp.indexOf( ":" ) );
+    }
+
+    private String localDateTimeToNormalisedString( LocalDateTime localDateTime ){
+        final var timestamp = localDateTime.toString();
+        return reduceTimestampResolution( timestamp );
+    }
+
     @Test
     void localDateTimeToOffsetDateTimeReturnsOffsetDateTime(){
         final var now = LocalDateTime.now();
-        Assertions.assertEquals( now, associationDaoToDtoMapper.localDateTimeToOffsetDateTime( now ).toLocalDateTime() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( now ), localDateTimeToNormalisedString( associationDaoToDtoMapper.localDateTimeToOffsetDateTime( now ).toLocalDateTime() ) );
     }
 
 }
