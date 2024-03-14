@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.repositories;
 
+import java.util.Set;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,4 +22,6 @@ public interface AssociationsRepository extends MongoRepository<AssociationDao, 
 
     Page<AssociationDao> findAllByUserIdAndStatusIsInAndCompanyNumberLike(final String userId , final List<String> status , final String companyNumber, final Pageable pageable);
 
+    @Query( "{ 'company_number': ?0, 'status': { $in: ?1 } }" )
+    Page<AssociationDao> fetchAssociatedUsers( final String companyNumber, final Set<String> statuses, final Pageable pageable );
 }
