@@ -54,12 +54,11 @@ public class MapperUtil {
         }
         association.setUserEmail(userEmail);
         association.setDisplayName(displayName);
-        enrichInvitations(association);
 
         return association;
     }
 
-    private void enrichInvitations(final Association association) {
+    public Association enrichInvitations(final Association association) {
         if (Objects.nonNull(association.getInvitations())) {
             association.setInvitations(
                     association.
@@ -67,7 +66,7 @@ public class MapperUtil {
                             .stream()
                             .map(this::enrichInvitation).toList());
         }
-
+        return association;
     }
 
     private Invitation enrichInvitation(Invitation invitation) {

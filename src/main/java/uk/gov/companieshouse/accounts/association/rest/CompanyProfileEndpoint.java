@@ -22,10 +22,10 @@ public class CompanyProfileEndpoint {
     }
 
     public ApiResponse<CompanyDetails> fetchCompanyProfile(final String companyNumber) throws ApiErrorResponseException, URIValidationException {
-        final var getCompanyProfileUrl = String.format("/company/%s/company-details", companyNumber);
+        final var getCompanyProfileUrl = String.format("/company/%s/company-detail", companyNumber);
 
         return apiClientUtil.getInternalApiClient(privateApiUrl)
-                .privateCompanyResourceHandler().getCompanyDetails(getCompanyProfileUrl).execute();
+                .privateCompanyDetailResourceHandler().getCompanyDetails(getCompanyProfileUrl).execute();
     }
 
 }

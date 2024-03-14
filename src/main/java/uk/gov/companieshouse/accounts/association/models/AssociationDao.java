@@ -47,15 +47,15 @@ public class AssociationDao {
     @FutureOrPresent
     private LocalDateTime approvalExpiryAt;
 
-    @Field("invitationDaos")
-    private List<InvitationDao> invitationDaos;
+    @Field("invitations")
+    private final List<InvitationDao> invitations;
     @NotNull
     private String etag;
     @Version
     private Integer version;
 
     public AssociationDao() {
-        invitationDaos = new ArrayList<>();
+        invitations = new ArrayList<>();
     }
 
     public String getId() {
@@ -111,12 +111,12 @@ public class AssociationDao {
     }
 
     public List<InvitationDao> getInvitations() {
-        return invitationDaos;
+        return invitations;
     }
 
-    public void setInvitations(List<InvitationDao> invitationDaos) {
+    public void setInvitations(List<InvitationDao> invitations) {
 
-        this.invitationDaos.addAll(invitationDaos);
+        this.invitations.addAll(invitations);
     }
 
     public String getEtag() {
@@ -169,7 +169,7 @@ public class AssociationDao {
                 ", approvalRoute='" + approvalRoute + '\'' +
                 ", userEmail='" + userEmail + '\'' +
                 ", approvalExpiryAt=" + approvalExpiryAt +
-                ", invitationDaos=" + invitationDaos +
+                ", invitations=" + invitations +
                 ", etag='" + etag + '\'' +
                 ", version=" + version +
                 '}';
