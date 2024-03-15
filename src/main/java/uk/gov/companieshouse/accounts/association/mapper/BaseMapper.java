@@ -36,7 +36,7 @@ public abstract class BaseMapper {
 
     public void enrichAssociationWithLinks(Association association) {
         final var associationId = association.getId();
-        final var self = String.format("/%s", associationId);
+        final var self = String.format("/associations/%s", associationId);
         final var links = new AssociationLinks().self(self);
 
         association.setLinks(links);
