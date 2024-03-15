@@ -93,7 +93,7 @@ public class AssociationsListCompanyMapperTest {
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getUserId).toList().contains("111"));
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getUserEmail).toList().containsAll(List.of("bruce.wayne@gotham.city", "batman@gotham.city")));
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getCompanyName).allMatch(companyName -> companyName.equals("Wayne Enterprises")));
-        Assertions.assertEquals("/associations", links.getSelf());
+        Assertions.assertEquals("/associations/companies/111111?page_index=0&items_per_page=2", links.getSelf());
         Assertions.assertEquals(String.format("/associations/companies/111111?page_index=%d&items_per_page=%d", 1, 2), links.getNext());
         Assertions.assertEquals(0, associationsList.getPageNumber());
         Assertions.assertEquals(2, associationsList.getItemsPerPage());

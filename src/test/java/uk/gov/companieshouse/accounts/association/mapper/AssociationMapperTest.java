@@ -118,7 +118,7 @@ public class AssociationMapperTest {
         Assertions.assertEquals("111111", dto.getCompanyNumber());
         Assertions.assertEquals("bruce.wayne@gotham.city", dto.getUserEmail());
         Assertions.assertEquals("Batman", dto.getDisplayName());
-        Assertions.assertEquals("/1", links.getSelf());
+        Assertions.assertEquals("/associations/1", links.getSelf());
         Assertions.assertEquals(DEFAULT_KIND, dto.getKind());
     }
 
@@ -180,7 +180,7 @@ public class AssociationMapperTest {
         Assertions.assertEquals("theTag", dto.getEtag());
         Assertions.assertEquals("Wayne Enterprises", dto.getCompanyName());
         Assertions.assertEquals(DEFAULT_DISPLAY_NAME, dto.getDisplayName());
-        Assertions.assertEquals("/1", links.getSelf());
+        Assertions.assertEquals("/associations/1", links.getSelf());
         Assertions.assertEquals(DEFAULT_KIND, dto.getKind());
     }
 
