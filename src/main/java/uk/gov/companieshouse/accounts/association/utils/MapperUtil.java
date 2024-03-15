@@ -14,7 +14,7 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 @Component
 public class MapperUtil {
@@ -57,12 +57,11 @@ public class MapperUtil {
 
     public Association enrichInvitations(final Association association) {
         if (Objects.nonNull(association.getInvitations())) {
-           Stream<Invitation> invitationsList =
-                   association.
+            List<Invitation> invitationsList = association.
                     getInvitations().stream()
-                    .map(this::enrichInvitation);
+                    .map(this::enrichInvitation).collect(Collectors.toList());
 
-            association.setInvitations(invitationsList.toList());
+            association.setInvitations(invitationsList);
         }
         return association;
     }
