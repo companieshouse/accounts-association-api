@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.AccountsAssociationServiceApplication;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
-import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.*;
@@ -26,19 +25,16 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     private static final Logger LOG = LoggerFactory.getLogger(AccountsAssociationServiceApplication.applicationNameSpace);
 
 
-   private final UsersService usersService;
+    private final UsersService usersService;
 
 
     private final AssociationsService associationsService;
 
 
-    private final CompanyService companyService;
-
     @Autowired
-    public UserCompanyAssociations(UsersService usersService, AssociationsService associationsService, CompanyService companyService) {
+    public UserCompanyAssociations(UsersService usersService, AssociationsService associationsService) {
         this.usersService = usersService;
         this.associationsService = associationsService;
-        this.companyService = companyService;
     }
 
     @Override
