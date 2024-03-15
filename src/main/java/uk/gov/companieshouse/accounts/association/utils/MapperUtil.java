@@ -11,10 +11,10 @@ import uk.gov.companieshouse.api.accounts.associations.model.AssociationsListLin
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Component
 public class MapperUtil {
@@ -57,14 +57,12 @@ public class MapperUtil {
 
     public Association enrichInvitations(final Association association) {
         if (Objects.nonNull(association.getInvitations())) {
-            List<Invitation> invitationsList = new ArrayList<>(association.
-                    getInvitations()
-                    .stream()
-                    .map(this::enrichInvitation)
-                    .toList());
+           Stream<Invitation> invitationsList =
+                   association.
+                    getInvitations().stream()
+                    .map(this::enrichInvitation);
 
-
-            association.setInvitations(invitationsList);
+            association.setInvitations(invitationsList.toList());
         }
         return association;
     }
