@@ -13,10 +13,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 
 @Document("user_company_associations")
-public class Association {
+public class AssociationDao {
     @Id
     private String id;
     @Indexed
@@ -28,7 +27,7 @@ public class Association {
     @Field("user_id")
     private String userId;
     @NotNull
-    private StatusEnum status;
+    private String status;
     @Field("created_at")
     @CreatedDate
     private LocalDateTime createdAt;
@@ -49,13 +48,13 @@ public class Association {
     private LocalDateTime approvalExpiryAt;
 
     @Field("invitations")
-    private List<Invitation> invitations ;
+    private final List<InvitationDao> invitations;
     @NotNull
     private String etag;
     @Version
     private Integer version;
 
-    public Association() {
+    public AssociationDao() {
         invitations = new ArrayList<>();
     }
 
@@ -83,11 +82,11 @@ public class Association {
         this.userId = userId;
     }
 
-    public StatusEnum getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(StatusEnum status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 
@@ -111,11 +110,11 @@ public class Association {
         this.userEmail = userEmail;
     }
 
-    public List<Invitation> getInvitations() {
+    public List<InvitationDao> getInvitations() {
         return invitations;
     }
 
-    public void setInvitations(List<Invitation> invitations) {
+    public void setInvitations(List<InvitationDao> invitations) {
 
         this.invitations.addAll(invitations);
     }

@@ -1,6 +1,9 @@
 package uk.gov.companieshouse.accounts.association.configuration;
 
+import java.util.ArrayList;
 import java.util.Collections;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -16,6 +19,7 @@ public class InterceptorConfig implements WebMvcConfigurer {
 
     private final LoggingInterceptor loggingInterceptor;
 
+    @Autowired
     public InterceptorConfig( final LoggingInterceptor loggingInterceptor) {
         this.loggingInterceptor = loggingInterceptor;
     }
@@ -44,7 +48,7 @@ public class InterceptorConfig implements WebMvcConfigurer {
     private void addEricInterceptors( final InterceptorRegistry registry){
         registry.addInterceptor(
                 new UserAuthenticationInterceptor(
-                        Collections.EMPTY_LIST,
+                        new ArrayList<>(),
                         Collections.singletonList("oauth2"),
                         new InternalUserInterceptor(
                                 AccountsAssociationServiceApplication.applicationNameSpace)

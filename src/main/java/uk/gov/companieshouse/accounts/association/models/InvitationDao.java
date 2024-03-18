@@ -5,14 +5,14 @@ import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 
-public class Invitation {
+public class InvitationDao {
     @Field("invited_by")
     private String invitedBy;
     @Field("invited_at")
     @FutureOrPresent
     private LocalDateTime invitedAt;
 
-    public Invitation() {
+    public InvitationDao() {
     }
 
     public String getInvitedBy() {
@@ -33,7 +33,7 @@ public class Invitation {
 
     @Override
     public String toString() {
-        return "Invitation{" +
+        return "InvitationDao{" +
                 "invitedBy='" + invitedBy + '\'' +
                 ", invitedAt=" + invitedAt +
                 '}';
