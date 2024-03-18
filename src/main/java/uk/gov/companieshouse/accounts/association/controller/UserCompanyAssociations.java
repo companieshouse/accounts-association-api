@@ -44,12 +44,12 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
     @Override
     public ResponseEntity<AssociationsList> fetchAssociationsBy(
-            @NotNull String xRequestId,
-            @NotNull String ericIdentity,
-            @NotNull @Valid List<String> status,
-            @Valid Integer pageIndex,
-            @Valid Integer itemsPerPage,
-            @Pattern(regexp = "^[0-9A-Z]{1,10}$") @Valid String companyNumber) {
+            final String xRequestId,
+            final String ericIdentity,
+            final List<String> status,
+            final Integer pageIndex,
+            final Integer itemsPerPage,
+            final String companyNumber) {
 
         LOG.infoContext(xRequestId, "Trying to fetch associations data for user in session :".concat(ericIdentity), null);
 

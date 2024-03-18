@@ -1,4 +1,4 @@
-package uk.gov.companieshouse.accounts.association.repositories;
+package uk.gov.companieshouse.accounts.association.integration;
 
 import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.*;
@@ -15,6 +15,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
+import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.ApiClientUtil;
 import java.util.Set;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
