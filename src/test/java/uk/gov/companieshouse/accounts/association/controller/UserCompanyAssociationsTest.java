@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -19,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserCompanyAssociations.class)
@@ -42,19 +44,37 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchAssociationsByTestShouldThrow403ErrorRequestWhenEricIdNotProvided() throws Exception {
-        mockMvc.perform(get("/associations").header("X-Request-Id", "theId")).andExpect(status().is4xxClientError());
+    void fetchAssociationsByTestShouldThrow401ErrorRequestWhenEricIdNotProvided() throws Exception {
+        var response = mockMvc.perform(get("/associations").header("X-Request-Id", "theId")).andReturn();
+        assertEquals(401, response.getResponse().getStatus());
+    }
 
+    @Test
+    void fetchAssociationsByTestShouldThrow405ErrorRequestWhenPatchApplied() throws Exception {
+        var response = mockMvc.perform(patch("/associations").header("X-Request-Id", "theId")).andReturn();
+        assertEquals(405, response.getResponse().getStatus());
+    }
+
+    @Test
+    void fetchAssociationsByTestShouldThrow400ErrorWhenRequestIdNotProvided() throws Exception {
+        var response = mockMvc.perform(get("/associations").header("Eric-identity", "abcd12345")
+                .header("Eric-identity", "abcd12345")
+                .header("ERIC-Identity-Type", "key")
+                .header("ERIC-Authorised-Key-Roles", "*")).andExpect(status().isBadRequest()).andReturn();
+        assertEquals("{\"type\":\"about:blank\",\"title\":\"Bad Request\",\"status\":400,\"detail\":\"Required header 'X-Request-Id' is not present.\",\"instance\":\"/associations\"}",
+                response.getResponse().getContentAsString());
     }
 
 
     @Test
     void fetchAssociationsByTestShouldThrowBadRequestIfUserIdFromEricNotFound() throws Exception {
-        mockMvc.perform(get("/associations").header("Eric-identity", "abcd12345")
+        var response = mockMvc.perform(get("/associations").header("Eric-identity", "abcd12345")
                 .header("X-Request-Id", "theId")
                 .header("Eric-identity", "abcd12345")
                 .header("ERIC-Identity-Type", "key")
-                .header("ERIC-Authorised-Key-Roles", "*")).andExpect(status().isBadRequest());
+                .header("ERIC-Authorised-Key-Roles", "*")).andExpect(status().isBadRequest()).andReturn();
+        assertEquals("{\"errors\":[{\"error\":\"Eric id is not valid\",\"location\":\"accounts_association_api\",\"location_type\":\"request-body\",\"type\":\"ch:validation\"}]}",
+                response.getResponse().getContentAsString());
 
     }
 
@@ -100,5 +120,16 @@ class UserCompanyAssociationsTest {
 
         String error = "{\"errors\":[{\"error\":\"Please check the request and try again\",\"location\":\"accounts_association_api\",\"location_type\":\"request-body\",\"type\":\"ch:validation\"}]}";
         assertEquals(error, response.getResponse().getContentAsString());
+    }
+
+    @Test
+    void fetchAssociationsByTestShouldTrow500WhenInternalServerError() throws Exception {
+        when(usersService.fetchUserDetails("abcd12345")).thenThrow(new InternalServerErrorRuntimeException("test"));
+        mockMvc.perform(get("/associations?page_index=0&items_per_page=15&company_number=123")
+                .header("Eric-identity", "abcd12345")
+                .header("X-Request-Id", "theId")
+                .header("ERIC-Identity-Type", "key")
+                .header("ERIC-Authorised-Key-Roles", "*")).andExpect(status().is5xxServerError());
+
     }
 }
