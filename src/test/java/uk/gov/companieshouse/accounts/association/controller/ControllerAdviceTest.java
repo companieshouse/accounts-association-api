@@ -7,16 +7,25 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 
+import org.springframework.web.client.HttpServerErrorException;
 import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfig;
+import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.api.accounts.user.model.User;
+
+import javax.validation.ConstraintViolationException;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Tag("unit-test")
@@ -25,17 +34,10 @@ class ControllerAdviceTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @MockBean
-    private UsersService usersService;
     @MockBean
     private AssociationsService associationsService;
-
     @MockBean
-    private CompanyService companyService;
-    @MockBean
-    private UserCompanyAssociations userCompanyAssociations;
-
+    private UsersService usersService;
     @MockBean
     InterceptorConfig interceptorConfig;
 
@@ -44,61 +46,50 @@ class ControllerAdviceTest {
         Mockito.doNothing().when(interceptorConfig).addInterceptors(any());
     }
 
+
+    @Test
+    void testNotFoundRuntimeError() throws Exception {
+        Mockito.doThrow(new NotFoundRuntimeException("accounts-association-api", "Couldn't find association"))
+                .when(usersService).fetchUserDetails(any());
+
+        mockMvc.perform(get("/associations")
+                        .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
+                .andExpect(status().isNotFound());
+
+    }
+
     @Test
     void testBadRequestRuntimeError() throws Exception {
-        mockMvc.perform( get( "/associations" ).header("X-Request-Id", "theId123") ).andExpect(status().isBadRequest());
+
+        mockMvc.perform(get( "/associations" )
+                        .header("X-Request-Id", "theId123"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
     void testConstraintViolationError() throws Exception {
-        mockMvc.perform( get( "/associations?status=done" ).header("X-Request-Id", "theId123")).andExpect(status().isBadRequest());
+
+        mockMvc.perform(get( "/associations?company_number=&&" )
+                        .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
+                .andExpect(status().isBadRequest());
     }
-
     @Test
-    void testBadRequestWhenStatusIncorrect() throws Exception {
-        mockMvc.perform( get( "/associations?status=" ).header("X-Request-Id", "theId123")).andExpect(status().isBadRequest());
+    void testOnInternalServerError() throws Exception {
+        Mockito.doThrow(new NullPointerException("Couldn't find association"))
+                .when(usersService).fetchUserDetails(any());
+
+        mockMvc.perform(get("/associations?company_number=123445")
+                        .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
+                .andExpect(status().isInternalServerError());
     }
-
     @Test
-    void testThrowNullPointerExceptionWhenStatusEmpty() throws Exception {
-        Mockito.doThrow(NullPointerException.class)
-                .when(associationsService).fetchAssociationsForUserStatusAndCompany(any(), any(), eq(1), eq(1), eq("1234"));
-        try {
-            mockMvc.perform(get("/associations?status=")
-                            .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
-                    .andExpect(status().isOk());
-        } catch (NullPointerException e) {
+    void testOnInternalServerErrorRuntimeException() throws Exception {
+        Mockito.doThrow(new InternalServerErrorRuntimeException("Couldn't find association"))
+                .when(usersService).fetchUserDetails(any());
 
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    void testThrowNullPointerExceptionWhenStatusMissing() throws Exception {
-        Mockito.doThrow(NullPointerException.class)
-                .when(associationsService).fetchAssociationsForUserStatusAndCompany(any(), any(), eq(1), eq(1), eq("1234"));
-        try {
-            mockMvc.perform(get("/associations?items_per_page=15&page_index=1&company_number=123456" )
-                            .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
-                    .andExpect(status().isOk());
-        } catch (NullPointerException e) {
-
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    void testThrowNullPointerExceptionWhenEricHeaderMissing() throws Exception {
-            mockMvc.perform(get("/associations?items_per_page=15&page_index=1&company_number=123456" )
-                            .header("X-Request-Id", "theId123"))
-                    .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testStatusOKWhenCorrectValues() throws Exception {
-        mockMvc.perform(get( "/associations?items_per_page=15&page_index=1&status=confirmed&company_number=123456" )
-                        .header("X-Request-Id", "theId123") .header("ERIC-Identity", "111"))
-                .andExpect(status().isOk());
+        mockMvc.perform(get("/associations")
+                        .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
+                .andExpect(status().isInternalServerError());
     }
 }
 
