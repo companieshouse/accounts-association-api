@@ -50,7 +50,7 @@ class ControllerAdviceTest {
     @Test
     void testNotFoundRuntimeError() throws Exception {
         Mockito.doThrow(new NotFoundRuntimeException("accounts-association-api", "Couldn't find association"))
-                .when(usersService).fetchUserDetails(any());
+                .when(usersService).fetchUserDetails("111");
 
         mockMvc.perform(get("/associations")
                         .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
@@ -76,7 +76,7 @@ class ControllerAdviceTest {
     @Test
     void testOnInternalServerError() throws Exception {
         Mockito.doThrow(new NullPointerException("Couldn't find association"))
-                .when(usersService).fetchUserDetails(any());
+                .when(usersService).fetchUserDetails("111");
 
         mockMvc.perform(get("/associations?company_number=123445")
                         .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
@@ -85,7 +85,7 @@ class ControllerAdviceTest {
     @Test
     void testOnInternalServerErrorRuntimeException() throws Exception {
         Mockito.doThrow(new InternalServerErrorRuntimeException("Couldn't find association"))
-                .when(usersService).fetchUserDetails(any());
+                .when(usersService).fetchUserDetails("111");
 
         mockMvc.perform(get("/associations")
                         .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
