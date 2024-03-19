@@ -111,12 +111,14 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseBody
     public Errors onException(Exception e, HttpServletRequest r) {
+
+        Errors errors = new Errors();
         String requestId = r.getHeader(X_REQUEST_ID);
         String msg = r.getRequestURL() + (r.getQueryString()!=null ? "?"+r.getQueryString() : "") + ". " + e.getMessage();
         LOG.errorContext(requestId, msg, e, null);
 
-        Errors errors = new Errors();
         errors.addError(Err.invalidBodyBuilderWithLocation(ACCOUNTS_ASSOCIATION_API).withError(e.getMessage()).build());
 
         return errors;
