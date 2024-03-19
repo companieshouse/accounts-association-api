@@ -54,6 +54,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         LOG.infoContext(xRequestId, "Trying to fetch associations data for user in session :".concat(ericIdentity), null);
 
         final var user = usersService.fetchUserDetails(ericIdentity);
+        Optional.ofNullable(user).orElseThrow(() -> new BadRequestRuntimeException("Eric id is not valid"));
         final AssociationsList associationsList = associationsService
                 .fetchAssociationsForUserStatusAndCompany(
                         user, status, pageIndex, itemsPerPage, companyNumber);
