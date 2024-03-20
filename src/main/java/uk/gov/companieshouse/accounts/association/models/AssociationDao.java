@@ -39,7 +39,7 @@ public class AssociationDao {
     private LocalDateTime removedAt;
     @NotNull
     @Field("approval_route")
-    private ApprovalRouteEnum approvalRoute;
+    private String approvalRoute;
     @Indexed
     @Field("user_email")
     private String userEmail;
@@ -94,11 +94,11 @@ public class AssociationDao {
         return createdAt;
     }
 
-    public ApprovalRouteEnum getApprovalRoute() {
+    public String getApprovalRoute() {
         return approvalRoute;
     }
 
-    public void setApprovalRoute(ApprovalRouteEnum approvalRoute) {
+    public void setApprovalRoute(String approvalRoute) {
         this.approvalRoute = approvalRoute;
     }
 

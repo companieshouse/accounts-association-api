@@ -7,12 +7,12 @@ import jakarta.validation.ConstraintViolationException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-import uk.gov.companieshouse.accounts.association.AccountsAssociationServiceApplication;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
@@ -24,7 +24,10 @@ import uk.gov.companieshouse.service.rest.err.Errors;
 @org.springframework.web.bind.annotation.ControllerAdvice
 public class ControllerAdvice extends ResponseEntityExceptionHandler {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AccountsAssociationServiceApplication.applicationNameSpace);
+    @Value("${spring.application.name}")
+    public static String applicationNameSpace;
+
+    private static final Logger LOG = LoggerFactory.getLogger(applicationNameSpace);
     public static final String X_REQUEST_ID = "X-Request-Id";
     public static final String ACCOUNTS_ASSOCIATION_API = "accounts_association_api";
 

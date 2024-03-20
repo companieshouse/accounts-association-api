@@ -78,7 +78,7 @@ public class AssociationsServiceTest {
         associationOne.setId("1");
         associationOne.setApprovedAt(now.plusDays(1));
         associationOne.setRemovedAt(now.plusDays(2));
-        associationOne.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
+        associationOne.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
         associationOne.setApprovalExpiryAt(now.plusDays(3));
         associationOne.setInvitations( List.of( invitationOne ) );
         associationOne.setEtag( "a" );
@@ -97,7 +97,7 @@ public class AssociationsServiceTest {
         associationTwo.setId("2");
         associationTwo.setApprovedAt( now.plusDays(5) );
         associationTwo.setRemovedAt( now.plusDays(6) );
-        associationTwo.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
+        associationTwo.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
         associationTwo.setApprovalExpiryAt( now.plusDays(7) );
         associationTwo.setInvitations( List.of( invitationTwo ) );
         associationTwo.setEtag("b");
@@ -115,7 +115,7 @@ public class AssociationsServiceTest {
         associationThree.setId("3");
         associationThree.setApprovedAt( now.plusDays(9) );
         associationThree.setRemovedAt( now.plusDays(10) );
-        associationThree.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
+        associationThree.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
         associationThree.setApprovalExpiryAt( now.plusDays(11) );
         associationThree.setInvitations( List.of( invitationThree ) );
         associationThree.setEtag("c");
@@ -132,7 +132,7 @@ public class AssociationsServiceTest {
         associationFour.setId("4");
         associationFour.setApprovedAt( now.plusDays(13) );
         associationFour.setRemovedAt( now.plusDays(14) );
-        associationFour.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
+        associationFour.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
         associationFour.setApprovalExpiryAt( now.plusDays(15) );
         associationFour.setInvitations( List.of( invitationFour ) );
         associationFour.setEtag("d");
@@ -149,7 +149,7 @@ public class AssociationsServiceTest {
         associationFive.setId("5");
         associationFive.setApprovedAt( now.plusDays(17) );
         associationFive.setRemovedAt( now.plusDays(18) );
-        associationFive.setApprovalRoute(ApprovalRouteEnum.INVITATION);
+        associationFive.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationFive.setApprovalExpiryAt( now.plusDays(19) );
         associationFive.setInvitations( List.of( invitationFive ) );
         associationFive.setEtag("e");
@@ -166,7 +166,7 @@ public class AssociationsServiceTest {
         associationSix.setId("6");
         associationSix.setApprovedAt( now.plusDays(21) );
         associationSix.setRemovedAt( now.plusDays(22) );
-        associationSix.setApprovalRoute(ApprovalRouteEnum.INVITATION);
+        associationSix.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationSix.setApprovalExpiryAt( now.plusDays(23) );
         associationSix.setInvitations( List.of( invitationSix ) );
         associationSix.setEtag("f");
@@ -183,7 +183,7 @@ public class AssociationsServiceTest {
         associationSeven.setId("7");
         associationSeven.setApprovedAt( now.plusDays(25) );
         associationSeven.setRemovedAt( now.plusDays(26) );
-        associationSeven.setApprovalRoute(ApprovalRouteEnum.INVITATION);
+        associationSeven.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationSeven.setApprovalExpiryAt( now.plusDays(27) );
         associationSeven.setInvitations( List.of( invitationSeven ) );
         associationSeven.setEtag("g");
@@ -200,7 +200,7 @@ public class AssociationsServiceTest {
         associationEight.setId("8");
         associationEight.setApprovedAt( now.plusDays(29) );
         associationEight.setRemovedAt( now.plusDays(30) );
-        associationEight.setApprovalRoute(ApprovalRouteEnum.INVITATION);
+        associationEight.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationEight.setApprovalExpiryAt( now.plusDays(31) );
         associationEight.setInvitations( List.of( invitationEight ) );
         associationEight.setEtag("h");
@@ -217,7 +217,7 @@ public class AssociationsServiceTest {
         associationNine.setId("9");
         associationNine.setApprovedAt( now.plusDays(33) );
         associationNine.setRemovedAt( now.plusDays(34) );
-        associationNine.setApprovalRoute(ApprovalRouteEnum.INVITATION);
+        associationNine.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationNine.setApprovalExpiryAt( now.plusDays(35) );
         associationNine.setInvitations( List.of( invitationNine ) );
         associationNine.setEtag("i");
@@ -234,7 +234,7 @@ public class AssociationsServiceTest {
         associationTen.setId("10");
         associationTen.setApprovedAt( now.plusDays(37) );
         associationTen.setRemovedAt( now.plusDays(38) );
-        associationTen.setApprovalRoute(ApprovalRouteEnum.INVITATION);
+        associationTen.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationTen.setApprovalExpiryAt( now.plusDays(39) );
         associationTen.setInvitations( List.of( invitationTen ) );
         associationTen.setEtag("j");
@@ -251,7 +251,7 @@ public class AssociationsServiceTest {
         associationEleven.setId("11");
         associationEleven.setApprovedAt( now.plusDays(41) );
         associationEleven.setRemovedAt( now.plusDays(42) );
-        associationEleven.setApprovalRoute(ApprovalRouteEnum.INVITATION);
+        associationEleven.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationEleven.setApprovalExpiryAt( now.plusDays(43) );
         associationEleven.setInvitations( List.of( invitationEleven ) );
         associationEleven.setEtag("k");
@@ -268,7 +268,7 @@ public class AssociationsServiceTest {
         associationTwelve.setId("12");
         associationTwelve.setApprovedAt( now.plusDays(45) );
         associationTwelve.setRemovedAt( now.plusDays(46) );
-        associationTwelve.setApprovalRoute(ApprovalRouteEnum.INVITATION);
+        associationTwelve.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationTwelve.setApprovalExpiryAt( now.plusDays(47) );
         associationTwelve.setInvitations( List.of( invitationTwelve ) );
         associationTwelve.setEtag("l");
@@ -285,7 +285,7 @@ public class AssociationsServiceTest {
         associationThirteen.setId("13");
         associationThirteen.setApprovedAt( now.plusDays(49) );
         associationThirteen.setRemovedAt( now.plusDays(50) );
-        associationThirteen.setApprovalRoute(ApprovalRouteEnum.INVITATION);
+        associationThirteen.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationThirteen.setApprovalExpiryAt( now.plusDays(51) );
         associationThirteen.setInvitations( List.of( invitationThirteen ) );
         associationThirteen.setEtag("m");
@@ -302,7 +302,7 @@ public class AssociationsServiceTest {
         associationFourteen.setId("14");
         associationFourteen.setApprovedAt( now.plusDays(53) );
         associationFourteen.setRemovedAt( now.plusDays(54) );
-        associationFourteen.setApprovalRoute(ApprovalRouteEnum.INVITATION);
+        associationFourteen.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationFourteen.setApprovalExpiryAt( now.plusDays(55) );
         associationFourteen.setInvitations( List.of( invitationFourteen ) );
         associationFourteen.setEtag("n");
@@ -319,7 +319,7 @@ public class AssociationsServiceTest {
         associationFifteen.setId("15");
         associationFifteen.setApprovedAt( now.plusDays(57) );
         associationFifteen.setRemovedAt( now.plusDays(58) );
-        associationFifteen.setApprovalRoute(ApprovalRouteEnum.INVITATION);
+        associationFifteen.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationFifteen.setApprovalExpiryAt( now.plusDays(59) );
         associationFifteen.setInvitations( List.of( invitationFifteen ) );
         associationFifteen.setEtag("o");
@@ -336,7 +336,7 @@ public class AssociationsServiceTest {
         associationSixteen.setId("16");
         associationSixteen.setApprovedAt( now.plusDays(61) );
         associationSixteen.setRemovedAt( now.plusDays(62) );
-        associationSixteen.setApprovalRoute(ApprovalRouteEnum.INVITATION);
+        associationSixteen.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationSixteen.setApprovalExpiryAt( now.plusDays(63) );
         associationSixteen.setInvitations( List.of( invitationSixteen ) );
         associationSixteen.setEtag("p");
