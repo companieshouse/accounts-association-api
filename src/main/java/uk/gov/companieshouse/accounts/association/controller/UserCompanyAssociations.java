@@ -4,10 +4,10 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import uk.gov.companieshouse.accounts.association.AccountsAssociationServiceApplication;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -22,7 +22,10 @@ import java.util.Optional;
 @RestController
 public class UserCompanyAssociations implements UserCompanyAssociationsInterface {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AccountsAssociationServiceApplication.applicationNameSpace);
+    @Value("${spring.application.name}")
+    public static String applicationNameSpace;
+
+    private static final Logger LOG = LoggerFactory.getLogger(applicationNameSpace);
 
 
     private final UsersService usersService;

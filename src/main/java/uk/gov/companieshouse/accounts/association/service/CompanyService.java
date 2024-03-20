@@ -1,8 +1,8 @@
 package uk.gov.companieshouse.accounts.association.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import uk.gov.companieshouse.accounts.association.AccountsAssociationServiceApplication;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
@@ -15,9 +15,12 @@ import uk.gov.companieshouse.logging.LoggerFactory;
 @Service
 public class CompanyService {
 
+    @Value("${spring.application.name}")
+    public static String applicationNameSpace;
+
     private final CompanyProfileEndpoint companyProfileEndpoint;
 
-    private static final Logger LOG = LoggerFactory.getLogger(AccountsAssociationServiceApplication.applicationNameSpace);
+    private static final Logger LOG = LoggerFactory.getLogger(applicationNameSpace);
 
     @Autowired
     public CompanyService(CompanyProfileEndpoint companyProfileEndpoint) {

@@ -15,6 +15,8 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
@@ -54,12 +56,14 @@ public class AssociationsListUserMapperTest {
         associationBatmanDao = new AssociationDao();
         associationBatmanDao.setUserId("111");
         associationBatmanDao.setCompanyNumber("111111");
-        associationBatmanDao.setStatus("confirmed");
+        associationBatmanDao.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationBatmanDao.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
 
         associationAlfieDao = new AssociationDao();
         associationAlfieDao.setUserEmail("111");
         associationAlfieDao.setCompanyNumber("222222");
-        associationAlfieDao.setStatus("awaiting-approval");
+        associationAlfieDao.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationAlfieDao.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
 
     }
 

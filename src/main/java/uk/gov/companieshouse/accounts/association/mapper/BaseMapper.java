@@ -27,6 +27,8 @@ public abstract class BaseMapper {
 
     @Mapping(target = "status",
             expression = "java(Association.StatusEnum.fromValue(associationDao.getStatus()))")
+    @Mapping(target = "approvalRoute",
+            expression = "java(Association.ApprovalRouteEnum.fromValue(associationDao.getApprovalRoute()))")
     public abstract Association daoToDto(final AssociationDao associationDao);
 
     public OffsetDateTime localDateTimeToOffsetDateTime(LocalDateTime localDateTime) {
