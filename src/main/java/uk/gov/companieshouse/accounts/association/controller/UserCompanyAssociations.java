@@ -53,6 +53,16 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         LOG.infoContext(xRequestId, "Trying to fetch associations data for user in session :".concat(ericIdentity), null);
 
+        if ( pageIndex < 0 ){
+            LOG.error( "pageIndex was less then 0" );
+            throw new BadRequestRuntimeException( "Please check the request and try again" );
+        }
+
+        if ( itemsPerPage <= 0 ){
+            LOG.error( "itemsPerPage was less then 0" );
+            throw new BadRequestRuntimeException( "Please check the request and try again" );
+        }
+
         final var user = usersService.fetchUserDetails(ericIdentity);
         Optional.ofNullable(user).orElseThrow(() -> new BadRequestRuntimeException("Eric id is not valid"));//NOSONAR or else throw will be caught by controller advice
         final AssociationsList associationsList = associationsService

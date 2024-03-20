@@ -1,95 +1,80 @@
-package uk.gov.companieshouse.accounts.association.service;
+package uk.gov.companieshouse.accounts.association.integration;
+
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 
 import java.time.LocalDateTime;
-import org.junit.jupiter.api.Assertions;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import uk.gov.companieshouse.accounts.association.mapper.AssociationMapper;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
-import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
+import uk.gov.companieshouse.accounts.association.service.AssociationsService;
+import uk.gov.companieshouse.api.InternalApiClient;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
-import uk.gov.companieshouse.api.error.ApiErrorResponseException;
-import uk.gov.companieshouse.api.handler.exception.URIValidationException;
+import uk.gov.companieshouse.api.sdk.ApiClientService;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
+import org.mockito.Mockito;
 
-import java.util.Collections;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
+@SpringBootTest
 @ExtendWith(MockitoExtension.class)
-@Tag("unit-test")
-class AssociationsServiceTest {
+@Testcontainers
+@Tag("integration-test")
+public class AssociationsServiceTest {
 
-    @InjectMocks
-    AssociationsService associationsService;
+    @Container
+    @ServiceConnection
+    static MongoDBContainer container = new MongoDBContainer("mongo:5");
 
-    @Mock
+    @Autowired
+    MongoTemplate mongoTemplate;
+
+    @Autowired
     AssociationsRepository associationsRepository;
 
-    @Mock
+    @MockBean
+    ApiClientService apiClientService;
+
+    @MockBean
+    InternalApiClient internalApiClient;
+
+    @MockBean
     AssociationsListCompanyMapper associationsListCompanyMapper;
 
-    @Mock
-    AssociationsListUserMapper associationsListUserMapper;
-
-    @Mock
-    AssociationMapper associationMapper;
-
-    private AssociationDao associationOne;
-    private AssociationDao associationTwo;
-    private AssociationDao associationThree;
-    private AssociationDao associationFour;
-    private AssociationDao associationFive;
-    private AssociationDao associationSix;
-    private AssociationDao associationSeven;
-    private AssociationDao associationEight;
-    private AssociationDao associationNine;
-    private AssociationDao associationTen;
-    private AssociationDao associationEleven;
-    private AssociationDao associationTwelve;
-    private AssociationDao associationThirteen;
-    private AssociationDao associationFourteen;
-    private AssociationDao associationFifteen;
-    private AssociationDao associationSixteen;
+    @Autowired
+    private AssociationsService associationsService;
 
     @BeforeEach
     public void setup() {
-
         final var now = LocalDateTime.now();
 
         final var invitationOne = new InvitationDao();
         invitationOne.setInvitedBy("666");
         invitationOne.setInvitedAt(now.plusDays(4));
 
-        associationOne = new AssociationDao();
+        final var associationOne = new AssociationDao();
         associationOne.setCompanyNumber("111111");
         associationOne.setUserId("111");
+        associationOne.setStatus( StatusEnum.CONFIRMED.getValue() );
         associationOne.setUserEmail("bruce.wayne@gotham.city");
-        associationOne.setStatus(StatusEnum.CONFIRMED.getValue());
         associationOne.setId("1");
         associationOne.setApprovedAt(now.plusDays(1));
         associationOne.setRemovedAt(now.plusDays(2));
@@ -102,11 +87,13 @@ class AssociationsServiceTest {
         invitationTwo.setInvitedBy("666");
         invitationTwo.setInvitedAt( now.plusDays(8) );
 
-        associationTwo = new AssociationDao();
+        final var associationTwo = new AssociationDao();
+        associationTwo.setCompanyNumber("222222");
+        associationTwo.setUserId("111");
+        associationTwo.setStatus( StatusEnum.CONFIRMED.getValue() );
         associationTwo.setCompanyNumber("111111");
         associationTwo.setUserId("222");
         associationTwo.setUserEmail("the.joker@gotham.city");
-        associationTwo.setStatus(StatusEnum.CONFIRMED.getValue());
         associationTwo.setId("2");
         associationTwo.setApprovedAt( now.plusDays(5) );
         associationTwo.setRemovedAt( now.plusDays(6) );
@@ -119,11 +106,12 @@ class AssociationsServiceTest {
         invitationThree.setInvitedBy("666");
         invitationThree.setInvitedAt( now.plusDays(12) );
 
-        associationThree = new AssociationDao();
+        final var associationThree = new AssociationDao();
         associationThree.setCompanyNumber("111111");
+        associationThree.setUserId("222");
+        associationThree.setStatus( StatusEnum.CONFIRMED.getValue() );
         associationThree.setUserId("333");
         associationThree.setUserEmail("harley.quinn@gotham.city");
-        associationThree.setStatus(StatusEnum.CONFIRMED.getValue());
         associationThree.setId("3");
         associationThree.setApprovedAt( now.plusDays(9) );
         associationThree.setRemovedAt( now.plusDays(10) );
@@ -136,7 +124,7 @@ class AssociationsServiceTest {
         invitationFour.setInvitedBy("666");
         invitationFour.setInvitedAt( now.plusDays(16) );
 
-        associationFour = new AssociationDao();
+        final var associationFour = new AssociationDao();
         associationFour.setCompanyNumber("111111");
         associationFour.setUserId("444");
         associationFour.setUserEmail("robin@gotham.city");
@@ -153,7 +141,7 @@ class AssociationsServiceTest {
         invitationFive.setInvitedBy("666");
         invitationFive.setInvitedAt( now.plusDays(20) );
 
-        associationFive = new AssociationDao();
+        final var associationFive = new AssociationDao();
         associationFive.setCompanyNumber("111111");
         associationFive.setUserId("555");
         associationFive.setUserEmail("barbara.gordon@gotham.city");
@@ -170,7 +158,7 @@ class AssociationsServiceTest {
         invitationSix.setInvitedBy("5555");
         invitationSix.setInvitedAt( now.plusDays(24) );
 
-        associationSix = new AssociationDao();
+        final var associationSix = new AssociationDao();
         associationSix.setCompanyNumber("111111");
         associationSix.setUserId("666");
         associationSix.setUserEmail("homer.simpson@springfield.com");
@@ -187,7 +175,7 @@ class AssociationsServiceTest {
         invitationSeven.setInvitedBy("5555");
         invitationSeven.setInvitedAt( now.plusDays(28) );
 
-        associationSeven = new AssociationDao();
+        final var associationSeven = new AssociationDao();
         associationSeven.setCompanyNumber("111111");
         associationSeven.setUserId("777");
         associationSeven.setUserEmail("marge.simpson@springfield.com");
@@ -204,7 +192,7 @@ class AssociationsServiceTest {
         invitationEight.setInvitedBy("5555");
         invitationEight.setInvitedAt( now.plusDays(32) );
 
-        associationEight = new AssociationDao();
+        final var associationEight = new AssociationDao();
         associationEight.setCompanyNumber("111111");
         associationEight.setUserId("888");
         associationEight.setUserEmail("bart.simpson@springfield.com");
@@ -221,7 +209,7 @@ class AssociationsServiceTest {
         invitationNine.setInvitedBy("5555");
         invitationNine.setInvitedAt( now.plusDays(36) );
 
-        associationNine = new AssociationDao();
+        final var associationNine = new AssociationDao();
         associationNine.setCompanyNumber("111111");
         associationNine.setUserId("999");
         associationNine.setUserEmail("lisa.simpson@springfield.com");
@@ -238,7 +226,7 @@ class AssociationsServiceTest {
         invitationTen.setInvitedBy("5555");
         invitationTen.setInvitedAt( now.plusDays(40) );
 
-        associationTen = new AssociationDao();
+        final var associationTen = new AssociationDao();
         associationTen.setCompanyNumber("111111");
         associationTen.setUserId("1111");
         associationTen.setUserEmail("maggie.simpson@springfield.com");
@@ -255,7 +243,7 @@ class AssociationsServiceTest {
         invitationEleven.setInvitedBy("5555");
         invitationEleven.setInvitedAt( now.plusDays(44) );
 
-        associationEleven = new AssociationDao();
+        final var associationEleven = new AssociationDao();
         associationEleven.setCompanyNumber("111111");
         associationEleven.setUserId("2222");
         associationEleven.setUserEmail("crusty.the.clown@springfield.com");
@@ -272,7 +260,7 @@ class AssociationsServiceTest {
         invitationTwelve.setInvitedBy("5555");
         invitationTwelve.setInvitedAt( now.plusDays(48) );
 
-        associationTwelve = new AssociationDao();
+        final var associationTwelve = new AssociationDao();
         associationTwelve.setCompanyNumber("111111");
         associationTwelve.setUserId("3333");
         associationTwelve.setUserEmail("itchy@springfield.com");
@@ -289,7 +277,7 @@ class AssociationsServiceTest {
         invitationThirteen.setInvitedBy("5555");
         invitationThirteen.setInvitedAt( now.plusDays(52) );
 
-        associationThirteen = new AssociationDao();
+        final var associationThirteen = new AssociationDao();
         associationThirteen.setCompanyNumber("111111");
         associationThirteen.setUserId("4444");
         associationThirteen.setUserEmail("scratchy@springfield.com");
@@ -306,7 +294,7 @@ class AssociationsServiceTest {
         invitationFourteen.setInvitedBy("111");
         invitationFourteen.setInvitedAt( now.plusDays(56) );
 
-        associationFourteen = new AssociationDao();
+        final var associationFourteen = new AssociationDao();
         associationFourteen.setCompanyNumber("111111");
         associationFourteen.setUserId("5555");
         associationFourteen.setUserEmail("ross@friends.com");
@@ -323,7 +311,7 @@ class AssociationsServiceTest {
         invitationFifteen.setInvitedBy("111");
         invitationFifteen.setInvitedAt( now.plusDays(60) );
 
-        associationFifteen = new AssociationDao();
+        final var associationFifteen = new AssociationDao();
         associationFifteen.setCompanyNumber("111111");
         associationFifteen.setUserId("6666");
         associationFifteen.setUserEmail("rachel@friends.com");
@@ -340,7 +328,7 @@ class AssociationsServiceTest {
         invitationSixteen.setInvitedBy("111");
         invitationSixteen.setInvitedAt( now.plusDays(64) );
 
-        associationSixteen = new AssociationDao();
+        final var associationSixteen = new AssociationDao();
         associationSixteen.setCompanyNumber("111111");
         associationSixteen.setUserId("7777");
         associationSixteen.setUserEmail("chandler@friends.com");
@@ -353,47 +341,10 @@ class AssociationsServiceTest {
         associationSixteen.setInvitations( List.of( invitationSixteen ) );
         associationSixteen.setEtag("p");
 
-        associationsService = new AssociationsService(
-                associationsRepository,
-                associationsListUserMapper,
-                associationsListCompanyMapper,
-                associationMapper
-        );
-    }
-
-    @Test
-    void fetchAssociationsForUSerReturnEmptyItemsWhenNoAssociationFound() throws ApiErrorResponseException, URIValidationException {
-        User user = new User("kk", "kk@kk.com");
-        user.setUserId("111");
-        List<String> status = Collections.singletonList("confirmed");
-        Page<AssociationDao> page = Page.empty();
-        when(associationsRepository
-                .findAllByUserIdAndStatusIsInAndCompanyNumberLike(
-                        "111",
-                        status,
-                        "",
-                        PageRequest.of(0, 15)))
-                .thenReturn(page);
-        associationsService.fetchAssociationsForUserStatusAndCompany(user, status, 0, 15, "");
-        verify(associationsListUserMapper).daoToDto(page, user);
-
-    }
-
-    @Test
-    void fetchAssociationsForUserUsesStatusConfirmedAsDefaultWhenStatusNotProvided() throws ApiErrorResponseException, URIValidationException {
-        User user = new User("kk", "kk@kk.com");
-        user.setUserId("111");
-        Page<AssociationDao> page = Page.empty();
-
-        associationsService.fetchAssociationsForUserStatusAndCompany(user, null, 0, 15, "");
-        verify(associationsRepository)
-                .findAllByUserIdAndStatusIsInAndCompanyNumberLike(
-                        "111",
-                        Collections.singletonList("confirmed"),
-                        "",
-                        PageRequest.of(0, 15));
-        verify(associationsListUserMapper).daoToDto(null, user);
-
+        associationsRepository.insert( List.of( associationOne, associationTwo, associationThree, associationFour,
+                associationFive, associationSix, associationSeven, associationEight, associationNine, associationTen,
+                associationEleven, associationTwelve, associationThirteen, associationFourteen, associationFifteen,
+                associationSixteen ) );
     }
 
     @Test
@@ -422,12 +373,6 @@ class AssociationsServiceTest {
 
     @Test
     void fetchAssociatedUsersWithIncludeRemovedTrueDoesNotApplyFilter(){
-        final var content = List.of( associationOne, associationTwo, associationThree, associationFour, associationFive, associationSix, associationSeven, associationEight, associationNine, associationTen, associationEleven, associationTwelve, associationThirteen, associationFourteen, associationFifteen, associationSixteen );
-        final var pageRequest = PageRequest.of(0, 20);
-        final var page = new PageImpl<>(content, pageRequest, content.size());
-
-        Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( any(), any(), any() );
-
         final var companyDetails =
                 new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
 
@@ -438,14 +383,6 @@ class AssociationsServiceTest {
 
     @Test
     void fetchAssociatedUsersWithIncludeRemovedFalseAppliesFilter(){
-
-        final var content = List.of( associationOne, associationTwo, associationThree, associationFour, associationFive, associationSix, associationSeven, associationEight, associationNine, associationTen, associationEleven, associationTwelve, associationThirteen );
-        final var pageRequest = PageRequest.of(0, 20);
-        final var page = new PageImpl<>(content, pageRequest, content.size());
-
-        Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( any(), any(), any() );
-
-
         final var companyDetails =
                 new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
 
@@ -456,17 +393,16 @@ class AssociationsServiceTest {
 
     @Test
     void fetchAssociatedUsersAppliesPaginationCorrectly() {
-        final var content = List.of(associationSixteen);
-        final var pageRequest = PageRequest.of( 1, 15 );
-        final var page = new PageImpl<>( content, pageRequest, 16 );
-
-        Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( any(), any(), any() );
-
         final var companyDetails =
                 new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
 
         associationsService.fetchAssociatedUsers("111111", companyDetails, true, 15, 1);
         Mockito.verify(associationsListCompanyMapper).daoToDto(argThat(associationsPageMatches(16, 2, 1, List.of("16"))), eq(companyDetails));
+    }
+
+    @AfterEach
+    public void after() {
+        mongoTemplate.dropCollection(AssociationDao.class);
     }
 
 }
