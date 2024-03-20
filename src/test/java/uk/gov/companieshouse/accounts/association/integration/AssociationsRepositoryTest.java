@@ -55,7 +55,7 @@ class AssociationsRepositoryTest {
         associationOne.setCompanyNumber("12345");
         associationOne.setUserId("555");
         associationOne.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationOne.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
+        associationOne.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
         associationOne.setUserEmail("abc@abc.com");
         associationOne.setApprovalExpiryAt(LocalDateTime.now().plusDays(10));
         associationOne.setInvitations(new ArrayList<>());
@@ -72,7 +72,7 @@ class AssociationsRepositoryTest {
         associationTwo.setCompanyNumber("12345");
         associationTwo.setUserId("666");
         associationTwo.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationTwo.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
+        associationTwo.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
         associationTwo.setUserEmail("abc@abc.com");
         associationTwo.setApprovalExpiryAt(LocalDateTime.now().plusDays(10));
         associationTwo.setInvitations(new ArrayList<>());
@@ -89,7 +89,7 @@ class AssociationsRepositoryTest {
         associationThree.setCompanyNumber("10345");
         associationThree.setUserId("777");
         associationThree.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationThree.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
+        associationThree.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
         associationThree.setUserEmail(" ");
         associationThree.setEtag("OCRS7");
         associationThree.setApprovalExpiryAt(LocalDateTime.now().plusDays(10));
@@ -106,56 +106,56 @@ class AssociationsRepositoryTest {
         associationFour.setUserId("111");
         associationFour.setStatus(StatusEnum.CONFIRMED.getValue());
         associationFour.setEtag("x");
-        associationFour.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE );
+        associationFour.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE.getValue() );
 
         final var associationFive = new AssociationDao();
         associationFive.setCompanyNumber("222222");
         associationFive.setUserId("111");
         associationFive.setStatus(StatusEnum.CONFIRMED.getValue());
         associationFive.setEtag("x");
-        associationFive.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE );
+        associationFive.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE.getValue() );
 
         final var associationSix = new AssociationDao();
         associationSix.setCompanyNumber("111111");
         associationSix.setUserId("222");
         associationSix.setStatus(StatusEnum.CONFIRMED.getValue());
         associationSix.setEtag("x");
-        associationSix.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE );
+        associationSix.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE.getValue());
 
         final var associationSeven = new AssociationDao();
         associationSeven.setCompanyNumber("333333");
         associationSeven.setUserId("333");
         associationSeven.setStatus(StatusEnum.CONFIRMED.getValue());
         associationSeven.setEtag("x");
-        associationSeven.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE );
+        associationSeven.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE.getValue() );
 
         final var associationEight = new AssociationDao();
         associationEight.setCompanyNumber("333333");
         associationEight.setUserId("444");
         associationEight.setStatus(StatusEnum.CONFIRMED.getValue());
         associationEight.setEtag("x");
-        associationEight.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE );
+        associationEight.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE.getValue() );
 
         final var associationNine = new AssociationDao();
         associationNine.setCompanyNumber("333333");
         associationNine.setUserId("888");
         associationNine.setStatus(StatusEnum.REMOVED.getValue());
         associationNine.setEtag("x");
-        associationNine.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE );
+        associationNine.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE.getValue() );
 
         final var associationTen = new AssociationDao();
         associationTen.setCompanyNumber("333333");
         associationTen.setUserId("101010");
         associationTen.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
         associationTen.setEtag("x");
-        associationTen.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE );
+        associationTen.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE.getValue() );
 
         final var associationEleven = new AssociationDao();
         associationEleven.setCompanyNumber("333333");
         associationEleven.setUserId("111111");
         associationEleven.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
         associationEleven.setEtag("x");
-        associationEleven.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE );
+        associationEleven.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE.getValue() );
 
         associationDaos = associationsRepository.saveAll( List.of(
                 associationOne, associationTwo, associationThree, associationFour,
@@ -171,7 +171,7 @@ class AssociationsRepositoryTest {
         associationUser.setCompanyNumber("1114422");
         associationUser.setUserId("9999");
         associationUser.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationUser.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
+        associationUser.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
         associationUser.setUserEmail("abc@abc.com");
         associationUser.setEtag("OCRS7");
         associationUser.setApprovalExpiryAt(LocalDateTime.now().plusDays(10));
@@ -303,7 +303,7 @@ class AssociationsRepositoryTest {
         associationDao.setCompanyNumber("1114422");
         associationDao.setUserId("9999");
         associationDao.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationDao.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
+        associationDao.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
         associationDao.setUserEmail("abc@abc.com");
         associationDao.setEtag("OCRS7");
         associationDao = associationsRepository.save(associationDao);
