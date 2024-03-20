@@ -99,6 +99,7 @@ public class AssociationMapperTest {
         dao.setUserId("111");
         dao.setCompanyNumber("111111");
         dao.setStatus(StatusEnum.CONFIRMED.getValue());
+        dao.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
         final var company = new CompanyDetails();
         company.setCompanyNumber("111111");
         company.setCompanyName("Hogwarts");
@@ -150,7 +151,7 @@ public class AssociationMapperTest {
         dao.setUserId("111");
         dao.setUserEmail("bruce.wayne@gotham.city");
         dao.setCompanyNumber("111111");
-        dao.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE);
+        dao.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
         dao.setStatus(StatusEnum.REMOVED.getValue());
         dao.setRemovedAt(now);
         dao.setInvitations(List.of(invitationDao));
