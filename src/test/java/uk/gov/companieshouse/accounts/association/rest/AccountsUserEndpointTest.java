@@ -29,7 +29,7 @@ import uk.gov.companieshouse.api.model.ApiResponse;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-public class AccountsUserEndpointTest {
+ class AccountsUserEndpointTest {
 
     @Mock
     ApiClientUtil apiClientService;

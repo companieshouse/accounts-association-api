@@ -1,12 +1,12 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
+import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.AssociationsListForCompanyInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.logging.Logger;
@@ -15,13 +15,10 @@ import uk.gov.companieshouse.logging.LoggerFactory;
 @RestController
 public class AssociationsListForCompanyController implements AssociationsListForCompanyInterface {
 
-    @Value("${spring.application.name}")
-    public static String applicationNameSpace;
-
     private final AssociationsService associationsService;
     private final CompanyService companyService;
 
-    private static final Logger LOG = LoggerFactory.getLogger( applicationNameSpace );
+    private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
 
     public AssociationsListForCompanyController(AssociationsService associationsService, CompanyService companyService) {
         this.associationsService = associationsService;
