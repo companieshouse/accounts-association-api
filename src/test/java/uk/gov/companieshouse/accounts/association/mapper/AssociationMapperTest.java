@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-public class AssociationMapperTest {
+ class AssociationMapperTest {
 
 
     @Mock
