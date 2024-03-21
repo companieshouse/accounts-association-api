@@ -1,15 +1,7 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -28,20 +20,26 @@ import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfi
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
+import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
+import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsListLinks;
-import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.company.CompanyDetails;
+
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
 @WebMvcTest(AssociationsListForCompanyController.class)
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-public class AssociationsListForCompanyControllerTest {
+ class AssociationsListForCompanyControllerTest {
 
     @Value("${internal.api.url}")
     private String internalApiUrl;
@@ -60,6 +58,9 @@ public class AssociationsListForCompanyControllerTest {
 
     @MockBean
     InterceptorConfig interceptorConfig;
+
+    @MockBean
+    StaticPropertyUtil staticPropertyUtil;
 
     private static final String DEFAULT_KIND = "association";
     private static final String DEFAULT_DISPLAY_NAME = "Not provided";
@@ -162,7 +163,7 @@ public class AssociationsListForCompanyControllerTest {
                 .andExpect(status().isOk());
 
 
-        Mockito.verify( associationsService ).fetchAssociatedUsers( eq( "111111" ), eq( companyDetails ), eq( false ), eq( 15 ), eq( 0 ) );
+        Mockito.verify( associationsService ).fetchAssociatedUsers(  "111111" ,  companyDetails ,  false ,  15 , 0  );
     }
 
     @Test
@@ -184,7 +185,7 @@ public class AssociationsListForCompanyControllerTest {
         mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=false", "111111" ).header("X-Request-Id", "theId123") )
                 .andExpect(status().isOk());
 
-        Mockito.verify( associationsService ).fetchAssociatedUsers( eq( "111111" ), eq( companyDetails ), eq( false ), eq( 15 ), eq( 0 ) );
+        Mockito.verify( associationsService ).fetchAssociatedUsers(  "111111" , companyDetails , false , 15 , 0  );
     }
 
     @Test
@@ -206,7 +207,7 @@ public class AssociationsListForCompanyControllerTest {
         mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=true", "111111" ).header("X-Request-Id", "theId123") )
                 .andExpect(status().isOk());
 
-        Mockito.verify( associationsService ).fetchAssociatedUsers( eq( "111111" ), eq( companyDetails ), eq( true ), eq( 15 ), eq( 0 ) );
+        Mockito.verify( associationsService ).fetchAssociatedUsers( "111111" ,  companyDetails, true , 15 , 0 );
     }
 
     @Test

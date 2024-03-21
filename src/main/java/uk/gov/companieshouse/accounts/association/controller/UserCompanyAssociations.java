@@ -4,13 +4,13 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.logging.Logger;
@@ -22,10 +22,8 @@ import java.util.Optional;
 @RestController
 public class UserCompanyAssociations implements UserCompanyAssociationsInterface {
 
-    @Value("${spring.application.name}")
-    public static String applicationNameSpace;
 
-    private static final Logger LOG = LoggerFactory.getLogger(applicationNameSpace);
+    private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
 
 
     private final UsersService usersService;
@@ -56,14 +54,14 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         LOG.infoContext(xRequestId, "Trying to fetch associations data for user in session :".concat(ericIdentity), null);
 
-        if ( pageIndex < 0 ){
-            LOG.error( "pageIndex was less then 0" );
-            throw new BadRequestRuntimeException( "Please check the request and try again" );
+        if (pageIndex < 0) {
+            LOG.error("pageIndex was less then 0");
+            throw new BadRequestRuntimeException("Please check the request and try again");
         }
 
-        if ( itemsPerPage <= 0 ){
-            LOG.error( "itemsPerPage was less then 0" );
-            throw new BadRequestRuntimeException( "Please check the request and try again" );
+        if (itemsPerPage <= 0) {
+            LOG.error("itemsPerPage was less then 0");
+            throw new BadRequestRuntimeException("Please check the request and try again");
         }
 
         final var user = usersService.fetchUserDetails(ericIdentity);

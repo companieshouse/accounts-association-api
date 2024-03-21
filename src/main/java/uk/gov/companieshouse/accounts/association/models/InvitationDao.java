@@ -12,6 +12,7 @@ public class InvitationDao {
     @FutureOrPresent
     private LocalDateTime invitedAt;
 
+    //Default constructor
     public InvitationDao() {
     }
 
