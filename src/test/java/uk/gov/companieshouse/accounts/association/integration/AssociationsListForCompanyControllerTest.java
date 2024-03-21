@@ -35,6 +35,7 @@ import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
+import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.InternalApiClient;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
@@ -85,6 +86,9 @@ class AssociationsListForCompanyControllerTest {
 
     @MockBean
     InterceptorConfig interceptorConfig;
+
+    @MockBean
+    StaticPropertyUtil staticPropertyUtil;
 
     private static final String DEFAULT_KIND = "association";
     private static final String DEFAULT_DISPLAY_NAME = "Not provided";

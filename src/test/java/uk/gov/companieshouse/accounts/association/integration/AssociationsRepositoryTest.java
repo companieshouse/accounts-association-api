@@ -23,6 +23,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 
@@ -46,6 +48,9 @@ class AssociationsRepositoryTest {
     AssociationsRepository associationsRepository;
     List<AssociationDao> associationDaos;
     List<InvitationDao> invitationDaos = new ArrayList<>();
+
+    @MockBean
+    StaticPropertyUtil staticPropertyUtil;
 
 
     @BeforeEach
