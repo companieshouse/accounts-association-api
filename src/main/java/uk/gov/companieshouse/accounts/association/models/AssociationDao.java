@@ -12,7 +12,6 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 
 @Document("user_company_associations")
 public class AssociationDao {

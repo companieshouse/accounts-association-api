@@ -53,7 +53,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Testcontainers
 @ExtendWith(MockitoExtension.class)
 @Tag("integration-test")
-public class AssociationsListForCompanyControllerTest {
+class AssociationsListForCompanyControllerTest {
 
     @Value("${internal.api.url}")
     private String internalApiUrl;

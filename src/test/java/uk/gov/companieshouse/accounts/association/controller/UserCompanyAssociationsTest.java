@@ -11,6 +11,7 @@ import uk.gov.companieshouse.accounts.association.exceptions.InternalServerError
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
@@ -39,9 +40,8 @@ class UserCompanyAssociationsTest {
     @MockBean
     private AssociationsService associationsService;
 
-    @BeforeEach
-    public void setup() {
-    }
+    @MockBean
+    StaticPropertyUtil staticPropertyUtil;
 
     @Test
     void fetchAssociationsByTestShouldThrow401ErrorRequestWhenEricIdNotProvided() throws Exception {
@@ -59,7 +59,7 @@ class UserCompanyAssociationsTest {
     void fetchAssociationsByTestShouldThrow400ErrorWhenRequestIdNotProvided() throws Exception {
         var response = mockMvc.perform(get("/associations").header("Eric-identity", "abcd12345")
                 .header("Eric-identity", "abcd12345")
-                .header("ERIC-Identity-Type", "key")
+                .header("ERIC-Identity-Type", "oauth2")
                 .header("ERIC-Authorised-Key-Roles", "*")).andExpect(status().isBadRequest()).andReturn();
         assertEquals("{\"type\":\"about:blank\",\"title\":\"Bad Request\",\"status\":400,\"detail\":\"Required header 'X-Request-Id' is not present.\",\"instance\":\"/associations\"}",
                 response.getResponse().getContentAsString());
@@ -71,7 +71,7 @@ class UserCompanyAssociationsTest {
         var response = mockMvc.perform(get("/associations").header("Eric-identity", "abcd12345")
                 .header("X-Request-Id", "theId")
                 .header("Eric-identity", "abcd12345")
-                .header("ERIC-Identity-Type", "key")
+                .header("ERIC-Identity-Type", "oauth2")
                 .header("ERIC-Authorised-Key-Roles", "*")).andExpect(status().isBadRequest()).andReturn();
         assertEquals("{\"errors\":[{\"error\":\"Eric id is not valid\",\"location\":\"accounts_association_api\",\"location_type\":\"request-body\",\"type\":\"ch:validation\"}]}",
                 response.getResponse().getContentAsString());
@@ -84,7 +84,7 @@ class UserCompanyAssociationsTest {
         var response = mockMvc.perform(get("/associations")
                 .header("Eric-identity", "abcd12345")
                 .header("X-Request-Id", "theId")
-                .header("ERIC-Identity-Type", "key")
+                .header("ERIC-Identity-Type", "oauth2")
                 .header("ERIC-Authorised-Key-Roles", "*")).andExpect(status().is2xxSuccessful()).andReturn();
         assertEquals(0, response.getResponse().getContentLength());
     }
@@ -100,7 +100,7 @@ class UserCompanyAssociationsTest {
         var response = mockMvc.perform(get("/associations?page_index=0&items_per_page=15&company_number=123")
                 .header("Eric-identity", "abcd12345")
                 .header("X-Request-Id", "theId")
-                .header("ERIC-Identity-Type", "key")
+                .header("ERIC-Identity-Type", "oauth2")
                 .header("ERIC-Authorised-Key-Roles", "*")).andReturn();
 
         String list = response.getResponse().getContentAsString();
@@ -115,7 +115,7 @@ class UserCompanyAssociationsTest {
         var response = mockMvc.perform(get("/associations?page_index=0&items_per_page=15&company_number=abc")
                 .header("Eric-identity", "abcd12345")
                 .header("X-Request-Id", "theId")
-                .header("ERIC-Identity-Type", "key")
+                .header("ERIC-Identity-Type", "oauth2")
                 .header("ERIC-Authorised-Key-Roles", "*")).andExpect(status().isBadRequest()).andReturn();
 
         String error = "{\"errors\":[{\"error\":\"Please check the request and try again\",\"location\":\"accounts_association_api\",\"location_type\":\"request-body\",\"type\":\"ch:validation\"}]}";
@@ -128,7 +128,7 @@ class UserCompanyAssociationsTest {
         mockMvc.perform(get("/associations?page_index=0&items_per_page=15&company_number=123")
                 .header("Eric-identity", "abcd12345")
                 .header("X-Request-Id", "theId")
-                .header("ERIC-Identity-Type", "key")
+                .header("ERIC-Identity-Type", "oauth2")
                 .header("ERIC-Authorised-Key-Roles", "*")).andExpect(status().is5xxServerError());
 
     }

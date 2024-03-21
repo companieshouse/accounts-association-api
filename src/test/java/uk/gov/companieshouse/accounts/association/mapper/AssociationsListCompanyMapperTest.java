@@ -25,7 +25,7 @@ import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-public class AssociationsListCompanyMapperTest {
+ class AssociationsListCompanyMapperTest {
 
     @Mock
     private UsersService usersService;

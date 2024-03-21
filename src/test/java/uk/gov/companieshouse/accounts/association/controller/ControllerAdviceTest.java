@@ -18,6 +18,7 @@ import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeExce
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
 import javax.validation.ConstraintViolationException;
@@ -40,6 +41,10 @@ class ControllerAdviceTest {
     private UsersService usersService;
     @MockBean
     InterceptorConfig interceptorConfig;
+
+    @MockBean
+    StaticPropertyUtil staticPropertyUtil;
+
 
     @BeforeEach
     void setup() {
