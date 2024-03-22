@@ -302,6 +302,51 @@ class AssociationsRepositoryTest {
     }
 
     @Test
+    void findAllByUserIdAndStatusIsInAndCompanyNumberLikeWithNullOrNonexistentOrMalformedUserIdOrNullOrEmptyOrMalformedStatusReturnsEmptyPage(){
+        Assertions.assertTrue( associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike(null, List.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(0, 5) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("9191", List.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(0, 5) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("$$$$", List.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(0, 5) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("111", null,"",PageRequest.of(0, 5) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("111", List.of(),"",PageRequest.of(0, 5) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("111", List.of("complicated"),"",PageRequest.of(0, 5) ).isEmpty() );
+    }
+
+    @Test
+    void findAllByUserIdAndStatusIsInAndCompanyNumberLikeImplementsPaginationCorrectly(){
+         final var page = associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("111", List.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(1, 1) );
+         final var ids = page.getContent().stream().map(AssociationDao::getCompanyNumber).toList();
+         Assertions.assertTrue( ids.contains( "222222" ) );
+         Assertions.assertEquals( 1, ids.size() );
+    }
+
+    @Test
+    void findAllByUserIdAndStatusIsInAndCompanyNumberLikeWithNullPageableReturnsAllAssociations(){
+        final var page = associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("111", List.of(StatusEnum.CONFIRMED.getValue() ),"",null );
+        final var ids = page.getContent().stream().map(AssociationDao::getCompanyNumber).toList();
+        Assertions.assertTrue( ids.containsAll( List.of( "111111", "222222" ) ) );
+        Assertions.assertEquals( 2, ids.size() );
+    }
+
+    @Test
+    void findAllByUserIdAndStatusIsInAndCompanyNumberLikeFiltersBasedOnCompanyNumber(){
+        final var page = associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("111", List.of(StatusEnum.CONFIRMED.getValue() ),"222222",PageRequest.of(0, 15) );
+        final var ids = page.getContent().stream().map(AssociationDao::getCompanyNumber).toList();
+        Assertions.assertTrue( ids.contains( "222222" ) );
+        Assertions.assertEquals( 1, ids.size() );
+    }
+
+    @Test
+    void findAllByUserIdAndStatusIsInAndCompanyNumberLikeWithNullCompanyNumberThrowsIllegalArgumentException(){
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("111", List.of(StatusEnum.CONFIRMED.getValue() ),null,PageRequest.of(0, 15) ) );
+    }
+
+    @Test
+    void findAllByUserIdAndStatusIsInAndCompanyNumberLikeWithMalformedOrNonexistentCompanyNumberReturnsEmptyPage(){
+        Assertions.assertTrue( associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("111", List.of(StatusEnum.CONFIRMED.getValue() ),"$$$$$$",PageRequest.of(0, 15) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("111", List.of(StatusEnum.CONFIRMED.getValue() ),"abdef",PageRequest.of(0, 15) ).isEmpty() );
+    }
+
+    @Test
     void updateVersionFieldIncrementsVersion() {
 
         AssociationDao associationDao = new AssociationDao();
