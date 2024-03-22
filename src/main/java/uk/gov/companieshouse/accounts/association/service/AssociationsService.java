@@ -81,6 +81,7 @@ public class AssociationsService {
         final Optional<AssociationDao> association = associationsRepository.findById(id);
 
         return association.map(associationMapper::daoToDto).orElse(null);
+        //return association.ifPresentOrElse(associationMapper::daoToDto, null);
     }
 
 }
