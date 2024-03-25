@@ -21,6 +21,7 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
+import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
@@ -29,6 +30,7 @@ import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.InternalApiClient;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.sdk.ApiClientService;
 import org.junit.jupiter.api.Test;
@@ -59,6 +61,9 @@ public class AssociationsServiceTest {
 
     @MockBean
     AssociationsListCompanyMapper associationsListCompanyMapper;
+
+    @MockBean
+    AssociationsListUserMapper associationsListUserMapper;
 
     @Autowired
     private AssociationsService associationsService;
@@ -345,10 +350,285 @@ public class AssociationsServiceTest {
         associationSixteen.setInvitations( List.of( invitationSixteen ) );
         associationSixteen.setEtag("p");
 
+        final var invitationEighteen = new InvitationDao();
+        invitationEighteen.setInvitedBy("666");
+        invitationEighteen.setInvitedAt(now.plusDays(4));
+
+        final var associationEighteen = new AssociationDao();
+        associationEighteen.setCompanyNumber("333333");
+        associationEighteen.setUserId("9999");
+        associationEighteen.setUserEmail("scrooge.mcduck@disney.land");
+        associationEighteen.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationEighteen.setId("18");
+        associationEighteen.setApprovedAt(now.plusDays(1));
+        associationEighteen.setRemovedAt(now.plusDays(2));
+        associationEighteen.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
+        associationEighteen.setApprovalExpiryAt(now.plusDays(3));
+        associationEighteen.setInvitations( List.of( invitationEighteen ) );
+        associationEighteen.setEtag( "aa" );
+
+        final var invitationNineteen = new InvitationDao();
+        invitationNineteen.setInvitedBy("666");
+        invitationNineteen.setInvitedAt( now.plusDays(8) );
+
+        final var associationNineteen = new AssociationDao();
+        associationNineteen.setCompanyNumber("444444");
+        associationNineteen.setUserId("9999");
+        associationNineteen.setUserEmail("scrooge.mcduck@disney.land");
+        associationNineteen.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationNineteen.setId("19");
+        associationNineteen.setApprovedAt( now.plusDays(5) );
+        associationNineteen.setRemovedAt( now.plusDays(6) );
+        associationNineteen.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
+        associationNineteen.setApprovalExpiryAt( now.plusDays(7) );
+        associationNineteen.setInvitations( List.of( invitationNineteen ) );
+        associationNineteen.setEtag("bb");
+
+        final var invitationTwenty = new InvitationDao();
+        invitationTwenty.setInvitedBy("666");
+        invitationTwenty.setInvitedAt( now.plusDays(12) );
+
+        final var associationTwenty = new AssociationDao();
+        associationTwenty.setCompanyNumber("555555");
+        associationTwenty.setUserId("9999");
+        associationTwenty.setUserEmail("scrooge.mcduck@disney.land");
+        associationTwenty.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationTwenty.setId("20");
+        associationTwenty.setApprovedAt( now.plusDays(9) );
+        associationTwenty.setRemovedAt( now.plusDays(10) );
+        associationTwenty.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
+        associationTwenty.setApprovalExpiryAt( now.plusDays(11) );
+        associationTwenty.setInvitations( List.of( invitationTwenty ) );
+        associationTwenty.setEtag("cc");
+
+        final var invitationTwentyOne = new InvitationDao();
+        invitationTwentyOne.setInvitedBy("666");
+        invitationTwentyOne.setInvitedAt( now.plusDays(16) );
+
+        final var associationTwentyOne = new AssociationDao();
+        associationTwentyOne.setCompanyNumber("666666");
+        associationTwentyOne.setUserId("9999");
+        associationTwentyOne.setUserEmail("scrooge.mcduck@disney.land");
+        associationTwentyOne.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationTwentyOne.setId("21");
+        associationTwentyOne.setApprovedAt( now.plusDays(13) );
+        associationTwentyOne.setRemovedAt( now.plusDays(14) );
+        associationTwentyOne.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
+        associationTwentyOne.setApprovalExpiryAt( now.plusDays(15) );
+        associationTwentyOne.setInvitations( List.of( invitationTwentyOne ) );
+        associationTwentyOne.setEtag("dd");
+
+        final var invitationTwentyTwo = new InvitationDao();
+        invitationTwentyTwo.setInvitedBy("666");
+        invitationTwentyTwo.setInvitedAt( now.plusDays(20) );
+
+        final var associationTwentyTwo = new AssociationDao();
+        associationTwentyTwo.setCompanyNumber("777777");
+        associationTwentyTwo.setUserId("9999");
+        associationTwentyTwo.setUserEmail("scrooge.mcduck@disney.land");
+        associationTwentyTwo.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationTwentyTwo.setId("22");
+        associationTwentyTwo.setApprovedAt( now.plusDays(17) );
+        associationTwentyTwo.setRemovedAt( now.plusDays(18) );
+        associationTwentyTwo.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationTwentyTwo.setApprovalExpiryAt( now.plusDays(19) );
+        associationTwentyTwo.setInvitations( List.of( invitationTwentyTwo ) );
+        associationTwentyTwo.setEtag("ee");
+
+        final var invitationTwentyThree = new InvitationDao();
+        invitationTwentyThree.setInvitedBy("5555");
+        invitationTwentyThree.setInvitedAt( now.plusDays(24) );
+
+        final var associationTwentyThree = new AssociationDao();
+        associationTwentyThree.setCompanyNumber("888888");
+        associationTwentyThree.setUserId("9999");
+        associationTwentyThree.setUserEmail("scrooge.mcduck@disney.land");
+        associationTwentyThree.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationTwentyThree.setId("23");
+        associationTwentyThree.setApprovedAt( now.plusDays(21) );
+        associationTwentyThree.setRemovedAt( now.plusDays(22) );
+        associationTwentyThree.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationTwentyThree.setApprovalExpiryAt( now.plusDays(23) );
+        associationTwentyThree.setInvitations( List.of( invitationTwentyThree ) );
+        associationTwentyThree.setEtag("ff");
+
+        final var invitationTwentyFour = new InvitationDao();
+        invitationTwentyFour.setInvitedBy("5555");
+        invitationTwentyFour.setInvitedAt( now.plusDays(28) );
+
+        final var associationTwentyFour = new AssociationDao();
+        associationTwentyFour.setCompanyNumber("999999");
+        associationTwentyFour.setUserId("9999");
+        associationTwentyFour.setUserEmail("scrooge.mcduck@disney.land");
+        associationTwentyFour.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationTwentyFour.setId("24");
+        associationTwentyFour.setApprovedAt( now.plusDays(25) );
+        associationTwentyFour.setRemovedAt( now.plusDays(26) );
+        associationTwentyFour.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationTwentyFour.setApprovalExpiryAt( now.plusDays(27) );
+        associationTwentyFour.setInvitations( List.of( invitationTwentyFour ) );
+        associationTwentyFour.setEtag("gg");
+
+        final var invitationTwentyFive = new InvitationDao();
+        invitationTwentyFive.setInvitedBy("5555");
+        invitationTwentyFive.setInvitedAt( now.plusDays(32) );
+
+        final var associationTwentyFive = new AssociationDao();
+        associationTwentyFive.setCompanyNumber("x111111");
+        associationTwentyFive.setUserId("9999");
+        associationTwentyFive.setUserEmail("scrooge.mcduck@disney.land");
+        associationTwentyFive.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationTwentyFive.setId("25");
+        associationTwentyFive.setApprovedAt( now.plusDays(29) );
+        associationTwentyFive.setRemovedAt( now.plusDays(30) );
+        associationTwentyFive.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationTwentyFive.setApprovalExpiryAt( now.plusDays(31) );
+        associationTwentyFive.setInvitations( List.of( invitationTwentyFive ) );
+        associationTwentyFive.setEtag("hh");
+
+        final var invitationTwentySix = new InvitationDao();
+        invitationTwentySix.setInvitedBy("5555");
+        invitationTwentySix.setInvitedAt( now.plusDays(36) );
+
+        final var associationTwentySix = new AssociationDao();
+        associationTwentySix.setCompanyNumber("x222222");
+        associationTwentySix.setUserId("9999");
+        associationTwentySix.setUserEmail("scrooge.mcduck@disney.land");
+        associationTwentySix.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationTwentySix.setId("26");
+        associationTwentySix.setApprovedAt( now.plusDays(33) );
+        associationTwentySix.setRemovedAt( now.plusDays(34) );
+        associationTwentySix.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationTwentySix.setApprovalExpiryAt( now.plusDays(35) );
+        associationTwentySix.setInvitations( List.of( invitationTwentySix ) );
+        associationTwentySix.setEtag("ii");
+
+        final var invitationTwentySeven = new InvitationDao();
+        invitationTwentySeven.setInvitedBy("5555");
+        invitationTwentySeven.setInvitedAt( now.plusDays(40) );
+
+        final var associationTwentySeven = new AssociationDao();
+        associationTwentySeven.setCompanyNumber("x333333");
+        associationTwentySeven.setUserId("9999");
+        associationTwentySeven.setUserEmail("scrooge.mcduck@disney.land");
+        associationTwentySeven.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationTwentySeven.setId("27");
+        associationTwentySeven.setApprovedAt( now.plusDays(37) );
+        associationTwentySeven.setRemovedAt( now.plusDays(38) );
+        associationTwentySeven.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationTwentySeven.setApprovalExpiryAt( now.plusDays(39) );
+        associationTwentySeven.setInvitations( List.of( invitationTwentySeven ) );
+        associationTwentySeven.setEtag("jj");
+
+        final var invitationTwentyEight = new InvitationDao();
+        invitationTwentyEight.setInvitedBy("5555");
+        invitationTwentyEight.setInvitedAt( now.plusDays(44) );
+
+        final var associationTwentyEight = new AssociationDao();
+        associationTwentyEight.setCompanyNumber("x444444");
+        associationTwentyEight.setUserId("9999");
+        associationTwentyEight.setUserEmail("scrooge.mcduck@disney.land");
+        associationTwentyEight.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationTwentyEight.setId("28");
+        associationTwentyEight.setApprovedAt( now.plusDays(41) );
+        associationTwentyEight.setRemovedAt( now.plusDays(42) );
+        associationTwentyEight.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationTwentyEight.setApprovalExpiryAt( now.plusDays(43) );
+        associationTwentyEight.setInvitations( List.of( invitationTwentyEight ) );
+        associationTwentyEight.setEtag("kk");
+
+        final var invitationTwentyNine = new InvitationDao();
+        invitationTwentyNine.setInvitedBy("5555");
+        invitationTwentyNine.setInvitedAt( now.plusDays(48) );
+
+        final var associationTwentyNine = new AssociationDao();
+        associationTwentyNine.setCompanyNumber("x555555");
+        associationTwentyNine.setUserId("9999");
+        associationTwentyNine.setUserEmail("scrooge.mcduck@disney.land");
+        associationTwentyNine.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationTwentyNine.setId("29");
+        associationTwentyNine.setApprovedAt( now.plusDays(45) );
+        associationTwentyNine.setRemovedAt( now.plusDays(46) );
+        associationTwentyNine.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationTwentyNine.setApprovalExpiryAt( now.plusDays(47) );
+        associationTwentyNine.setInvitations( List.of( invitationTwentyNine ) );
+        associationTwentyNine.setEtag("ll");
+
+        final var invitationThirty = new InvitationDao();
+        invitationThirty.setInvitedBy("5555");
+        invitationThirty.setInvitedAt( now.plusDays(52) );
+
+        final var associationThirty = new AssociationDao();
+        associationThirty.setCompanyNumber("x666666");
+        associationThirty.setUserId("9999");
+        associationThirty.setUserEmail("scrooge.mcduck@disney.land");
+        associationThirty.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationThirty.setId("30");
+        associationThirty.setApprovedAt( now.plusDays(49) );
+        associationThirty.setRemovedAt( now.plusDays(50) );
+        associationThirty.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationThirty.setApprovalExpiryAt( now.plusDays(51) );
+        associationThirty.setInvitations( List.of( invitationThirty ) );
+        associationThirty.setEtag("mm");
+
+        final var invitationThirtyOne = new InvitationDao();
+        invitationThirtyOne.setInvitedBy("111");
+        invitationThirtyOne.setInvitedAt( now.plusDays(56) );
+
+        final var associationThirtyOne = new AssociationDao();
+        associationThirtyOne.setCompanyNumber("x777777");
+        associationThirtyOne.setUserId("9999");
+        associationThirtyOne.setUserEmail("scrooge.mcduck@disney.land");
+        associationThirtyOne.setStatus(StatusEnum.REMOVED.getValue());
+        associationThirtyOne.setId("31");
+        associationThirtyOne.setApprovedAt( now.plusDays(53) );
+        associationThirtyOne.setRemovedAt( now.plusDays(54) );
+        associationThirtyOne.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationThirtyOne.setApprovalExpiryAt( now.plusDays(55) );
+        associationThirtyOne.setInvitations( List.of( invitationThirtyOne ) );
+        associationThirtyOne.setEtag("nn");
+
+        final var invitationThirtyTwo = new InvitationDao();
+        invitationThirtyTwo.setInvitedBy("111");
+        invitationThirtyTwo.setInvitedAt( now.plusDays(60) );
+
+        final var associationThirtyTwo = new AssociationDao();
+        associationThirtyTwo.setCompanyNumber("x888888");
+        associationThirtyTwo.setUserId("9999");
+        associationThirtyTwo.setUserEmail("scrooge.mcduck@disney.land");
+        associationThirtyTwo.setStatus(StatusEnum.REMOVED.getValue());
+        associationThirtyTwo.setId("32");
+        associationThirtyTwo.setApprovedAt( now.plusDays(57) );
+        associationThirtyTwo.setRemovedAt( now.plusDays(58) );
+        associationThirtyTwo.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationThirtyTwo.setApprovalExpiryAt( now.plusDays(59) );
+        associationThirtyTwo.setInvitations( List.of( invitationThirtyTwo ) );
+        associationThirtyTwo.setEtag("oo");
+
+        final var invitationThirtyThree = new InvitationDao();
+        invitationThirtyThree.setInvitedBy("111");
+        invitationThirtyThree.setInvitedAt( now.plusDays(64) );
+
+        final var associationThirtyThree = new AssociationDao();
+        associationThirtyThree.setCompanyNumber("x999999");
+        associationThirtyThree.setUserId("9999");
+        associationThirtyThree.setUserEmail("scrooge.mcduck@disney.land");
+        associationThirtyThree.setStatus(StatusEnum.REMOVED.getValue());
+        associationThirtyThree.setId("33");
+        associationThirtyThree.setApprovedAt( now.plusDays(61) );
+        associationThirtyThree.setRemovedAt( now.plusDays(62) );
+        associationThirtyThree.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationThirtyThree.setApprovalExpiryAt( now.plusDays(63) );
+        associationThirtyThree.setInvitations( List.of( invitationThirtyThree ) );
+        associationThirtyThree.setEtag("pp");
+
         associationsRepository.insert( List.of( associationOne, associationTwo, associationThree, associationFour,
                 associationFive, associationSix, associationSeven, associationEight, associationNine, associationTen,
                 associationEleven, associationTwelve, associationThirteen, associationFourteen, associationFifteen,
-                associationSixteen ) );
+                associationSixteen, associationEighteen, associationNineteen, associationTwenty, associationTwentyOne,
+                associationTwentyTwo, associationTwentyThree, associationTwentyFour, associationTwentyFive, associationTwentySix,
+                associationTwentySeven, associationTwentyEight, associationTwentyNine, associationThirty, associationThirtyOne,
+                associationThirtyTwo, associationThirtyThree ) );
     }
 
     @Test
@@ -402,6 +682,87 @@ public class AssociationsServiceTest {
 
         associationsService.fetchAssociatedUsers("111111", companyDetails, true, 15, 1);
         Mockito.verify(associationsListCompanyMapper).daoToDto(argThat(associationsPageMatches(16, 2, 1, List.of("16"))), eq(companyDetails));
+    }
+
+    @Test
+    void fetchAssociationsForUserStatusAndCompanyWithNullInputsThrowsNullPointerException(){
+        final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName( "Scrooge McDuck" );
+        final var status = List.of( StatusEnum.CONFIRMED.getValue() );
+
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchAssociationsForUserStatusAndCompany( null, status, 0, 15, "333333" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchAssociationsForUserStatusAndCompany( user, status, null, 15, "333333" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchAssociationsForUserStatusAndCompany( user, status, 0, null, "333333" ) );
+    }
+
+    @Test
+    void fetchAssociationsForUserStatusAndCompanyWithInvalidPageIndexOrItemsPerPageThrowsIllegalArgumentException() {
+        final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName( "Scrooge McDuck" );
+        final var status = List.of( StatusEnum.CONFIRMED.getValue() );
+
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchAssociationsForUserStatusAndCompany( user, status, -1, 15, "333333" ) );
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchAssociationsForUserStatusAndCompany( user, status, 0, 0, "333333" ) );
+    }
+
+    @Test
+    void fetchAssociationsForUserStatusAndCompanyPaginatesCorrectly() {
+        final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName( "Scrooge McDuck" );
+        final var status = List.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() );
+        associationsService.fetchAssociationsForUserStatusAndCompany( user, status, 1, 15, null );
+
+        Mockito.verify(associationsListUserMapper).daoToDto(argThat(associationsPageMatches(16, 2, 1, List.of("33"))), eq(user));
+    }
+
+    @Test
+    void fetchAssociationsForUserStatusAndCompanyFiltersByCompanyNumber(){
+        final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName( "Scrooge McDuck" );
+        final var status = List.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() );
+        associationsService.fetchAssociationsForUserStatusAndCompany( user, status, 0, 15, "333333" );
+
+        Mockito.verify(associationsListUserMapper).daoToDto(argThat(associationsPageMatches(2, 1, 2, List.of("18", "27"))), eq(user));
+    }
+
+    @Test
+    void fetchAssociationsForUserStatusAndCompanyFiltersBasedOnStatus(){
+        final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName( "Scrooge McDuck" );
+        final var status = List.of( StatusEnum.REMOVED.getValue() );
+
+        associationsService.fetchAssociationsForUserStatusAndCompany( user, status, 0, 15, null );
+        Mockito.verify(associationsListUserMapper).daoToDto(argThat(associationsPageMatches(3, 1, 3, List.of("31", "32", "33"))), eq(user));
+    }
+
+    @Test
+    void fetchAssociationsForUserStatusAndCompanyWithNullStatusDefaultsToConfirmedStatus(){
+        final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName( "Scrooge McDuck" );
+        associationsService.fetchAssociationsForUserStatusAndCompany( user, null, 0, 15, null );
+        Mockito.verify(associationsListUserMapper).daoToDto(argThat(associationsPageMatches(5, 1, 5, List.of("18", "19", "20", "21", "22"))), eq(user));
+    }
+
+    @Test
+    void fetchAssociationsForUserStatusAndCompanyWithEmptyStatusDefaultsToConfirmedStatus(){
+        final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName( "Scrooge McDuck" );
+        associationsService.fetchAssociationsForUserStatusAndCompany( user, List.of(), 0, 15, null );
+        Mockito.verify(associationsListUserMapper).daoToDto(argThat(associationsPageMatches(5, 1, 5, List.of("18", "19", "20", "21", "22"))), eq(user));
+    }
+
+    @Test
+    void fetchAssociationsForUserStatusAndCompanyWithInvalidStatusReturnsEmptyPage() {
+        final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName( "Scrooge McDuck" );
+        associationsService.fetchAssociationsForUserStatusAndCompany( user, List.of( "complicated" ), 0, 15, null );
+        Mockito.verify(associationsListUserMapper).daoToDto(argThat(associationsPageMatches(0, 0, 0, List.of())), eq(user));
+    }
+
+    @Test
+    void fetchAssociationsForUserStatusAndCompanyWithNonexistentOrInvalidCompanyNumberReturnsEmptyPage() {
+        final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName( "Scrooge McDuck" );
+        associationsService.fetchAssociationsForUserStatusAndCompany( user, List.of(), 0, 15, "$$$$$$" );
+        Mockito.verify(associationsListUserMapper).daoToDto(argThat(associationsPageMatches(0, 0, 0, List.of())), eq(user));
+    }
+
+    @Test
+    void fetchAssociationsForUserStatusAndCompanyWithNonexistentUserIdReturnsEmptyPage() {
+        final var user = new User().userId("9191").email("scrooge.mcduck@disney.land").displayName( "Scrooge McDuck" );
+        associationsService.fetchAssociationsForUserStatusAndCompany( user, List.of(), 0, 15, null );
+        Mockito.verify(associationsListUserMapper).daoToDto(argThat(associationsPageMatches(0, 0, 0, List.of())), eq(user));
     }
 
     @AfterEach
