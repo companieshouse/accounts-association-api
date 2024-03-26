@@ -18,7 +18,6 @@ import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -80,12 +79,12 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         LOG.debug(String.format("%s: Attempting to get the Association details : %s", xRequestId, id));
 
         final var association = associationsService.findAssociationById(id);
-        if (Objects.isNull(association)) {
+        if (association.isEmpty()) {
             String errorMessage = String.format("Cannot find Association for the Id: %s", id);
             LOG.error(errorMessage);
             throw new NotFoundRuntimeException(StaticPropertyUtil.APPLICATION_NAMESPACE, errorMessage);
         }
-        return new ResponseEntity<>(association, HttpStatus.OK);
+        return new ResponseEntity<>(association.get(), HttpStatus.OK);
     }
 
     @Override
