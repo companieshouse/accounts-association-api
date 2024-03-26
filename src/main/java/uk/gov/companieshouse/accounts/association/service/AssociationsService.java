@@ -67,21 +67,18 @@ public class AssociationsService {
         final Pageable pageable = PageRequest.of(pageIndex, itemsPerPage);
 
         final var statuses = new HashSet<>(Set.of(StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue()));
-        if (includeRemoved)
+        if (includeRemoved) {
             statuses.add(StatusEnum.REMOVED.getValue());
-
+        }
         final var associations = associationsRepository.fetchAssociatedUsers(companyNumber, statuses, pageable);
 
         return associationsListCompanyMapper.daoToDto(associations, companyDetails);
     }
 
     @Transactional(readOnly = true)
-    public Association findAssociationById(final String id) {
+    public Optional<Association> findAssociationById(final String id) {
 
-        final Optional<AssociationDao> association = associationsRepository.findById(id);
-
-        return association.map(associationMapper::daoToDto).orElse(null);
-        //return association.ifPresentOrElse(associationMapper::daoToDto, null);
+        return associationsRepository.findById(id).map(associationMapper::daoToDto);
     }
 
 }

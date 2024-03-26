@@ -756,17 +756,17 @@ class AssociationsServiceTest {
     void getAssociationByIdReturnsAssociationDtoWhenAssociationFound() {
         Mockito.when(associationsRepository.findById("1")).thenReturn(Optional.of(associationOne));
 
-        Association association = associationsService.findAssociationById("1");
+        var association = associationsService.findAssociationById("1");
         Mockito.verify(associationMapper).daoToDto(associationOne);
 
     }
 
     @Test
     void getAssociationByIdReturnsEmptyWhenAssociationNotFound() {
-        Mockito.when(associationsRepository.findById("1111")).thenReturn(null);
+        Mockito.when(associationsRepository.findById("1111")).thenReturn(Optional.empty());
 
-        Association association = associationsService.findAssociationById("1111");
-        Assertions.assertTrue(association==null);
+        var association = associationsService.findAssociationById("1111");
+        Assertions.assertTrue(association.isEmpty());
 
     }
 
