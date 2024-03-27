@@ -80,7 +80,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         final var association = associationsService.findAssociationById(id);
         if (association.isEmpty()) {
-            String errorMessage = String.format("Cannot find Association for the Id: %s", id);
+            var errorMessage = String.format("Cannot find Association for the Id: %s", id);
             LOG.error(errorMessage);
             throw new NotFoundRuntimeException(StaticPropertyUtil.APPLICATION_NAMESPACE, errorMessage);
         }
