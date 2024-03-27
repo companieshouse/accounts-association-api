@@ -423,6 +423,21 @@ class AssociationsRepositoryTest {
         Assertions.assertTrue( secondPageContent.containsAll( List.of( "888", "101010" ) ) );
     }
 
+    @Test
+    void associationExistsWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(){
+        Assertions.assertFalse( associationsRepository.associationExists( null, "111" ) );
+        Assertions.assertFalse( associationsRepository.associationExists( "$$$$$$", "111" ) );
+        Assertions.assertFalse( associationsRepository.associationExists( "919191", "111" ) );
+        Assertions.assertFalse( associationsRepository.associationExists( "111111", null ) );
+        Assertions.assertFalse( associationsRepository.associationExists( "111111", "$$$" ) );
+        Assertions.assertFalse( associationsRepository.associationExists( "111111", "9191" ) );
+    }
+
+    @Test
+    void associationExistsWithExistingAssociationReturnsTrue(){
+        Assertions.assertTrue( associationsRepository.associationExists( "111111", "111" ) );
+    }
+
     @AfterEach
     public void after() {
         mongoTemplate.dropCollection(AssociationDao.class);
