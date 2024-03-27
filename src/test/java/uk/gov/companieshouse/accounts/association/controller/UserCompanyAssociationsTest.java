@@ -564,16 +564,15 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void getAssociationUserDetailsWithNonexistentUIdReturnsNotFound() throws Exception {
-        Mockito.doThrow(new NotFoundRuntimeException("user-company-association-api", "Cannot find Association for the Id")).when(associationsService).findAssociationById("11");
+    void getAssociationUserDetailsWithNonexistentIdReturnsNotFound() throws Exception {
+        Mockito.doReturn(Optional.empty()).when(associationsService).findAssociationById("11");
         final var response = mockMvc.perform(get("/associations/{id}", "11")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*"))
                 .andExpect(status().isNotFound()).andReturn();
-
-        String error = "{\"errors\":[{\"error\":\"Cannot find Association for the Id\",\"type\":\"ch:service\"}]}";
+        String error = "{\"errors\":[{\"error\":\"Cannot find Association for the Id: 11\",\"type\":\"ch:service\"}]}";
         assertEquals(error, response.getResponse().getContentAsString());
     }
 
