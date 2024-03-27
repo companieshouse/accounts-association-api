@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
@@ -74,8 +75,16 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<Association> getAssociationForId(@NotNull String s, @Pattern(regexp = "^[a-zA-Z0-9]*$") String s1) {
-        return null;
+    public ResponseEntity<Association> getAssociationForId(final String xRequestId, final String id) {
+        LOG.debug(String.format("%s: Attempting to get the Association details : %s", xRequestId, id));
+
+        final var association = associationsService.findAssociationById(id);
+        if (association.isEmpty()) {
+            var errorMessage = String.format("Cannot find Association for the Id: %s", id);
+            LOG.error(errorMessage);
+            throw new NotFoundRuntimeException(StaticPropertyUtil.APPLICATION_NAMESPACE, errorMessage);
+        }
+        return new ResponseEntity<>(association.get(), HttpStatus.OK);
     }
 
     @Override

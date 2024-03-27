@@ -54,7 +54,7 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
         LOG.errorContext(requestId, e.getMessage(), null, contextMap);
 
         Errors errors = new Errors();
-        errors.addError(Err.invalidBodyBuilderWithLocation(e.getFieldLocation()).withError(e.getMessage()).build());
+        errors.addError(Err.serviceErrBuilder().withType("ch:service").withError(e.getMessage()).build());
         return errors;
     }
 
