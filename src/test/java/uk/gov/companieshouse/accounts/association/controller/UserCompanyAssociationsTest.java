@@ -30,9 +30,11 @@ import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
 import java.util.Collections;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -68,48 +70,48 @@ class UserCompanyAssociationsTest {
     public void setup() {
 
         final var invitationOne =
-        new Invitation().invitedBy( "homer.simpson@springfield.com" )
+                new Invitation().invitedBy( "homer.simpson@springfield.com" )
                         .invitedAt( now.plusDays(4).toString() );
 
         associationOne =
-        new Association().etag("aa")
-                         .id("18")
-                         .userId("9999")
-                         .userEmail("scrooge.mcduck@disney.land")
-                         .displayName("Scrooge McDuck")
-                         .companyNumber("333333")
-                         .companyName("Tesco")
-                         .status(StatusEnum.CONFIRMED)
-                         .createdAt( LocalDateTime.now().atOffset( ZoneOffset.UTC ) )
-                         .approvedAt( now.plusDays(1).atOffset( ZoneOffset.UTC ) )
-                         .removedAt( now.plusDays(2).atOffset( ZoneOffset.UTC ) )
-                         .kind( DEFAULT_KIND )
-                         .approvalRoute(ApprovalRouteEnum.AUTH_CODE)
-                         .approvalExpiryAt( now.plusDays(3).toString() )
-                         .invitations( List.of( invitationOne ) )
-                         .links( new AssociationLinks().self( "/18" ) );
+                new Association().etag("aa")
+                        .id("18")
+                        .userId("9999")
+                        .userEmail("scrooge.mcduck@disney.land")
+                        .displayName("Scrooge McDuck")
+                        .companyNumber("333333")
+                        .companyName("Tesco")
+                        .status(StatusEnum.CONFIRMED)
+                        .createdAt( LocalDateTime.now().atOffset( ZoneOffset.UTC ) )
+                        .approvedAt( now.plusDays(1).atOffset( ZoneOffset.UTC ) )
+                        .removedAt( now.plusDays(2).atOffset( ZoneOffset.UTC ) )
+                        .kind( DEFAULT_KIND )
+                        .approvalRoute(ApprovalRouteEnum.AUTH_CODE)
+                        .approvalExpiryAt( now.plusDays(3).toString() )
+                        .invitations( List.of( invitationOne ) )
+                        .links( new AssociationLinks().self( "/18" ) );
 
         final var invitationTwo =
-        new Invitation().invitedBy( "homer.simpson@springfield.com" )
-                .invitedAt( now.plusDays(8).toString() );
+                new Invitation().invitedBy( "homer.simpson@springfield.com" )
+                        .invitedAt( now.plusDays(8).toString() );
 
         associationTwo =
-        new Association().etag("bb")
-                         .id("19")
-                         .userId("9999")
-                         .userEmail("scrooge.mcduck@disney.land")
-                         .displayName("Scrooge McDuck")
-                         .companyNumber("444444")
-                         .companyName("Sainsbury's")
-                         .status(StatusEnum.REMOVED)
-                         .createdAt( LocalDateTime.now().atOffset( ZoneOffset.UTC ) )
-                         .approvedAt( now.plusDays(5).atOffset( ZoneOffset.UTC ) )
-                         .removedAt( now.plusDays(6).atOffset( ZoneOffset.UTC ) )
-                         .kind( DEFAULT_KIND )
-                         .approvalRoute(ApprovalRouteEnum.AUTH_CODE)
-                         .approvalExpiryAt( now.plusDays(7).toString() )
-                         .invitations( List.of( invitationTwo ) )
-                         .links( new AssociationLinks().self( "/19" ) );
+                new Association().etag("bb")
+                        .id("19")
+                        .userId("9999")
+                        .userEmail("scrooge.mcduck@disney.land")
+                        .displayName("Scrooge McDuck")
+                        .companyNumber("444444")
+                        .companyName("Sainsbury's")
+                        .status(StatusEnum.REMOVED)
+                        .createdAt( LocalDateTime.now().atOffset( ZoneOffset.UTC ) )
+                        .approvedAt( now.plusDays(5).atOffset( ZoneOffset.UTC ) )
+                        .removedAt( now.plusDays(6).atOffset( ZoneOffset.UTC ) )
+                        .kind( DEFAULT_KIND )
+                        .approvalRoute(ApprovalRouteEnum.AUTH_CODE)
+                        .approvalExpiryAt( now.plusDays(7).toString() )
+                        .invitations( List.of( invitationTwo ) )
+                        .links( new AssociationLinks().self( "/19" ) );
 
     }
 
@@ -544,6 +546,64 @@ class UserCompanyAssociationsTest {
         Assertions.assertEquals( "homer.simpson@springfield.com", invitationsOne.get(0).getInvitedBy() );
         Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(4) ), reduceTimestampResolution( invitationsOne.get(0).getInvitedAt() ) );
         Assertions.assertEquals( "/18", associationOne.getLinks().getSelf() );
+    }
+
+    @Test
+    void getAssociationDetailsWithoutPathVariableReturnsNotFound() throws Exception {
+        mockMvc.perform( get( "/associations/" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isNotFound() );
+    }
+    @Test
+    void getAssociationsDetailsWithoutXRequestIdReturnsBadRequest() throws Exception {
+        mockMvc.perform( get( "/associations/{id}", "1" )
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect(status().isBadRequest());
+    }
+    @Test
+    void getAssociationDetailsWithMalformedInputReturnsBadRequest() throws Exception {
+        mockMvc.perform( get( "/associations/{id}", "$" )
+                .header( "X-Request-Id", "theId123" )
+                .header("Eric-identity", "9999")
+                .header("ERIC-Identity-Type", "oauth2")
+                .header("ERIC-Authorised-Key-Roles", "*") ).andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void getAssociationUserDetailsWithNonexistentUIdReturnsNotFound() throws Exception {
+        Mockito.doThrow( new NotFoundRuntimeException( "user-company-association-api", "Not found" ) ).when( associationsService ).findAssociationById( "11" );
+        mockMvc.perform( get( "/associations/{id}", "11" )
+                .header( "X-Request-Id", "theId123" )
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isNotFound() );
+    }
+
+    @Test
+    void getAssociationDetailsFetchesAssociationDetails() throws Exception {
+        Mockito.doReturn(Optional.of(associationOne)).when(associationsService).findAssociationById("18");
+        final var response =
+                mockMvc.perform( get( "/associations/{id}", "18" )
+                                .header( "X-Request-Id", "theId123" )
+                                .header("Eric-identity", "9999")
+                                .header("ERIC-Identity-Type", "oauth2")
+                                .header("ERIC-Authorised-Key-Roles", "*") )
+                        .andExpect( status().isOk() )
+                        .andReturn()
+                        .getResponse();
+
+        final var objectMapper = new ObjectMapper();
+        objectMapper.registerModule( new JavaTimeModule() );
+        final Association associations = objectMapper.readValue( response.getContentAsByteArray(), Association.class );
+
+        Assertions.assertEquals( "18", associationOne.getId() );
+
     }
 
 }

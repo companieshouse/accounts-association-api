@@ -36,6 +36,7 @@ import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.InternalApiClient;
+import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
@@ -432,9 +433,9 @@ public class UserCompanyAssociationsTest {
     @Test
     void fetchAssociationsByWithoutXRequestIdReturnsBadRequest() throws Exception {
         mockMvc.perform( get( "/associations" )
-                .header("Eric-identity", "333333")
-                .header("ERIC-Identity-Type", "key")
-                .header("ERIC-Authorised-Key-Roles", "*") )
+                        .header("Eric-identity", "333333")
+                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isBadRequest() );
     }
 
@@ -503,14 +504,14 @@ public class UserCompanyAssociationsTest {
     @Test
     void fetchAssociationsByWithInvalidStatusReturnsZeroResults() throws Exception {
         final var response =
-        mockMvc.perform( get( "/associations?status=$$$$" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "key")
-                        .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isOk() )
-                .andReturn()
-                .getResponse();
+                mockMvc.perform( get( "/associations?status=$$$$" )
+                                .header("X-Request-Id", "theId123")
+                                .header("Eric-identity", "9999")
+                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Authorised-Key-Roles", "*") )
+                        .andExpect( status().isOk() )
+                        .andReturn()
+                        .getResponse();
 
         final var objectMapper = new ObjectMapper();
         objectMapper.registerModule( new JavaTimeModule() );
@@ -522,14 +523,14 @@ public class UserCompanyAssociationsTest {
     @Test
     void fetchAssociationsByUsesDefaultsIfValuesAreNotProvided() throws Exception {
         final var response =
-        mockMvc.perform( get( "/associations" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "key")
-                        .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isOk() )
-                .andReturn()
-                .getResponse();
+                mockMvc.perform( get( "/associations" )
+                                .header("X-Request-Id", "theId123")
+                                .header("Eric-identity", "9999")
+                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Authorised-Key-Roles", "*") )
+                        .andExpect( status().isOk() )
+                        .andReturn()
+                        .getResponse();
 
         final var objectMapper = new ObjectMapper();
         objectMapper.registerModule( new JavaTimeModule() );
@@ -537,7 +538,7 @@ public class UserCompanyAssociationsTest {
         final var links = associationsList.getLinks();
 
         final var items =
-        associationsList.getItems()
+                associationsList.getItems()
                         .stream()
                         .map( uk.gov.companieshouse.api.accounts.associations.model.Association::getId )
                         .toList();
@@ -554,14 +555,14 @@ public class UserCompanyAssociationsTest {
     @Test
     void fetchAssociationsByWithOneStatusAppliesStatusFilterCorrectly() throws Exception {
         final var response =
-        mockMvc.perform( get( "/associations?status=removed" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "key")
-                        .header("ERIC-Authorised-Key-Roles", "*") )
-               .andExpect( status().isOk() )
-               .andReturn()
-               .getResponse();
+                mockMvc.perform( get( "/associations?status=removed" )
+                                .header("X-Request-Id", "theId123")
+                                .header("Eric-identity", "9999")
+                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Authorised-Key-Roles", "*") )
+                        .andExpect( status().isOk() )
+                        .andReturn()
+                        .getResponse();
 
         final var objectMapper = new ObjectMapper();
         objectMapper.registerModule( new JavaTimeModule() );
@@ -618,14 +619,14 @@ public class UserCompanyAssociationsTest {
     @Test
     void fetchAssociationsByImplementsPaginationCorrectly() throws Exception {
         final var response =
-        mockMvc.perform( get( "/associations?status=confirmed&status=awaiting-approval&status=removed&page_index=2&items_per_page=3" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "key")
-                        .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isOk() )
-                .andReturn()
-                .getResponse();
+                mockMvc.perform( get( "/associations?status=confirmed&status=awaiting-approval&status=removed&page_index=2&items_per_page=3" )
+                                .header("X-Request-Id", "theId123")
+                                .header("Eric-identity", "9999")
+                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Authorised-Key-Roles", "*") )
+                        .andExpect( status().isOk() )
+                        .andReturn()
+                        .getResponse();
 
         final var objectMapper = new ObjectMapper();
         objectMapper.registerModule( new JavaTimeModule() );
@@ -633,10 +634,10 @@ public class UserCompanyAssociationsTest {
         final var links = associationsList.getLinks();
 
         final var items =
-        associationsList.getItems()
-                .stream()
-                .map( uk.gov.companieshouse.api.accounts.associations.model.Association::getId )
-                .toList();
+                associationsList.getItems()
+                        .stream()
+                        .map( uk.gov.companieshouse.api.accounts.associations.model.Association::getId )
+                        .toList();
 
         Assertions.assertTrue( items.containsAll( List.of ( "24", "25", "26" ) ) );
         Assertions.assertEquals( "/associations?page_index=2&items_per_page=3", links.getSelf() );
@@ -650,14 +651,14 @@ public class UserCompanyAssociationsTest {
     @Test
     void fetchAssociationsByFiltersBasedOnCompanyNumberCorrectly() throws Exception {
         final var response =
-        mockMvc.perform( get( "/associations?company_number=333333" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "key")
-                        .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isOk() )
-                .andReturn()
-                .getResponse();
+                mockMvc.perform( get( "/associations?company_number=333333" )
+                                .header("X-Request-Id", "theId123")
+                                .header("Eric-identity", "9999")
+                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Authorised-Key-Roles", "*") )
+                        .andExpect( status().isOk() )
+                        .andReturn()
+                        .getResponse();
 
         final var objectMapper = new ObjectMapper();
         objectMapper.registerModule( new JavaTimeModule() );
@@ -692,14 +693,14 @@ public class UserCompanyAssociationsTest {
     void fetchAssociationsByDoesMappingCorrectly() throws Exception {
 
         final var response =
-        mockMvc.perform( get( "/associations?company_number=333333" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "key")
-                        .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isOk() )
-                .andReturn()
-                .getResponse();
+                mockMvc.perform( get( "/associations?company_number=333333" )
+                                .header("X-Request-Id", "theId123")
+                                .header("Eric-identity", "9999")
+                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Authorised-Key-Roles", "*") )
+                        .andExpect( status().isOk() )
+                        .andReturn()
+                        .getResponse();
 
         final var objectMapper = new ObjectMapper();
         objectMapper.registerModule( new JavaTimeModule() );
@@ -727,6 +728,63 @@ public class UserCompanyAssociationsTest {
         Assertions.assertEquals( "homer.simpson@springfield.com", invitationsOne.get(0).getInvitedBy() );
         Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(4) ), reduceTimestampResolution( invitationsOne.get(0).getInvitedAt() ) );
         Assertions.assertEquals( "/associations/18", associationOne.getLinks().getSelf() );
+    }
+
+    @Test
+    void getAssociationDetailsWithoutPathVariableReturnsNotFound() throws Exception {
+        mockMvc.perform( get( "/associations/" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isNotFound() );
+    }
+    @Test
+    void getAssociationsDetailsWithoutXRequestIdReturnsBadRequest() throws Exception {
+        mockMvc.perform( get( "/associations/{id}", "1" )
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect(status().isBadRequest());
+    }
+    @Test
+    void getAssociationDetailsWithMalformedInputReturnsBadRequest() throws Exception {
+        mockMvc.perform( get( "/associations/{id}", "$" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void getAssociationUserDetailsWithNonexistentIdReturnsNotFound() throws Exception {
+        mockMvc.perform( get( "/associations/{id}", "1" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isNotFound() );
+    }
+
+    @Test
+    void getAssociationDetailsFetchesAssociationDetails() throws Exception {
+        final var responseBody =
+                mockMvc.perform( get( "/associations/{id}", "18" )
+                                .header("X-Request-Id", "theId123")
+                                .header("Eric-identity", "9999")
+                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Authorised-Key-Roles", "*") )
+                        .andExpect( status().isOk() )
+                        .andReturn()
+                        .getResponse().getContentAsByteArray();
+
+        final var objectMapper = new ObjectMapper();
+        objectMapper.registerModule( new JavaTimeModule() );
+        final var association = objectMapper.readValue(responseBody, Association.class );
+
+        Assertions.assertEquals( "9999", association.getUserId());
+
     }
 
     @AfterEach
