@@ -4,7 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
-import uk.gov.companieshouse.api.interceptor.UserAuthenticationInterceptor;
+import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.util.security.AuthorisationUtil;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
@@ -14,7 +14,7 @@ import java.util.Objects;
 @Component
 public class AuthorizationInterceptor implements HandlerInterceptor {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(String.valueOf(UserAuthenticationInterceptor.class));
+    private static final Logger LOGGER = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
 
 
     @Override
