@@ -770,4 +770,36 @@ public class AssociationsServiceTest {
         mongoTemplate.dropCollection(AssociationDao.class);
     }
 
+    @Test
+    void associationExistsWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(){
+        Assertions.assertFalse( associationsService.associationExists( null, "111" ) );
+        Assertions.assertFalse( associationsService.associationExists( "$$$$$$", "111" ) );
+        Assertions.assertFalse( associationsService.associationExists( "919191", "111" ) );
+        Assertions.assertFalse( associationsService.associationExists( "111111", null ) );
+        Assertions.assertFalse( associationsService.associationExists( "111111", "$$$" ) );
+        Assertions.assertFalse( associationsService.associationExists( "111111", "9191" ) );
+    }
+
+    @Test
+    void associationExistsWithExistingAssociationReturnsTrue(){
+        Assertions.assertTrue( associationsService.associationExists( "111111", "111" ) );
+    }
+
+    @Test
+    void createAssociationWithNullInputsThrowsNullPointerException(){
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( null, "000", ApprovalRouteEnum.AUTH_CODE ) );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", null, ApprovalRouteEnum.AUTH_CODE ) );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", "000", null ) );
+    }
+
+    @Test
+    void createAssociationSuccessfullyCreatesAssociation(){
+        final var association = associationsService.createAssociation( "000000", "000", ApprovalRouteEnum.AUTH_CODE );
+        Assertions.assertEquals( "000000", association.getCompanyNumber() );
+        Assertions.assertEquals( "000", association.getUserId() );
+        Assertions.assertEquals( StatusEnum.CONFIRMED.getValue(), association.getStatus() );
+        Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE.getValue(), association.getApprovalRoute() );
+        Assertions.assertNotNull( association.getEtag() );
+    }
+
 }
