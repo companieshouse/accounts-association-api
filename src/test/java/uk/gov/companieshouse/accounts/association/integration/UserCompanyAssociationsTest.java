@@ -24,6 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -40,6 +41,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
@@ -47,6 +49,7 @@ import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.api.model.ApiResponse;
 import uk.gov.companieshouse.api.sdk.ApiClientService;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
@@ -427,6 +430,8 @@ public class UserCompanyAssociationsTest {
         Mockito.doReturn( toGetUserDetailsApiResponse( "5555", "ross@friends.com", null ) ).when( accountsUserEndpoint ).getUserDetails( "5555" );
         Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( accountsUserEndpoint ).getUserDetails( "9191" );
 
+        Mockito.doReturn( toCompanyDetailsApiResponse( "000000", "Boston Dynamics" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "000000" );
+
         Mockito.doNothing().when(interceptorConfig).addInterceptors( any() );
     }
 
@@ -785,6 +790,116 @@ public class UserCompanyAssociationsTest {
 
         Assertions.assertEquals( "9999", association.getUserId());
 
+    }
+
+    @Test
+    void addAssociationWithoutXRequestIdReturnsBadRequest() throws Exception {
+        mockMvc.perform(post( "/associations" )
+                        .header("Eric-identity", "000")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"000000\"}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void addAssociationWithoutEricIdentityReturnsBadRequest() throws Exception {
+        mockMvc.perform(post( "/associations" )
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"000000\"}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void addAssociationWithoutRequestBodyReturnsBadRequest() throws Exception {
+        mockMvc.perform(post( "/associations" )
+                        .header("Eric-identity", "000")
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void addAssociationWithoutCompanyNumberReturnsBadRequest() throws Exception {
+        mockMvc.perform(post( "/associations" )
+                        .header("Eric-identity", "000")
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void addAssociationWithMalformedCompanyNumberReturnsBadRequest() throws Exception {
+        mockMvc.perform(post( "/associations" )
+                        .header("Eric-identity", "000")
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"$$$$$$\"}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void addAssociationWithExistingAssociationReturnsBadRequest() throws Exception {
+        mockMvc.perform(post( "/associations" )
+                        .header("Eric-identity", "9999")
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"333333\"}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void addAssociationWithNonexistentCompanyNumberReturnsNotFound() throws Exception {
+        mockMvc.perform(post( "/associations" )
+                        .header("Eric-identity", "000")
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"919191\"}" ) )
+                .andExpect( status().isNotFound() );
+    }
+
+    @Test
+    void addAssociationCreatesNewAssociationCorrectlyAndReturnsAssociationIdWithCreatedHttpStatus() throws Exception {
+        final var responseJson =
+        mockMvc.perform(post( "/associations" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "000")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"000000\"}" ) )
+            .andExpect( status().isCreated() )
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        final var objectMapper = new ObjectMapper();
+        final var response = objectMapper.readValue( responseJson, ResponseBodyPost.class );
+
+        final var associationOptional = associationsRepository.findById( response.getAssociationId() );
+        Assertions.assertTrue( associationOptional.isPresent() );
+
+        final var association = associationOptional.get();
+        Assertions.assertEquals( "000000", association.getCompanyNumber() );
+        Assertions.assertEquals( "000", association.getUserId() );
+        Assertions.assertEquals( StatusEnum.CONFIRMED.getValue(), association.getStatus() );
+        Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE.getValue(), association.getApprovalRoute() );
+        Assertions.assertNotNull( association.getEtag() );
     }
 
     @AfterEach
