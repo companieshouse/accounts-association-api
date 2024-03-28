@@ -10,10 +10,12 @@ import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
+import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.*;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
@@ -32,16 +34,37 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
     private final AssociationsService associationsService;
 
+    private final CompanyService companyService;
 
     @Autowired
-    public UserCompanyAssociations(UsersService usersService, AssociationsService associationsService) {
+    public UserCompanyAssociations(UsersService usersService, AssociationsService associationsService, CompanyService companyService) {
         this.usersService = usersService;
         this.associationsService = associationsService;
+        this.companyService = companyService;
     }
 
     @Override
-    public ResponseEntity<ResponseBodyPost> addAssociation(@NotNull String s, @NotNull String s1, @Valid RequestBodyPost requestBodyPost) {
-        return null;
+    public ResponseEntity<ResponseBodyPost> addAssociation( final String xRequestId, final String ericIdentity, final RequestBodyPost requestBody ) {
+        final var companyNumber = requestBody.getCompanyNumber();
+
+        LOG.infoContext( xRequestId, String.format( "Attempting to create association for company_number %s and user_id %s", companyNumber, ericIdentity ), null);
+
+        LOG.infoContext( xRequestId, String.format( "Attempting to fetch company for company_number %s from company profile cache.", companyNumber ), null);
+        companyService.fetchCompanyProfile( companyNumber );
+        LOG.infoContext( xRequestId, String.format( "Successfully fetched company for company_number %s from company profile cache.", companyNumber ), null);
+
+        LOG.infoContext( xRequestId, String.format( "Attempting to check if association between company_number %s and user_id %s exists in user_company_associations.", companyNumber, ericIdentity ), null);
+        if ( associationsService.associationExists( companyNumber, ericIdentity ) ){
+            LOG.error( String.format( "%s: Association between user_id %s and company_number %s already exists.", xRequestId, ericIdentity, companyNumber ) );
+            throw new BadRequestRuntimeException( "Association already exists." );
+        }
+        LOG.infoContext( xRequestId, String.format( "Could not find association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity ), null);
+
+        LOG.infoContext( xRequestId, String.format( "Attempting to create association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity ), null);
+        final var association = associationsService.createAssociation( companyNumber, ericIdentity, ApprovalRouteEnum.AUTH_CODE );
+        LOG.infoContext( xRequestId, String.format( "Successfully created association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity ), null);
+
+        return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
     }
 
     @Override

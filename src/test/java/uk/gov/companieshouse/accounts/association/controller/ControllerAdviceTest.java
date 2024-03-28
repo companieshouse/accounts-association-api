@@ -7,26 +7,19 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 
-import org.springframework.web.client.HttpServerErrorException;
 import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfig;
-import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
-import uk.gov.companieshouse.api.accounts.user.model.User;
 
-import javax.validation.ConstraintViolationException;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Tag("unit-test")
@@ -44,6 +37,9 @@ class ControllerAdviceTest {
 
     @MockBean
     StaticPropertyUtil staticPropertyUtil;
+
+    @MockBean
+    CompanyService companyService;
 
 
     @BeforeEach
