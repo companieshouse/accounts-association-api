@@ -1,5 +1,7 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import java.time.LocalDateTime;
+import java.util.Objects;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -26,12 +28,13 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -903,6 +906,44 @@ class AssociationsServiceTest {
 
         associationsService.fetchAssociationsForUserStatusAndCompany( user, List.of(), 0, 15, null );
         Mockito.verify(associationsListUserMapper).daoToDto(argThat(associationsPageMatches(0, 0, 0, List.of())), eq(user));
+    }
+
+    @Test
+    void associationExistsWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(){
+        Mockito.doReturn( false ).when( associationsRepository ).associationExists( any(), any() );
+        Assertions.assertFalse( associationsService.associationExists( null, "111" ) );
+        Assertions.assertFalse( associationsService.associationExists( "$$$$$$", "111" ) );
+        Assertions.assertFalse( associationsService.associationExists( "919191", "111" ) );
+        Assertions.assertFalse( associationsService.associationExists( "111111", null ) );
+        Assertions.assertFalse( associationsService.associationExists( "111111", "$$$" ) );
+        Assertions.assertFalse( associationsService.associationExists( "111111", "9191" ) );
+    }
+
+    @Test
+    void associationExistsWithExistingAssociationReturnsTrue(){
+        Mockito.doReturn( true ).when( associationsRepository ).associationExists( "111111", "111" );
+        Assertions.assertTrue( associationsService.associationExists( "111111", "111" ) );
+    }
+
+    @Test
+    void createAssociationWithNullInputsThrowsNullPointerException(){
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( null, "000", ApprovalRouteEnum.AUTH_CODE ) );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", null, ApprovalRouteEnum.AUTH_CODE ) );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", "000", null ) );
+    }
+
+    private ArgumentMatcher<AssociationDao> createAssociationDaoMatches( final String companyNumber, final String userId, final ApprovalRouteEnum approvalRouteEnum ){
+        return associationDao -> associationDao.getCompanyNumber().equals( companyNumber ) ||
+                                 associationDao.getUserId().equals( userId ) ||
+                                 associationDao.getStatus().equals( StatusEnum.CONFIRMED.getValue() ) ||
+                                 associationDao.getApprovalRoute().equals( approvalRouteEnum.getValue() ) ||
+                                 !Objects.isNull( associationDao.getEtag() );
+    }
+
+    @Test
+    void createAssociationSuccessfullyCreatesAssociation(){
+        associationsService.createAssociation( "000000", "000", ApprovalRouteEnum.AUTH_CODE );
+        Mockito.verify( associationsRepository ).insert( argThat( createAssociationDaoMatches( "000000", "000", ApprovalRouteEnum.AUTH_CODE ) ) );
     }
 
 }
