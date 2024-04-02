@@ -1,6 +1,7 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
 import jakarta.validation.ConstraintViolationException;
+import java.util.HashSet;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -436,6 +437,44 @@ class AssociationsRepositoryTest {
     @Test
     void associationExistsWithExistingAssociationReturnsTrue(){
         Assertions.assertTrue( associationsRepository.associationExists( "111111", "111" ) );
+    }
+
+    @Test
+    void fetchAssociationWithNullOrMalformedOrNonexistentCompanyNumberOrUserEmailReturnsEmptyPage(){
+        Assertions.assertTrue(associationsRepository.fetchAssociation( null, "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty());
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "$$$$$$", "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "919191", "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", null, Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", "$$$", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", "the.void@space.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
+    }
+
+    @Test
+    void fetchAssociationWithNullStatusThrowsException(){
+        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchAssociation( "12345", "abc@abc.com", null, PageRequest.of( 0, 15 ) ) );
+    }
+
+    @Test
+    void fetchAssociationWithEmptyStatusesOrNullOrMalformedStatusReturnsEmptyPage(){
+        final var nullSet = new HashSet<String>();
+        nullSet.add(null);
+
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", "abc@abc.com", Set.of(), PageRequest.of( 0, 15 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", "abc@abc.com", nullSet, PageRequest.of( 0, 15 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", "abc@abc.com", Set.of( "complicated" ), PageRequest.of( 0, 15 ) ).isEmpty() );
+    }
+
+    @Test
+    void fetchAssociationRetrievesAssociation(){
+         Assertions.assertEquals( "111", associationsRepository.fetchAssociation( "12345", "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).getContent().getFirst().getId() );
+    }
+
+    @Test
+    void fetchAssociationWithoutPageableRetrievesAllAssociationsThatSatisfyQuery(){
+        final var associations = associationsRepository.fetchAssociation( "12345", "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() ), null );
+        Assertions.assertEquals( 2, associations.getTotalElements() );
+        Assertions.assertEquals( "111", associations.getContent().getFirst().getId() );
+        Assertions.assertEquals( "222", associations.getContent().getLast().getId() );
     }
 
     @AfterEach
