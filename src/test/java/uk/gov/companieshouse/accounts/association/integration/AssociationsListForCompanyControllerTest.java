@@ -638,6 +638,45 @@ class AssociationsListForCompanyControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void getAssociationsForCompanyWithMalformedUserEmailReturnsBadRequest() throws Exception {
+        mockMvc.perform( get( "/associations/companies/{company_number}?user_email=$$$", "111111" ).header("X-Request-Id", "theId123") )
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAssociationsForCompanyFetchesAssociation() throws Exception {
+       final var response =
+        mockMvc.perform( get( "/associations/companies/{company_number}?user_email=bruce.wayne@gotham.city", "111111" ).header("X-Request-Id", "theId123") )
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsByteArray();
+
+        final var objectMapper = new ObjectMapper();
+        objectMapper.registerModule( new JavaTimeModule() );
+        final var associationsList = objectMapper.readValue( response, AssociationsList.class );
+
+        Assertions.assertEquals( 1, associationsList.getTotalResults() );
+        Assertions.assertEquals( "1", associationsList.getItems().getFirst().getId() );
+    }
+
+    @Test
+    void getAssociationsForCompanyWithNonexistentUserEmailFetchesEmptyList() throws Exception {
+        final var response =
+                mockMvc.perform( get( "/associations/companies/{company_number}?user_email=the.void@space.com", "111111" ).header("X-Request-Id", "theId123") )
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray();
+
+        final var objectMapper = new ObjectMapper();
+        objectMapper.registerModule( new JavaTimeModule() );
+        final var associationsList = objectMapper.readValue( response, AssociationsList.class );
+
+        Assertions.assertEquals( 0, associationsList.getTotalResults() );
+    }
+
     @AfterEach
     public void after() {
         mongoTemplate.dropCollection(AssociationDao.class);
