@@ -30,6 +30,6 @@ public interface AssociationsRepository extends MongoRepository<AssociationDao, 
 
 
     @Query( "{ 'company_number': ?0, 'user_email': ?1, 'status': { $in: ?2 } } }" )
-    Page<AssociationDao> fetchAssociation( final String companyNumber, final String userEmail, final Set<String> statuses, final Pageable pageable );
+    Page<AssociationDao> fetchAssociationForCompanyNumberUserEmailAndStatus( final String companyNumber, final String userEmail, final Set<String> statuses, final Pageable pageable );
 
 }

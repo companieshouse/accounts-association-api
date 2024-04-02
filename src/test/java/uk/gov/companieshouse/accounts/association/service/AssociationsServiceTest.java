@@ -762,7 +762,7 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, 1);
 
-        Mockito.doReturn(page).when(associationsRepository).fetchAssociation("111111", "bruce.wayne@gotham.city",
+        Mockito.doReturn(page).when(associationsRepository).fetchAssociationForCompanyNumberUserEmailAndStatus("111111", "bruce.wayne@gotham.city",
                 Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() ), pageRequest );
 
         final var companyDetails =
@@ -779,7 +779,7 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, content.size() );
 
-        Mockito.doReturn(page).when(associationsRepository).fetchAssociation("111111", "$$$",
+        Mockito.doReturn(page).when(associationsRepository).fetchAssociationForCompanyNumberUserEmailAndStatus("111111", "$$$",
                 Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() ), pageRequest );
 
         final var companyDetails =
@@ -795,7 +795,7 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, content.size() );
 
-        Mockito.doReturn(page).when(associationsRepository).fetchAssociation("111111", "the.void@space.com",
+        Mockito.doReturn(page).when(associationsRepository).fetchAssociationForCompanyNumberUserEmailAndStatus("111111", "the.void@space.com",
                 Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() ), pageRequest );
 
         final var companyDetails =
