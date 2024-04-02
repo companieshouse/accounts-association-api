@@ -161,7 +161,14 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             }
         }
             //if association with email id
-            var updatedAssociation = associationsService.sendNewInvitation(ericIdentity, existingAssociationWithEmail.get());
+            //check if the user exists.
+        var inviteeUser = usersService.searchUserDetails(Collections.singletonList(invitationRequestBodyPost.getInviteeEmailId()));
+        if(!inviteeUser.isEmpty()){
+            existingAssociationWithEmail.get().setUserId(inviteeUser.getFirst().getUserId());
+            existingAssociationWithEmail.get().setUserEmail(null);
+        }
+
+        var updatedAssociation = associationsService.sendNewInvitation(ericIdentity, existingAssociationWithEmail.get());
             return new ResponseEntity<>(new ResponseBodyPost().associationId(updatedAssociation.getId()), HttpStatus.OK);
 
 
