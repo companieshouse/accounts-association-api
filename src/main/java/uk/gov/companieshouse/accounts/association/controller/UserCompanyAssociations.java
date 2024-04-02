@@ -49,19 +49,19 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         LOG.infoContext( xRequestId, String.format( "Attempting to create association for company_number %s and user_id %s", companyNumber, ericIdentity ), null);
 
-        LOG.infoContext( xRequestId, String.format( "Attempting to fetch company for company_number %s from company profile cache.", companyNumber ), null);
+        LOG.debugContext( xRequestId, String.format( "Attempting to fetch company for company_number %s from company profile cache.", companyNumber ), null);
         companyService.fetchCompanyProfile( companyNumber );
-        LOG.infoContext( xRequestId, String.format( "Successfully fetched company for company_number %s from company profile cache.", companyNumber ), null);
+        LOG.debugContext( xRequestId, String.format( "Successfully fetched company for company_number %s from company profile cache.", companyNumber ), null);
 
-        LOG.infoContext( xRequestId, String.format( "Attempting to check if association between company_number %s and user_id %s exists in user_company_associations.", companyNumber, ericIdentity ), null);
+        LOG.debugContext( xRequestId, String.format( "Attempting to check if association between company_number %s and user_id %s exists in user_company_associations.", companyNumber, ericIdentity ), null);
         if ( associationsService.associationExists( companyNumber, ericIdentity ) ){
             LOG.error( String.format( "%s: Association between user_id %s and company_number %s already exists.", xRequestId, ericIdentity, companyNumber ) );
             throw new BadRequestRuntimeException( "Association already exists." );
         }
-        LOG.infoContext( xRequestId, String.format( "Could not find association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity ), null);
+        LOG.debugContext( xRequestId, String.format( "Could not find association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity ), null);
 
-        LOG.infoContext( xRequestId, String.format( "Attempting to create association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity ), null);
-        final var association = associationsService.createAssociation( companyNumber, ericIdentity, ApprovalRouteEnum.AUTH_CODE );
+        LOG.debugContext( xRequestId, String.format( "Attempting to create association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity ), null);
+        final var association = associationsService.createAssociation( companyNumber, ericIdentity, null, ApprovalRouteEnum.AUTH_CODE );
         LOG.infoContext( xRequestId, String.format( "Successfully created association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity ), null);
 
         return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
@@ -111,7 +111,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<ResponseBodyPost> inviteUser(@NotNull String s, @NotNull String s1, @Valid InvitationRequestBodyPost invitationRequestBodyPost) {
+    public ResponseEntity<ResponseBodyPost> inviteUser(@NotNull String xRequestId, @NotNull String ericIdentity, @Valid InvitationRequestBodyPost invitationRequestBodyPost) {
         return null;
     }
 

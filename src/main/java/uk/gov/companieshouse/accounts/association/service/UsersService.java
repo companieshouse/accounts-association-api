@@ -22,25 +22,25 @@ public class UsersService {
         this.accountsUserEndpoint = accountsUserEndpoint;
     }
 
-    public User fetchUserDetails( final String userId ) {
+    public User fetchUserDetails(final String userId) {
 
         try {
-            LOG.debug( String.format( "Attempting to fetch user details for user %s", userId ) );
+            LOG.debug(String.format("Attempting to fetch user details for user %s", userId));
             return accountsUserEndpoint.getUserDetails(userId)
-                                       .getData();
-        } catch( ApiErrorResponseException exception ){
-            if( exception.getStatusCode() == 404 ) {
-                LOG.error( String.format( "Could not find user details for user %s", userId ) );
-                throw new NotFoundRuntimeException( "accounts-association-api", "Failed to find user" );
+                    .getData();
+        } catch (ApiErrorResponseException exception) {
+            if (exception.getStatusCode() == 404) {
+                LOG.errorContext(String.format("Could not find user details for user %s", userId), exception, null);
+                throw new NotFoundRuntimeException("accounts-association-api", "Failed to find user");
             } else {
-                LOG.error( String.format( "Failed to retrieve user details for user %s", userId ) );
+                LOG.errorContext(String.format("Failed to retrieve user details for user %s", userId), exception, null);
                 throw new InternalServerErrorRuntimeException("Failed to retrieve user details");
             }
-        } catch( URIValidationException exception ){
-            LOG.error( String.format( "Failed to fetch user details for user %s, because uri was incorrectly formatted", userId ) );
-            throw new InternalServerErrorRuntimeException( "Invalid uri for accounts-user-api service" );
-        } catch ( Exception exception ){
-            LOG.error( String.format( "Failed to retrieve user details for user %s", userId ) );
+        } catch (URIValidationException exception) {
+            LOG.errorContext(String.format("Failed to fetch user details for user %s, because uri was incorrectly formatted", userId), exception, null);
+            throw new InternalServerErrorRuntimeException("Invalid uri for accounts-user-api service");
+        } catch (Exception exception) {
+            LOG.errorContext(String.format("Failed to retrieve user details for user %s", userId), exception, null);
             throw new InternalServerErrorRuntimeException("Failed to retrieve user details");
         }
 

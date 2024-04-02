@@ -33,17 +33,17 @@ public class CompanyService {
                     .getData();
         } catch (ApiErrorResponseException exception) {
             if (exception.getStatusCode() == 404) {
-                LOG.error(String.format("Could not find company profile for company %s", companyNumber));
+                LOG.errorContext(String.format("Could not find company profile for company %s", companyNumber), exception, null);
                 throw new NotFoundRuntimeException("accounts-association-api", "Failed to find company");
             } else {
-                LOG.error(String.format("Failed to retrieve company profile for company %s", companyNumber));
+                LOG.errorContext(String.format("Failed to retrieve company profile for company %s", companyNumber), exception, null);
                 throw new InternalServerErrorRuntimeException("Failed to retrieve company profile");
             }
         } catch (URIValidationException exception) {
-            LOG.error(String.format("Failed to fetch company profile for company %s, because uri was incorrectly formatted", companyNumber));
+            LOG.errorContext(String.format("Failed to fetch company profile for company %s, because uri was incorrectly formatted", companyNumber), exception, null);
             throw new InternalServerErrorRuntimeException("Invalid uri for company-profile-api service");
         } catch (Exception exception) {
-            LOG.error(String.format("Failed to retrieve company profile for company %s", companyNumber));
+            LOG.errorContext(String.format("Failed to retrieve company profile for company %s", companyNumber), exception, null);
             throw new InternalServerErrorRuntimeException("Failed to retrieve company profile");
         }
 
