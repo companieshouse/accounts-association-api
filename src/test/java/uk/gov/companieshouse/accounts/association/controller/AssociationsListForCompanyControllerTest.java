@@ -32,6 +32,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -152,7 +153,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         expectedAssociationsList.setItemsPerPage( 15 );
         expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationOne ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ), isNull() );
 
         final var companyDetails =
                 new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
@@ -163,7 +164,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 .andExpect(status().isOk());
 
 
-        Mockito.verify( associationsService ).fetchAssociatedUsers(  "111111" ,  companyDetails ,  false ,  15 , 0  );
+        Mockito.verify( associationsService ).fetchAssociatedUsers(  "111111" ,  companyDetails ,  false ,  15 , 0, null );
     }
 
     @Test
@@ -175,7 +176,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         expectedAssociationsList.setItemsPerPage( 15 );
         expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationOne ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ), isNull() );
 
         final var companyDetails =
                 new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
@@ -185,7 +186,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=false", "111111" ).header("X-Request-Id", "theId123") )
                 .andExpect(status().isOk());
 
-        Mockito.verify( associationsService ).fetchAssociatedUsers(  "111111" , companyDetails , false , 15 , 0  );
+        Mockito.verify( associationsService ).fetchAssociatedUsers(  "111111" , companyDetails , false , 15 , 0, null );
     }
 
     @Test
@@ -197,7 +198,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         expectedAssociationsList.setItemsPerPage( 15 );
         expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationOne, associationTwo ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 15 ), eq( 0 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 15 ), eq( 0 ), isNull() );
 
         final var companyDetails =
                 new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
@@ -207,7 +208,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=true", "111111" ).header("X-Request-Id", "theId123") )
                 .andExpect(status().isOk());
 
-        Mockito.verify( associationsService ).fetchAssociatedUsers( "111111" ,  companyDetails, true , 15 , 0 );
+        Mockito.verify( associationsService ).fetchAssociatedUsers( "111111" ,  companyDetails, true , 15 , 0, null );
     }
 
     @Test
@@ -219,7 +220,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         expectedAssociationsList.setItemsPerPage( 1 );
         expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationTwo ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 1 ), eq( 1 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 1 ), eq( 1 ), isNull() );
 
         final var companyDetails =
                 new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
@@ -280,7 +281,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         expectedAssociationsList.setItemsPerPage( 2 );
         expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationOne, associationTwo ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 2 ), eq( 0 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 2 ), eq( 0 ), isNull() );
 
         final var companyDetails =
                 new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
@@ -335,5 +336,63 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void getAssociationsForCompanyWithMalformedUserEmailReturnsBadRequest() throws Exception {
+        mockMvc.perform( get( "/associations/companies/{company_number}?user_email=$$$", "111111" ).header("X-Request-Id", "theId123") )
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAssociationsForCompanyFetchesAssociation() throws Exception {
+        final var companyDetails =
+                new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
+
+        Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( any() );
+
+        final var expectedAssociationsList = new AssociationsList();
+        expectedAssociationsList.setTotalResults( 1 );
+        expectedAssociationsList.setItems(List.of( associationOne ));
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( eq( "111111" ), eq( companyDetails ), eq( false ), eq( 15 ), eq( 0 ), eq( "bruce.wayne@gotham.city" ) );
+
+        final var response =
+                mockMvc.perform( get( "/associations/companies/{company_number}?user_email=bruce.wayne@gotham.city", "111111" ).header("X-Request-Id", "theId123") )
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray();
+
+        final var objectMapper = new ObjectMapper();
+        objectMapper.registerModule( new JavaTimeModule() );
+        final var associationsList = objectMapper.readValue( response, AssociationsList.class );
+
+        Assertions.assertEquals( 1, associationsList.getTotalResults() );
+        Assertions.assertEquals( "1", associationsList.getItems().getFirst().getId() );
+    }
+
+    @Test
+    void getAssociationsForCompanyWithNonexistentUserEmailFetchesEmptyList() throws Exception {
+        final var companyDetails =
+                new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
+
+        Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( any() );
+
+        final var expectedAssociationsList = new AssociationsList();
+        expectedAssociationsList.setTotalResults( 0 );
+        expectedAssociationsList.setItems(List.of());
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( eq( "111111" ), eq( companyDetails ), eq( false ), eq( 15 ), eq( 0 ), eq( "the.void@space.com" ) );
+
+        final var response =
+                mockMvc.perform( get( "/associations/companies/{company_number}?user_email=the.void@space.com", "111111" ).header("X-Request-Id", "theId123") )
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray();
+
+        final var objectMapper = new ObjectMapper();
+        objectMapper.registerModule( new JavaTimeModule() );
+        final var associationsList = objectMapper.readValue( response, AssociationsList.class );
+
+        Assertions.assertEquals( 0, associationsList.getTotalResults() );
+    }
 
 }
