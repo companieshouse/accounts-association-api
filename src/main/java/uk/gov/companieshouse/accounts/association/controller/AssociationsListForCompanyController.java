@@ -26,7 +26,7 @@ public class AssociationsListForCompanyController implements AssociationsListFor
     }
 
     @Override
-    public ResponseEntity<AssociationsList> getAssociationsForCompany( final String companyNumber, final String xRequestId, final Boolean includeRemoved, final Integer pageIndex, final Integer itemsPerPage ) {
+    public ResponseEntity<AssociationsList> getAssociationsForCompany( final String companyNumber, final String xRequestId, final Boolean includeRemoved, final Integer pageIndex, final Integer itemsPerPage, final String userEmail ) {
 
         LOG.info( String.format( "%s: Attempting to fetch users that are associated with company %s. includeRemoved=%b, itemsPerPage=%d, and pageIndex=%d.", xRequestId, companyNumber, includeRemoved, itemsPerPage, pageIndex ) );
 
@@ -42,7 +42,7 @@ public class AssociationsListForCompanyController implements AssociationsListFor
 
         final var companyProfile = companyService.fetchCompanyProfile( companyNumber );
 
-        final var associationsList = associationsService.fetchAssociatedUsers( companyNumber, companyProfile, includeRemoved, itemsPerPage, pageIndex );
+        final var associationsList = associationsService.fetchAssociatedUsers( companyNumber, companyProfile, includeRemoved, itemsPerPage, pageIndex, userEmail );
         final var associationsListIsEmpty = associationsList.getItems().isEmpty();
 
         LOG.info( associationsListIsEmpty ? String.format( "%s: Could not find any associations", xRequestId ) : String.format( "%s: Successfully fetched associations", xRequestId ) );
