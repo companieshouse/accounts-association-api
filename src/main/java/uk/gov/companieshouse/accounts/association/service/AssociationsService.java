@@ -82,7 +82,7 @@ public class AssociationsService {
         if ( Objects.isNull( userEmail ) ){
             associations = associationsRepository.fetchAssociatedUsers(companyNumber, statuses, pageable);
         } else {
-            associations = associationsRepository.fetchAssociation( companyNumber, userEmail, statuses, pageable );
+            associations = associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( companyNumber, userEmail, statuses, pageable );
         }
 
         return associationsListCompanyMapper.daoToDto(associations, companyDetails);

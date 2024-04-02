@@ -440,38 +440,38 @@ class AssociationsRepositoryTest {
     }
 
     @Test
-    void fetchAssociationWithNullOrMalformedOrNonexistentCompanyNumberOrUserEmailReturnsEmptyPage(){
-        Assertions.assertTrue(associationsRepository.fetchAssociation( null, "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty());
-        Assertions.assertTrue( associationsRepository.fetchAssociation( "$$$$$$", "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociation( "919191", "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", null, Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", "$$$", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", "the.void@space.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
+    void fetchAssociationForCompanyNumberUserEmailAndStatusWithNullOrMalformedOrNonexistentCompanyNumberOrUserEmailReturnsEmptyPage(){
+        Assertions.assertTrue(associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( null, "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty());
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "$$$$$$", "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "919191", "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", null, Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "$$$", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "the.void@space.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
     }
 
     @Test
-    void fetchAssociationWithNullStatusThrowsException(){
-        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchAssociation( "12345", "abc@abc.com", null, PageRequest.of( 0, 15 ) ) );
+    void fetchAssociationForCompanyNumberUserEmailAndStatusWithNullStatusThrowsException(){
+        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "abc@abc.com", null, PageRequest.of( 0, 15 ) ) );
     }
 
     @Test
-    void fetchAssociationWithEmptyStatusesOrNullOrMalformedStatusReturnsEmptyPage(){
+    void fetchAssociationForCompanyNumberUserEmailAndStatusWithEmptyStatusesOrNullOrMalformedStatusReturnsEmptyPage(){
         final var nullSet = new HashSet<String>();
         nullSet.add(null);
 
-        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", "abc@abc.com", Set.of(), PageRequest.of( 0, 15 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", "abc@abc.com", nullSet, PageRequest.of( 0, 15 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", "abc@abc.com", Set.of( "complicated" ), PageRequest.of( 0, 15 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "abc@abc.com", Set.of(), PageRequest.of( 0, 15 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "abc@abc.com", nullSet, PageRequest.of( 0, 15 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "abc@abc.com", Set.of( "complicated" ), PageRequest.of( 0, 15 ) ).isEmpty() );
     }
 
     @Test
-    void fetchAssociationRetrievesAssociation(){
-         Assertions.assertEquals( "111", associationsRepository.fetchAssociation( "12345", "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).getContent().getFirst().getId() );
+    void fetchAssociationForCompanyNumberUserEmailAndStatusRetrievesAssociation(){
+         Assertions.assertEquals( "111", associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).getContent().getFirst().getId() );
     }
 
     @Test
-    void fetchAssociationWithoutPageableRetrievesAllAssociationsThatSatisfyQuery(){
-        final var associations = associationsRepository.fetchAssociation( "12345", "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() ), null );
+    void fetchAssociationForCompanyNumberUserEmailAndStatusWithoutPageableRetrievesAllAssociationsThatSatisfyQuery(){
+        final var associations = associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() ), null );
         Assertions.assertEquals( 2, associations.getTotalElements() );
         Assertions.assertEquals( "111", associations.getContent().getFirst().getId() );
         Assertions.assertEquals( "222", associations.getContent().getLast().getId() );
