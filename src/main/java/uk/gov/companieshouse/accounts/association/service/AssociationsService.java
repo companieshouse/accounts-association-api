@@ -70,14 +70,20 @@ public class AssociationsService {
     }
 
     @Transactional(readOnly = true)
-    public AssociationsList fetchAssociatedUsers(final String companyNumber, final CompanyDetails companyDetails, final boolean includeRemoved, final int itemsPerPage, final int pageIndex) {
+    public AssociationsList fetchAssociatedUsers(final String companyNumber, final CompanyDetails companyDetails, final boolean includeRemoved, final int itemsPerPage, final int pageIndex, final String userEmail) {
         final Pageable pageable = PageRequest.of(pageIndex, itemsPerPage);
 
         final var statuses = new HashSet<>(Set.of(StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue()));
         if (includeRemoved) {
             statuses.add(StatusEnum.REMOVED.getValue());
         }
-        final var associations = associationsRepository.fetchAssociatedUsers(companyNumber, statuses, pageable);
+
+        final Page<AssociationDao> associations;
+        if ( Objects.isNull( userEmail ) ){
+            associations = associationsRepository.fetchAssociatedUsers(companyNumber, statuses, pageable);
+        } else {
+            associations = associationsRepository.fetchAssociation( companyNumber, userEmail, statuses, pageable );
+        }
 
         return associationsListCompanyMapper.daoToDto(associations, companyDetails);
     }
