@@ -11,6 +11,8 @@ import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
+import java.util.List;
+
 @Service
 public class UsersService {
 
@@ -41,6 +43,19 @@ public class UsersService {
             throw new InternalServerErrorRuntimeException("Invalid uri for accounts-user-api service");
         } catch (Exception exception) {
             LOG.errorContext(String.format("Failed to retrieve user details for user %s", userId), exception, null);
+            throw new InternalServerErrorRuntimeException("Failed to retrieve user details");
+        }
+
+    }
+
+    public List<User> searchUserDetails(final List<String> emails) {
+
+        try {
+            LOG.debug(String.format("Attempting to fetch user details for users %s", String.join(",", emails)));
+            return accountsUserEndpoint.searchUserDetails(emails)
+                    .getData();
+        } catch (URIValidationException | ApiErrorResponseException | Exception exception) {
+            LOG.errorContext(String.format("Failed to retrieve user details for users %s", String.join(",", emails)), exception, null);
             throw new InternalServerErrorRuntimeException("Failed to retrieve user details");
         }
 
