@@ -20,6 +20,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
@@ -30,6 +31,7 @@ import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.InternalApiClient;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.sdk.ApiClientService;
@@ -828,6 +830,47 @@ public class AssociationsServiceTest {
         Assertions.assertEquals( StatusEnum.CONFIRMED.getValue(), association.getStatus() );
         Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE.getValue(), association.getApprovalRoute() );
         Assertions.assertNotNull( association.getEtag() );
+    }
+
+    @Test
+    void updateAssociationStatusWithMalformedOrNonexistentAssociationIdThrowsInternalServerError(){
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociationStatus( "$$$", "111", RequestBodyPut.StatusEnum.REMOVED, false ) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociationStatus( "9191", "111", RequestBodyPut.StatusEnum.REMOVED, false ) );
+    }
+
+    @Test
+    void updateAssociationStatusWithNullAssociationIdOrUserIdOrNullStatusThrowsNullPointerException(){
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociationStatus( null, "111", RequestBodyPut.StatusEnum.REMOVED, false ) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociationStatus( "1", null, RequestBodyPut.StatusEnum.REMOVED, true ) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociationStatus( "1", "111", null, false ) );
+    }
+
+    @Test
+    void updateAssociationStatusWithRemovedStatusAndSwapUserEmailForUserIdSetToFalseUpdatesAssociationCorrectly(){
+        final var oldAssociationData = associationsRepository.findById("1").get();
+        associationsService.updateAssociationStatus( "1", "111", RequestBodyPut.StatusEnum.REMOVED, false );
+        final var newAssociationData = associationsRepository.findById("1").get();
+
+        Assertions.assertEquals( RequestBodyPut.StatusEnum.REMOVED.getValue(), newAssociationData.getStatus() );
+        Assertions.assertEquals( oldAssociationData.getApprovedAt(), newAssociationData.getApprovedAt() );
+        Assertions.assertNotEquals( oldAssociationData.getRemovedAt(), newAssociationData.getRemovedAt() );
+        Assertions.assertNotEquals( oldAssociationData.getEtag(), newAssociationData.getEtag() );
+        Assertions.assertEquals( oldAssociationData.getUserEmail(), newAssociationData.getUserEmail() );
+        Assertions.assertEquals( oldAssociationData.getUserId(), newAssociationData.getUserId() );
+    }
+
+    @Test
+    void updateAssociationStatusWithConfirmedStatusAndSwapUserEmailForUserIdSetToTrueUpdatesAssociationCorrectly(){
+        final var oldAssociationData = associationsRepository.findById("6").get();
+        associationsService.updateAssociationStatus( "6", "777", RequestBodyPut.StatusEnum.CONFIRMED, true );
+        final var newAssociationData = associationsRepository.findById("6").get();
+
+        Assertions.assertEquals( RequestBodyPut.StatusEnum.CONFIRMED.getValue(), newAssociationData.getStatus() );
+        Assertions.assertNotEquals( oldAssociationData.getApprovedAt(), newAssociationData.getApprovedAt() );
+        Assertions.assertEquals( oldAssociationData.getRemovedAt(), newAssociationData.getRemovedAt() );
+        Assertions.assertNotEquals( oldAssociationData.getEtag(), newAssociationData.getEtag() );
+        Assertions.assertNull( newAssociationData.getUserEmail() );
+        Assertions.assertEquals( "777", newAssociationData.getUserId() );
     }
 
 }

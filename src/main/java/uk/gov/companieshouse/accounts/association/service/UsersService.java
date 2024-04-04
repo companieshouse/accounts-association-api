@@ -1,11 +1,13 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import java.util.List;
 import org.springframework.stereotype.Service;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.user.model.User;
+import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.logging.Logger;
@@ -42,6 +44,22 @@ public class UsersService {
         } catch ( Exception exception ){
             LOG.error( String.format( "Failed to retrieve user details for user %s", userId ) );
             throw new InternalServerErrorRuntimeException("Failed to retrieve user details");
+        }
+
+    }
+
+    public UsersList searchUserDetails( final List<String> emails ){
+
+        try {
+            LOG.debug( String.format( "Attempting to search for user details for: %s", String.join(", ", emails) ) );
+            return accountsUserEndpoint.searchUserDetails(emails)
+                    .getData();
+        } catch( URIValidationException exception ){
+            LOG.error( String.format( "Search failed to fetch user details for users (%s), because uri was incorrectly formatted", String.join(", ", emails) ) );
+            throw new InternalServerErrorRuntimeException( "Invalid uri for accounts-user-api service" );
+        } catch ( Exception exception ){
+            LOG.error( String.format( "Search failed to retrieve user details for: %s", String.join(", ", emails) ) );
+            throw new InternalServerErrorRuntimeException("Search failed to retrieve user details");
         }
 
     }
