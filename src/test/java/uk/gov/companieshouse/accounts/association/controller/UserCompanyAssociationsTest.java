@@ -34,6 +34,7 @@ import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -704,6 +705,202 @@ class UserCompanyAssociationsTest {
 
         Assertions.assertEquals( "99", response.getAssociationId() );
 
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithoutXRequestIdReturnsBadRequest() throws Exception {
+        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithMalformedAssociationIdReturnsBadRequest() throws Exception {
+        mockMvc.perform( patch( "/associations/{associationId}", "$$$" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithoutRequestBodyReturnsBadRequest() throws Exception {
+        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithoutStatusReturnsBadRequest() throws Exception {
+        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithMalformedStatusReturnsBadRequest() throws Exception {
+        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"complicated\"}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithNonexistentAssociationIdReturnsNotFound() throws Exception {
+        Mockito.doReturn( Optional.empty() ).when( associationsService ).findAssociationById( "9191" );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "9191" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isNotFound() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithRemovedUpdatesAssociationStatus() throws Exception {
+        Mockito.doReturn( Optional.of( associationOne ) ).when( associationsService ).findAssociationById( "18" );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( associationsService ).updateAssociationStatus("18", "9999", RequestBodyPut.StatusEnum.REMOVED, false );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithConfirmedUpdatesAssociationStatus() throws Exception {
+        Mockito.doReturn( Optional.of( associationOne ) ).when( associationsService ).findAssociationById( "18" );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( associationsService ).updateAssociationStatus("18", "9999", RequestBodyPut.StatusEnum.CONFIRMED, false );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithNullUserIdAndExistingUserAndConfirmedUpdatesAssociationStatus() throws Exception {
+        final var associationZero = new Association()
+                .id("0")
+                .userEmail("light.yagami@death.note");
+
+        Mockito.doReturn( Optional.of( associationZero ) ).when( associationsService ).findAssociationById( "0" );
+
+        final var user = new User().userId( "000" ).displayName( "Kira" );
+        final var usersList = new UsersList();
+        usersList.add( user );
+        Mockito.doReturn( usersList ).when( usersService ).searchUserDetails( List.of( "light.yagami@death.note" ) );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "0" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "000")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( associationsService ).updateAssociationStatus("0", "000", RequestBodyPut.StatusEnum.CONFIRMED, true );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithNullUserIdAndNonexistentUserAndConfirmedReturnsBadRequest() throws Exception {
+        final var associationZero = new Association()
+                .id("0")
+                .userEmail("light.yagami@death.note");
+
+        Mockito.doReturn( Optional.of( associationZero ) ).when( associationsService ).findAssociationById( "0" );
+
+        Mockito.doReturn( new UsersList() ).when( usersService ).searchUserDetails( List.of( "light.yagami@death.note" ) );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "0" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "000")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithNullUserIdAndExistingUserAndRemovedUpdatesAssociationStatus() throws Exception {
+        final var associationZero = new Association()
+                .id("0")
+                .userEmail("light.yagami@death.note");
+
+        Mockito.doReturn( Optional.of( associationZero ) ).when( associationsService ).findAssociationById( "0" );
+
+        final var user = new User().userId( "000" ).displayName( "Kira" );
+        final var usersList = new UsersList();
+        usersList.add( user );
+        Mockito.doReturn( usersList ).when( usersService ).searchUserDetails( List.of( "light.yagami@death.note" ) );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "0" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "000")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( associationsService ).updateAssociationStatus("0", "000", RequestBodyPut.StatusEnum.REMOVED, true );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithNullUserIdAndNonexistentUserAndRemovedUpdatesAssociationStatus() throws Exception {
+        final var associationZero = new Association()
+                .id("0")
+                .userEmail("light.yagami@death.note");
+
+        Mockito.doReturn( Optional.of( associationZero ) ).when( associationsService ).findAssociationById( "0" );
+
+        Mockito.doReturn( new UsersList() ).when( usersService ).searchUserDetails( List.of( "light.yagami@death.note" ) );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "0" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "000")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( associationsService ).updateAssociationStatus("0", null, RequestBodyPut.StatusEnum.REMOVED, false );
     }
 
 }

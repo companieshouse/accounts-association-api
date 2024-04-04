@@ -2,7 +2,7 @@ package uk.gov.companieshouse.accounts.association.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +16,7 @@ import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
@@ -115,9 +116,51 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         return null;
     }
 
-
     @Override
-    public ResponseEntity<Void> updateAssociationStatusForId(@NotNull String s, @Pattern(regexp = "^[a-zA-Z0-9]*$") String s1, @Valid RequestBodyPut requestBodyPut) {
-        return null;
+    public ResponseEntity<Void> updateAssociationStatusForId(final String xRequestId, final String associationId, final RequestBodyPut requestBody) {
+        final var status = requestBody.getStatus();
+
+        LOG.infoContext( xRequestId, String.format( "Attempting to update association status for association %s to %s.", associationId, status.getValue() ), null );
+
+        LOG.debugContext( xRequestId, String.format( "Attempting to fetch association %s from user_company_associations.", associationId ), null );
+        final var associationOptional = associationsService.findAssociationById( associationId );
+        if ( associationOptional.isEmpty() ){
+            LOG.error( String.format( "%s: Could not find association %s in user_company_associations.", xRequestId, associationId ) );
+            throw new NotFoundRuntimeException( "accounts-association-api", String.format( "Association %s was not found.", associationId ) );
+        }
+        LOG.debugContext( xRequestId, String.format( "Successfully fetched association %s from user_company_associations.", associationId ), null );
+
+        final var association = associationOptional.get();
+
+        var swapUserEmailForUserId = false;
+        if ( Objects.isNull( association.getUserId() ) ){
+            LOG.debugContext( xRequestId, String.format( "Association %s does not have a userId. Attempting to fetch data from accounts-user-api.", associationId ), null );
+            final var userEmail = association.getUserEmail();
+            final var usersList = usersService.searchUserDetails( List.of( userEmail ) );
+            final var userNotFound = Objects.isNull( usersList ) || usersList.isEmpty();
+
+            if ( userNotFound ) {
+                if ( status.equals( StatusEnum.CONFIRMED ) ){
+                    LOG.error( String.format( "%s: Could not find user %s, via the accounts-user-api", xRequestId, usersList ) );
+                    throw new BadRequestRuntimeException( String.format( "Could not find data for user %s", userEmail ) );
+                } else {
+                    LOG.debugContext(xRequestId, "Data from accounts-user-api was not found.", null);
+                }
+            } else {
+                final var userDetails = usersList.getFirst();
+                association.setUserId( userDetails.getUserId() );
+                swapUserEmailForUserId = true;
+                LOG.debugContext( xRequestId, "Successfully fetched data from accounts-user-api.", null );
+            }
+        }
+
+        final var userId = association.getUserId();
+
+        LOG.debugContext( xRequestId, String.format( "Attempting to update the status of association %s to %s", associationId, status.getValue() ), null );
+        associationsService.updateAssociationStatus( associationId, userId, status, swapUserEmailForUserId );
+        LOG.infoContext( xRequestId, "Successfully updated association status for association %s to %s.", null );
+
+        return new ResponseEntity<>( HttpStatus.OK );
     }
+
 }
