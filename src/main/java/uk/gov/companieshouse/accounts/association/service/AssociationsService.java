@@ -3,12 +3,15 @@ package uk.gov.companieshouse.accounts.association.service;
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
@@ -19,6 +22,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
@@ -113,6 +117,37 @@ public class AssociationsService {
         association.setEtag( generateEtag() );
         association.setStatus( StatusEnum.CONFIRMED.getValue() );
         return associationsRepository.insert( association );
+    }
+
+    @Transactional
+    public void updateAssociationStatus( final String associationId, final String userId, final RequestBodyPut.StatusEnum status, boolean swapUserEmailForUserId ){
+        if ( Objects.isNull( associationId ) ) {
+            LOG.error( "Attempted to update association with null association id" );
+            throw new NullPointerException( "associationId must not be null" );
+        }
+
+        final var timestampKey = status.equals( RequestBodyPut.StatusEnum.CONFIRMED ) ? "approved_at" : "removed_at";
+
+        var update = new Update()
+                .set( "status", status.getValue() )
+                .set( timestampKey, LocalDateTime.now() )
+                .set( "etag", generateEtag() );
+
+        if ( swapUserEmailForUserId ) {
+            if ( Objects.isNull( userId ) ){
+                LOG.error( "Attempted to update association with null user_id" );
+                throw new NullPointerException( "userId must not be null" );
+            }
+            update = update.set( "user_email", null ).set( "user_id", userId );
+        }
+
+        final var numRecordsUpdated = associationsRepository.updateAssociation( associationId, update );
+
+        if ( numRecordsUpdated == 0 ){
+            LOG.error( String.format( "Failed to update status of association %s to %s", associationId, status.getValue() ) );
+            throw new InternalServerErrorRuntimeException( "Failed to update association status" );
+        }
+
     }
 
 }
