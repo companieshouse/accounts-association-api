@@ -41,14 +41,17 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
 import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 import uk.gov.companieshouse.api.accounts.user.model.User;
+import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.api.model.ApiResponse;
 import uk.gov.companieshouse.api.sdk.ApiClientService;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -107,6 +110,12 @@ public class UserCompanyAssociationsTest {
     private ApiResponse<User> toGetUserDetailsApiResponse( final String userId, final String email, final String displayName ){
         final var user = new User().userId(userId).email( email ).displayName( displayName );
         return new ApiResponse<>( 200, Map.of(), user );
+    }
+
+    private ApiResponse<UsersList> toSearchUserDetailsApiResponse( final String email, final String userId ){
+        final var usersList = new UsersList();
+        usersList.add( new User().email( email ).userId( userId ) );
+        return new ApiResponse<>( 200, Map.of(), usersList );
     }
 
     @BeforeEach
@@ -900,6 +909,256 @@ public class UserCompanyAssociationsTest {
         Assertions.assertEquals( StatusEnum.CONFIRMED.getValue(), association.getStatus() );
         Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE.getValue(), association.getApprovalRoute() );
         Assertions.assertNotNull( association.getEtag() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithoutXRequestIdReturnsBadRequest() throws Exception {
+        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithMalformedAssociationIdReturnsBadRequest() throws Exception {
+        mockMvc.perform( patch( "/associations/{associationId}", "$$$" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithoutRequestBodyReturnsBadRequest() throws Exception {
+        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithoutStatusReturnsBadRequest() throws Exception {
+        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithMalformedStatusReturnsBadRequest() throws Exception {
+        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"complicated\"}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithNonexistentAssociationIdReturnsNotFound() throws Exception {
+        mockMvc.perform( patch( "/associations/{associationId}", "9191" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isNotFound() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithRemovedUpdatesAssociationStatus() throws Exception {
+        final var oldAssociationData = associationsRepository.findById("18").get();
+
+        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        final var newAssociationData = associationsRepository.findById("18").get();
+        Assertions.assertEquals( RequestBodyPut.StatusEnum.REMOVED.getValue(), newAssociationData.getStatus() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( oldAssociationData.getApprovedAt() ), localDateTimeToNormalisedString( newAssociationData.getApprovedAt() ) );
+        Assertions.assertNotEquals( oldAssociationData.getRemovedAt(), newAssociationData.getRemovedAt() );
+        Assertions.assertNotEquals( oldAssociationData.getEtag(), newAssociationData.getEtag() );
+        Assertions.assertEquals( oldAssociationData.getUserEmail(), newAssociationData.getUserEmail() );
+        Assertions.assertEquals( oldAssociationData.getUserId(), newAssociationData.getUserId() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithConfirmedUpdatesAssociationStatus() throws Exception {
+        final var oldAssociationData = associationsRepository.findById("18").get();
+
+        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        final var newAssociationData = associationsRepository.findById("18").get();
+        Assertions.assertEquals( RequestBodyPut.StatusEnum.CONFIRMED.getValue(), newAssociationData.getStatus() );
+        Assertions.assertNotEquals( oldAssociationData.getApprovedAt(), newAssociationData.getApprovedAt() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( oldAssociationData.getRemovedAt() ), localDateTimeToNormalisedString( newAssociationData.getRemovedAt() ) );
+        Assertions.assertNotEquals( oldAssociationData.getEtag(), newAssociationData.getEtag() );
+        Assertions.assertEquals( oldAssociationData.getUserEmail(), newAssociationData.getUserEmail() );
+        Assertions.assertEquals( oldAssociationData.getUserId(), newAssociationData.getUserId() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithNullUserIdAndExistingUserAndConfirmedUpdatesAssociationStatus() throws Exception {
+        Mockito.doReturn( toSearchUserDetailsApiResponse( "light.yagami@death.note", "000" ) ).when( accountsUserEndpoint ).searchUserDetails( any() );
+
+        final var associationZero = new AssociationDao();
+        associationZero.setCompanyNumber("000000");
+        associationZero.setUserEmail("light.yagami@death.note");
+        associationZero.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationZero.setId("0");
+        associationZero.setApprovedAt(now.plusDays(1));
+        associationZero.setRemovedAt(now.plusDays(2));
+        associationZero.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
+        associationZero.setApprovalExpiryAt(now.plusDays(3));
+        associationZero.setInvitations( List.of() );
+        associationZero.setEtag( "aa" );
+
+        associationsRepository.insert( associationZero );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "0" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "000")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        final var newAssociationData = associationsRepository.findById("0").get();
+        Assertions.assertEquals( RequestBodyPut.StatusEnum.CONFIRMED.getValue(), newAssociationData.getStatus() );
+        Assertions.assertNotEquals( associationZero.getApprovedAt(), newAssociationData.getApprovedAt() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( associationZero.getRemovedAt() ), localDateTimeToNormalisedString( newAssociationData.getRemovedAt() ) );
+        Assertions.assertNotEquals( associationZero.getEtag(), newAssociationData.getEtag() );
+        Assertions.assertNotEquals( associationZero.getUserEmail(), newAssociationData.getUserEmail() );
+        Assertions.assertNotEquals( associationZero.getUserId(), newAssociationData.getUserId() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithNullUserIdAndNonexistentUserAndConfirmedReturnsBadRequest() throws Exception {
+        Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new UsersList() ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( "light.yagami@death.note" ) );
+
+        final var associationZero = new AssociationDao();
+        associationZero.setCompanyNumber("000000");
+        associationZero.setUserEmail("light.yagami@death.note");
+        associationZero.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationZero.setId("0");
+        associationZero.setApprovedAt(now.plusDays(1));
+        associationZero.setRemovedAt(now.plusDays(2));
+        associationZero.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
+        associationZero.setApprovalExpiryAt(now.plusDays(3));
+        associationZero.setInvitations( List.of() );
+        associationZero.setEtag( "aa" );
+
+        associationsRepository.insert( associationZero );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "0" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "000")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithNullUserIdAndExistingUserAndRemovedUpdatesAssociationStatus() throws Exception {
+        Mockito.doReturn( toSearchUserDetailsApiResponse( "light.yagami@death.note", "000" ) ).when( accountsUserEndpoint ).searchUserDetails( any() );
+
+        final var associationZero = new AssociationDao();
+        associationZero.setCompanyNumber("000000");
+        associationZero.setUserEmail("light.yagami@death.note");
+        associationZero.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationZero.setId("0");
+        associationZero.setApprovedAt(now.plusDays(1));
+        associationZero.setRemovedAt(now.plusDays(2));
+        associationZero.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
+        associationZero.setApprovalExpiryAt(now.plusDays(3));
+        associationZero.setInvitations( List.of() );
+        associationZero.setEtag( "aa" );
+
+        associationsRepository.insert( associationZero );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "0" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "000")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        final var newAssociationData = associationsRepository.findById("0").get();
+        Assertions.assertEquals( RequestBodyPut.StatusEnum.REMOVED.getValue(), newAssociationData.getStatus() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( associationZero.getApprovedAt() ), localDateTimeToNormalisedString( newAssociationData.getApprovedAt() ) );
+        Assertions.assertNotEquals( localDateTimeToNormalisedString( associationZero.getRemovedAt() ), localDateTimeToNormalisedString( newAssociationData.getRemovedAt() ) );
+        Assertions.assertNotEquals( associationZero.getEtag(), newAssociationData.getEtag() );
+        Assertions.assertNotEquals( associationZero.getUserEmail(), newAssociationData.getUserEmail() );
+        Assertions.assertNotEquals( associationZero.getUserId(), newAssociationData.getUserId() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWithNullUserIdAndNonexistentUserAndRemovedUpdatesAssociationStatus() throws Exception {
+        Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new UsersList() ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( "light.yagami@death.note" ) );
+
+        final var associationZero = new AssociationDao();
+        associationZero.setCompanyNumber("000000");
+        associationZero.setUserEmail("light.yagami@death.note");
+        associationZero.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationZero.setId("0");
+        associationZero.setApprovedAt(now.plusDays(1));
+        associationZero.setRemovedAt(now.plusDays(2));
+        associationZero.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
+        associationZero.setApprovalExpiryAt(now.plusDays(3));
+        associationZero.setInvitations( List.of() );
+        associationZero.setEtag( "aa" );
+
+        associationsRepository.insert( associationZero );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "0" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "000")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        final var newAssociationData = associationsRepository.findById("0").get();
+        Assertions.assertEquals( RequestBodyPut.StatusEnum.REMOVED.getValue(), newAssociationData.getStatus() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( associationZero.getApprovedAt() ), localDateTimeToNormalisedString( newAssociationData.getApprovedAt() ) );
+        Assertions.assertNotEquals( localDateTimeToNormalisedString( associationZero.getRemovedAt() ), localDateTimeToNormalisedString( newAssociationData.getRemovedAt() ) );
+        Assertions.assertNotEquals( associationZero.getEtag(), newAssociationData.getEtag() );
+        Assertions.assertEquals( associationZero.getUserEmail(), newAssociationData.getUserEmail() );
+        Assertions.assertEquals( associationZero.getUserId(), newAssociationData.getUserId() );
     }
 
     @AfterEach
