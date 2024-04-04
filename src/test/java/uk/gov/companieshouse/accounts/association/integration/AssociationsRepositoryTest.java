@@ -477,6 +477,29 @@ class AssociationsRepositoryTest {
         Assertions.assertEquals( "222", associations.getContent().getLast().getId() );
     }
 
+    @Test
+    void updateAssociationWithNullOrMalformedOrNonexistentAssociationIdDoesNotUpdateAnyRows(){
+        final var setStatusToRemoved = new Update().set( "status", StatusEnum.REMOVED.getValue() );
+
+        Assertions.assertEquals( 0, associationsRepository.updateAssociation( null, setStatusToRemoved ) );
+        Assertions.assertEquals( 0, associationsRepository.updateAssociation( "$$$", setStatusToRemoved ) );
+        Assertions.assertEquals( 0, associationsRepository.updateAssociation( "919", setStatusToRemoved ) );
+    }
+
+    @Test
+    void updateAssociationWithNullUpdateThrowsIllegalStateException(){
+        Assertions.assertThrows( IllegalStateException.class, () -> associationsRepository.updateAssociation( "111", null ) );
+    }
+
+    @Test
+    void updateAssociationPerformsUpdate(){
+        final var setStatusToRemoved = new Update().set( "status", StatusEnum.REMOVED.getValue() );
+        final var numRowsUpdated = associationsRepository.updateAssociation( "111", setStatusToRemoved );
+
+        Assertions.assertEquals( 1, numRowsUpdated );
+        Assertions.assertEquals( StatusEnum.REMOVED.getValue(), associationsRepository.findById( "111" ).get().getStatus() );
+    }
+
     @AfterEach
     public void after() {
         mongoTemplate.dropCollection(AssociationDao.class);
