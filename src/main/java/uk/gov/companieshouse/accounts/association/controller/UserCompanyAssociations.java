@@ -2,8 +2,12 @@ package uk.gov.companieshouse.accounts.association.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+
+import java.time.LocalDateTime;
 import java.util.Objects;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,6 +26,8 @@ import uk.gov.companieshouse.logging.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+
+import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 
 @RestController
 public class UserCompanyAssociations implements UserCompanyAssociationsInterface {
@@ -45,27 +51,27 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<ResponseBodyPost> addAssociation( final String xRequestId, final String ericIdentity, final RequestBodyPost requestBody ) {
+    public ResponseEntity<ResponseBodyPost> addAssociation(final String xRequestId, final String ericIdentity, final RequestBodyPost requestBody) {
         final var companyNumber = requestBody.getCompanyNumber();
 
-        LOG.infoContext( xRequestId, String.format( "Attempting to create association for company_number %s and user_id %s", companyNumber, ericIdentity ), null);
+        LOG.infoContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s", companyNumber, ericIdentity), null);
 
-        LOG.infoContext( xRequestId, String.format( "Attempting to fetch company for company_number %s from company profile cache.", companyNumber ), null);
-        companyService.fetchCompanyProfile( companyNumber );
-        LOG.infoContext( xRequestId, String.format( "Successfully fetched company for company_number %s from company profile cache.", companyNumber ), null);
+        LOG.infoContext(xRequestId, String.format("Attempting to fetch company for company_number %s from company profile cache.", companyNumber), null);
+        companyService.fetchCompanyProfile(companyNumber);
+        LOG.infoContext(xRequestId, String.format("Successfully fetched company for company_number %s from company profile cache.", companyNumber), null);
 
-        LOG.infoContext( xRequestId, String.format( "Attempting to check if association between company_number %s and user_id %s exists in user_company_associations.", companyNumber, ericIdentity ), null);
-        if ( associationsService.associationExists( companyNumber, ericIdentity ) ){
-            LOG.error( String.format( "%s: Association between user_id %s and company_number %s already exists.", xRequestId, ericIdentity, companyNumber ) );
-            throw new BadRequestRuntimeException( "Association already exists." );
+        LOG.infoContext(xRequestId, String.format("Attempting to check if association between company_number %s and user_id %s exists in user_company_associations.", companyNumber, ericIdentity), null);
+        if (associationsService.associationExists(companyNumber, ericIdentity)) {
+            LOG.error(String.format("%s: Association between user_id %s and company_number %s already exists.", xRequestId, ericIdentity, companyNumber));
+            throw new BadRequestRuntimeException("Association already exists.");
         }
-        LOG.infoContext( xRequestId, String.format( "Could not find association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity ), null);
+        LOG.infoContext(xRequestId, String.format("Could not find association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
 
-        LOG.infoContext( xRequestId, String.format( "Attempting to create association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity ), null);
-        final var association = associationsService.createAssociation( companyNumber, ericIdentity, ApprovalRouteEnum.AUTH_CODE );
-        LOG.infoContext( xRequestId, String.format( "Successfully created association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity ), null);
+        LOG.infoContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
+        final var association = associationsService.createAssociation(companyNumber, ericIdentity, ApprovalRouteEnum.AUTH_CODE);
+        LOG.infoContext(xRequestId, String.format("Successfully created association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
 
-        return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
+        return new ResponseEntity<>(new ResponseBodyPost().associationId(association.getId()), HttpStatus.CREATED);
     }
 
     @Override
@@ -120,47 +126,48 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     public ResponseEntity<Void> updateAssociationStatusForId(final String xRequestId, final String associationId, final RequestBodyPut requestBody) {
         final var status = requestBody.getStatus();
 
-        LOG.infoContext( xRequestId, String.format( "Attempting to update association status for association %s to %s.", associationId, status.getValue() ), null );
+        LOG.infoContext(xRequestId, String.format("Attempting to update association status for association %s to %s.", associationId, status.getValue()), null);
 
-        LOG.debugContext( xRequestId, String.format( "Attempting to fetch association %s from user_company_associations.", associationId ), null );
-        final var associationOptional = associationsService.findAssociationById( associationId );
-        if ( associationOptional.isEmpty() ){
-            LOG.error( String.format( "%s: Could not find association %s in user_company_associations.", xRequestId, associationId ) );
-            throw new NotFoundRuntimeException( "accounts-association-api", String.format( "Association %s was not found.", associationId ) );
+        LOG.debugContext(xRequestId, String.format("Attempting to fetch association %s from user_company_associations.", associationId), null);
+        final var associationOptional = associationsService.findAssociationDaoById(associationId);
+        if (associationOptional.isEmpty()) {
+            LOG.error(String.format("%s: Could not find association %s in user_company_associations.", xRequestId, associationId));
+            throw new NotFoundRuntimeException("accounts-association-api", String.format("Association %s was not found.", associationId));
         }
-        LOG.debugContext( xRequestId, String.format( "Successfully fetched association %s from user_company_associations.", associationId ), null );
+        LOG.debugContext(xRequestId, String.format("Successfully fetched association %s from user_company_associations.", associationId), null);
 
         final var association = associationOptional.get();
+        final var timestampKey = status.equals(RequestBodyPut.StatusEnum.CONFIRMED) ? "approved_at" : "removed_at";
 
-        var swapUserEmailForUserId = false;
-        if ( Objects.isNull( association.getUserId() ) ){
-            LOG.debugContext( xRequestId, String.format( "Association %s does not have a userId. Attempting to fetch data from accounts-user-api.", associationId ), null );
+        var update = new Update()
+                .set("status", status.getValue())
+                .set(timestampKey, LocalDateTime.now().toString());
+
+        if (Objects.isNull(association.getUserId())) {
+            LOG.debugContext(xRequestId, String.format("Association %s does not have a userId. Attempting to fetch data from accounts-user-api.", associationId), null);
             final var userEmail = association.getUserEmail();
-            final var usersList = usersService.searchUserDetails( List.of( userEmail ) );
-            final var userNotFound = Objects.isNull( usersList ) || usersList.isEmpty();
+            final var usersList = usersService.searchUserDetails(List.of(userEmail));
+            final var userNotFound = Objects.isNull(usersList) || usersList.isEmpty();
 
-            if ( userNotFound ) {
-                if ( status.equals( StatusEnum.CONFIRMED ) ){
-                    LOG.error( String.format( "%s: Could not find user %s, via the accounts-user-api", xRequestId, usersList ) );
-                    throw new BadRequestRuntimeException( String.format( "Could not find data for user %s", userEmail ) );
-                } else {
-                    LOG.debugContext(xRequestId, "Data from accounts-user-api was not found.", null);
-                }
-            } else {
-                final var userDetails = usersList.getFirst();
-                association.setUserId( userDetails.getUserId() );
-                swapUserEmailForUserId = true;
-                LOG.debugContext( xRequestId, "Successfully fetched data from accounts-user-api.", null );
+            if (status.equals(StatusEnum.CONFIRMED) && userNotFound) {
+                LOG.error(String.format("%s: Could not find user %s, via the accounts-user-api", xRequestId, userEmail));
+                throw new BadRequestRuntimeException(String.format("Could not find data for user %s", userEmail));
+
             }
+            //if user found, swap out the temporary email id with the user id.
+            if (!userNotFound) {
+                LOG.debugContext(xRequestId, "Successfully fetched data from accounts-user-api for user.", null);
+                update.set("user_email", null).set("user_id", usersList.getFirst().getUserId());
+            }
+
+
         }
 
-        final var userId = association.getUserId();
+        LOG.debugContext(xRequestId, String.format("Attempting to update the status of association %s to %s", associationId, status.getValue()), null);
+        associationsService.updateAssociation(associationId, update);
+        LOG.infoContext(xRequestId, "Successfully updated association status for association %s to %s.", null);
 
-        LOG.debugContext( xRequestId, String.format( "Attempting to update the status of association %s to %s", associationId, status.getValue() ), null );
-        associationsService.updateAssociationStatus( associationId, userId, status, swapUserEmailForUserId );
-        LOG.infoContext( xRequestId, "Successfully updated association status for association %s to %s.", null );
-
-        return new ResponseEntity<>( HttpStatus.OK );
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
 }

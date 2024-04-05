@@ -6,6 +6,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -19,10 +20,12 @@ public class AssociationDao {
     @Id
     private String id;
     @NotNull
+    @Indexed
     @Field("company_number")
     private String companyNumber;
 
     @Field("user_id")
+    @Indexed
     private String userId;
     @NotNull
     private String status;
@@ -39,6 +42,7 @@ public class AssociationDao {
     @Field("approval_route")
     private String approvalRoute;
     @Field("user_email")
+    @Indexed
     private String userEmail;
     @Field("approval_expiry_at")
     @FutureOrPresent

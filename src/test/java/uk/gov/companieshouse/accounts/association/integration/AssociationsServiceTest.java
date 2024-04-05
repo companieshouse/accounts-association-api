@@ -17,6 +17,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Update;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -834,21 +835,21 @@ public class AssociationsServiceTest {
 
     @Test
     void updateAssociationStatusWithMalformedOrNonexistentAssociationIdThrowsInternalServerError(){
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociationStatus( "$$$", "111", RequestBodyPut.StatusEnum.REMOVED, false ) );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociationStatus( "9191", "111", RequestBodyPut.StatusEnum.REMOVED, false ) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "$$$", new Update()) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "9191", new Update()) );
     }
 
     @Test
     void updateAssociationStatusWithNullAssociationIdOrUserIdOrNullStatusThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociationStatus( null, "111", RequestBodyPut.StatusEnum.REMOVED, false ) );
-        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociationStatus( "1", null, RequestBodyPut.StatusEnum.REMOVED, true ) );
-        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociationStatus( "1", "111", null, false ) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociation( null, null) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociation( "1",  null) );
     }
 
     @Test
     void updateAssociationStatusWithRemovedStatusAndSwapUserEmailForUserIdSetToFalseUpdatesAssociationCorrectly(){
         final var oldAssociationData = associationsRepository.findById("1").get();
-        associationsService.updateAssociationStatus( "1", "111", RequestBodyPut.StatusEnum.REMOVED, false );
+
+        associationsService.updateAssociation( "1", new Update().set("removed_at", LocalDateTime.now()).set("status","removed"));
         final var newAssociationData = associationsRepository.findById("1").get();
 
         Assertions.assertEquals( RequestBodyPut.StatusEnum.REMOVED.getValue(), newAssociationData.getStatus() );
@@ -859,18 +860,5 @@ public class AssociationsServiceTest {
         Assertions.assertEquals( oldAssociationData.getUserId(), newAssociationData.getUserId() );
     }
 
-    @Test
-    void updateAssociationStatusWithConfirmedStatusAndSwapUserEmailForUserIdSetToTrueUpdatesAssociationCorrectly(){
-        final var oldAssociationData = associationsRepository.findById("6").get();
-        associationsService.updateAssociationStatus( "6", "777", RequestBodyPut.StatusEnum.CONFIRMED, true );
-        final var newAssociationData = associationsRepository.findById("6").get();
-
-        Assertions.assertEquals( RequestBodyPut.StatusEnum.CONFIRMED.getValue(), newAssociationData.getStatus() );
-        Assertions.assertNotEquals( oldAssociationData.getApprovedAt(), newAssociationData.getApprovedAt() );
-        Assertions.assertEquals( oldAssociationData.getRemovedAt(), newAssociationData.getRemovedAt() );
-        Assertions.assertNotEquals( oldAssociationData.getEtag(), newAssociationData.getEtag() );
-        Assertions.assertNull( newAssociationData.getUserEmail() );
-        Assertions.assertEquals( "777", newAssociationData.getUserId() );
-    }
 
 }
