@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
-import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -14,15 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Document("user_company_associations")
+@CompoundIndex(name = "company_user_idx", def = "{'company_number': 1, 'user_id': 1, 'user_email': 1}", unique = true)
 public class AssociationDao {
     @Id
     private String id;
-    @Indexed
     @NotNull
     @Field("company_number")
     private String companyNumber;
 
-    @Indexed
     @Field("user_id")
     private String userId;
     @NotNull
@@ -39,7 +38,6 @@ public class AssociationDao {
     @NotNull
     @Field("approval_route")
     private String approvalRoute;
-    @Indexed
     @Field("user_email")
     private String userEmail;
     @Field("approval_expiry_at")
