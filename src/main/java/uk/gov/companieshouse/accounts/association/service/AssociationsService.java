@@ -130,7 +130,7 @@ public class AssociationsService {
 
         var update = new Update()
                 .set( "status", status.getValue() )
-                .set( timestampKey, LocalDateTime.now() )
+                .set( timestampKey, LocalDateTime.now().toString() )
                 .set( "etag", generateEtag() );
 
         if ( swapUserEmailForUserId ) {
