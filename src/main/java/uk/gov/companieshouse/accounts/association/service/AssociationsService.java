@@ -3,7 +3,9 @@ package uk.gov.companieshouse.accounts.association.service;
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 
 import jakarta.validation.constraints.NotNull;
+
 import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -83,10 +85,10 @@ public class AssociationsService {
         }
 
         final Page<AssociationDao> associations;
-        if ( Objects.isNull( userEmail ) ){
+        if (Objects.isNull(userEmail)) {
             associations = associationsRepository.fetchAssociatedUsers(companyNumber, statuses, pageable);
         } else {
-            associations = associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( companyNumber, userEmail, statuses, pageable );
+            associations = associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus(companyNumber, userEmail, statuses, pageable);
         }
 
         return associationsListCompanyMapper.daoToDto(associations, companyDetails);
@@ -99,53 +101,44 @@ public class AssociationsService {
     }
 
     @Transactional(readOnly = true)
-    public boolean associationExists( final String companyNumber, final String userId ){
-        return associationsRepository.associationExists( companyNumber, userId );
+    public Optional<AssociationDao> findAssociationDaoById(final String id) {
+
+        return associationsRepository.findById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean associationExists(final String companyNumber, final String userId) {
+        return associationsRepository.associationExists(companyNumber, userId);
     }
 
     @Transactional
-    public AssociationDao createAssociation( final String companyNumber, final String userId, final ApprovalRouteEnum approvalRoute ){
-        if ( Objects.isNull( companyNumber ) || Objects.isNull( userId ) ) {
-            LOG.error( "Attempted to create association with null company_number or null user_id" );
+    public AssociationDao createAssociation(final String companyNumber, final String userId, final ApprovalRouteEnum approvalRoute) {
+        if (Objects.isNull(companyNumber) || Objects.isNull(userId)) {
+            LOG.error("Attempted to create association with null company_number or null user_id");
             throw new NullPointerException("companyNumber and userId must not be null");
         }
 
         final var association = new AssociationDao();
-        association.setCompanyNumber( companyNumber );
-        association.setUserId( userId );
-        association.setApprovalRoute( approvalRoute.getValue() );
-        association.setEtag( generateEtag() );
-        association.setStatus( StatusEnum.CONFIRMED.getValue() );
-        return associationsRepository.insert( association );
+        association.setCompanyNumber(companyNumber);
+        association.setUserId(userId);
+        association.setApprovalRoute(approvalRoute.getValue());
+        association.setEtag(generateEtag());
+        association.setStatus(StatusEnum.CONFIRMED.getValue());
+        return associationsRepository.insert(association);
     }
 
     @Transactional
-    public void updateAssociationStatus( final String associationId, final String userId, final RequestBodyPut.StatusEnum status, boolean swapUserEmailForUserId ){
-        if ( Objects.isNull( associationId ) ) {
-            LOG.error( "Attempted to update association with null association id" );
-            throw new NullPointerException( "associationId must not be null" );
+    public void updateAssociation(final String associationId, final Update update) {
+        if (Objects.isNull(associationId)) {
+            LOG.error("Attempted to update association with null association id");
+            throw new NullPointerException("associationId must not be null");
         }
+        update.set("etag", generateEtag());
+        final var numRecordsUpdated = associationsRepository.updateAssociation(associationId, update);
 
-        final var timestampKey = status.equals( RequestBodyPut.StatusEnum.CONFIRMED ) ? "approved_at" : "removed_at";
-
-        var update = new Update()
-                .set( "status", status.getValue() )
-                .set( timestampKey, LocalDateTime.now().toString() )
-                .set( "etag", generateEtag() );
-
-        if ( swapUserEmailForUserId ) {
-            if ( Objects.isNull( userId ) ){
-                LOG.error( "Attempted to update association with null user_id" );
-                throw new NullPointerException( "userId must not be null" );
-            }
-            update = update.set( "user_email", null ).set( "user_id", userId );
-        }
-
-        final var numRecordsUpdated = associationsRepository.updateAssociation( associationId, update );
-
-        if ( numRecordsUpdated == 0 ){
-            LOG.error( String.format( "Failed to update status of association %s to %s", associationId, status.getValue() ) );
-            throw new InternalServerErrorRuntimeException( "Failed to update association status" );
+        if (numRecordsUpdated == 0) {
+            LOG.error(String.format("Failed to update association with id: %s", associationId));
+            throw new InternalServerErrorRuntimeException("Failed to update association");
         }
 
     }

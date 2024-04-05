@@ -1003,15 +1003,14 @@ class AssociationsServiceTest {
     @Test
     void updateAssociationStatusWithMalformedOrNonexistentAssociationIdThrowsInternalServerError(){
         Mockito.doReturn( 0 ).when( associationsRepository ).updateAssociation( any(), any() );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociationStatus( "$$$", "111", RequestBodyPut.StatusEnum.REMOVED, false ) );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociationStatus( "9191", "111", RequestBodyPut.StatusEnum.REMOVED, false ) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "$$$", new Update()) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "9191", new Update()) );
     }
 
     @Test
     void updateAssociationStatusWithNullAssociationIdOrUserIdOrNullStatusThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociationStatus( null, "111", RequestBodyPut.StatusEnum.REMOVED, false ) );
-        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociationStatus( "1", null, RequestBodyPut.StatusEnum.REMOVED, true ) );
-        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociationStatus( "1", "111", null, false ) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociation( null, null) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociation( "1", null) );
     }
 
     private ArgumentMatcher<Update> updateAssociationMatches( String expectedStatus, boolean approvedAtShouldBeNull, boolean removedAtShouldBeNull, String expectedUserEmail, String expectedUserId ){
@@ -1035,18 +1034,5 @@ class AssociationsServiceTest {
         };
     }
 
-    @Test
-    void updateAssociationStatusWithRemovedStatusAndSwapUserEmailForUserIdSetToFalseUpdatesAssociationCorrectly(){
-        Mockito.doReturn( 1 ).when( associationsRepository ).updateAssociation( any(), any() );
-        associationsService.updateAssociationStatus( "1", "111", RequestBodyPut.StatusEnum.REMOVED, false );
-        Mockito.verify( associationsRepository ).updateAssociation( eq( "1" ), argThat( updateAssociationMatches( RequestBodyPut.StatusEnum.REMOVED.getValue(), true, false, null, null) ) );
-    }
-
-    @Test
-    void updateAssociationStatusWithConfirmedStatusAndSwapUserEmailForUserIdSetToTrueUpdatesAssociationCorrectly(){
-        Mockito.doReturn( 1 ).when( associationsRepository ).updateAssociation( any(), any() );
-        associationsService.updateAssociationStatus( "6", "777", RequestBodyPut.StatusEnum.CONFIRMED, true );
-        Mockito.verify( associationsRepository ).updateAssociation( eq( "6" ), argThat( updateAssociationMatches( RequestBodyPut.StatusEnum.CONFIRMED.getValue(), false, true, null, "777" ) ) );
-    }
 
 }

@@ -7,9 +7,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.mockito.internal.verification.Times;
+import org.mockito.verification.VerificationMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
@@ -38,6 +41,8 @@ import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -781,9 +786,16 @@ class UserCompanyAssociationsTest {
 
     @Test
     void updateAssociationStatusForIdWithRemovedUpdatesAssociationStatus() throws Exception {
-        Mockito.doReturn( Optional.of( associationOne ) ).when( associationsService ).findAssociationById( "18" );
 
-        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+        final var associationZero = new AssociationDao();
+
+        associationZero.setId("0");
+        associationZero.setUserEmail("light.yagami@death.note");
+        associationZero.setStatus("confirmed");
+
+        Mockito.doReturn( Optional.of( associationZero ) ).when( associationsService ).findAssociationDaoById( "0" );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "0" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -792,32 +804,39 @@ class UserCompanyAssociationsTest {
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
 
-        Mockito.verify( associationsService ).updateAssociationStatus("18", "9999", RequestBodyPut.StatusEnum.REMOVED, false );
+        Mockito.verify( associationsService ).updateAssociation(anyString(), any(Update.class));
     }
 
-    @Test
-    void updateAssociationStatusForIdWithConfirmedUpdatesAssociationStatus() throws Exception {
-        Mockito.doReturn( Optional.of( associationOne ) ).when( associationsService ).findAssociationById( "18" );
 
-        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+    @Test
+    void updateAssociationStatusForIdWithConfirmedUpdatesWithNoUserFoundShouldThrow404AssociationStatus() throws Exception {
+        final var associationZero = new AssociationDao();
+
+        associationZero.setId("0");
+        associationZero.setUserEmail("light.yagami@death.note");
+        associationZero.setStatus("awaiting-approval");
+
+        Mockito.doReturn( Optional.of( associationZero ) ).when( associationsService ).findAssociationDaoById( "0" );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "0" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"status\":\"confirmed\"}" ) )
-                .andExpect( status().isOk() );
-
-        Mockito.verify( associationsService ).updateAssociationStatus("18", "9999", RequestBodyPut.StatusEnum.CONFIRMED, false );
+                .andExpect( status().isBadRequest() );
     }
 
     @Test
     void updateAssociationStatusForIdWithNullUserIdAndExistingUserAndConfirmedUpdatesAssociationStatus() throws Exception {
-        final var associationZero = new Association()
-                .id("0")
-                .userEmail("light.yagami@death.note");
+        final var associationZero = new AssociationDao();
 
-        Mockito.doReturn( Optional.of( associationZero ) ).when( associationsService ).findAssociationById( "0" );
+        associationZero.setId("0");
+        associationZero.setUserEmail("light.yagami@death.note");
+        associationZero.setStatus("awaiting-approval");
+
+        Mockito.doReturn( Optional.of( associationZero ) ).when( associationsService ).findAssociationDaoById( "0" );
 
         final var user = new User().userId( "000" ).displayName( "Kira" );
         final var usersList = new UsersList();
@@ -833,7 +852,7 @@ class UserCompanyAssociationsTest {
                         .content( "{\"status\":\"confirmed\"}" ) )
                 .andExpect( status().isOk() );
 
-        Mockito.verify( associationsService ).updateAssociationStatus("0", "000", RequestBodyPut.StatusEnum.CONFIRMED, true );
+        Mockito.verify( associationsService, new Times(1) ).updateAssociation(anyString(),any(Update.class));
     }
 
     @Test
@@ -853,16 +872,17 @@ class UserCompanyAssociationsTest {
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"status\":\"confirmed\"}" ) )
-                .andExpect( status().isBadRequest() );
+                .andExpect( status().isNotFound());
     }
 
     @Test
     void updateAssociationStatusForIdWithNullUserIdAndExistingUserAndRemovedUpdatesAssociationStatus() throws Exception {
-        final var associationZero = new Association()
-                .id("0")
-                .userEmail("light.yagami@death.note");
+        final var associationZero = new AssociationDao();
 
-        Mockito.doReturn( Optional.of( associationZero ) ).when( associationsService ).findAssociationById( "0" );
+        associationZero.setId("0");
+        associationZero.setUserEmail("light.yagami@death.note");
+
+        Mockito.doReturn( Optional.of( associationZero ) ).when( associationsService ).findAssociationDaoById( "0" );
 
         final var user = new User().userId( "000" ).displayName( "Kira" );
         final var usersList = new UsersList();
@@ -878,16 +898,17 @@ class UserCompanyAssociationsTest {
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
 
-        Mockito.verify( associationsService ).updateAssociationStatus("0", "000", RequestBodyPut.StatusEnum.REMOVED, true );
+        Mockito.verify( associationsService, new Times(1) ).updateAssociation(anyString(), any(Update.class));
     }
 
     @Test
     void updateAssociationStatusForIdWithNullUserIdAndNonexistentUserAndRemovedUpdatesAssociationStatus() throws Exception {
-        final var associationZero = new Association()
-                .id("0")
-                .userEmail("light.yagami@death.note");
+        final var associationZero = new AssociationDao();
 
-        Mockito.doReturn( Optional.of( associationZero ) ).when( associationsService ).findAssociationById( "0" );
+        associationZero.setId("0");
+        associationZero.setUserEmail("light.yagami@death.note");
+
+        Mockito.doReturn( Optional.of( associationZero ) ).when( associationsService ).findAssociationDaoById( "0" );
 
         Mockito.doReturn( new UsersList() ).when( usersService ).searchUserDetails( List.of( "light.yagami@death.note" ) );
 
@@ -899,8 +920,7 @@ class UserCompanyAssociationsTest {
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
-
-        Mockito.verify( associationsService ).updateAssociationStatus("0", null, RequestBodyPut.StatusEnum.REMOVED, false );
+        Mockito.verify( associationsService, new Times(1)).updateAssociation(anyString(), any(Update.class));
     }
 
 }
