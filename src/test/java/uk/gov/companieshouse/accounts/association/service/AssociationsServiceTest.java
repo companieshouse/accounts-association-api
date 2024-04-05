@@ -3,6 +3,7 @@ package uk.gov.companieshouse.accounts.association.service;
 import java.util.Set;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import org.bson.Document;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -16,6 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.mongodb.core.query.Update;
+import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
@@ -24,6 +27,7 @@ import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
@@ -995,5 +999,40 @@ class AssociationsServiceTest {
         associationsService.createAssociation( "000000", "000", ApprovalRouteEnum.AUTH_CODE );
         Mockito.verify( associationsRepository ).insert( argThat( createAssociationDaoMatches( "000000", "000", ApprovalRouteEnum.AUTH_CODE ) ) );
     }
+
+    @Test
+    void updateAssociationStatusWithMalformedOrNonexistentAssociationIdThrowsInternalServerError(){
+        Mockito.doReturn( 0 ).when( associationsRepository ).updateAssociation( any(), any() );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "$$$", new Update()) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "9191", new Update()) );
+    }
+
+    @Test
+    void updateAssociationStatusWithNullAssociationIdOrUserIdOrNullStatusThrowsNullPointerException(){
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociation( null, null) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociation( "1", null) );
+    }
+
+    private ArgumentMatcher<Update> updateAssociationMatches( String expectedStatus, boolean approvedAtShouldBeNull, boolean removedAtShouldBeNull, String expectedUserEmail, String expectedUserId ){
+        return update -> {
+            final var document = update.getUpdateObject().get("$set", Document.class);
+            final var statusIsCorrect = expectedStatus.equals( document.get( "status" ) );
+            final var approvedAtIsCorrect = Objects.isNull( document.getOrDefault( "approved_at", null ) ) == approvedAtShouldBeNull;
+            final var removedAtIsCorrect = Objects.isNull( document.getOrDefault( "removed_at", null ) ) == removedAtShouldBeNull;
+            final var etagIsNotNull = !Objects.isNull( document.getOrDefault( "etag", null ) );
+            final var userEmail = document.getOrDefault( "user_email", null );
+            boolean userEmailIsCorrect = Objects.isNull( expectedUserEmail ) ? Objects.isNull( userEmail ) : expectedUserEmail.equals( userEmail );
+            final var userId = document.getOrDefault( "user_id", null );
+            boolean userIdIsCorrect = Objects.isNull( expectedUserId ) ? Objects.isNull( userId ) : expectedUserId.equals( userId );
+
+            return statusIsCorrect &&
+                    approvedAtIsCorrect &&
+                    removedAtIsCorrect &&
+                    etagIsNotNull &&
+                    userEmailIsCorrect &&
+                    userIdIsCorrect;
+        };
+    }
+
 
 }

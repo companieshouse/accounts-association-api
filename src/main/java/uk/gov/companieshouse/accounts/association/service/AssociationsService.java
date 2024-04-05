@@ -3,12 +3,17 @@ package uk.gov.companieshouse.accounts.association.service;
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 
 import jakarta.validation.constraints.NotNull;
+
+import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
@@ -19,6 +24,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
@@ -79,10 +85,10 @@ public class AssociationsService {
         }
 
         final Page<AssociationDao> associations;
-        if ( Objects.isNull( userEmail ) ){
+        if (Objects.isNull(userEmail)) {
             associations = associationsRepository.fetchAssociatedUsers(companyNumber, statuses, pageable);
         } else {
-            associations = associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( companyNumber, userEmail, statuses, pageable );
+            associations = associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus(companyNumber, userEmail, statuses, pageable);
         }
 
         return associationsListCompanyMapper.daoToDto(associations, companyDetails);
@@ -95,24 +101,46 @@ public class AssociationsService {
     }
 
     @Transactional(readOnly = true)
-    public boolean associationExists( final String companyNumber, final String userId ){
-        return associationsRepository.associationExists( companyNumber, userId );
+    public Optional<AssociationDao> findAssociationDaoById(final String id) {
+
+        return associationsRepository.findById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean associationExists(final String companyNumber, final String userId) {
+        return associationsRepository.associationExists(companyNumber, userId);
     }
 
     @Transactional
-    public AssociationDao createAssociation( final String companyNumber, final String userId, final ApprovalRouteEnum approvalRoute ){
-        if ( Objects.isNull( companyNumber ) || Objects.isNull( userId ) ) {
-            LOG.error( "Attempted to create association with null company_number or null user_id" );
+    public AssociationDao createAssociation(final String companyNumber, final String userId, final ApprovalRouteEnum approvalRoute) {
+        if (Objects.isNull(companyNumber) || Objects.isNull(userId)) {
+            LOG.error("Attempted to create association with null company_number or null user_id");
             throw new NullPointerException("companyNumber and userId must not be null");
         }
 
         final var association = new AssociationDao();
-        association.setCompanyNumber( companyNumber );
-        association.setUserId( userId );
-        association.setApprovalRoute( approvalRoute.getValue() );
-        association.setEtag( generateEtag() );
-        association.setStatus( StatusEnum.CONFIRMED.getValue() );
-        return associationsRepository.insert( association );
+        association.setCompanyNumber(companyNumber);
+        association.setUserId(userId);
+        association.setApprovalRoute(approvalRoute.getValue());
+        association.setEtag(generateEtag());
+        association.setStatus(StatusEnum.CONFIRMED.getValue());
+        return associationsRepository.insert(association);
+    }
+
+    @Transactional
+    public void updateAssociation(final String associationId, final Update update) {
+        if (Objects.isNull(associationId)) {
+            LOG.error("Attempted to update association with null association id");
+            throw new NullPointerException("associationId must not be null");
+        }
+        update.set("etag", generateEtag());
+        final var numRecordsUpdated = associationsRepository.updateAssociation(associationId, update);
+
+        if (numRecordsUpdated == 0) {
+            LOG.error(String.format("Failed to update association with id: %s", associationId));
+            throw new InternalServerErrorRuntimeException("Failed to update association");
+        }
+
     }
 
 }

@@ -17,9 +17,11 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Update;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
@@ -30,6 +32,7 @@ import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.InternalApiClient;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.sdk.ApiClientService;
@@ -829,5 +832,33 @@ public class AssociationsServiceTest {
         Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE.getValue(), association.getApprovalRoute() );
         Assertions.assertNotNull( association.getEtag() );
     }
+
+    @Test
+    void updateAssociationStatusWithMalformedOrNonexistentAssociationIdThrowsInternalServerError(){
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "$$$", new Update()) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "9191", new Update()) );
+    }
+
+    @Test
+    void updateAssociationStatusWithNullAssociationIdOrUserIdOrNullStatusThrowsNullPointerException(){
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociation( null, null) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.updateAssociation( "1",  null) );
+    }
+
+    @Test
+    void updateAssociationStatusWithRemovedStatusAndSwapUserEmailForUserIdSetToFalseUpdatesAssociationCorrectly(){
+        final var oldAssociationData = associationsRepository.findById("1").get();
+
+        associationsService.updateAssociation( "1", new Update().set("removed_at", LocalDateTime.now()).set("status","removed"));
+        final var newAssociationData = associationsRepository.findById("1").get();
+
+        Assertions.assertEquals( RequestBodyPut.StatusEnum.REMOVED.getValue(), newAssociationData.getStatus() );
+        Assertions.assertEquals( oldAssociationData.getApprovedAt(), newAssociationData.getApprovedAt() );
+        Assertions.assertNotEquals( oldAssociationData.getRemovedAt(), newAssociationData.getRemovedAt() );
+        Assertions.assertNotEquals( oldAssociationData.getEtag(), newAssociationData.getEtag() );
+        Assertions.assertEquals( oldAssociationData.getUserEmail(), newAssociationData.getUserEmail() );
+        Assertions.assertEquals( oldAssociationData.getUserId(), newAssociationData.getUserId() );
+    }
+
 
 }
