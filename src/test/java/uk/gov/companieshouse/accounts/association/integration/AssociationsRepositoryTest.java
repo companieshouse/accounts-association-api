@@ -7,10 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.MethodMode;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -498,6 +501,210 @@ class AssociationsRepositoryTest {
 
         Assertions.assertEquals( 1, numRowsUpdated );
         Assertions.assertEquals( StatusEnum.REMOVED.getValue(), associationsRepository.findById( "111" ).get().getStatus() );
+    }
+
+    private AssociationDao createMinimalistAssociationForCompositeKeyTests( String userId, String userEmail, String companyNumber ){
+        final var association = new AssociationDao();
+        association.setUserId( userId );
+        association.setUserEmail( userEmail );
+        association.setCompanyNumber( companyNumber );
+        association.setStatus( StatusEnum.REMOVED.getValue() );
+        association.setEtag( "a" );
+        association.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE.getValue() );
+        return association;
+    }
+
+    @Test
+    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD)
+    void compositeKeyWithNullAndNullEmailAndNullAndNullUserIdThrowsDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( null, null, "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( null, null, "K000001" );
+        Assertions.assertThrows( DuplicateKeyException.class, () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithNullAndNullEmailAndNotNullAndNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", null, "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( null, null, "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithNullAndNullEmailAndNullAndNotNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( null, null, "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K001", null, "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD)
+    void compositeKeyWithNullAndNullEmailAndNullDuplicateNotAndNotNullUserIdThrowsDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", null, "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K001", null, "K000001" );
+        Assertions.assertThrows( DuplicateKeyException.class, () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithNullAndNullEmailAndDistinctNullNotAndNotNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", null, "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K002", null, "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithNotNullAndNullEmailAndNullAndNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( null, "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( null, null, "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithNotNullAndNullEmailAndNotNullAndNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( null, null, "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithNotNullAndNullEmailAndNullAndNotNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( null, "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K001", null, "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithNotNullAndNullEmailAndDuplicateNotNullAndNotNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K001", null, "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithNotNullAndNullEmailAndDistinctNotNullAndNotNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K002", null, "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithNullAndNotNullEmailAndNullAndNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( null, null, "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( null, "madonna@singer.com", "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithNullAndNotNullEmailAndNotNullAndNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", null, "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( null, "madonna@singer.com", "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithNullAndNotNullEmailAndNullAndNotNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( null, null, "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K001", "madonna@singer.com", "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithNullAndNotNullEmailAndDuplicateNotNullAndNotNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", null, "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K001", "madonna@singer.com", "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithNullAndNotNullEmailAndUniqueNotNullAndNotNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", null, "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K002", "madonna@singer.com", "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD)
+    void compositeKeyWithDuplicateNotNullAndNotNullEmailAndNullAndNullUserIdThrowsDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( null, "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( null, "madonna@singer.com", "K000001" );
+        Assertions.assertThrows( DuplicateKeyException.class, () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithDuplicateNotNullAndNotNullEmailAndNotNullAndNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( null, "madonna@singer.com", "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithDuplicateNotNullAndNotNullEmailAndNullAndNotNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( null, "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K001", "madonna@singer.com", "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD)
+    void compositeKeyWithDuplicateNotNullAndNotNullEmailAndDuplicateNotNullAndNotNullUserIdThrowsDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K001", "madonna@singer.com", "K000001" );
+        Assertions.assertThrows( DuplicateKeyException.class, () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithDuplicateNotNullAndNotNullEmailAndUniqueNotNullAndNotNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K002", "madonna@singer.com", "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithUniqueNotNullAndNotNullEmailAndNullAndNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( null, "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( null, "micahel.jackson@singer.com", "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithUniqueNotNullAndNotNullEmailAndNotNullAndNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( null, "micahel.jackson@singer.com", "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithUniqueNotNullAndNotNullEmailAndNullAndNotNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( null, "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K001", "micahel.jackson@singer.com", "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithUniqueNotNullAndNotNullEmailAndDuplicateNotNullAndNotNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K001", "micahel.jackson@singer.com", "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithUniqueNotNullAndNotNullEmailAndUniqueNotNullAndNotNullUserIdDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K002", "micahel.jackson@singer.com", "K000001" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithTheSameUserIdButDifferentCompanyNumbersDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( "K001", null, "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( "K001", null, "K000002" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void compositeKeyWithTheSameUserEmailButDifferentCompanyNumbersDoesNotThrowDuplicateKeyException(){
+        final var associationOne = createMinimalistAssociationForCompositeKeyTests( null, "madonna@singer.com", "K000001" );
+        final var associationTwo = createMinimalistAssociationForCompositeKeyTests( null, "madonna@singer.com", "K000002" );
+        Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
     }
 
     @AfterEach
