@@ -981,9 +981,9 @@ class AssociationsServiceTest {
 
     @Test
     void createAssociationWithNullInputsThrowsNullPointerException(){
-        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( null, "000", ApprovalRouteEnum.AUTH_CODE ) );
-        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", null, ApprovalRouteEnum.AUTH_CODE ) );
-        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", "000", null ) );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( null, "000", null, ApprovalRouteEnum.AUTH_CODE ) );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", null, null, ApprovalRouteEnum.AUTH_CODE ) );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", "000", null, null ) );
     }
 
     private ArgumentMatcher<AssociationDao> createAssociationDaoMatches( final String companyNumber, final String userId, final ApprovalRouteEnum approvalRouteEnum ){
@@ -996,7 +996,7 @@ class AssociationsServiceTest {
 
     @Test
     void createAssociationSuccessfullyCreatesAssociation(){
-        associationsService.createAssociation( "000000", "000", ApprovalRouteEnum.AUTH_CODE );
+        associationsService.createAssociation( "000000", "000", null, ApprovalRouteEnum.AUTH_CODE );
         Mockito.verify( associationsRepository ).insert( argThat( createAssociationDaoMatches( "000000", "000", ApprovalRouteEnum.AUTH_CODE ) ) );
     }
 

@@ -18,13 +18,13 @@ import uk.gov.companieshouse.accounts.association.mapper.AssociationMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
@@ -111,16 +111,30 @@ public class AssociationsService {
         return associationsRepository.associationExists(companyNumber, userId);
     }
 
+    // TODO: test this method
+    @Transactional(readOnly = true)
+    public Optional<AssociationDao> fetchAssociationForCompanyNumberAndUserEmail(final String companyNumber, final String userEmail) {
+        return associationsRepository.fetchAssociationForCompanyNumberAndUserEmail(companyNumber, userEmail);
+    }
+
+    // TODO: test this method
+    @Transactional(readOnly = true)
+    public Optional<AssociationDao> fetchAssociationForCompanyNumberAndUserId(final String companyNumber, final String userId) {
+        return associationsRepository.fetchAssociationForCompanyNumberAndUserId(companyNumber, userId);
+    }
+
+    // TODO: add extra tests this method
     @Transactional
-    public AssociationDao createAssociation(final String companyNumber, final String userId, final ApprovalRouteEnum approvalRoute) {
-        if (Objects.isNull(companyNumber) || Objects.isNull(userId)) {
-            LOG.error("Attempted to create association with null company_number or null user_id");
-            throw new NullPointerException("companyNumber and userId must not be null");
+    public AssociationDao createAssociation(final String companyNumber, final String userId, final String userEmail, final ApprovalRouteEnum approvalRoute) {
+        if (Objects.isNull(companyNumber) || ( Objects.isNull(userId) && Objects.isNull(userEmail) ) ) {
+            LOG.error("Attempted to create association with null company_number or null user_id and null user_email");
+            throw new NullPointerException("companyNumber and userId or userEmail must not be null");
         }
 
         final var association = new AssociationDao();
         association.setCompanyNumber(companyNumber);
         association.setUserId(userId);
+        association.setUserEmail( userEmail );
         association.setApprovalRoute(approvalRoute.getValue());
         association.setEtag(generateEtag());
         association.setStatus(StatusEnum.CONFIRMED.getValue());
@@ -128,19 +142,49 @@ public class AssociationsService {
     }
 
     @Transactional
-    public void updateAssociation(final String associationId, final Update update) {
-        if (Objects.isNull(associationId)) {
+    public AssociationDao updateAssociation(final AssociationDao association ) {
+        if (Objects.isNull( association.getId() ) ) {
             LOG.error("Attempted to update association with null association id");
             throw new NullPointerException("associationId must not be null");
         }
-        update.set("etag", generateEtag());
-        final var numRecordsUpdated = associationsRepository.updateAssociation(associationId, update);
 
-        if (numRecordsUpdated == 0) {
-            LOG.error(String.format("Failed to update association with id: %s", associationId));
-            throw new InternalServerErrorRuntimeException("Failed to update association");
+        association.setEtag(generateEtag());
+
+        if ( associationsRepository.existsById( association.getId() ) ) {
+            return associationsRepository.save(association);
         }
 
+        return null;
+    }
+
+
+
+
+    // TODO: refactor this methdo out so that it uses updateAssociation
+    // TODO: test this method
+    @Transactional
+    public AssociationDao inviteUser( final String inviterUserId, AssociationDao association ){
+        if ( Objects.isNull( inviterUserId ) ) {
+            LOG.error("inviterUserId was null.");
+            throw new NullPointerException( "Inviter must be specified in order to create invitation." );
+        }
+
+        if ( Objects.isNull( association ) || Objects.isNull( association.getId() ) ){
+            LOG.error("associationId was not provided.");
+            throw new NullPointerException( "The association must exist in order to create an invitation" );
+        }
+
+        final var now = LocalDateTime.now();
+
+        final var invitation = new InvitationDao();
+        invitation.setInvitedBy( inviterUserId );
+        invitation.setInvitedAt( now );
+
+        association.getInvitations().add( invitation );
+        association.setApprovalRoute( ApprovalRouteEnum.INVITATION.getValue() );
+        association.setApprovalExpiryAt( now.plusDays( 7 ) );
+
+        return updateAssociation( association );
     }
 
 }
