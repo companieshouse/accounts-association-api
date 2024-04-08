@@ -818,14 +818,14 @@ public class AssociationsServiceTest {
 
     @Test
     void createAssociationWithNullInputsThrowsNullPointerException(){
-        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( null, "000", ApprovalRouteEnum.AUTH_CODE ) );
-        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", null, ApprovalRouteEnum.AUTH_CODE ) );
-        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", "000", null ) );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( null, "000", null, ApprovalRouteEnum.AUTH_CODE ) );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", null, null, ApprovalRouteEnum.AUTH_CODE ) );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", "000", null, null ) );
     }
 
     @Test
     void createAssociationSuccessfullyCreatesAssociation(){
-        final var association = associationsService.createAssociation( "000000", "000", ApprovalRouteEnum.AUTH_CODE );
+        final var association = associationsService.createAssociation( "000000", "000", null, ApprovalRouteEnum.AUTH_CODE );
         Assertions.assertEquals( "000000", association.getCompanyNumber() );
         Assertions.assertEquals( "000", association.getUserId() );
         Assertions.assertEquals( StatusEnum.CONFIRMED.getValue(), association.getStatus() );
