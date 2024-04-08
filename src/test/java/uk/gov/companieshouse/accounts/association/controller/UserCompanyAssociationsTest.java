@@ -689,7 +689,7 @@ class UserCompanyAssociationsTest {
     void addAssociationCreatesNewAssociationCorrectlyAndReturnsAssociationIdWithCreatedHttpStatus() throws Exception {
         final var associationDao =  new AssociationDao();
         associationDao.setId( "99" );
-        Mockito.doReturn( associationDao ).when( associationsService ).createAssociation( "000000", "000", null, ApprovalRouteEnum.AUTH_CODE );
+        Mockito.doReturn( associationDao ).when( associationsService ).createAssociation( "000000", "000", null, ApprovalRouteEnum.AUTH_CODE , null);
         Mockito.doReturn( false ).when( associationsService ).associationExists( "000000", "000" );
 
         final var responseJson =

@@ -111,7 +111,6 @@ public class AssociationsService {
         return associationsRepository.associationExists(companyNumber, userId);
     }
 
-    // TODO: test this method
     @Transactional(readOnly = true)
     public Optional<AssociationDao> fetchAssociationForCompanyNumberAndUserEmail(final String companyNumber, final String userEmail) {
         return associationsRepository.fetchAssociationForCompanyNumberAndUserEmail(companyNumber, userEmail);
@@ -125,66 +124,65 @@ public class AssociationsService {
 
     // TODO: add extra tests this method
     @Transactional
-    public AssociationDao createAssociation(final String companyNumber, final String userId, final String userEmail, final ApprovalRouteEnum approvalRoute) {
-        if (Objects.isNull(companyNumber) || ( Objects.isNull(userId) && Objects.isNull(userEmail) ) ) {
-            LOG.error("Attempted to create association with null company_number or null user_id and null user_email");
-            throw new NullPointerException("companyNumber and userId or userEmail must not be null");
+    public AssociationDao createAssociation(final String companyNumber,
+                                            final String userId,
+                                            final String userEmail,
+                                            final ApprovalRouteEnum approvalRoute,
+                                            final String invitedByUserId) {
+        if (Objects.isNull(companyNumber) || companyNumber.isEmpty()) {
+            throw new NullPointerException("companyNumber must not be null");
+        }
+
+        if (Objects.isNull(userId) && Objects.isNull(userEmail)) {
+            throw new NullPointerException("UserId or UserEmail should be provided");
         }
 
         final var association = new AssociationDao();
         association.setCompanyNumber(companyNumber);
         association.setUserId(userId);
-        association.setUserEmail( userEmail );
+        association.setUserEmail(userEmail);
         association.setApprovalRoute(approvalRoute.getValue());
         association.setEtag(generateEtag());
-        association.setStatus(StatusEnum.CONFIRMED.getValue());
-        return associationsRepository.insert(association);
+
+
+        if (ApprovalRouteEnum.INVITATION.equals(approvalRoute)) {
+            addInvitation(invitedByUserId, association);
+
+        } else {
+            association.setStatus(StatusEnum.CONFIRMED.getValue());
+        }
+        return associationsRepository.save(association);
+    }
+
+    private static void addInvitation(String invitedByUserId, AssociationDao association) {
+        InvitationDao invitationDao = new InvitationDao();
+        invitationDao.setInvitedAt(LocalDateTime.now());
+        invitationDao.setInvitedBy(invitedByUserId);
+        association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        association.setApprovalExpiryAt(LocalDateTime.now().plusDays(7));
+        association.getInvitations().add(invitationDao);
     }
 
     @Transactional
-    public AssociationDao updateAssociation(final AssociationDao association ) {
-        if (Objects.isNull( association.getId() ) ) {
+    public AssociationDao sendNewInvitation(final String invitedByUserId, final AssociationDao association) {
+        addInvitation(invitedByUserId, association);
+        return associationsRepository.save(association);
+    }
+
+    @Transactional
+    public void updateAssociation(final String associationId, final Update update) {
+        if (Objects.isNull(associationId)) {
             LOG.error("Attempted to update association with null association id");
             throw new NullPointerException("associationId must not be null");
         }
+        update.set("etag", generateEtag());
+        final var numRecordsUpdated = associationsRepository.updateAssociation(associationId, update);
 
-        association.setEtag(generateEtag());
-
-        if ( associationsRepository.existsById( association.getId() ) ) {
-            return associationsRepository.save(association);
+        if (numRecordsUpdated == 0) {
+            LOG.error(String.format("Failed to update association with id: %s", associationId));
+            throw new InternalServerErrorRuntimeException("Failed to update association");
         }
 
-        return null;
-    }
-
-
-
-
-    // TODO: refactor this methdo out so that it uses updateAssociation
-    // TODO: test this method
-    @Transactional
-    public AssociationDao inviteUser( final String inviterUserId, AssociationDao association ){
-        if ( Objects.isNull( inviterUserId ) ) {
-            LOG.error("inviterUserId was null.");
-            throw new NullPointerException( "Inviter must be specified in order to create invitation." );
-        }
-
-        if ( Objects.isNull( association ) || Objects.isNull( association.getId() ) ){
-            LOG.error("associationId was not provided.");
-            throw new NullPointerException( "The association must exist in order to create an invitation" );
-        }
-
-        final var now = LocalDateTime.now();
-
-        final var invitation = new InvitationDao();
-        invitation.setInvitedBy( inviterUserId );
-        invitation.setInvitedAt( now );
-
-        association.getInvitations().add( invitation );
-        association.setApprovalRoute( ApprovalRouteEnum.INVITATION.getValue() );
-        association.setApprovalExpiryAt( now.plusDays( 7 ) );
-
-        return updateAssociation( association );
     }
 
 }
