@@ -1,8 +1,5 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
-import java.time.LocalDateTime;
-import java.util.Objects;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
@@ -22,7 +19,9 @@ import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.Stat
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -136,40 +135,44 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         }
 
         LOG.debugContext( xRequestId, String.format( "Attempting to search for %s in accounts-user-api.", inviteeEmail ), null );
-        final var usersList = usersService.searchUserDetails( List.of( inviteeEmail ) );
-        final var userFound = !( Objects.isNull( usersList ) || usersList.isEmpty() );
+        final var inviteeUserDetails = usersService.searchUserDetails( List.of( inviteeEmail ) );
+        final var inviteeUserFound = !( Objects.isNull( inviteeUserDetails ) || inviteeUserDetails.isEmpty() );
 
         LOG.debugContext( xRequestId, String.format( "Attempting to fetch association for company %s and user email %s.", companyNumber, inviteeEmail ), null );
-        final var associationEmailOptional = associationsService.fetchAssociationForCompanyNumberAndUserEmail( companyNumber, inviteeEmail );
+        final var associationWithUserEmail = associationsService.fetchAssociationForCompanyNumberAndUserEmail( companyNumber, inviteeEmail );
         AssociationDao association = null;
-        if ( associationEmailOptional.isPresent() ){
-            // TODO: swap operation
+
+        if ( associationWithUserEmail.isPresent()){
             LOG.debugContext( xRequestId, String.format( "Association for company %s and user email %s was found.", companyNumber, inviteeEmail), null );
-            association = associationEmailOptional.get();
+            if( inviteeUserFound ) {
+                association = associationWithUserEmail.get();
+                association.setUserEmail("");
+                association.setUserId(inviteeUserDetails.getFirst().getUserId());
+            }
+            var associationId = associationsService.sendNewInvitation(ericIdentity, association).getId();
+            return new ResponseEntity<>( new ResponseBodyPost().associationId( associationId ), HttpStatus.CREATED );
         }
 
-        if ( associationEmailOptional.isEmpty() && userFound ){
-            final var userDetails = usersList.getFirst();
+        //if association with email not found and user found
+        if ( inviteeUserFound ){
+            final var userDetails = inviteeUserDetails.getFirst();
             final var inviteeUserId = userDetails.getUserId();
-            LOG.debugContext( xRequestId, String.format( "Association for company %s and user email %s was not found, but user was found. Attempting to fetch association for company %s and user id %s", companyNumber, inviteeEmail, companyNumber, inviteeUserId ), null );
-            final var associationUserOptional = associationsService.fetchAssociationForCompanyNumberAndUserId( companyNumber, inviteeUserId );
-            association = associationUserOptional.orElseGet(
-                    () -> associationsService.createAssociation(companyNumber, inviteeUserId, null,
-                            ApprovalRouteEnum.INVITATION));
-        }
+            LOG.debugContext( xRequestId, String.format( "Attempting to fetch association for company %s and user id %s", companyNumber, inviteeUserId ), null );
+            Optional<AssociationDao> associationWithUserID = associationsService.fetchAssociationForCompanyNumberAndUserId( companyNumber, inviteeUserId );
+            if(associationWithUserID.isEmpty()){
+                LOG.infoContext( xRequestId, String.format( "Creating association and invitation for company %s and user id %s", companyNumber, inviteeUserDetails.getFirst().getUserId() ), null );
+                association = associationsService.createAssociation(companyNumber,inviteeUserId,null,ApprovalRouteEnum.INVITATION,ericIdentity);
+                return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
+            }
+            LOG.infoContext( xRequestId, String.format( "Association for company %s and user id %s found, association id: %s", companyNumber, inviteeUserDetails.getFirst().getUserId(), associationWithUserID.get().getId() ), null );
+            LOG.debugContext( xRequestId, String.format( "Attempting to send new invitation for company %s and user id %s for association id: %s", companyNumber, inviteeUserId, associationWithUserID.get().getId() ), null );
+            association = associationsService.sendNewInvitation(ericIdentity, associationWithUserID.get());
+            return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
 
-        if ( associationEmailOptional.isEmpty() && !userFound ){
-            LOG.debugContext( xRequestId, String.format( "Association for company %s and user email %s was not found, and user was not found.", companyNumber, inviteeEmail), null );
-            association = associationsService.createAssociation( companyNumber, null, inviteeEmail, ApprovalRouteEnum.INVITATION );
         }
-
-        if ( Association.StatusEnum.AWAITING_APPROVAL.getValue().equals( association.getStatus() ) ){
-            LOG.debugContext( xRequestId, "Attempting to send invitation", null );
-            associationsService.inviteUser( ericIdentity, association );
-        }
-
-        final var associationId = association.getId();
-        return new ResponseEntity<>( new ResponseBodyPost().associationId( associationId ), HttpStatus.CREATED );
+        //if association with email not found, user not found
+        association = associationsService.createAssociation(companyNumber, null ,inviteeEmail,ApprovalRouteEnum.INVITATION,ericIdentity);
+        return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
     }
 
     @Override
