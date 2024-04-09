@@ -21,6 +21,7 @@ import uk.gov.companieshouse.service.rest.err.Errors;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @org.springframework.web.bind.annotation.ControllerAdvice
 public class ControllerAdvice extends ResponseEntityExceptionHandler {
@@ -54,24 +55,24 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
         LOG.errorContext(requestId, e.getMessage(), null, contextMap);
 
         Errors errors = new Errors();
-        errors.addError(Err.serviceErrBuilder().withType("ch:service").withError(e.getMessage()).build());
+        errors.addError(Err.serviceErrBuilder().withError(e.getMessage()).build());
         return errors;
     }
 
     @ExceptionHandler(BadRequestRuntimeException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public Errors onBadRequestRuntimeException(BadRequestRuntimeException e, HttpServletRequest request) {
+    public Errors onBadRequestRuntimeException(BadRequestRuntimeException exception, HttpServletRequest request) {
         String requestId = request.getHeader(X_REQUEST_ID);
 
         Map<String, Object> contextMap = new HashMap<>();
         contextMap.put("url", request.getRequestURL().toString());
         contextMap.put("query-parameters", request.getQueryString() != null ? "?" + request.getQueryString() : "");
 
-        LOG.errorContext(requestId, e.getMessage(), null, contextMap);
+        LOG.errorContext(requestId, exception.getMessage(), null, contextMap);
 
         Errors errors = new Errors();
-        errors.addError(Err.serviceErrBuilder().withType("ch:service").withError(e.getMessage()).build());
+        errors.addError(Err.serviceErrBuilder().withError(exception.getMessage()).build());
         return errors;
     }
 
@@ -97,17 +98,17 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
     @ResponseBody
     public Errors onConstraintViolationException(ConstraintViolationException exception, HttpServletRequest request) {
 
-        Errors errors = new Errors();
+        Errors errorsToBeLogged = new Errors();
         for (ConstraintViolation<?> constraintViolation : exception.getConstraintViolations()) {
-            var errorMessage = "Please check the request and try again";
-            errors.addError(Err.invalidBodyBuilderWithLocation(ACCOUNTS_ASSOCIATION_API).withError(errorMessage).build());
+            errorsToBeLogged.addError(Err.invalidBodyBuilderWithLocation(ACCOUNTS_ASSOCIATION_API)
+                    .withError(String.format("%s %s", Optional.of(constraintViolation.getInvalidValue()).orElse(" "),constraintViolation.getMessage())).build());
         }
 
         String requestId = request.getHeader(X_REQUEST_ID);
-        String errorsJsonString = getJsonStringFromErrors(requestId, errors);
-        LOG.errorContext(requestId, String.format("Validation Failed with [%s]", errorsJsonString), exception, null);
+        String errorsJsonString = getJsonStringFromErrors(requestId, errorsToBeLogged);
+        LOG.errorContext(requestId, String.format("Validation Failed with [%s]", errorsJsonString), null, null);
 
-        return errors;
+        return errorsToBeLogged;
     }
 
     @ExceptionHandler(Exception.class)

@@ -54,22 +54,22 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     public ResponseEntity<ResponseBodyPost> addAssociation(final String xRequestId, final String ericIdentity, final RequestBodyPost requestBody) {
         final var companyNumber = requestBody.getCompanyNumber();
 
-        LOG.infoContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s", companyNumber, ericIdentity), null);
+        LOG.debugContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s", companyNumber, ericIdentity), null);
 
-        LOG.infoContext(xRequestId, String.format("Attempting to fetch company for company_number %s from company profile cache.", companyNumber), null);
+        LOG.debugContext(xRequestId, String.format("Attempting to fetch company for company_number %s from company profile cache.", companyNumber), null);
         companyService.fetchCompanyProfile(companyNumber);
-        LOG.infoContext(xRequestId, String.format("Successfully fetched company for company_number %s from company profile cache.", companyNumber), null);
+        LOG.debugContext(xRequestId, String.format("Successfully fetched company for company_number %s from company profile cache.", companyNumber), null);
 
-        LOG.infoContext(xRequestId, String.format("Attempting to check if association between company_number %s and user_id %s exists in user_company_associations.", companyNumber, ericIdentity), null);
+        LOG.debugContext(xRequestId, String.format("Attempting to check if association between company_number %s and user_id %s exists in user_company_associations.", companyNumber, ericIdentity), null);
         if (associationsService.associationExists(companyNumber, ericIdentity)) {
             LOG.error(String.format("%s: Association between user_id %s and company_number %s already exists.", xRequestId, ericIdentity, companyNumber));
             throw new BadRequestRuntimeException("Association already exists.");
         }
-        LOG.infoContext(xRequestId, String.format("Could not find association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
+        LOG.debugContext(xRequestId, String.format("Could not find association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
 
-        LOG.infoContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
+        LOG.debugContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
         final var association = associationsService.createAssociation(companyNumber, ericIdentity, ApprovalRouteEnum.AUTH_CODE);
-        LOG.infoContext(xRequestId, String.format("Successfully created association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
+        LOG.debugContext(xRequestId, String.format("Successfully created association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
 
         return new ResponseEntity<>(new ResponseBodyPost().associationId(association.getId()), HttpStatus.CREATED);
     }
@@ -83,7 +83,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             final Integer itemsPerPage,
             final String companyNumber) {
 
-        LOG.infoContext(xRequestId, "Trying to fetch associations data for user in session :".concat(ericIdentity), null);
+        LOG.debugContext(xRequestId, "Trying to fetch associations data for user in session :".concat(ericIdentity), null);
 
         if (pageIndex < 0) {
             LOG.error("pageIndex was less then 0");
@@ -106,7 +106,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
     @Override
     public ResponseEntity<Association> getAssociationForId(final String xRequestId, final String id) {
-        LOG.debug(String.format("%s: Attempting to get the Association details : %s", xRequestId, id));
+        LOG.debugContext(xRequestId, String.format("Attempting to get the Association details : %s",id), null);
 
         final var association = associationsService.findAssociationById(id);
         if (association.isEmpty()) {
@@ -126,7 +126,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     public ResponseEntity<Void> updateAssociationStatusForId(final String xRequestId, final String associationId, final RequestBodyPut requestBody) {
         final var status = requestBody.getStatus();
 
-        LOG.infoContext(xRequestId, String.format("Attempting to update association status for association %s to %s.", associationId, status.getValue()), null);
+        LOG.debugContext(xRequestId, String.format("Attempting to update association status for association %s to %s.", associationId, status.getValue()), null);
 
         LOG.debugContext(xRequestId, String.format("Attempting to fetch association %s from user_company_associations.", associationId), null);
         final var associationOptional = associationsService.findAssociationDaoById(associationId);
@@ -165,7 +165,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         LOG.debugContext(xRequestId, String.format("Attempting to update the status of association %s to %s", associationId, status.getValue()), null);
         associationsService.updateAssociation(associationId, update);
-        LOG.infoContext(xRequestId, "Successfully updated association status for association %s to %s.", null);
+        LOG.debugContext(xRequestId, "Successfully updated association status for association %s to %s.", null);
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
