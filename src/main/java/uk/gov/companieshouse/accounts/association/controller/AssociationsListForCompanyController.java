@@ -28,10 +28,10 @@ public class AssociationsListForCompanyController implements AssociationsListFor
     @Override
     public ResponseEntity<AssociationsList> getAssociationsForCompany( final String companyNumber, final String xRequestId, final Boolean includeRemoved, final Integer pageIndex, final Integer itemsPerPage, final String userEmail ) {
 
-        LOG.info( String.format( "%s: Attempting to fetch users that are associated with company %s. includeRemoved=%b, itemsPerPage=%d, and pageIndex=%d.", xRequestId, companyNumber, includeRemoved, itemsPerPage, pageIndex ) );
+        LOG.debugContext(xRequestId, String.format( "Attempting to fetch users that are associated with company %s. includeRemoved=%b, itemsPerPage=%d, and pageIndex=%d.", companyNumber, includeRemoved, itemsPerPage, pageIndex ),null );
 
         if ( pageIndex < 0 ){
-            LOG.error( "pageIndex was less then 0" );
+            LOG.error("pageIndex was less then 0" );
             throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
 
@@ -45,7 +45,7 @@ public class AssociationsListForCompanyController implements AssociationsListFor
         final var associationsList = associationsService.fetchAssociatedUsers( companyNumber, companyProfile, includeRemoved, itemsPerPage, pageIndex, userEmail );
         final var associationsListIsEmpty = associationsList.getItems().isEmpty();
 
-        LOG.info( associationsListIsEmpty ? String.format( "%s: Could not find any associations", xRequestId ) : String.format( "%s: Successfully fetched associations", xRequestId ) );
+        LOG.debugContext(xRequestId, associationsListIsEmpty ? "Could not find any associations" : "Successfully fetched associations",null) ;
 
         return new ResponseEntity<>( associationsList, HttpStatus.OK );
     }
