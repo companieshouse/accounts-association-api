@@ -146,7 +146,7 @@ class UserCompanyAssociationsTest {
                 .header("Eric-identity", "abcd12345")
                 .header("ERIC-Identity-Type", "oauth2")
                 .header("ERIC-Authorised-Key-Roles", "*")).andExpect(status().isBadRequest()).andReturn();
-        assertEquals("{\"errors\":[{\"error\":\"Eric id is not valid\",\"location\":\"accounts_association_api\",\"location_type\":\"request-body\",\"type\":\"ch:validation\"}]}",
+        assertEquals("{\"errors\":[{\"error\":\"Eric id is not valid\",\"type\":\"ch:service\"}]}",
                 response.getResponse().getContentAsString());
 
     }
@@ -191,7 +191,7 @@ class UserCompanyAssociationsTest {
                 .header("ERIC-Identity-Type", "oauth2")
                 .header("ERIC-Authorised-Key-Roles", "*")).andExpect(status().isBadRequest()).andReturn();
 
-        String error = "{\"errors\":[{\"error\":\"Please check the request and try again\",\"location\":\"accounts_association_api\",\"location_type\":\"request-body\",\"type\":\"ch:validation\"}]}";
+        String error = "{\"errors\":[{\"error\":\"abc must match \\\"^[0-9A-Z]{1,10}$\\\"\",\"location\":\"accounts_association_api\",\"location_type\":\"request-body\",\"type\":\"ch:validation\"}]}";
         assertEquals(error, response.getResponse().getContentAsString());
     }
 
