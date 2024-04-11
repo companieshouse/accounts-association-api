@@ -63,7 +63,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         LOG.debugContext(xRequestId, String.format("Could not find association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
 
         LOG.debugContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
-        final var association = associationsService.createAssociation(companyNumber, ericIdentity, ApprovalRouteEnum.AUTH_CODE);
+        final var association = associationsService.createAssociation(companyNumber, ericIdentity, null, ApprovalRouteEnum.AUTH_CODE, null);
         LOG.debugContext(xRequestId, String.format("Successfully created association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
 
         return new ResponseEntity<>(new ResponseBodyPost().associationId(association.getId()), HttpStatus.CREATED);
