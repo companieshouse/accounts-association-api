@@ -59,6 +59,8 @@ class AssociationsRepositoryTest {
 
     @BeforeEach
     public void setup() {
+        final var now = LocalDateTime.now();
+
         final var associationOne = new AssociationDao();
         associationOne.setId("111");
         associationOne.setCompanyNumber("12345");
@@ -166,10 +168,27 @@ class AssociationsRepositoryTest {
         associationEleven.setEtag("x");
         associationEleven.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE.getValue() );
 
+        final var invitationThirtyOne = new InvitationDao();
+        invitationThirtyOne.setInvitedBy("111");
+        invitationThirtyOne.setInvitedAt( now.plusDays(56) );
+
+        final var associationThirtyOne = new AssociationDao();
+        associationThirtyOne.setCompanyNumber("x777777");
+        associationThirtyOne.setUserId("99999");
+        associationThirtyOne.setUserEmail("scrooge.mcduck@disney.land");
+        associationThirtyOne.setStatus(StatusEnum.REMOVED.getValue());
+        associationThirtyOne.setId("31");
+        associationThirtyOne.setApprovedAt( now.plusDays(53) );
+        associationThirtyOne.setRemovedAt( now.plusDays(54) );
+        associationThirtyOne.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationThirtyOne.setApprovalExpiryAt( now.plusDays(55) );
+        associationThirtyOne.setInvitations( List.of( invitationThirtyOne ) );
+        associationThirtyOne.setEtag("nn");
+
         associationDaos = associationsRepository.saveAll( List.of(
                 associationOne, associationTwo, associationThree, associationFour,
                 associationFive, associationSix, associationSeven, associationEight,
-                associationNine, associationTen, associationEleven ) );
+                associationNine, associationTen, associationEleven, associationThirtyOne ) );
 
     }
 
@@ -705,6 +724,42 @@ class AssociationsRepositoryTest {
         final var associationOne = createMinimalistAssociationForCompositeKeyTests( null, "madonna@singer.com", "K000001" );
         final var associationTwo = createMinimalistAssociationForCompositeKeyTests( null, "madonna@singer.com", "K000002" );
         Assertions.assertDoesNotThrow( () -> associationsRepository.insert(List.of(associationOne, associationTwo)) );
+    }
+
+    @Test
+    void fetchAssociationForCompanyNumberAndUserEmailWithNullOrMalformedOrNonexistentCompanyNumberReturnsNothing(){
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserEmail( null, "abc@abc.com" ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserEmail( "$$$$$$", "abc@abc.com" ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserEmail( "919191", "abc@abc.com" ).isEmpty() );
+    }
+
+    @Test
+    void fetchAssociationForCompanyNumberAndUserEmailWithMalformedOrNonexistentUserEmailReturnsNothing(){
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserEmail( "12345", "$$$$$$" ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserEmail( "12345", "the.void@space.com" ).isEmpty() );
+    }
+
+    @Test
+    void fetchAssociationForCompanyNumberAndUserEmailRetrievesAssociation(){
+        Assertions.assertEquals( "31", associationsRepository.fetchAssociationForCompanyNumberAndUserEmail( "x777777", "scrooge.mcduck@disney.land" ).get().getId() ); ;
+    }
+
+    @Test
+    void fetchAssociationForCompanyNumberAndUserIdWithNullOrMalformedOrNonexistentCompanyNumberReturnsNothing(){
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserId( null, "99999" ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserId( "$$$$$$", "99999" ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserId( "919191", "99999" ).isEmpty() );
+    }
+
+    @Test
+    void fetchAssociationForCompanyNumberAndUserIdWithMalformedOrNonexistentUserIdReturnsNothing(){
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserId( "12345", "$$$$$$" ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserId( "12345", "919191" ).isEmpty() );
+    }
+
+    @Test
+    void fetchAssociationForCompanyNumberAndUserIdRetrievesAssociation(){
+        Assertions.assertEquals( "31", associationsRepository.fetchAssociationForCompanyNumberAndUserId( "x777777", "99999" ).get().getId() ); ;
     }
 
     @AfterEach

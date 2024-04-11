@@ -18,13 +18,13 @@ import uk.gov.companieshouse.accounts.association.mapper.AssociationMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
@@ -111,20 +111,65 @@ public class AssociationsService {
         return associationsRepository.associationExists(companyNumber, userId);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<AssociationDao> fetchAssociationForCompanyNumberAndUserEmail(final String companyNumber, final String userEmail) {
+        return associationsRepository.fetchAssociationForCompanyNumberAndUserEmail(companyNumber, userEmail);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<AssociationDao> fetchAssociationForCompanyNumberAndUserId(final String companyNumber, final String userId) {
+        return associationsRepository.fetchAssociationForCompanyNumberAndUserId(companyNumber, userId);
+    }
+
     @Transactional
-    public AssociationDao createAssociation(final String companyNumber, final String userId, final ApprovalRouteEnum approvalRoute) {
-        if (Objects.isNull(companyNumber) || Objects.isNull(userId)) {
-            LOG.error("Attempted to create association with null company_number or null user_id");
-            throw new NullPointerException("companyNumber and userId must not be null");
+    public AssociationDao createAssociation(final String companyNumber,
+                                            final String userId,
+                                            final String userEmail,
+                                            final ApprovalRouteEnum approvalRoute,
+                                            final String invitedByUserId) {
+        if (Objects.isNull(companyNumber) || companyNumber.isEmpty()) {
+            throw new NullPointerException("companyNumber must not be null");
+        }
+
+        if (Objects.isNull(userId) && Objects.isNull(userEmail)) {
+            throw new NullPointerException("UserId or UserEmail should be provided");
         }
 
         final var association = new AssociationDao();
         association.setCompanyNumber(companyNumber);
         association.setUserId(userId);
+        association.setUserEmail(userEmail);
         association.setApprovalRoute(approvalRoute.getValue());
         association.setEtag(generateEtag());
-        association.setStatus(StatusEnum.CONFIRMED.getValue());
-        return associationsRepository.insert(association);
+
+
+        if (ApprovalRouteEnum.INVITATION.equals(approvalRoute)) {
+            addInvitation(invitedByUserId, association);
+
+        } else {
+            association.setStatus(StatusEnum.CONFIRMED.getValue());
+        }
+        return associationsRepository.save(association);
+    }
+
+    private static void addInvitation(String invitedByUserId, AssociationDao association) {
+        if ( Objects.isNull( invitedByUserId ) ){
+            throw new NullPointerException( "invitedByUserId cannot be null." );
+        }
+
+        InvitationDao invitationDao = new InvitationDao();
+        invitationDao.setInvitedAt(LocalDateTime.now());
+        invitationDao.setInvitedBy(invitedByUserId);
+        association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        association.setApprovalExpiryAt(LocalDateTime.now().plusDays(7));
+        association.getInvitations().add(invitationDao);
+    }
+
+    @Transactional
+    public AssociationDao sendNewInvitation(final String invitedByUserId, final AssociationDao association) {
+        association.setEtag( generateEtag() );
+        addInvitation(invitedByUserId, association);
+        return associationsRepository.save(association);
     }
 
     @Transactional
