@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.repositories;
 
+import java.util.Optional;
 import java.util.Set;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
@@ -28,6 +29,11 @@ public interface AssociationsRepository extends MongoRepository<AssociationDao, 
     @Query( value = "{ 'company_number': ?0, 'user_id': ?1 }", exists = true )
     boolean associationExists( String companyNumber, String userId );
 
+    @Query( value = "{ 'company_number': ?0, 'user_email': ?1 }")
+    Optional<AssociationDao> fetchAssociationForCompanyNumberAndUserEmail(final String companyNumber,final String userEmail );
+
+    @Query( value = "{ 'company_number': ?0, 'user_id': ?1 }")
+    Optional<AssociationDao> fetchAssociationForCompanyNumberAndUserId(final String companyNumber, final String userId);
 
     @Query( "{ 'company_number': ?0, 'user_email': ?1, 'status': { $in: ?2 } } }" )
     Page<AssociationDao> fetchAssociationForCompanyNumberUserEmailAndStatus( final String companyNumber, final String userEmail, final Set<String> statuses, final Pageable pageable );

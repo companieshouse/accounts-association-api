@@ -1,11 +1,5 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-
-import java.time.LocalDateTime;
-import java.util.Objects;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
@@ -13,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
+import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -24,10 +19,10 @@ import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.Stat
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-
-import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 
 @RestController
 public class UserCompanyAssociations implements UserCompanyAssociationsInterface {
@@ -68,7 +63,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         LOG.debugContext(xRequestId, String.format("Could not find association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
 
         LOG.debugContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
-        final var association = associationsService.createAssociation(companyNumber, ericIdentity, ApprovalRouteEnum.AUTH_CODE);
+        final var association = associationsService.createAssociation(companyNumber, ericIdentity, null, ApprovalRouteEnum.AUTH_CODE, null);
         LOG.debugContext(xRequestId, String.format("Successfully created association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
 
         return new ResponseEntity<>(new ResponseBodyPost().associationId(association.getId()), HttpStatus.CREATED);
@@ -118,8 +113,65 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<ResponseBodyPost> inviteUser(@NotNull String s, @NotNull String s1, @Valid InvitationRequestBodyPost invitationRequestBodyPost) {
-        return null;
+    public ResponseEntity<ResponseBodyPost> inviteUser( final String xRequestId, final String ericIdentity, final InvitationRequestBodyPost requestBody ) {
+        final var companyNumber = requestBody.getCompanyNumber();
+        final var inviteeEmail = requestBody.getInviteeEmailId();
+
+        LOG.infoContext( xRequestId, String.format("%s is attempting to invite a new user to company %s.", ericIdentity, companyNumber ), null );
+        if ( Objects.isNull( inviteeEmail ) ) {
+            LOG.error( String.format( "%s: inviteeEmail is null.", xRequestId ) );
+            throw new BadRequestRuntimeException( "Please check the request and try again" );
+        }
+
+        try {
+            LOG.debugContext( xRequestId, String.format( "Attempting to fetch %s from accounts-user-api.", ericIdentity ), null );
+            usersService.fetchUserDetails(ericIdentity);
+            LOG.debugContext( xRequestId, String.format( "Attempting to fetch %s from company-profile-api.", companyNumber ), null );
+            companyService.fetchCompanyProfile( companyNumber );
+        } catch( NotFoundRuntimeException notFoundRuntimeException ){
+            LOG.error( notFoundRuntimeException.getMessage() );
+            throw new BadRequestRuntimeException( "Please check the request and try again" );
+        }
+
+        LOG.debugContext( xRequestId, String.format( "Attempting to search for %s in accounts-user-api.", inviteeEmail ), null );
+        final var inviteeUserDetails = usersService.searchUserDetails( List.of( inviteeEmail ) );
+        final var inviteeUserFound = !( Objects.isNull( inviteeUserDetails ) || inviteeUserDetails.isEmpty() );
+
+        LOG.debugContext( xRequestId, String.format( "Attempting to fetch association for company %s and user email %s.", companyNumber, inviteeEmail ), null );
+        final var associationWithUserEmail = associationsService.fetchAssociationForCompanyNumberAndUserEmail( companyNumber, inviteeEmail );
+        AssociationDao association = null;
+
+        if ( associationWithUserEmail.isPresent()){
+            LOG.debugContext( xRequestId, String.format( "Association for company %s and user email %s was found.", companyNumber, inviteeEmail), null );
+            association = associationWithUserEmail.get();
+            if( inviteeUserFound ) {
+                association.setUserEmail(null);
+                association.setUserId(inviteeUserDetails.getFirst().getUserId());
+            }
+            var associationId = associationsService.sendNewInvitation(ericIdentity, association).getId();
+            return new ResponseEntity<>( new ResponseBodyPost().associationId( associationId ), HttpStatus.CREATED );
+        }
+
+        //if association with email not found and user found
+        if ( inviteeUserFound ){
+            final var userDetails = inviteeUserDetails.getFirst();
+            final var inviteeUserId = userDetails.getUserId();
+            LOG.debugContext( xRequestId, String.format( "Attempting to fetch association for company %s and user id %s", companyNumber, inviteeUserId ), null );
+            Optional<AssociationDao> associationWithUserID = associationsService.fetchAssociationForCompanyNumberAndUserId( companyNumber, inviteeUserId );
+            if(associationWithUserID.isEmpty()){
+                LOG.infoContext( xRequestId, String.format( "Creating association and invitation for company %s and user id %s", companyNumber, inviteeUserDetails.getFirst().getUserId() ), null );
+                association = associationsService.createAssociation(companyNumber,inviteeUserId,null,ApprovalRouteEnum.INVITATION,ericIdentity);
+                return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
+            }
+            LOG.infoContext( xRequestId, String.format( "Association for company %s and user id %s found, association id: %s", companyNumber, inviteeUserDetails.getFirst().getUserId(), associationWithUserID.get().getId() ), null );
+            LOG.debugContext( xRequestId, String.format( "Attempting to send new invitation for company %s and user id %s for association id: %s", companyNumber, inviteeUserId, associationWithUserID.get().getId() ), null );
+            association = associationsService.sendNewInvitation(ericIdentity, associationWithUserID.get());
+            return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
+
+        }
+        //if association with email not found, user not found
+        association = associationsService.createAssociation(companyNumber, null ,inviteeEmail,ApprovalRouteEnum.INVITATION,ericIdentity);
+        return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
     }
 
     @Override
