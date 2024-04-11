@@ -15,9 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.MethodMode;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -818,19 +821,124 @@ public class AssociationsServiceTest {
 
     @Test
     void createAssociationWithNullInputsThrowsNullPointerException(){
-        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( null, "000", null, ApprovalRouteEnum.AUTH_CODE ,null) );
-        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", null, null, ApprovalRouteEnum.AUTH_CODE , null) );
-        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", "000", null, null , null) );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( null, "000", "the.void@space.com", ApprovalRouteEnum.AUTH_CODE ,"111") );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", null, null, ApprovalRouteEnum.AUTH_CODE ,"111") );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", "000", "the.void@space.com", null ,"111") );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", "000", "the.void@space.com", ApprovalRouteEnum.INVITATION ,null) );
     }
 
     @Test
-    void createAssociationSuccessfullyCreatesAssociation(){
-        final var association = associationsService.createAssociation( "000000", "000", null, ApprovalRouteEnum.AUTH_CODE , null);
+    @DirtiesContext(methodMode = MethodMode.BEFORE_METHOD)
+    void createAssociationThatAlreadyExistsThrowsDuplicateKeyException(){
+        associationsService.createAssociation( "000000", "000", null, ApprovalRouteEnum.INVITATION, "111" );
+        associationsService.createAssociation( "000000", null, "bruce.wayne@gotham.city", ApprovalRouteEnum.INVITATION, "111" );
+
+        Assertions.assertThrows( DuplicateKeyException.class, () -> associationsService.createAssociation( "000000", "000", null, ApprovalRouteEnum.INVITATION, "111" ) );
+        Assertions.assertThrows( DuplicateKeyException.class, () -> associationsService.createAssociation( "000000", null, "bruce.wayne@gotham.city", ApprovalRouteEnum.INVITATION, "111" ) );
+    }
+
+    @Test
+    void createAssociationWithUserIdAndAuthCodeSuccessfullyCreatesAssociation(){
+        final var association = associationsService.createAssociation( "000000", "000", null, ApprovalRouteEnum.AUTH_CODE, null);
         Assertions.assertEquals( "000000", association.getCompanyNumber() );
         Assertions.assertEquals( "000", association.getUserId() );
+        Assertions.assertNull( association.getUserEmail() );
         Assertions.assertEquals( StatusEnum.CONFIRMED.getValue(), association.getStatus() );
         Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE.getValue(), association.getApprovalRoute() );
         Assertions.assertNotNull( association.getEtag() );
+    }
+
+    @Test
+    void createAssociationWithUserIdAndInvitationSuccessfullyCreatesAssociation(){
+        final var association = associationsService.createAssociation( "000000", "000", null, ApprovalRouteEnum.INVITATION, "111");
+        final var invitation = association.getInvitations().getFirst();
+
+        Assertions.assertEquals( "000000", association.getCompanyNumber() );
+        Assertions.assertEquals( "000", association.getUserId() );
+        Assertions.assertNull( association.getUserEmail() );
+        Assertions.assertEquals( StatusEnum.AWAITING_APPROVAL.getValue(), association.getStatus() );
+        Assertions.assertEquals( ApprovalRouteEnum.INVITATION.getValue(), association.getApprovalRoute() );
+        Assertions.assertNotNull( association.getEtag() );
+        Assertions.assertNotNull( association.getApprovalExpiryAt() );
+        Assertions.assertNotNull( invitation.getInvitedAt() );
+        Assertions.assertEquals( "111", invitation.getInvitedBy() );
+    }
+
+    @Test
+    void createAssociationWithUserEmailAndAuthCodeSuccessfullyCreatesAssociation(){
+        final var association = associationsService.createAssociation( "000000", null, "bruce.wayne@gotham.city", ApprovalRouteEnum.AUTH_CODE, null);
+        Assertions.assertEquals( "000000", association.getCompanyNumber() );
+        Assertions.assertNull( association.getUserId() );
+        Assertions.assertEquals( "bruce.wayne@gotham.city", association.getUserEmail() );
+        Assertions.assertEquals( StatusEnum.CONFIRMED.getValue(), association.getStatus() );
+        Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE.getValue(), association.getApprovalRoute() );
+        Assertions.assertNotNull( association.getEtag() );
+    }
+
+    @Test
+    void createAssociationWithUserEmailAndInvitationSuccessfullyCreatesAssociation(){
+        final var association = associationsService.createAssociation( "000000", null, "bruce.wayne@gotham.city", ApprovalRouteEnum.INVITATION, "111");
+        final var invitation = association.getInvitations().getFirst();
+
+        Assertions.assertEquals( "000000", association.getCompanyNumber() );
+        Assertions.assertNull( association.getUserId() );
+        Assertions.assertEquals( "bruce.wayne@gotham.city", association.getUserEmail() );
+        Assertions.assertEquals( StatusEnum.AWAITING_APPROVAL.getValue(), association.getStatus() );
+        Assertions.assertEquals( ApprovalRouteEnum.INVITATION.getValue(), association.getApprovalRoute() );
+        Assertions.assertNotNull( association.getEtag() );
+        Assertions.assertNotNull( association.getApprovalExpiryAt() );
+        Assertions.assertNotNull( invitation.getInvitedAt() );
+        Assertions.assertEquals( "111", invitation.getInvitedBy() );
+    }
+
+    @Test
+    void sendNewInvitationWithNullInputsThrowsNullPointerException(){
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.sendNewInvitation( null, associationsRepository.findById("1").get() ) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.sendNewInvitation( "111", null ) );
+    }
+
+    @Test
+    void sendNewInvitationWithNonexistentAssociationCreatesNewAssociation(){
+        final var association = new AssociationDao();
+        association.setCompanyNumber( "000000" );
+        association.setUserId( null );
+        association.setUserEmail( "the.void@space.com" );
+        association.setApprovalRoute( ApprovalRouteEnum.INVITATION.getValue() );
+
+        final var updatedAssociation = associationsService.sendNewInvitation( "111", association );
+        final var invitation = updatedAssociation.getInvitations().getFirst();
+
+        Assertions.assertEquals( "000000", association.getCompanyNumber() );
+        Assertions.assertNull( association.getUserId() );
+        Assertions.assertEquals( "the.void@space.com", association.getUserEmail() );
+        Assertions.assertEquals( ApprovalRouteEnum.INVITATION.getValue(), association.getApprovalRoute() );
+        Assertions.assertEquals( StatusEnum.AWAITING_APPROVAL.getValue(), association.getStatus() );
+        Assertions.assertNotNull( association.getEtag() );
+        Assertions.assertNotNull( association.getApprovalExpiryAt() );
+        Assertions.assertNotNull( invitation.getInvitedAt() );
+        Assertions.assertEquals( "111", invitation.getInvitedBy() );
+    }
+
+    @Test
+    void sendNewInvitationWithExistingAssociationCreatesNewInvitation(){
+        final var association = associationsRepository.findById( "1" ).get();
+
+        final var updatedAssociation = associationsService.sendNewInvitation( "222", association );
+        final var invitations = updatedAssociation.getInvitations();
+        final var firstInvitation = invitations.getFirst();
+        final var secondInvitation = invitations.getLast();
+
+        Assertions.assertEquals( "111111", association.getCompanyNumber() );
+        Assertions.assertEquals( "111", association.getUserId() );
+        Assertions.assertEquals( "bruce.wayne@gotham.city", association.getUserEmail() );
+        Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE.getValue(), association.getApprovalRoute() );
+        Assertions.assertEquals( StatusEnum.AWAITING_APPROVAL.getValue(), association.getStatus() );
+        Assertions.assertNotNull( association.getEtag() );
+        Assertions.assertNotNull( association.getApprovalExpiryAt() );
+        Assertions.assertNotNull( firstInvitation.getInvitedAt() );
+        Assertions.assertEquals( "666", firstInvitation.getInvitedBy() );
+        Assertions.assertNotNull( secondInvitation.getInvitedAt() );
+        Assertions.assertEquals( "222", secondInvitation.getInvitedBy() );
     }
 
     @Test
@@ -860,5 +968,22 @@ public class AssociationsServiceTest {
         Assertions.assertEquals( oldAssociationData.getUserId(), newAssociationData.getUserId() );
     }
 
+    @Test
+    void fetchAssociationForCompanyNumberAndUserIdWithNullOrMalformedOrNonexistentCompanyNumberReturnsNothing(){
+        Assertions.assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( null, "111" ).isEmpty() );
+        Assertions.assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( "$$$$$$", "111" ).isEmpty() );
+        Assertions.assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( "919191", "111" ).isEmpty() );
+    }
+
+    @Test
+    void fetchAssociationForCompanyNumberAndUserIdWithMalformedOrNonexistentUserIdReturnsNothing() {
+        Assertions.assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "$$$" ).isEmpty() );
+        Assertions.assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "9191" ).isEmpty() );
+    }
+
+    @Test
+    void fetchAssociationForCompanyNumberAndUserIdShouldFetchAssociation(){
+        Assertions.assertEquals( "1", associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "111" ).get().getId() );
+    }
 
 }

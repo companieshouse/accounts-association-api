@@ -112,7 +112,6 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         return new ResponseEntity<>(association.get(), HttpStatus.OK);
     }
 
-    // TODO: test this method
     @Override
     public ResponseEntity<ResponseBodyPost> inviteUser( final String xRequestId, final String ericIdentity, final InvitationRequestBodyPost requestBody ) {
         final var companyNumber = requestBody.getCompanyNumber();
@@ -144,9 +143,9 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         if ( associationWithUserEmail.isPresent()){
             LOG.debugContext( xRequestId, String.format( "Association for company %s and user email %s was found.", companyNumber, inviteeEmail), null );
+            association = associationWithUserEmail.get();
             if( inviteeUserFound ) {
-                association = associationWithUserEmail.get();
-                association.setUserEmail("");
+                association.setUserEmail(null);
                 association.setUserId(inviteeUserDetails.getFirst().getUserId());
             }
             var associationId = associationsService.sendNewInvitation(ericIdentity, association).getId();
