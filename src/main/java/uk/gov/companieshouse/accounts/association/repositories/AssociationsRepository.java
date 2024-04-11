@@ -29,11 +29,9 @@ public interface AssociationsRepository extends MongoRepository<AssociationDao, 
     @Query( value = "{ 'company_number': ?0, 'user_id': ?1 }", exists = true )
     boolean associationExists( String companyNumber, String userId );
 
-    // TODO: test this method
     @Query( value = "{ 'company_number': ?0, 'user_email': ?1 }")
     Optional<AssociationDao> fetchAssociationForCompanyNumberAndUserEmail(final String companyNumber,final String userEmail );
 
-    // TODO: test this method
     @Query( value = "{ 'company_number': ?0, 'user_id': ?1 }")
     Optional<AssociationDao> fetchAssociationForCompanyNumberAndUserId(final String companyNumber, final String userId);
 

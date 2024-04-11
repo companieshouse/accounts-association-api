@@ -116,13 +116,11 @@ public class AssociationsService {
         return associationsRepository.fetchAssociationForCompanyNumberAndUserEmail(companyNumber, userEmail);
     }
 
-    // TODO: test this method
     @Transactional(readOnly = true)
     public Optional<AssociationDao> fetchAssociationForCompanyNumberAndUserId(final String companyNumber, final String userId) {
         return associationsRepository.fetchAssociationForCompanyNumberAndUserId(companyNumber, userId);
     }
 
-    // TODO: add extra tests this method
     @Transactional
     public AssociationDao createAssociation(final String companyNumber,
                                             final String userId,
@@ -155,6 +153,10 @@ public class AssociationsService {
     }
 
     private static void addInvitation(String invitedByUserId, AssociationDao association) {
+        if ( Objects.isNull( invitedByUserId ) ){
+            throw new NullPointerException( "invitedByUserId cannot be null." );
+        }
+
         InvitationDao invitationDao = new InvitationDao();
         invitationDao.setInvitedAt(LocalDateTime.now());
         invitationDao.setInvitedBy(invitedByUserId);
@@ -165,6 +167,7 @@ public class AssociationsService {
 
     @Transactional
     public AssociationDao sendNewInvitation(final String invitedByUserId, final AssociationDao association) {
+        association.setEtag( generateEtag() );
         addInvitation(invitedByUserId, association);
         return associationsRepository.save(association);
     }
