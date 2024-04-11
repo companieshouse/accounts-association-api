@@ -129,7 +129,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             LOG.debugContext( xRequestId, String.format( "Attempting to fetch %s from company-profile-api.", companyNumber ), null );
             companyService.fetchCompanyProfile( companyNumber );
         } catch( NotFoundRuntimeException notFoundRuntimeException ){
-            LOG.error( String.format( "%s: Was either unable to fetch %s from accounts-user-api, or %s from company-profile-api.", xRequestId, ericIdentity, companyNumber ) );
+            LOG.error( notFoundRuntimeException.getMessage() );
             throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
 
