@@ -33,10 +33,8 @@ public class AssociationDao {
     @CreatedDate
     private LocalDateTime createdAt;
     @Field("approved_at")
-    @FutureOrPresent
     private LocalDateTime approvedAt;
     @Field("removed_at")
-    @FutureOrPresent
     private LocalDateTime removedAt;
     @NotNull
     @Field("approval_route")
@@ -45,7 +43,6 @@ public class AssociationDao {
     @Indexed
     private String userEmail;
     @Field("approval_expiry_at")
-    @FutureOrPresent
     private LocalDateTime approvalExpiryAt;
 
     @Field("invitations")
