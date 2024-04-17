@@ -50,6 +50,8 @@ import uk.gov.companieshouse.api.error.ApiErrorResponseException;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.api.model.ApiResponse;
 import uk.gov.companieshouse.api.sdk.ApiClientService;
+import uk.gov.companieshouse.email_producer.EmailProducer;
+import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -88,6 +90,12 @@ public class UserCompanyAssociationsTest {
 
     @MockBean
     AccountsUserEndpoint accountsUserEndpoint;
+
+    @MockBean
+    EmailProducer emailProducer;
+
+    @MockBean
+    KafkaProducerFactory kafkaProducerFactory;
 
     @Autowired
     AssociationsRepository associationsRepository;

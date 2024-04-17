@@ -31,6 +31,8 @@ import java.util.List;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.email_producer.EmailProducer;
+import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -44,6 +46,12 @@ class AssociationsRepositoryTest {
     static MongoDBContainer container = new MongoDBContainer("mongo:5");
     @Autowired
     MongoTemplate mongoTemplate;
+
+    @MockBean
+    EmailProducer emailProducer;
+
+    @MockBean
+    KafkaProducerFactory kafkaProducerFactory;
 
     @MockBean
     ApiClientUtil apiClientUtil;

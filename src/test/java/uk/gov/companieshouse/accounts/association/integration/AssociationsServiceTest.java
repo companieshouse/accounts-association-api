@@ -42,6 +42,8 @@ import uk.gov.companieshouse.api.sdk.ApiClientService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
+import uk.gov.companieshouse.email_producer.EmailProducer;
+import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
@@ -64,6 +66,12 @@ public class AssociationsServiceTest {
 
     @MockBean
     InternalApiClient internalApiClient;
+
+    @MockBean
+    EmailProducer emailProducer;
+
+    @MockBean
+    KafkaProducerFactory kafkaProducerFactory;
 
     @MockBean
     AssociationsListCompanyMapper associationsListCompanyMapper;
