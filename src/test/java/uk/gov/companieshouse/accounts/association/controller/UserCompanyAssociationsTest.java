@@ -174,7 +174,7 @@ class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByTestShouldReturnEmptyDataWhenNoAssociationsFoundForEricIdentity() throws Exception {
-        when(usersService.fetchUserDetails("abcd12345")).thenReturn(new User("abc", "abc@abc.com").userId("abcd12345"));
+        when(usersService.fetchUserDetails("abcd12345")).thenReturn(new User("abc", "abc", "abc@abc.com").userId("abcd12345"));
         var response = mockMvc.perform(get("/associations")
                 .header("Eric-identity", "abcd12345")
                 .header("X-Request-Id", "theId")
@@ -185,7 +185,7 @@ class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByTestShouldReturnDataWhenAssociationsFoundForEricIdentity() throws Exception {
-        User user = new User("abc", "abc@abc.com").userId("abcd12345");
+        User user = new User("abc","abc", "abc@abc.com").userId("abcd12345");
         AssociationsList associationsList = new AssociationsList().itemsPerPage(15).pageNumber(0).totalPages(1).totalResults(1);
         when(usersService.fetchUserDetails("abcd12345")).thenReturn(user);
         when(associationsService
