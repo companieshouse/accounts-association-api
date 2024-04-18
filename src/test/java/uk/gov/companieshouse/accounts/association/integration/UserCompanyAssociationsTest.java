@@ -1447,8 +1447,6 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberExistsDoesNotPerformSwapButThrowsBadRequest() throws Exception {
-        //Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new UsersList() ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( "scrooge.mcduck@disney.land" ) );
-        // final var association = associationsRepository.fetchAssociationForCompanyNumberAndUserEmail("222222", "mr.blobby@nightmare.com").get();
 
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
@@ -1459,7 +1457,6 @@ public class UserCompanyAssociationsTest {
                         .content( "{\"company_number\":\"111111\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
                 .andExpect( status().isBadRequest() ).andReturn();
 
-        //Assertions.assertEquals( StatusEnum.CONFIRMED.getValue(), association.getStatus() );
     }
 
 
