@@ -94,6 +94,14 @@ public class AssociationsService {
         return associationsListCompanyMapper.daoToDto(associations, companyDetails);
     }
 
+    @Transactional( readOnly = true )
+    public List<Association> fetchAllAssociatedUsers( final CompanyDetails companyDetails, final Set<String> statuses ){
+        final var companyNumber = companyDetails.getCompanyNumber();
+        final var associations = associationsRepository.fetchAssociatedUsers( companyNumber, statuses, null );
+        return associationsListCompanyMapper.daoToDto(associations, companyDetails)
+                                            .getItems();
+    }
+
     @Transactional(readOnly = true)
     public Optional<Association> findAssociationById(final String id) {
 

@@ -1,5 +1,7 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
+import java.util.Set;
+import java.util.function.Consumer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
@@ -10,12 +12,15 @@ import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeExce
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
+import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum;
+import uk.gov.companieshouse.api.accounts.user.model.User;
+import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
@@ -38,12 +43,27 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
     private final CompanyService companyService;
 
+    private final EmailService emailService;
+
     @Autowired
-    public UserCompanyAssociations(UsersService usersService, AssociationsService associationsService, CompanyService companyService) {
+    public UserCompanyAssociations(UsersService usersService, AssociationsService associationsService, CompanyService companyService, EmailService emailService) {
         this.usersService = usersService;
         this.associationsService = associationsService;
         this.companyService = companyService;
+        this.emailService = emailService;
     }
+
+    private void sendEmailToUsersAssociatedWithCompany( final String xRequestId, CompanyDetails companyDetails, Consumer<String> sendEmailForEmailAddress ){
+        final var companyNumber = companyDetails.getCompanyNumber();
+        LOG.debugContext( xRequestId, String.format( "Attempting to send notifications to users from company %s", companyNumber ), null );
+        associationsService.fetchAllAssociatedUsers( companyDetails, Set.of( StatusEnum.CONFIRMED.getValue() ) )
+                           .stream()
+                           .map( Association::getUserEmail )
+                           .forEach( sendEmailForEmailAddress );
+        LOG.debugContext( xRequestId, String.format( "Successfully sent notifications to users from company %s", companyNumber ), null );
+    }
+
+// TODO: I default the displayName to email if there is no displayName... need to ask if this is okay
 
     @Override
     public ResponseEntity<ResponseBodyPost> addAssociation(final String xRequestId, final String ericIdentity, final RequestBodyPost requestBody) {
@@ -51,8 +71,14 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         LOG.debugContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s", companyNumber, ericIdentity), null);
 
+        LOG.debugContext( xRequestId, String.format("Attempting to fetch user for user_id %s from accounts-user-api.", ericIdentity), null );
+        final var user = usersService.fetchUserDetails( ericIdentity );
+        final var displayName = Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() );
+        LOG.debugContext( xRequestId, String.format("Successfully fetched user for user_id %s from accounts-user-api.", ericIdentity), null );
+
         LOG.debugContext(xRequestId, String.format("Attempting to fetch company for company_number %s from company profile cache.", companyNumber), null);
-        companyService.fetchCompanyProfile(companyNumber);
+        final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
+        final var companyName = companyDetails.getCompanyName();
         LOG.debugContext(xRequestId, String.format("Successfully fetched company for company_number %s from company profile cache.", companyNumber), null);
 
         LOG.debugContext(xRequestId, String.format("Attempting to check if association between company_number %s and user_id %s exists in user_company_associations.", companyNumber, ericIdentity), null);
@@ -65,6 +91,8 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         LOG.debugContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
         final var association = associationsService.createAssociation(companyNumber, ericIdentity, null, ApprovalRouteEnum.AUTH_CODE, null);
         LOG.debugContext(xRequestId, String.format("Successfully created association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
+
+        sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, recipientEmail -> emailService.sendAuthCodeConfirmationEmail( recipientEmail, displayName, companyName ) );
 
         return new ResponseEntity<>(new ResponseBodyPost().associationId(association.getId()), HttpStatus.CREATED);
     }
@@ -112,6 +140,13 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         return new ResponseEntity<>(association.get(), HttpStatus.OK);
     }
 
+
+
+
+
+
+
+
     @Override
     public ResponseEntity<ResponseBodyPost> inviteUser( final String xRequestId, final String ericIdentity, final InvitationRequestBodyPost requestBody ) {
         final var companyNumber = requestBody.getCompanyNumber();
@@ -123,19 +158,25 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
 
+        User inviterUser;
+        CompanyDetails companyDetails;
         try {
             LOG.debugContext( xRequestId, String.format( "Attempting to fetch %s from accounts-user-api.", ericIdentity ), null );
-            usersService.fetchUserDetails(ericIdentity);
+            inviterUser = usersService.fetchUserDetails(ericIdentity);
             LOG.debugContext( xRequestId, String.format( "Attempting to fetch %s from company-profile-api.", companyNumber ), null );
-            companyService.fetchCompanyProfile( companyNumber );
+            companyDetails = companyService.fetchCompanyProfile( companyNumber );
         } catch( NotFoundRuntimeException notFoundRuntimeException ){
             LOG.error( notFoundRuntimeException.getMessage() );
             throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
 
+        final var inviterDisplayName = Optional.ofNullable( inviterUser.getDisplayName() ).orElse( inviterUser.getEmail() );
+        final var companyName = companyDetails.getCompanyName();
+
         LOG.debugContext( xRequestId, String.format( "Attempting to search for %s in accounts-user-api.", inviteeEmail ), null );
         final var inviteeUserDetails = usersService.searchUserDetails( List.of( inviteeEmail ) );
         final var inviteeUserFound = !( Objects.isNull( inviteeUserDetails ) || inviteeUserDetails.isEmpty() );
+        final var inviteeDisplayName  = inviteeUserFound ? Optional.ofNullable( inviteeUserDetails.getFirst().getDisplayName() ).orElse( inviteeEmail ) : inviteeEmail;
 
         LOG.debugContext( xRequestId, String.format( "Attempting to fetch association for company %s and user email %s.", companyNumber, inviteeEmail ), null );
         final var associationWithUserEmail = associationsService.fetchAssociationForCompanyNumberAndUserEmail( companyNumber, inviteeEmail );
@@ -149,6 +190,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                 association.setUserId(inviteeUserDetails.getFirst().getUserId());
             }
             var associationId = associationsService.sendNewInvitation(ericIdentity, association).getId();
+            sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, recipientEmail -> emailService.sendInvitationEmail( recipientEmail, inviterDisplayName, inviteeDisplayName, companyName ) );
             return new ResponseEntity<>( new ResponseBodyPost().associationId( associationId ), HttpStatus.CREATED );
         }
 
@@ -161,22 +203,27 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             if(associationWithUserID.isEmpty()){
                 LOG.infoContext( xRequestId, String.format( "Creating association and invitation for company %s and user id %s", companyNumber, inviteeUserDetails.getFirst().getUserId() ), null );
                 association = associationsService.createAssociation(companyNumber,inviteeUserId,null,ApprovalRouteEnum.INVITATION,ericIdentity);
+                sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, recipientEmail -> emailService.sendInvitationEmail( recipientEmail, inviterDisplayName, inviteeDisplayName, companyName ) );
                 return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
             }
             LOG.infoContext( xRequestId, String.format( "Association for company %s and user id %s found, association id: %s", companyNumber, inviteeUserDetails.getFirst().getUserId(), associationWithUserID.get().getId() ), null );
             LOG.debugContext( xRequestId, String.format( "Attempting to send new invitation for company %s and user id %s for association id: %s", companyNumber, inviteeUserId, associationWithUserID.get().getId() ), null );
             association = associationsService.sendNewInvitation(ericIdentity, associationWithUserID.get());
+            sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, recipientEmail -> emailService.sendInvitationEmail( recipientEmail, inviterDisplayName, inviteeDisplayName, companyName ) );
             return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
 
         }
         //if association with email not found, user not found
         association = associationsService.createAssociation(companyNumber, null ,inviteeEmail,ApprovalRouteEnum.INVITATION,ericIdentity);
+        sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, recipientEmail -> emailService.sendInvitationEmail( recipientEmail, inviterDisplayName, inviteeDisplayName, companyName ) );
         return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
     }
 
     @Override
-    public ResponseEntity<Void> updateAssociationStatusForId(final String xRequestId, final String associationId, final RequestBodyPut requestBody) {
+    public ResponseEntity<Void> updateAssociationStatusForId(final String xRequestId, final String ericIdentity, final String associationId, final RequestBodyPut requestBody) {
         final var status = requestBody.getStatus();
+
+        // TODO: refactoring
 
         LOG.debugContext(xRequestId, String.format("Attempting to update association status for association %s to %s.", associationId, status.getValue()), null);
 
@@ -189,12 +236,26 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         LOG.debugContext(xRequestId, String.format("Successfully fetched association %s from user_company_associations.", associationId), null);
 
         final var association = associationOptional.get();
-        final var timestampKey = status.equals(RequestBodyPut.StatusEnum.CONFIRMED) ? "approved_at" : "removed_at";
+        final var companyNumber = association.getCompanyNumber();
 
+        // TODO: HLD needs to add ericIdentity
+        LOG.debugContext( xRequestId, String.format("Attempting to fetch user for user_id %s from accounts-user-api.", ericIdentity), null );
+        final var ericIdentityUser = usersService.fetchUserDetails( ericIdentity );
+        final var ericIdentityDisplayName = Optional.ofNullable( ericIdentityUser.getDisplayName() ).orElse( ericIdentityUser.getEmail() );
+        LOG.debugContext( xRequestId, String.format("Successfully fetched user for user_id %s from accounts-user-api.", ericIdentity), null );
+
+        LOG.debugContext(xRequestId, String.format("Attempting to fetch company for company_number %s from company profile cache.", companyNumber), null);
+        final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
+        final var companyName = companyDetails.getCompanyName();
+        LOG.debugContext(xRequestId, String.format("Successfully fetched company for company_number %s from company profile cache.", companyNumber), null);
+
+        final var timestampKey = status.equals(RequestBodyPut.StatusEnum.CONFIRMED) ? "approved_at" : "removed_at";
         var update = new Update()
                 .set("status", status.getValue())
                 .set(timestampKey, LocalDateTime.now().toString());
 
+        String updatedUserDisplayName;
+        boolean ericIdentityIsUpdatedUser;
         if (Objects.isNull(association.getUserId())) {
             LOG.debugContext(xRequestId, String.format("Association %s does not have a userId. Attempting to fetch data from accounts-user-api.", associationId), null);
             final var userEmail = association.getUserEmail();
@@ -211,13 +272,31 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                 LOG.debugContext(xRequestId, "Successfully fetched data from accounts-user-api for user.", null);
                 update.set("user_email", null).set("user_id", usersList.getFirst().getUserId());
             }
-
-
+            updatedUserDisplayName = userNotFound ? userEmail : Optional.ofNullable( usersList.getFirst().getDisplayName() ).orElse( userEmail );
+            ericIdentityIsUpdatedUser = !userNotFound && ericIdentity.equals(usersList.getFirst().getUserId());
+        } else {
+            final var user = usersService.fetchUserDetails( association.getUserId() );
+            updatedUserDisplayName = Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() );
+            ericIdentityIsUpdatedUser = ericIdentity.equals( user.getUserId() );
         }
 
         LOG.debugContext(xRequestId, String.format("Attempting to update the status of association %s to %s", associationId, status.getValue()), null);
         associationsService.updateAssociation(associationId, update);
         LOG.debugContext(xRequestId, "Successfully updated association status for association %s to %s.", null);
+
+        final var associationWasConfirmed = association.getStatus().equals( StatusEnum.CONFIRMED.getValue() );
+        final var associationWasAwaitingApproval = association.getStatus().equals( Association.StatusEnum.AWAITING_APPROVAL.getValue() );;
+        final var associationIsNowConfirmed = status.equals( StatusEnum.CONFIRMED );
+        final var associationIsNowRemoved = status.equals( StatusEnum.REMOVED );
+        final var approvalRouteWasInvitation = association.getApprovalRoute().equals( ApprovalRouteEnum.INVITATION.getValue() );
+
+        if ( associationWasConfirmed && associationIsNowRemoved ) sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, recipientEmail -> emailService.sendAuthorisationRemovedEmail( recipientEmail, ericIdentityDisplayName, updatedUserDisplayName, companyName ) );
+
+        if ( associationWasAwaitingApproval && approvalRouteWasInvitation ){
+            if ( associationIsNowConfirmed ) sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, recipientEmail -> emailService.sendInvitationAcceptedEmail( recipientEmail, ericIdentityDisplayName, updatedUserDisplayName, companyName ) );
+            if ( associationIsNowRemoved && !ericIdentityIsUpdatedUser ) sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, recipientEmail -> emailService.sendInvitationCancelledEmail( recipientEmail, ericIdentityDisplayName, updatedUserDisplayName, companyName ) );
+            if ( associationIsNowRemoved && ericIdentityIsUpdatedUser ) sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, recipientEmail -> emailService.sendInvitationRejectedEmail( recipientEmail, updatedUserDisplayName, companyName ) );
+        }
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
