@@ -693,8 +693,8 @@ class AssociationsServiceTest {
         final var companyDetails =
                 new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
 
-        Assertions.assertNull(associationsService.fetchAssociatedUsers(null, companyDetails, true, 15, 0, null));
-        Assertions.assertNull(associationsService.fetchAssociatedUsers("111111", null, true, 15, 0, null));
+        Assertions.assertNull(associationsService.fetchAssociatedUsers(null, companyDetails, true, 15, 0));
+        Assertions.assertNull(associationsService.fetchAssociatedUsers("111111", null, true, 15, 0));
     }
 
     private ArgumentMatcher<Page<AssociationDao>> associationsPageMatches(int totalElements, int totalPages, int numElementsOnPage, List<String> expectedAssociationIds) {
@@ -723,7 +723,7 @@ class AssociationsServiceTest {
         final var companyDetails =
                 new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
 
-        associationsService.fetchAssociatedUsers("111111", companyDetails, true, 20, 0, null);
+        associationsService.fetchAssociatedUsers("111111", companyDetails, true, 20, 0);
         final var expectedAssociationIds = List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16");
         Mockito.verify(associationsListCompanyMapper).daoToDto(argThat(associationsPageMatches(16, 1, 16, expectedAssociationIds)), eq(companyDetails));
     }
@@ -741,7 +741,7 @@ class AssociationsServiceTest {
         final var companyDetails =
                 new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
 
-        associationsService.fetchAssociatedUsers("111111", companyDetails, false, 20, 0, null);
+        associationsService.fetchAssociatedUsers("111111", companyDetails, false, 20, 0);
         final var expectedAssociationIds = List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13");
         Mockito.verify(associationsListCompanyMapper).daoToDto(argThat(associationsPageMatches(13, 1, 13, expectedAssociationIds)), eq(companyDetails));
     }
@@ -757,58 +757,11 @@ class AssociationsServiceTest {
         final var companyDetails =
                 new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
 
-        associationsService.fetchAssociatedUsers("111111", companyDetails, true, 15, 1, null);
+        associationsService.fetchAssociatedUsers("111111", companyDetails, true, 15, 1);
         Mockito.verify(associationsListCompanyMapper).daoToDto(argThat(associationsPageMatches(16, 2, 1, List.of("16"))), eq(companyDetails));
     }
 
-    @Test
-    void fetchAssociatedUsersWithUserEmailRetrievesAssociation(){
-        final var content = List.of(associationOne);
-        final var pageRequest = PageRequest.of(0, 15);
-        final var page = new PageImpl<>(content, pageRequest, 1);
 
-        Mockito.doReturn(page).when(associationsRepository).fetchAssociationForCompanyNumberUserEmailAndStatus("111111", "bruce.wayne@gotham.city",
-                Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() ), pageRequest );
-
-        final var companyDetails =
-                new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
-
-        associationsService.fetchAssociatedUsers("111111", companyDetails, true, 15, 0, "bruce.wayne@gotham.city" );
-
-        Mockito.verify(associationsListCompanyMapper).daoToDto(argThat(associationsPageMatches(1, 1, 1, List.of("1"))), eq(companyDetails));
-    }
-
-    @Test
-    void fetchAssociatedUsersWithMalformedUserEmailReturnsEmptyPage(){
-        final var content = List.of();
-        final var pageRequest = PageRequest.of(0, 15);
-        final var page = new PageImpl<>(content, pageRequest, content.size() );
-
-        Mockito.doReturn(page).when(associationsRepository).fetchAssociationForCompanyNumberUserEmailAndStatus("111111", "$$$",
-                Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() ), pageRequest );
-
-        final var companyDetails =
-                new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
-
-        associationsService.fetchAssociatedUsers("111111", companyDetails, true, 15, 0, "$$$" );
-        Mockito.verify(associationsListCompanyMapper).daoToDto(argThat(associationsPageMatches(0, 0, 0, List.of())), eq(companyDetails));
-    }
-
-    @Test
-    void fetchAssociatedUsersWithNonexistentUserEmailReturnsEmptyPage(){
-        final var content = List.of();
-        final var pageRequest = PageRequest.of(0, 15);
-        final var page = new PageImpl<>(content, pageRequest, content.size() );
-
-        Mockito.doReturn(page).when(associationsRepository).fetchAssociationForCompanyNumberUserEmailAndStatus("111111", "the.void@space.com",
-                Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() ), pageRequest );
-
-        final var companyDetails =
-                new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
-
-        associationsService.fetchAssociatedUsers("111111", companyDetails, true, 15, 0, "the.void@space.com" );
-        Mockito.verify(associationsListCompanyMapper).daoToDto(argThat(associationsPageMatches(0, 0, 0, List.of())), eq(companyDetails));
-    }
 
     @Test
     void getAssociationByIdReturnsAssociationDtoWhenAssociationFound() {
