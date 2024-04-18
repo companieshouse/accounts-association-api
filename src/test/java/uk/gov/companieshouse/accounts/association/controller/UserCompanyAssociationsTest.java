@@ -1126,7 +1126,7 @@ class UserCompanyAssociationsTest {
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoOne, null, "russell.howard@comedy.com")));
     }
 
-   /* @Test
+    @Test
     void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberExistsDoesNotPerformSwapButDoesPerformUpdateOperation() throws Exception {
         final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName("Scrooge McDuck");
         Mockito.doReturn(user).when(usersService).fetchUserDetails("9999");
@@ -1156,7 +1156,7 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isCreated());
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoTwo, "111", null)));
-    }*/
+    }
 
     @Test
     void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberDoesNotExistCreatesNewAssociation() throws Exception {
