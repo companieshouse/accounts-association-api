@@ -1230,7 +1230,7 @@ class UserCompanyAssociationsTest {
 
         Mockito.doReturn(Optional.of(associationDaoOne)).when(associationsService).fetchAssociationForCompanyNumberAndUserId("333333", "111");
 
-        Mockito.doThrow(new BadRequestRuntimeException("There is an existing association with Confirmed status for the user")).when(associationsService).fetchAssociationForCompanyNumberAndUserId("333333", "111").get().getStatus().equals("confirmed");
+        Mockito.doThrow(new BadRequestRuntimeException("There is an existing association with Confirmed status for the user")).when(associationsService).fetchAssociationForCompanyNumberAndUserId("333333", "111");
 
 
         final var response =mockMvc.perform(post("/associations/invitations")

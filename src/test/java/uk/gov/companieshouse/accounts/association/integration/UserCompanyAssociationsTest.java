@@ -428,10 +428,19 @@ public class UserCompanyAssociationsTest {
         associationThirtyFive.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationThirtyFive.setEtag("rr");
 
+        final var associationThirtySix = new AssociationDao();
+        associationThirtySix.setCompanyNumber("111111");
+        associationThirtySix.setUserId("111");
+        associationThirtySix.setId("36");
+        associationThirtySix.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationThirtySix.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationThirtySix.setEtag("rs");
+
         associationsRepository.insert( List.of( associationEighteen, associationNineteen, associationTwenty, associationTwentyOne,
                 associationTwentyTwo, associationTwentyThree, associationTwentyFour, associationTwentyFive, associationTwentySix,
                 associationTwentySeven, associationTwentyEight, associationTwentyNine, associationThirty, associationThirtyOne,
-                associationThirtyTwo, associationThirtyThree, associationSeventeen, associationThirtyFour, associationThirtyFive ) );
+                associationThirtyTwo, associationThirtyThree, associationSeventeen, associationThirtyFour, associationThirtyFive, associationThirtySix ) );
+        Mockito.doReturn( toCompanyDetailsApiResponse( "111111", "Sainsbury's" ) ).when( companyProfileEndpoint ).fetchCompanyProfile(  "111111" );
 
         Mockito.doReturn( toCompanyDetailsApiResponse( "333333", "Tesco" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "333333" );
         Mockito.doReturn( toCompanyDetailsApiResponse( "444444", "Sainsbury's" ) ).when( companyProfileEndpoint ).fetchCompanyProfile(  "444444" );
@@ -906,17 +915,17 @@ public class UserCompanyAssociationsTest {
     @Test
     void addAssociationCreatesNewAssociationCorrectlyAndReturnsAssociationIdWithCreatedHttpStatus() throws Exception {
         final var responseJson =
-        mockMvc.perform(post( "/associations" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "000")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
-                        .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"company_number\":\"000000\"}" ) )
-            .andExpect( status().isCreated() )
-            .andReturn()
-            .getResponse()
-            .getContentAsString();
+                mockMvc.perform(post( "/associations" )
+                                .header("X-Request-Id", "theId123")
+                                .header("Eric-identity", "000")
+                                .header("ERIC-Identity-Type", "oauth2")
+                                .header("ERIC-Authorised-Key-Roles", "*")
+                                .contentType( MediaType.APPLICATION_JSON )
+                                .content( "{\"company_number\":\"000000\"}" ) )
+                        .andExpect( status().isCreated() )
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
 
         final var objectMapper = new ObjectMapper();
         final var response = objectMapper.readValue( responseJson, ResponseBodyPost.class );
@@ -1247,7 +1256,7 @@ public class UserCompanyAssociationsTest {
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
-                .content( "{\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
+                        .content( "{\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
                 .andExpect( status().isBadRequest() );
     }
 
@@ -1435,6 +1444,24 @@ public class UserCompanyAssociationsTest {
         Assertions.assertNotNull( invitation.getInvitedAt() );
         Assertions.assertEquals( "9999", invitation.getInvitedBy() );
     }
+
+    @Test
+    void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberExistsDoesNotPerformSwapButThrowsBadRequest() throws Exception {
+        //Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new UsersList() ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( "scrooge.mcduck@disney.land" ) );
+        // final var association = associationsRepository.fetchAssociationForCompanyNumberAndUserEmail("222222", "mr.blobby@nightmare.com").get();
+
+        mockMvc.perform( post( "/associations/invitations" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"111111\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
+                .andExpect( status().isBadRequest() ).andReturn();
+
+        //Assertions.assertEquals( StatusEnum.CONFIRMED.getValue(), association.getStatus() );
+    }
+
 
     @AfterEach
     public void after() {
