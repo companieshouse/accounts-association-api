@@ -1,11 +1,6 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
-
 import jakarta.validation.constraints.NotNull;
-
-import java.time.LocalDateTime;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,7 +25,10 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.*;
+
+import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 
 @Service
 public class AssociationsService {
@@ -76,7 +74,11 @@ public class AssociationsService {
     }
 
     @Transactional(readOnly = true)
-    public AssociationsList fetchAssociatedUsers(final String companyNumber, final CompanyDetails companyDetails, final boolean includeRemoved, final int itemsPerPage, final int pageIndex, final String userEmail) {
+    public AssociationsList fetchAssociatedUsers(final String companyNumber,
+                                                 final CompanyDetails companyDetails,
+                                                 final boolean includeRemoved,
+                                                 final int itemsPerPage,
+                                                 final int pageIndex) {
         final Pageable pageable = PageRequest.of(pageIndex, itemsPerPage);
 
         final var statuses = new HashSet<>(Set.of(StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue()));
@@ -84,12 +86,8 @@ public class AssociationsService {
             statuses.add(StatusEnum.REMOVED.getValue());
         }
 
-        final Page<AssociationDao> associations;
-        if (Objects.isNull(userEmail)) {
-            associations = associationsRepository.fetchAssociatedUsers(companyNumber, statuses, pageable);
-        } else {
-            associations = associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus(companyNumber, userEmail, statuses, pageable);
-        }
+        final Page<AssociationDao> associations = associationsRepository.fetchAssociatedUsers(companyNumber, statuses, pageable);
+
 
         return associationsListCompanyMapper.daoToDto(associations, companyDetails);
     }
