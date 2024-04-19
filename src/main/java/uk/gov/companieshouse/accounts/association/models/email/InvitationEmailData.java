@@ -10,14 +10,14 @@ public class InvitationEmailData extends EmailData {
 
     private String companyName;
 
-    private String personInvitationFrom;
+    private String personWhoCreatedInvite;
 
     public InvitationEmailData(){}
 
-    public InvitationEmailData(String invitee, String companyName, String personInvitationFrom) {
+    public InvitationEmailData(String invitee, String companyName, String personWhoCreatedInvite) {
         this.invitee = invitee;
         this.companyName = companyName;
-        this.personInvitationFrom = personInvitationFrom;
+        this.personWhoCreatedInvite = personWhoCreatedInvite;
     }
 
     public void setInvitee(String invitee) {
@@ -36,12 +36,12 @@ public class InvitationEmailData extends EmailData {
         return companyName;
     }
 
-    public void setPersonInvitationFrom(String personInvitationFrom) {
-        this.personInvitationFrom = personInvitationFrom;
+    public void setPersonWhoCreatedInvite(String personWhoCreatedInvite) {
+        this.personWhoCreatedInvite = personWhoCreatedInvite;
     }
 
-    public String getPersonInvitationFrom() {
-        return personInvitationFrom;
+    public String getPersonWhoCreatedInvite() {
+        return personWhoCreatedInvite;
     }
 
     @Override
@@ -56,13 +56,13 @@ public class InvitationEmailData extends EmailData {
 
         return new EqualsBuilder().append(invitee, that.invitee)
                 .append(companyName, that.companyName)
-                .append(personInvitationFrom, that.personInvitationFrom).isEquals();
+                .append(personWhoCreatedInvite, that.personWhoCreatedInvite).isEquals();
     }
 
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37).append(invitee).append(companyName)
-                .append(personInvitationFrom).toHashCode();
+                .append(personWhoCreatedInvite).toHashCode();
     }
 
     @Override
@@ -70,7 +70,7 @@ public class InvitationEmailData extends EmailData {
         return "InvitationEmailData{" +
                 "invitee='" + invitee + '\'' +
                 ", companyName='" + companyName + '\'' +
-                ", personInvitationFrom='" + personInvitationFrom + '\'' +
+                ", personWhoCreatedInvite='" + personWhoCreatedInvite + '\'' +
                 '}';
     }
 

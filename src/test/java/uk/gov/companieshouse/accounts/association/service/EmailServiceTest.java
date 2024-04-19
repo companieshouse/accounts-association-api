@@ -80,7 +80,7 @@ public class EmailServiceTest {
         emailData.setTo( "kpatel@companieshouse.gov.uk" );
         emailData.setSubject( "Companies House: Elon Musk's authorisation removed to file online for Tesla" );
         emailData.setPersonWhoRemovedAuthorisation( "Krishna Patel" );
-        emailData.setAuthenticationRemovedPerson( "Elon Musk" );
+        emailData.setPersonWhoWasRemoved( "Elon Musk" );
         emailData.setCompanyName( "Tesla" );
 
         emailService.sendAuthorisationRemovedEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", "Tesla" );
@@ -107,7 +107,7 @@ public class EmailServiceTest {
         emailData.setTo( "kpatel@companieshouse.gov.uk" );
         emailData.setSubject( "Companies House: Invitation cancelled for Elon Musk to be authorised to file online for Tesla" );
         emailData.setPersonWhoCancelledInvite( "Krishna Patel" );
-        emailData.setInviteCancelledPerson( "Elon Musk" );
+        emailData.setPersonWhoWasCancelled( "Elon Musk" );
         emailData.setCompanyName( "Tesla" );
 
         emailService.sendInvitationCancelledEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", "Tesla" );
@@ -133,7 +133,7 @@ public class EmailServiceTest {
         final var emailData = new InvitationEmailData();
         emailData.setTo( "kpatel@companieshouse.gov.uk" );
         emailData.setSubject( "Companies House: Elon Musk invited to be authorised to file online for Tesla" );
-        emailData.setPersonInvitationFrom( "Krishna Patel" );
+        emailData.setPersonWhoCreatedInvite( "Krishna Patel" );
         emailData.setInvitee( "Elon Musk" );
         emailData.setCompanyName( "Tesla" );
 
@@ -160,7 +160,7 @@ public class EmailServiceTest {
         final var emailData = new InvitationAcceptedEmailData();
         emailData.setTo( "kpatel@companieshouse.gov.uk" );
         emailData.setSubject( "Companies House: Elon Musk is now authorised to file online for Tesla" );
-        emailData.setPersonInvitationFrom( "Krishna Patel" );
+        emailData.setPersonWhoCreatedInvite( "Krishna Patel" );
         emailData.setAuthorisedPerson( "Elon Musk" );
         emailData.setCompanyName( "Tesla" );
 
@@ -186,7 +186,7 @@ public class EmailServiceTest {
         final var emailData = new InvitationRejectedEmailData();
         emailData.setTo( "kpatel@companieshouse.gov.uk" );
         emailData.setSubject( "Companies House: Elon Musk has declined to be digitally authorised to file online for Tesla" );
-        emailData.setDeclinedAuthorisationPerson( "Elon Musk" );
+        emailData.setPersonWhoDeclined( "Elon Musk" );
         emailData.setCompanyName( "Tesla" );
 
         emailService.sendInvitationRejectedEmail( "kpatel@companieshouse.gov.uk", "Elon Musk", "Tesla" );
