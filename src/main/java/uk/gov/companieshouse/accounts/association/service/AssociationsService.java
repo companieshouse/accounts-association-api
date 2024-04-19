@@ -68,8 +68,9 @@ public class AssociationsService {
 
         }
 
-        Page<AssociationDao> results = associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike(
-                user.getUserId(), status, Optional.ofNullable(companyNumber).orElse(""), PageRequest.of(pageIndex, itemsPerPage));
+        Page<AssociationDao> results = associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike(
+                user.getUserId(),user.getEmail(), status, Optional.ofNullable(companyNumber).orElse(""), PageRequest.of(pageIndex, itemsPerPage))
+                ;
 
 
         return associationsListUserMapper.daoToDto(results, user);
