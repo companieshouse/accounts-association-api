@@ -22,6 +22,7 @@ public interface AssociationsRepository extends MongoRepository<AssociationDao, 
     int updateUser( String userId, Update update );
 
     Page<AssociationDao> findAllByUserIdAndStatusIsInAndCompanyNumberLike(final String userId , final List<String> status , final String companyNumber, final Pageable pageable);
+    Page<AssociationDao> findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike(final String userId , final String userEmail, final List<String> status , final String companyNumber, final Pageable pageable);
 
     @Query( "{ 'company_number': ?0, 'status': { $in: ?1 } }" )
     Page<AssociationDao> fetchAssociatedUsers( final String companyNumber, final Set<String> statuses, final Pageable pageable );

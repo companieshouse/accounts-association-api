@@ -67,7 +67,7 @@ class AssociationsRepositoryTest {
         associationOne.setUserId("555");
         associationOne.setStatus(StatusEnum.CONFIRMED.getValue());
         associationOne.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationOne.setUserEmail("abc@abc.com");
+       // associationOne.setUserEmail("abc@abc.com");
         associationOne.setApprovalExpiryAt(LocalDateTime.now().plusDays(10));
         associationOne.setInvitations(new ArrayList<>());
         associationOne.setEtag("OCRS7");
@@ -81,7 +81,7 @@ class AssociationsRepositoryTest {
         final var associationTwo = new AssociationDao();
         associationTwo.setId("222");
         associationTwo.setCompanyNumber("12345");
-        associationTwo.setUserId("666");
+      //  associationTwo.setUserId("666");
         associationTwo.setStatus(StatusEnum.CONFIRMED.getValue());
         associationTwo.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
         associationTwo.setUserEmail("abc@abc.com");
@@ -344,6 +344,8 @@ class AssociationsRepositoryTest {
 
     @Test
     void findAllByUserIdAndStatusIsInAndCompanyNumberLikeWithNullPageableReturnsAllAssociations(){
+        final var page1 = associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("555","abc@abc.com" ,List.of(StatusEnum.CONFIRMED.getValue() ),"",null );
+
         final var page = associationsRepository.findAllByUserIdAndStatusIsInAndCompanyNumberLike("111", List.of(StatusEnum.CONFIRMED.getValue() ),"",null );
         final var ids = page.getContent().stream().map(AssociationDao::getCompanyNumber).toList();
         Assertions.assertTrue( ids.containsAll( List.of( "111111", "222222" ) ) );
