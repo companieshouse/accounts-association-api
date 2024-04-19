@@ -10,14 +10,14 @@ public class InvitationAcceptedEmailData extends EmailData {
 
     private String companyName;
 
-    private String personInvitationFrom;
+    private String personWhoCreatedInvite;
 
     public InvitationAcceptedEmailData(){}
 
-    public InvitationAcceptedEmailData(String authorisedPerson, String companyName, String personInvitationFrom) {
+    public InvitationAcceptedEmailData(String authorisedPerson, String companyName, String personWhoCreatedInvite) {
         this.authorisedPerson = authorisedPerson;
         this.companyName = companyName;
-        this.personInvitationFrom = personInvitationFrom;
+        this.personWhoCreatedInvite = personWhoCreatedInvite;
     }
 
     public void setAuthorisedPerson(String authorisedPerson) {
@@ -36,12 +36,12 @@ public class InvitationAcceptedEmailData extends EmailData {
         return companyName;
     }
 
-    public void setPersonInvitationFrom(String personInvitationFrom) {
-        this.personInvitationFrom = personInvitationFrom;
+    public void setPersonWhoCreatedInvite(String personWhoCreatedInvite) {
+        this.personWhoCreatedInvite = personWhoCreatedInvite;
     }
 
-    public String getPersonInvitationFrom() {
-        return personInvitationFrom;
+    public String getPersonWhoCreatedInvite() {
+        return personWhoCreatedInvite;
     }
 
     @Override
@@ -56,13 +56,13 @@ public class InvitationAcceptedEmailData extends EmailData {
 
         return new EqualsBuilder().append(authorisedPerson,
                         that.authorisedPerson).append(companyName, that.companyName)
-                .append(personInvitationFrom, that.personInvitationFrom).isEquals();
+                .append(personWhoCreatedInvite, that.personWhoCreatedInvite).isEquals();
     }
 
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37).append(authorisedPerson).append(companyName)
-                .append(personInvitationFrom).toHashCode();
+                .append(personWhoCreatedInvite).toHashCode();
     }
 
     @Override
@@ -70,7 +70,7 @@ public class InvitationAcceptedEmailData extends EmailData {
         return "InvitationAcceptedEmailData{" +
                 "authorisedPerson='" + authorisedPerson + '\'' +
                 ", companyName='" + companyName + '\'' +
-                ", personInvitationFrom='" + personInvitationFrom + '\'' +
+                ", personWhoCreatedInvite='" + personWhoCreatedInvite + '\'' +
                 '}';
     }
 }
