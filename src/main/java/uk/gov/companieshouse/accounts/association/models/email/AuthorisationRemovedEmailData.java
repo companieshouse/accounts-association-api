@@ -6,7 +6,7 @@ import uk.gov.companieshouse.email_producer.model.EmailData;
 
 public class AuthorisationRemovedEmailData extends EmailData {
 
-    private String authenticationRemovedPerson;
+    private String personWhoWasRemoved;
 
     private String companyName;
 
@@ -14,18 +14,18 @@ public class AuthorisationRemovedEmailData extends EmailData {
 
     public AuthorisationRemovedEmailData(){}
 
-    public AuthorisationRemovedEmailData(String authenticationRemovedPerson, String companyName, String personWhoRemovedAuthorisation) {
-        this.authenticationRemovedPerson = authenticationRemovedPerson;
+    public AuthorisationRemovedEmailData(String personWhoWasRemoved, String companyName, String personWhoRemovedAuthorisation) {
+        this.personWhoWasRemoved = personWhoWasRemoved;
         this.companyName = companyName;
         this.personWhoRemovedAuthorisation = personWhoRemovedAuthorisation;
     }
 
-    public void setAuthenticationRemovedPerson(String authenticationRemovedPerson) {
-        this.authenticationRemovedPerson = authenticationRemovedPerson;
+    public void setPersonWhoWasRemoved(String personWhoWasRemoved) {
+        this.personWhoWasRemoved = personWhoWasRemoved;
     }
 
-    public String getAuthenticationRemovedPerson() {
-        return authenticationRemovedPerson;
+    public String getPersonWhoWasRemoved() {
+        return personWhoWasRemoved;
     }
 
     public void setCompanyName(String companyName) {
@@ -54,22 +54,22 @@ public class AuthorisationRemovedEmailData extends EmailData {
             return false;
         }
 
-        return new EqualsBuilder().append(authenticationRemovedPerson,
-                        that.authenticationRemovedPerson).append(companyName, that.companyName)
+        return new EqualsBuilder().append(personWhoWasRemoved,
+                        that.personWhoWasRemoved).append(companyName, that.companyName)
                 .append(personWhoRemovedAuthorisation, that.personWhoRemovedAuthorisation)
                 .isEquals();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37).append(authenticationRemovedPerson).append(companyName)
+        return new HashCodeBuilder(17, 37).append(personWhoWasRemoved).append(companyName)
                 .append(personWhoRemovedAuthorisation).toHashCode();
     }
 
     @Override
     public String toString() {
         return "AuthorisationRemovedEmailData{" +
-                "authenticationRemovedPerson='" + authenticationRemovedPerson + '\'' +
+                "personWhoWasRemoved='" + personWhoWasRemoved + '\'' +
                 ", companyName='" + companyName + '\'' +
                 ", personWhoRemovedAuthorisation='" + personWhoRemovedAuthorisation + '\'' +
                 '}';
