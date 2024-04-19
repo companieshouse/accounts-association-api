@@ -10,6 +10,7 @@ import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeExce
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
+import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
@@ -38,11 +39,15 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
     private final CompanyService companyService;
 
+    private final EmailService emailService;
+
     @Autowired
-    public UserCompanyAssociations(UsersService usersService, AssociationsService associationsService, CompanyService companyService) {
+    public UserCompanyAssociations(UsersService usersService, AssociationsService associationsService, CompanyService companyService,
+            EmailService emailService) {
         this.usersService = usersService;
         this.associationsService = associationsService;
         this.companyService = companyService;
+        this.emailService = emailService;
     }
 
     @Override
@@ -102,6 +107,15 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     @Override
     public ResponseEntity<Association> getAssociationForId(final String xRequestId, final String id) {
         LOG.debugContext(xRequestId, String.format("Attempting to get the Association details : %s",id), null);
+
+
+        emailService.sendAuthCodeConfirmationEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Tesla" );
+        emailService.sendAuthorisationRemovedEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", "Tesla" );
+        emailService.sendInvitationCancelledEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", "Tesla" );
+        emailService.sendInvitationEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", "Tesla" );
+        emailService.sendInvitationAcceptedEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", "Tesla" );
+        emailService.sendInvitationRejectedEmail( "kpatel@companieshouse.gov.uk", "Elon Musk", "Tesla" );
+
 
         final var association = associationsService.findAssociationById(id);
         if (association.isEmpty()) {
