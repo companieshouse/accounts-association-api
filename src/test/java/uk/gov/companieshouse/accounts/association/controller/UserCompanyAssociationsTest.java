@@ -1225,6 +1225,12 @@ class UserCompanyAssociationsTest {
         usersList.add(new User().userId("111").email("bruce.wayne@gotham.city"));
         Mockito.doReturn(usersList).when(usersService).searchUserDetails(List.of("bruce.wayne@gotham.city"));
 
+        AssociationDao confirmedAssociation = new AssociationDao();
+        confirmedAssociation.setStatus("confirmed");
+        Optional<AssociationDao> associationWithUserID = Optional.of(confirmedAssociation);
+
+        Mockito.when(associationsService.fetchAssociationForCompanyNumberAndUserId(Mockito.anyString(), Mockito.anyString())).thenReturn(associationWithUserID);
+
         Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationForCompanyNumberAndUserEmail("333333", "bruce.wayne@gotham.city");
 
         Mockito.doThrow(new BadRequestRuntimeException("There is an existing association with Confirmed status for the user")).when(associationsService).fetchAssociationForCompanyNumberAndUserId("333333", "111");
@@ -1239,14 +1245,6 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isBadRequest()).andReturn();
         assertEquals("{\"errors\":[{\"error\":\"There is an existing association with Confirmed status for the user\",\"type\":\"ch:service\"}]}",
                 response.getResponse().getContentAsString());
-
-        // Mocking associationWithUserID
-        AssociationDao confirmedAssociation = new AssociationDao();
-        confirmedAssociation.setStatus("confirmed");
-        Optional<AssociationDao> associationWithUserID = Optional.of(confirmedAssociation);
-
-        Mockito.when(associationsService.fetchAssociationForCompanyNumberAndUserId(Mockito.anyString(), Mockito.anyString())).thenReturn(associationWithUserID);
-
 
     }
 }
