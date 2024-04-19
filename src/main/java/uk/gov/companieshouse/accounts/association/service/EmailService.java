@@ -77,7 +77,7 @@ public class EmailService {
         emailData.setTo( recipientEmail );
         emailData.setSubject( subject );
         emailData.setPersonWhoRemovedAuthorisation( removedByDisplayName );
-        emailData.setAuthenticationRemovedPerson( removedUserDisplayName );
+        emailData.setPersonWhoWasRemoved( removedUserDisplayName );
         emailData.setCompanyName( companyName );
 
         LOG.debug( String.format( "Sending email entitled '%s' to '%s'", subject, recipientEmail ) );
@@ -96,7 +96,7 @@ public class EmailService {
         emailData.setTo( recipientEmail );
         emailData.setSubject( subject );
         emailData.setPersonWhoCancelledInvite( cancelledByDisplayName );
-        emailData.setInviteCancelledPerson( cancelledUserDisplayName );
+        emailData.setPersonWhoWasCancelled( cancelledUserDisplayName );
         emailData.setCompanyName( companyName );
 
         LOG.debug( String.format( "Sending email entitled '%s' to '%s'", subject, recipientEmail ) );
@@ -114,7 +114,7 @@ public class EmailService {
         final var emailData = new InvitationEmailData();
         emailData.setTo( recipientEmail );
         emailData.setSubject( subject );
-        emailData.setPersonInvitationFrom( inviterDisplayName );
+        emailData.setPersonWhoCreatedInvite( inviterDisplayName );
         emailData.setInvitee( inviteeDisplayName );
         emailData.setCompanyName( companyName );
 
@@ -133,7 +133,7 @@ public class EmailService {
         final var emailData = new InvitationAcceptedEmailData();
         emailData.setTo( recipientEmail );
         emailData.setSubject( subject );
-        emailData.setPersonInvitationFrom( inviterDisplayName );
+        emailData.setPersonWhoCreatedInvite( inviterDisplayName );
         emailData.setAuthorisedPerson( inviteeDisplayName );
         emailData.setCompanyName( companyName );
 
@@ -152,7 +152,7 @@ public class EmailService {
         final var emailData = new InvitationRejectedEmailData();
         emailData.setTo( recipientEmail );
         emailData.setSubject( subject );
-        emailData.setDeclinedAuthorisationPerson( inviteeDisplayName );
+        emailData.setPersonWhoDeclined( inviteeDisplayName );
         emailData.setCompanyName( companyName );
 
         LOG.debug( String.format( "Sending email entitled '%s' to '%s'", subject, recipientEmail ) );

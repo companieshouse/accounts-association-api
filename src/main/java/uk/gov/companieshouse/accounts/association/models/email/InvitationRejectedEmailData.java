@@ -6,20 +6,20 @@ import uk.gov.companieshouse.email_producer.model.EmailData;
 
 public class InvitationRejectedEmailData extends EmailData {
 
-    private String declinedAuthorisationPerson;
+    private String personWhoDeclined;
 
     private String companyName;
 
     public InvitationRejectedEmailData(){}
 
-    public InvitationRejectedEmailData(String declinedAuthorisationPerson, String companyName) {
-        this.declinedAuthorisationPerson = declinedAuthorisationPerson;
+    public InvitationRejectedEmailData(String personWhoDeclined, String companyName) {
+        this.personWhoDeclined = personWhoDeclined;
         this.companyName = companyName;
     }
 
 
-    public void setDeclinedAuthorisationPerson(String declinedAuthorisationPerson) {
-        this.declinedAuthorisationPerson = declinedAuthorisationPerson;
+    public void setPersonWhoDeclined(String personWhoDeclined) {
+        this.personWhoDeclined = personWhoDeclined;
     }
 
     public void setCompanyName(String companyName) {
@@ -30,8 +30,8 @@ public class InvitationRejectedEmailData extends EmailData {
         return companyName;
     }
 
-    public String getDeclinedAuthorisationPerson() {
-        return declinedAuthorisationPerson;
+    public String getPersonWhoDeclined() {
+        return personWhoDeclined;
     }
 
     @Override
@@ -44,20 +44,20 @@ public class InvitationRejectedEmailData extends EmailData {
             return false;
         }
 
-        return new EqualsBuilder().append(declinedAuthorisationPerson,
-                that.declinedAuthorisationPerson).append(companyName, that.companyName).isEquals();
+        return new EqualsBuilder().append(personWhoDeclined,
+                that.personWhoDeclined).append(companyName, that.companyName).isEquals();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37).append(declinedAuthorisationPerson).append(companyName)
+        return new HashCodeBuilder(17, 37).append(personWhoDeclined).append(companyName)
                 .toHashCode();
     }
 
     @Override
     public String toString() {
         return "InvitationRejectedEmailData{" +
-                "declinedAuthorisationPerson='" + declinedAuthorisationPerson + '\'' +
+                "personWhoDeclined='" + personWhoDeclined + '\'' +
                 ", companyName='" + companyName + '\'' +
                 '}';
     }
