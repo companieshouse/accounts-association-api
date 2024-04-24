@@ -758,14 +758,21 @@ public class AssociationsServiceTest {
     @Test
     void fetchAssociationsForUserStatusAndCompanyWithNonexistentOrInvalidCompanyNumberReturnsEmptyPage() {
         final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName( "Scrooge McDuck" );
-        associationsService.fetchAssociationsForUserStatusAndCompany( user, List.of(), 0, 15, "$$$$$$" );
+        associationsService.fetchAssociationsForUserStatusAndCompany( user, List.of(), 0, 15, "$$1234" );
         Mockito.verify(associationsListUserMapper).daoToDto(argThat(associationsPageMatches(0, 0, 0, List.of())), eq(user));
     }
 
     @Test
     void fetchAssociationsForUserStatusAndCompanyWithNonexistentUserIdReturnsEmptyPage() {
         final var user = new User().userId("9191").email("scrooge.mcduck@disney.land").displayName( "Scrooge McDuck" );
-        associationsService.fetchAssociationsForUserStatusAndCompany( user, List.of(), 0, 15, null );
+        associationsService.fetchAssociationsForUserStatusAndCompany( user, List.of(), 0, 15, "1234" );
+        Mockito.verify(associationsListUserMapper).daoToDto(argThat(associationsPageMatches(0, 0, 0, List.of())), eq(user));
+    }
+
+    @Test
+    void fetchAssociationsForUserStatusAndCompanyWithNonexistentUserEmailReturnsEmptyPage() {
+        final var user = new User().userId("9999").email("xyz@disney.land").displayName( "Scrooge McDuck" );
+        associationsService.fetchAssociationsForUserStatusAndCompany( user, List.of(), 0, 15, "1234" );
         Mockito.verify(associationsListUserMapper).daoToDto(argThat(associationsPageMatches(0, 0, 0, List.of())), eq(user));
     }
 
