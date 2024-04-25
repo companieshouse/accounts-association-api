@@ -41,8 +41,7 @@ import java.util.Optional;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -1216,7 +1215,7 @@ class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWhereAssociationBetweenInviteeUserEmailAndCompanyNumberExistAndInviteeUserIsFoundThrowsBadRequest() throws Exception {
-        final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName("Scrooge McDuck");
+        final var user = new User().userId("9999").email("bruce.wayne@gotham.city").displayName("Scrooge McDuck");
         Mockito.doReturn(user).when(usersService).fetchUserDetails("9999");
 
         final var company = new CompanyDetails().companyNumber("333333").companyName("Tesco");
@@ -1226,12 +1225,15 @@ class UserCompanyAssociationsTest {
         usersList.add(new User().userId("111").email("bruce.wayne@gotham.city"));
         Mockito.doReturn(usersList).when(usersService).searchUserDetails(List.of("bruce.wayne@gotham.city"));
 
+        AssociationDao confirmedAssociation = new AssociationDao();
+        confirmedAssociation.setStatus("confirmed");
+        Optional<AssociationDao> associationWithUserID = Optional.of(confirmedAssociation);
+
+        Mockito.when(associationsService.fetchAssociationForCompanyNumberAndUserId(Mockito.anyString(), Mockito.anyString())).thenReturn(associationWithUserID);
+
         Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationForCompanyNumberAndUserEmail("333333", "bruce.wayne@gotham.city");
 
-        Mockito.doReturn(Optional.of(associationDaoOne)).when(associationsService).fetchAssociationForCompanyNumberAndUserId("333333", "111");
-
         Mockito.doThrow(new BadRequestRuntimeException("There is an existing association with Confirmed status for the user")).when(associationsService).fetchAssociationForCompanyNumberAndUserId("333333", "111");
-
 
         final var response =mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -1243,5 +1245,6 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isBadRequest()).andReturn();
         assertEquals("{\"errors\":[{\"error\":\"There is an existing association with Confirmed status for the user\",\"type\":\"ch:service\"}]}",
                 response.getResponse().getContentAsString());
+
     }
 }
