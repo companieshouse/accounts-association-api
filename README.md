@@ -200,7 +200,7 @@ To set up and build the service using Docker, follow these steps:
 3. Ensure you're using Java 21
 4. Start Docker using `tilt up` in the docker-chs-development directory.
 5.  Open the tilt window and wait for `accounts-association-api` to become green.
-6. Open your browser and navigate to http://api.chs.local/users/healthcheck.
+6. Open your browser and navigate to http://api.chs.local/associations/healthcheck.
 
 Note: These instructions are tailored for a local Docker environment.
 
