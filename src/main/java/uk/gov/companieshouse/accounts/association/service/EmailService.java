@@ -9,6 +9,8 @@ import static uk.gov.companieshouse.accounts.association.utils.Constants.INVITAT
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.email.AuthCodeConfirmationEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.AuthorisationRemovedEmailData;
@@ -52,14 +55,20 @@ public class EmailService {
         this.usersService = usersService;
     }
 
+    @Async
     private void sendEmail( final EmailData emailData, final String messageType ) throws EmailSendingException {
-        try {
+        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
             emailProducer.sendEmail(emailData, messageType);
             LOG.debug(String.format("Submitted %s email to Kafka", messageType));
-        } catch (EmailSendingException exception) {
+        });
+
+        try {
+            future.get();
+        } catch (ExecutionException | InterruptedException | EmailSendingException exception) {
             LOG.error("Error sending email", exception);
-            throw exception;
+            throw new BadRequestRuntimeException(String.format("Error sending %s email to Kafka", messageType));
         }
+
     }
 
     @Transactional( readOnly = true )
@@ -79,7 +88,7 @@ public class EmailService {
         LOG.debugContext( xRequestId, String.format( "Successfully sent notifications to users from company %s", companyNumber ), null );
     }
 
-    private Consumer<String> sendAuthCodeConfirmationEmail( final String displayName, final String companyName ){
+    protected Consumer<String> sendAuthCodeConfirmationEmail( final String displayName, final String companyName ){
         return recipientEmail -> {
             if ( Objects.isNull( recipientEmail ) || Objects.isNull( displayName ) || Objects.isNull( companyName ) ){
                 LOG.error( "Attempted to send email where recipientEmail, displayName, or companyName was null" );
@@ -104,7 +113,7 @@ public class EmailService {
         sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendAuthCodeConfirmationEmail( displayName, companyDetails.getCompanyName() ) );
     }
 
-    private Consumer<String> sendAuthorisationRemovedEmail( final String removedByDisplayName, final String removedUserDisplayName, final String companyName ){
+    protected Consumer<String> sendAuthorisationRemovedEmail( final String removedByDisplayName, final String removedUserDisplayName, final String companyName ){
        return recipientEmail -> {
             if ( Objects.isNull( recipientEmail ) || Objects.isNull( removedByDisplayName ) || Objects.isNull( removedUserDisplayName ) || Objects.isNull( companyName ) ){
                 LOG.error( "Attempted to send email where recipientEmail, removedByDisplayName, removedUserDisplayName, or companyName was null" );
@@ -130,7 +139,7 @@ public class EmailService {
         sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendAuthorisationRemovedEmail( removedByDisplayName, removedUserDisplayName, companyDetails.getCompanyName() ) );
     }
 
-    private Consumer<String> sendInvitationCancelledEmail( final String cancelledByDisplayName, final String cancelledUserDisplayName, final String companyName ) {
+    protected Consumer<String> sendInvitationCancelledEmail( final String cancelledByDisplayName, final String cancelledUserDisplayName, final String companyName ) {
         return recipientEmail -> {
             if ( Objects.isNull( recipientEmail ) || Objects.isNull( cancelledByDisplayName ) || Objects.isNull( cancelledUserDisplayName ) || Objects.isNull( companyName ) ){
                 LOG.error( "Attempted to send email where recipientEmail, cancelledByDisplayName, cancelledUserDisplayName, or companyName was null" );
@@ -156,7 +165,7 @@ public class EmailService {
         sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendInvitationCancelledEmail( cancelledByDisplayName, cancelledUserDisplayName, companyDetails.getCompanyName() ) );
     }
 
-    private Consumer<String> sendInvitationEmail( final String inviterDisplayName, final String inviteeDisplayName, final String companyName ){
+    protected Consumer<String> sendInvitationEmail( final String inviterDisplayName, final String inviteeDisplayName, final String companyName ){
         return recipientEmail -> {
             if ( Objects.isNull( recipientEmail ) || Objects.isNull( inviterDisplayName ) || Objects.isNull( inviteeDisplayName ) || Objects.isNull( companyName ) ){
                 LOG.error( "Attempted to send email where recipientEmail, inviterDisplayName, inviteeDisplayName, or companyName was null" );
@@ -182,7 +191,7 @@ public class EmailService {
         sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendInvitationEmail( inviterDisplayName, inviteeDisplayName, companyDetails.getCompanyName() ) );
     }
 
-    private Consumer<String> sendInvitationAcceptedEmail( final String inviterDisplayName, final String inviteeDisplayName, final String companyName ){
+    protected Consumer<String> sendInvitationAcceptedEmail( final String inviterDisplayName, final String inviteeDisplayName, final String companyName ){
         return recipientEmail -> {
             if ( Objects.isNull( recipientEmail ) || Objects.isNull( inviterDisplayName ) || Objects.isNull( inviteeDisplayName ) || Objects.isNull( companyName ) ){
                 LOG.error( "Attempted to send email where recipientEmail, inviterDisplayName, inviteeDisplayName, or companyName was null" );
@@ -208,7 +217,7 @@ public class EmailService {
         sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendInvitationAcceptedEmail( inviterDisplayName, inviteeDisplayName, companyDetails.getCompanyName() ) );
     }
 
-    private Consumer<String> sendInvitationRejectedEmail( final String inviteeDisplayName, final String companyName ){
+    protected Consumer<String> sendInvitationRejectedEmail( final String inviteeDisplayName, final String companyName ){
         return recipientEmail -> {
             if ( Objects.isNull( recipientEmail ) || Objects.isNull( inviteeDisplayName ) || Objects.isNull( companyName ) ){
                 LOG.error( "Attempted to send email where recipientEmail, inviteeDisplayName, or companyName was null" );

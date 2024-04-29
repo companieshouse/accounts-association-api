@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.email.AuthCodeConfirmationEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.AuthorisationRemovedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.InvitationAcceptedEmailData;
@@ -37,15 +38,15 @@ public class EmailServiceTest {
 
     @Test
     void sendAuthCodeConfirmationEmailWithNullInputsThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmail( null, "Krishna Patel", "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmail( "kpatel@companieshouse.gov.uk", null, "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmail( "Krishna Patel", "Tesla" ).accept( null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmail(  null, "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmail(  "Krishna Patel", null ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
-    void sendAuthCodeConfirmationEmailWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendAuthCodeConfirmationEmailWithUnexpectedIssueThrowsBadRequestRuntimeException(){
         Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendAuthCodeConfirmationEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Tesla" ) );
+        Assertions.assertThrows( BadRequestRuntimeException.class, () -> emailService.sendAuthCodeConfirmationEmail( "Krishna Patel", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
@@ -56,22 +57,22 @@ public class EmailServiceTest {
         emailData.setAuthorisedPerson( "Krishna Patel" );
         emailData.setCompanyName( "Tesla" );
 
-        emailService.sendAuthCodeConfirmationEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Tesla" );
+        emailService.sendAuthCodeConfirmationEmail( "Krishna Patel", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" );
         Mockito.verify( emailProducer ).sendEmail( emailData, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE );
     }
 
     @Test
     void sendAuthorisationRemovedEmailWithNullInputsThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmail( null, "Krishna Patel", "Elon Musk", "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmail( "kpatel@companieshouse.gov.uk", null, "Elon Musk", "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", null, "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( null) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmail( null, "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmail( "Krishna Patel", null, "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmail(  "Krishna Patel", "Elon Musk", null ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
-    void sendAuthorisationRemovedEmailWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendAuthorisationRemovedEmailWithUnexpectedIssueThrowsBadRequestRuntimeException(){
         Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendAuthorisationRemovedEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", "Tesla" ) );
+        Assertions.assertThrows( BadRequestRuntimeException.class, () -> emailService.sendAuthorisationRemovedEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
@@ -83,22 +84,22 @@ public class EmailServiceTest {
         emailData.setPersonWhoWasRemoved( "Elon Musk" );
         emailData.setCompanyName( "Tesla" );
 
-        emailService.sendAuthorisationRemovedEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", "Tesla" );
+        emailService.sendAuthorisationRemovedEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" );
         Mockito.verify( emailProducer ).sendEmail( emailData, AUTHORISATION_REMOVED_MESSAGE_TYPE );
     }
 
     @Test
     void sendInvitationCancelledEmailWithNullInputsThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmail( null, "Krishna Patel", "Elon Musk", "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmail( "kpatel@companieshouse.gov.uk", null, "Elon Musk", "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", null, "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmail(  null, "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmail(  "Krishna Patel", null, "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmail( "Krishna Patel", "Elon Musk", null ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
-    void sendInvitationCancelledEmailWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendInvitationCancelledEmailWithUnexpectedIssueThrowsBadRequestRuntimeException(){
         Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationCancelledEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", "Tesla" ) );
+        Assertions.assertThrows( BadRequestRuntimeException.class, () -> emailService.sendInvitationCancelledEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
@@ -110,22 +111,22 @@ public class EmailServiceTest {
         emailData.setPersonWhoWasCancelled( "Elon Musk" );
         emailData.setCompanyName( "Tesla" );
 
-        emailService.sendInvitationCancelledEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", "Tesla" );
+        emailService.sendInvitationCancelledEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" );
         Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_CANCELLED_MESSAGE_TYPE );
     }
 
     @Test
     void sendInvitationEmailWithNullInputsThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmail( null, "Krishna Patel", "Elon Musk", "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmail( "kpatel@companieshouse.gov.uk", null, "Elon Musk", "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", null, "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmail( null, "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmail( "Krishna Patel", null, "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmail( "Krishna Patel", "Elon Musk", null ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
-    void sendInvitationEmailWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendInvitationEmailWithUnexpectedIssueThrowsBadRequestRuntimeException(){
         Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", "Tesla" ) );
+        Assertions.assertThrows( BadRequestRuntimeException.class, () -> emailService.sendInvitationEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
@@ -137,22 +138,22 @@ public class EmailServiceTest {
         emailData.setInvitee( "Elon Musk" );
         emailData.setCompanyName( "Tesla" );
 
-        emailService.sendInvitationEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", "Tesla" );
+        emailService.sendInvitationEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" );
         Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_MESSAGE_TYPE );
     }
 
     @Test
     void sendInvitationAcceptedEmailWithNullInputsThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmail( null, "Krishna Patel", "Elon Musk", "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmail( "kpatel@companieshouse.gov.uk", null, "Elon Musk", "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", null, "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmail( null, "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmail( "Krishna Patel", null, "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmail( "Krishna Patel", "Elon Musk", null ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
-    void sendInvitationAcceptedEmailWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendInvitationAcceptedEmailWithUnexpectedIssueThrowsBadRequestRuntimeException(){
         Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationAcceptedEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", "Tesla" ) );
+        Assertions.assertThrows( BadRequestRuntimeException.class, () -> emailService.sendInvitationAcceptedEmail(  "Krishna Patel", "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
@@ -164,21 +165,21 @@ public class EmailServiceTest {
         emailData.setAuthorisedPerson( "Elon Musk" );
         emailData.setCompanyName( "Tesla" );
 
-        emailService.sendInvitationAcceptedEmail( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Elon Musk", "Tesla" );
+        emailService.sendInvitationAcceptedEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" );
         Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_ACCEPTED_MESSAGE_TYPE );
     }
 
     @Test
     void sendInvitationRejectedEmailWithNullInputsThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmail( null,  "Elon Musk", "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmail( "kpatel@companieshouse.gov.uk", null, "Tesla" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmail( "kpatel@companieshouse.gov.uk", "Elon Musk", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmail( "Elon Musk", "Tesla" ).accept( null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmail( null, "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmail(  "Elon Musk", null ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
-    void sendInvitationRejectedEmailWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendInvitationRejectedEmailWithUnexpectedIssueThrowsBadRequestRuntimeException(){
         Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationRejectedEmail( "kpatel@companieshouse.gov.uk", "Elon Musk", "Tesla" ) );
+        Assertions.assertThrows( BadRequestRuntimeException.class, () -> emailService.sendInvitationRejectedEmail( "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
@@ -189,7 +190,7 @@ public class EmailServiceTest {
         emailData.setPersonWhoDeclined( "Elon Musk" );
         emailData.setCompanyName( "Tesla" );
 
-        emailService.sendInvitationRejectedEmail( "kpatel@companieshouse.gov.uk", "Elon Musk", "Tesla" );
+        emailService.sendInvitationRejectedEmail( "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" );
         Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_REJECTED_MESSAGE_TYPE );
     }
 
