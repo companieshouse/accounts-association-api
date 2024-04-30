@@ -7,6 +7,7 @@ import uk.gov.companieshouse.accounts.association.utils.ApiClientUtil;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
+import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserUserGet;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.api.model.ApiResponse;
 
@@ -33,12 +34,15 @@ public class AccountsUserEndpoint {
                 .execute();
     }
 
-    public ApiResponse<User> getUserDetails(final String userId) throws ApiErrorResponseException, URIValidationException {
+    public PrivateAccountsUserUserGet createGetUserDetailsRequest(final String userId) {
         final var getUserDetailsUrl = String.format("/users/%s", userId);
         return apiClientUtil.getInternalApiClient(internalApiUrl)
-                .privateAccountsUserResourceHandler()
-                .getUserDetails(getUserDetailsUrl)
-                .execute();
+                            .privateAccountsUserResourceHandler()
+                            .getUserDetails(getUserDetailsUrl);
+    }
+
+    public ApiResponse<User> getUserDetails(final String userId) throws ApiErrorResponseException, URIValidationException {
+        return createGetUserDetailsRequest(userId).execute();
     }
 
 }
