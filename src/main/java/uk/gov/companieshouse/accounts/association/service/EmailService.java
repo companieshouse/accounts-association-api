@@ -7,14 +7,15 @@ import static uk.gov.companieshouse.accounts.association.utils.Constants.INVITAT
 import static uk.gov.companieshouse.accounts.association.utils.Constants.INVITATION_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.Constants.INVITATION_REJECTED_MESSAGE_TYPE;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,6 @@ import uk.gov.companieshouse.accounts.association.models.email.InvitationEmailDa
 import uk.gov.companieshouse.accounts.association.models.email.InvitationRejectedEmailData;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
@@ -72,19 +72,21 @@ public class EmailService {
     }
 
     @Transactional( readOnly = true )
-    public Page<String> fetchAllAssociatedUsersEmails( final CompanyDetails companyDetails, final Set<String> statuses ){
+    public List<Supplier<User>> createRequestsToFetchAssociatedUsers( final CompanyDetails companyDetails, final Set<String> statuses ){
         final var companyNumber = companyDetails.getCompanyNumber();
         return associationsRepository.fetchAssociatedUsers( companyNumber, statuses, Pageable.unpaged() )
                 .map( AssociationDao::getUserId )
-                .map( usersService::fetchUserDetails )
-                .map( User::getEmail );
-    }
+                .map( usersService::createFetchUserDetailsRequest )
+                .getContent();
+    };
 
-    private void sendEmailToUsersAssociatedWithCompany( final String xRequestId, final CompanyDetails companyDetails, final Consumer<String> sendEmailForEmailAddress ){
+    private void sendEmailToUsersAssociatedWithCompany( final String xRequestId, final CompanyDetails companyDetails, final Consumer<String> sendEmailForEmailAddress, List<Supplier<User>> requestsToFetchAssociatedUsers ){
         final var companyNumber = companyDetails.getCompanyNumber();
         LOG.debugContext( xRequestId, String.format( "Attempting to send notifications to users from company %s", companyNumber ), null );
-        fetchAllAssociatedUsersEmails( companyDetails, Set.of( StatusEnum.CONFIRMED.getValue() ) )
-                .forEach( sendEmailForEmailAddress );
+        requestsToFetchAssociatedUsers.stream()
+                                      .map( Supplier::get )
+                                      .map( User::getEmail )
+                                      .forEach( sendEmailForEmailAddress );
         LOG.debugContext( xRequestId, String.format( "Successfully sent notifications to users from company %s", companyNumber ), null );
     }
 
@@ -109,8 +111,8 @@ public class EmailService {
     }
 
     @Async
-    public void sendAuthCodeConfirmationEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String displayName ){
-        sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendAuthCodeConfirmationEmail( displayName, companyDetails.getCompanyName() ) );
+    public void sendAuthCodeConfirmationEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String displayName, final List<Supplier<User>> requestsToFetchAssociatedUsers ){
+        sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendAuthCodeConfirmationEmail( displayName, companyDetails.getCompanyName() ), requestsToFetchAssociatedUsers );
     }
 
     protected Consumer<String> sendAuthorisationRemovedEmail( final String removedByDisplayName, final String removedUserDisplayName, final String companyName ){
@@ -135,8 +137,8 @@ public class EmailService {
     }
 
     @Async
-    public void sendAuthorisationRemovedEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String removedByDisplayName, final String removedUserDisplayName ) {
-        sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendAuthorisationRemovedEmail( removedByDisplayName, removedUserDisplayName, companyDetails.getCompanyName() ) );
+    public void sendAuthorisationRemovedEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String removedByDisplayName, final String removedUserDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers ) {
+        sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendAuthorisationRemovedEmail( removedByDisplayName, removedUserDisplayName, companyDetails.getCompanyName() ), requestsToFetchAssociatedUsers );
     }
 
     protected Consumer<String> sendInvitationCancelledEmail( final String cancelledByDisplayName, final String cancelledUserDisplayName, final String companyName ) {
@@ -161,8 +163,8 @@ public class EmailService {
     }
 
     @Async
-    public void sendInvitationCancelledEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String cancelledByDisplayName, final String cancelledUserDisplayName ){
-        sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendInvitationCancelledEmail( cancelledByDisplayName, cancelledUserDisplayName, companyDetails.getCompanyName() ) );
+    public void sendInvitationCancelledEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String cancelledByDisplayName, final String cancelledUserDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers ){
+        sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendInvitationCancelledEmail( cancelledByDisplayName, cancelledUserDisplayName, companyDetails.getCompanyName() ), requestsToFetchAssociatedUsers );
     }
 
     protected Consumer<String> sendInvitationEmail( final String inviterDisplayName, final String inviteeDisplayName, final String companyName ){
@@ -187,8 +189,8 @@ public class EmailService {
     }
 
     @Async
-    public void sendInvitationEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String inviteeDisplayName ){
-        sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendInvitationEmail( inviterDisplayName, inviteeDisplayName, companyDetails.getCompanyName() ) );
+    public void sendInvitationEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String inviteeDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers ){
+        sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendInvitationEmail( inviterDisplayName, inviteeDisplayName, companyDetails.getCompanyName() ), requestsToFetchAssociatedUsers );
     }
 
     protected Consumer<String> sendInvitationAcceptedEmail( final String inviterDisplayName, final String inviteeDisplayName, final String companyName ){
@@ -213,8 +215,8 @@ public class EmailService {
     }
 
     @Async
-    public void sendInvitationAcceptedEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String inviteeDisplayName ){
-        sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendInvitationAcceptedEmail( inviterDisplayName, inviteeDisplayName, companyDetails.getCompanyName() ) );
+    public void sendInvitationAcceptedEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String inviteeDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers ){
+        sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendInvitationAcceptedEmail( inviterDisplayName, inviteeDisplayName, companyDetails.getCompanyName() ), requestsToFetchAssociatedUsers );
     }
 
     protected Consumer<String> sendInvitationRejectedEmail( final String inviteeDisplayName, final String companyName ){
@@ -238,8 +240,8 @@ public class EmailService {
     }
 
     @Async
-    public void sendInvitationRejectedEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String inviteeDisplayName ){
-        sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendInvitationRejectedEmail( inviteeDisplayName, companyDetails.getCompanyName() ) );
+    public void sendInvitationRejectedEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String inviteeDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers ){
+        sendEmailToUsersAssociatedWithCompany( xRequestId, companyDetails, sendInvitationRejectedEmail( inviteeDisplayName, companyDetails.getCompanyName() ), requestsToFetchAssociatedUsers );
     }
 
 }
