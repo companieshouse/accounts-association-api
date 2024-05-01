@@ -1,4 +1,4 @@
-package uk.gov.companieshouse.accounts.association.models.email;
+package uk.gov.companieshouse.accounts.association.models.email.data;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
