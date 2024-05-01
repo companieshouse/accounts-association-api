@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
+import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserUserGet;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.api.model.ApiResponse;
 import uk.gov.companieshouse.api.sdk.ApiClientService;
@@ -98,6 +100,61 @@ class AssociationsListForCompanyControllerTest {
 
     @MockBean
     StaticPropertyUtil staticPropertyUtil;
+
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet111;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet222;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet333;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet444;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet555;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet666;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet777;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet888;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet999;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet1111;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet2222;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet3333;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet4444;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet5555;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet6666;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet7777;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet9191;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet8888;
 
     private static final String DEFAULT_KIND = "association";
     private static final String DEFAULT_DISPLAY_NAME = "Not provided";
@@ -416,23 +473,41 @@ class AssociationsListForCompanyControllerTest {
         Mockito.doReturn( toCompanyDetailsApiResponse( "111111", "Wayne Enterprises" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( eq( "111111" ) );
         Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( companyProfileEndpoint ).fetchCompanyProfile( eq( "919191" ) );
 
-        Mockito.doReturn( toGetUserDetailsApiResponse( "bruce.wayne@gotham.city", "Batman" ) ).when( accountsUserEndpoint ).getUserDetails( eq( "111" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "the.joker@gotham.city", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "222" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "harley.quinn@gotham.city", "Harleen Quinzel" ) ).when( accountsUserEndpoint ).getUserDetails( eq( "333" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "robin@gotham.city", "Boy Wonder" ) ).when( accountsUserEndpoint ).getUserDetails( eq( "444" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "barbara.gordon@gotham.city", "Batwoman" ) ).when( accountsUserEndpoint ).getUserDetails( eq( "555" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "homer.simpson@springfield.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "666" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "marge.simpson@springfield.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "777" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "bart.simpson@springfield.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "888" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "lisa.simpson@springfield.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "999" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "maggie.simpson@springfield.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "1111" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "crusty.the.clown@springfield.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "2222" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "itchy@springfield.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "3333" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "scratchy@springfield.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "4444" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "ross@friends.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "5555" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "rachel@friends.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "6666" ) );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "chandler@friends.com", null ) ).when( accountsUserEndpoint ).getUserDetails( eq( "7777" ) );
-        Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( accountsUserEndpoint ).getUserDetails( eq( "9191" ) );
+        Mockito.doReturn( privateAccountsUserUserGet111 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "111" );
+        Mockito.doReturn( privateAccountsUserUserGet222 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "222" );
+        Mockito.doReturn( privateAccountsUserUserGet333 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "333" );
+        Mockito.doReturn( privateAccountsUserUserGet444 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "444" );
+        Mockito.doReturn( privateAccountsUserUserGet555 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "555" );
+        Mockito.doReturn( privateAccountsUserUserGet666 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "666" );
+        Mockito.doReturn( privateAccountsUserUserGet777 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "777" );
+        Mockito.doReturn( privateAccountsUserUserGet888 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "888" );
+        Mockito.doReturn( privateAccountsUserUserGet999 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "999" );
+        Mockito.doReturn( privateAccountsUserUserGet1111 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "1111" );
+        Mockito.doReturn( privateAccountsUserUserGet2222 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "2222" );
+        Mockito.doReturn( privateAccountsUserUserGet3333 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "3333" );
+        Mockito.doReturn( privateAccountsUserUserGet4444 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "4444" );
+        Mockito.doReturn( privateAccountsUserUserGet5555 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "5555" );
+        Mockito.doReturn( privateAccountsUserUserGet6666 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "6666" );
+        Mockito.doReturn( privateAccountsUserUserGet7777 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "7777" );
+        Mockito.doReturn( privateAccountsUserUserGet9191 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "9191" );
+
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "bruce.wayne@gotham.city", "Batman" ) ).when( privateAccountsUserUserGet111 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "the.joker@gotham.city", null ) ).when( privateAccountsUserUserGet222 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "harley.quinn@gotham.city", "Harleen Quinzel" ) ).when( privateAccountsUserUserGet333 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "robin@gotham.city", "Boy Wonder" ) ).when( privateAccountsUserUserGet444 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "barbara.gordon@gotham.city", "Batwoman" ) ).when( privateAccountsUserUserGet555 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "homer.simpson@springfield.com", null ) ).when( privateAccountsUserUserGet666 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "marge.simpson@springfield.com", null ) ).when( privateAccountsUserUserGet777 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "bart.simpson@springfield.com", null ) ).when( privateAccountsUserUserGet888 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "lisa.simpson@springfield.com", null ) ).when( privateAccountsUserUserGet999 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "maggie.simpson@springfield.com", null ) ).when( privateAccountsUserUserGet1111 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "crusty.the.clown@springfield.com", null ) ).when( privateAccountsUserUserGet2222 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "itchy@springfield.com", null ) ).when( privateAccountsUserUserGet3333 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "scratchy@springfield.com", null ) ).when( privateAccountsUserUserGet4444 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "ross@friends.com", null ) ).when( privateAccountsUserUserGet5555 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "rachel@friends.com", null ) ).when( privateAccountsUserUserGet6666 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "chandler@friends.com", null ) ).when( privateAccountsUserUserGet7777 ).execute();
+        Mockito.lenient().doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet9191 ).execute();
 
         Mockito.doNothing().when(interceptorConfig).addInterceptors( any() );
     }
@@ -571,8 +646,9 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyWhereAccountsUserEndpointCannotFindUserReturnsNotFound() throws Exception {
+        Mockito.doReturn( privateAccountsUserUserGet8888 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "8888" );
         Mockito.doReturn( toCompanyDetailsApiResponse( "222222", "Nightmare" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( eq( "222222" ) );
-        Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( accountsUserEndpoint ).getUserDetails( eq( "8888" ) );
+        Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet8888 ).execute();
 
         mockMvc.perform( get( "/associations/companies/{company_number}", "222222" ).header("X-Request-Id", "theId123") )
                 .andExpect(status().isNotFound());
