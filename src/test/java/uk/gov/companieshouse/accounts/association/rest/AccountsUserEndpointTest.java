@@ -138,4 +138,43 @@ import uk.gov.companieshouse.api.model.ApiResponse;
         Assertions.assertThrows( ApiErrorResponseException.class, () -> accountsUserEndpoint.getUserDetails( "666" ) );
     }
 
+    @Test
+    void createGetUserDetailsRequestWithNullInputThrowsNullPointerException(){
+        Assertions.assertThrows( NullPointerException.class, () -> accountsUserEndpoint.createGetUserDetailsRequest( null ).execute() );
+    }
+
+    @Test
+    void createGetUserDetailsRequestWithMalformedInputReturnsBadRequest() throws Exception {
+        Mockito.doReturn( internalApiClient ).when( apiClientService ).getInternalApiClient(any());
+        Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
+        Mockito.doReturn( privateAccountsUserUserGet ).when( privateAccountsUserResourceHandler ).getUserDetails( any() );
+        Mockito.doThrow( new ApiErrorResponseException( new Builder( 400, "Bad request", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet ).execute();
+
+        Assertions.assertThrows( ApiErrorResponseException.class, () -> accountsUserEndpoint.createGetUserDetailsRequest( "$" ).execute() );
+    }
+
+    @Test
+    void createGetUserDetailsRequestFetchesUser() throws Exception {
+        Mockito.doReturn( internalApiClient ).when( apiClientService ).getInternalApiClient(any());
+        Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
+        Mockito.doReturn( privateAccountsUserUserGet ).when( privateAccountsUserResourceHandler ).getUserDetails( any() );
+
+        final var intendedResponse = new ApiResponse<>( 200, Map.of(), new User().userId( "111" ) );
+        Mockito.doReturn( intendedResponse ).when( privateAccountsUserUserGet ).execute();
+        final var response = accountsUserEndpoint.createGetUserDetailsRequest( "111" ).execute();
+
+        Assertions.assertEquals( 200, response.getStatusCode() );
+        Assertions.assertEquals( "111", response.getData().getUserId() );
+    }
+
+    @Test
+    void createGetUserDetailsRequestWithNonexistentUserReturnsNotFound() throws Exception {
+        Mockito.doReturn( internalApiClient ).when( apiClientService ).getInternalApiClient(any());
+        Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
+        Mockito.doReturn( privateAccountsUserUserGet ).when( privateAccountsUserResourceHandler ).getUserDetails( any() );
+        Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet ).execute();
+
+        Assertions.assertThrows( ApiErrorResponseException.class, () -> accountsUserEndpoint.createGetUserDetailsRequest( "666" ).execute() );
+    }
+
 }
