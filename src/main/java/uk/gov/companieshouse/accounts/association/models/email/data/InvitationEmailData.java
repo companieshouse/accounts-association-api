@@ -1,31 +1,31 @@
-package uk.gov.companieshouse.accounts.association.models.email;
+package uk.gov.companieshouse.accounts.association.models.email.data;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import uk.gov.companieshouse.email_producer.model.EmailData;
 
-public class InvitationAcceptedEmailData extends EmailData {
+public class InvitationEmailData extends EmailData {
 
-    private String authorisedPerson;
+    private String invitee;
 
     private String companyName;
 
     private String personWhoCreatedInvite;
 
-    public InvitationAcceptedEmailData(){}
+    public InvitationEmailData(){}
 
-    public InvitationAcceptedEmailData(String authorisedPerson, String companyName, String personWhoCreatedInvite) {
-        this.authorisedPerson = authorisedPerson;
+    public InvitationEmailData(String invitee, String companyName, String personWhoCreatedInvite) {
+        this.invitee = invitee;
         this.companyName = companyName;
         this.personWhoCreatedInvite = personWhoCreatedInvite;
     }
 
-    public void setAuthorisedPerson(String authorisedPerson) {
-        this.authorisedPerson = authorisedPerson;
+    public void setInvitee(String invitee) {
+        this.invitee = invitee;
     }
 
-    public String getAuthorisedPerson() {
-        return authorisedPerson;
+    public String getInvitee() {
+        return invitee;
     }
 
     public void setCompanyName(String companyName) {
@@ -50,27 +50,28 @@ public class InvitationAcceptedEmailData extends EmailData {
             return true;
         }
 
-        if (!(o instanceof InvitationAcceptedEmailData that)) {
+        if (!(o instanceof InvitationEmailData that)) {
             return false;
         }
 
-        return new EqualsBuilder().append(authorisedPerson,
-                        that.authorisedPerson).append(companyName, that.companyName)
+        return new EqualsBuilder().append(invitee, that.invitee)
+                .append(companyName, that.companyName)
                 .append(personWhoCreatedInvite, that.personWhoCreatedInvite).isEquals();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37).append(authorisedPerson).append(companyName)
+        return new HashCodeBuilder(17, 37).append(invitee).append(companyName)
                 .append(personWhoCreatedInvite).toHashCode();
     }
 
     @Override
     public String toString() {
-        return "InvitationAcceptedEmailData{" +
-                "authorisedPerson='" + authorisedPerson + '\'' +
+        return "InvitationEmailData{" +
+                "invitee='" + invitee + '\'' +
                 ", companyName='" + companyName + '\'' +
                 ", personWhoCreatedInvite='" + personWhoCreatedInvite + '\'' +
                 '}';
     }
+
 }
