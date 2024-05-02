@@ -220,7 +220,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         LOG.debugContext(xRequestId, String.format("Attempting to update the status of association %s to %s", associationId, status.getValue()), null);
         associationsService.updateAssociation(associationId, update);
-        LOG.debugContext(xRequestId, "Successfully updated association status for association %s to %s.", null);
+        LOG.debugContext(xRequestId, String.format( "Successfully updated association status for association %s to %s.", associationId, status.getValue() ), null);
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
