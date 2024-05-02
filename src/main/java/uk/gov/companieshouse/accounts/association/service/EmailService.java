@@ -17,6 +17,7 @@ import uk.gov.companieshouse.accounts.association.models.email.senders.Invitatio
 import uk.gov.companieshouse.accounts.association.models.email.senders.InvitationEmailSender;
 import uk.gov.companieshouse.accounts.association.models.email.senders.InvitationRejectedEmailSender;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
@@ -47,9 +48,8 @@ public class EmailService {
     }
 
     @Transactional( readOnly = true )
-    public List<Supplier<User>> createRequestsToFetchAssociatedUsers( final CompanyDetails companyDetails, final Set<String> statuses ){
-        final var companyNumber = companyDetails.getCompanyNumber();
-        return associationsRepository.fetchAssociatedUsers( companyNumber, statuses, Pageable.unpaged() )
+    public List<Supplier<User>> createRequestsToFetchAssociatedUsers( final String companyNumber ){
+        return associationsRepository.fetchAssociatedUsers( companyNumber, Set.of( StatusEnum.CONFIRMED.getValue() ), Pageable.unpaged() )
                 .map( AssociationDao::getUserId )
                 .map( usersService::createFetchUserDetailsRequest )
                 .getContent();
