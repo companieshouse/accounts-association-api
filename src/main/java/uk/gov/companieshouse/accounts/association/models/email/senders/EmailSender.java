@@ -3,6 +3,7 @@ package uk.gov.companieshouse.accounts.association.models.email.senders;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import uk.gov.companieshouse.accounts.association.models.NotificationLog;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
@@ -25,7 +26,7 @@ public abstract class EmailSender {
     protected void sendEmail(final EmailData emailData, final String messageType ) throws EmailSendingException {
         try {
             emailProducer.sendEmail(emailData, messageType);
-            LOG.debug(String.format("Submitted %s email to Kafka", messageType));
+            new NotificationLog( emailData, messageType ).print();
         } catch (EmailSendingException exception) {
             LOG.error("Error sending email", exception);
             throw exception;
