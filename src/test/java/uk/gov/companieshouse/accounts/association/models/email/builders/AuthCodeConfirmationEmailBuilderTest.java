@@ -1,4 +1,4 @@
-package uk.gov.companieshouse.accounts.association.models.email.senders;
+package uk.gov.companieshouse.accounts.association.models.email.builders;
 
 import static org.mockito.ArgumentMatchers.any;
 import static uk.gov.companieshouse.accounts.association.utils.Constants.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
@@ -21,29 +21,29 @@ import uk.gov.companieshouse.email_producer.EmailSendingException;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-public class AuthCodeConfirmationEmailSenderTest {
+public class AuthCodeConfirmationEmailBuilderTest {
 
     @Mock
     EmailProducer emailProducer;
 
-    AuthCodeConfirmationEmailSender authCodeConfirmationEmailSender;
+    AuthCodeConfirmationEmailBuilder authCodeConfirmationEmailBuilder;
 
     @BeforeEach
     public void setup(){
-        authCodeConfirmationEmailSender = new AuthCodeConfirmationEmailSender( emailProducer );
+        authCodeConfirmationEmailBuilder = new AuthCodeConfirmationEmailBuilder( emailProducer );
     }
 
     @Test
     void sendAuthCodeConfirmationEmailWithNullInputsThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailSender.sendEmail( "Krishna Patel", "Tesla" ).accept( null ) );
-        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailSender.sendEmail( (String) null, "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailSender.sendEmail( "Krishna Patel", null ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailBuilder.sendEmail( "Krishna Patel", "Tesla" ).accept( null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailBuilder.sendEmail( (String) null, "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailBuilder.sendEmail( "Krishna Patel", null ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
     void sendAuthCodeConfirmationEmailWithUnexpectedIssueThrowsBadRequestRuntimeException(){
         Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> authCodeConfirmationEmailSender.sendEmail( "Krishna Patel", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( EmailSendingException.class, () -> authCodeConfirmationEmailBuilder.sendEmail( "Krishna Patel", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
@@ -54,7 +54,7 @@ public class AuthCodeConfirmationEmailSenderTest {
         emailData.setAuthorisedPerson( "Krishna Patel" );
         emailData.setCompanyName( "Tesla" );
 
-        authCodeConfirmationEmailSender.sendEmail( "Krishna Patel", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" );
+        authCodeConfirmationEmailBuilder.sendEmail( "Krishna Patel", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" );
         Mockito.verify( emailProducer ).sendEmail( emailData, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE );
     }
 
@@ -69,10 +69,10 @@ public class AuthCodeConfirmationEmailSenderTest {
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
-        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailSender.sendEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailSender.sendEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Krishna Patel", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailSender.sendEmailToAssociatedUsers( "theId12345", companyDetails, null, requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailSender.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailBuilder.sendEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailBuilder.sendEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Krishna Patel", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailBuilder.sendEmailToAssociatedUsers( "theId12345", companyDetails, null, requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailBuilder.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", null ) );
     }
 
     @Test
@@ -85,7 +85,7 @@ public class AuthCodeConfirmationEmailSenderTest {
 
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-        authCodeConfirmationEmailSender.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", requestsToFetchAssociatedUsers );
+        authCodeConfirmationEmailBuilder.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", requestsToFetchAssociatedUsers );
 
         Mockito.verify( emailProducer ).sendEmail( emailData, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE );
     }
@@ -99,7 +99,7 @@ public class AuthCodeConfirmationEmailSenderTest {
         emailData.setCompanyName( "Tesla" );
 
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        authCodeConfirmationEmailSender.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", List.of() );
+        authCodeConfirmationEmailBuilder.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", List.of() );
 
         Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE );
     }
@@ -116,7 +116,7 @@ public class AuthCodeConfirmationEmailSenderTest {
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
         Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> authCodeConfirmationEmailSender.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( EmailSendingException.class, () -> authCodeConfirmationEmailBuilder.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", requestsToFetchAssociatedUsers ) );
     }
 
 }

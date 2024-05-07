@@ -1,8 +1,10 @@
-package uk.gov.companieshouse.accounts.association.models.email.senders;
+package uk.gov.companieshouse.accounts.association.service;
 
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import org.springframework.context.annotation.ComponentScan;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
@@ -12,6 +14,7 @@ import uk.gov.companieshouse.email_producer.model.EmailData;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
+@ComponentScan("uk.gov.companieshouse.email_producer")
 public abstract class EmailSender {
 
     private final EmailProducer emailProducer;
@@ -21,6 +24,7 @@ public abstract class EmailSender {
     public EmailSender( EmailProducer emailProducer ){
         this.emailProducer = emailProducer;
     }
+
 
     protected void sendEmail(final EmailData emailData, final String messageType ) throws EmailSendingException {
         try {
