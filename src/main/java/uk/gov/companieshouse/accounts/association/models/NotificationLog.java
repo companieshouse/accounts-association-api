@@ -28,16 +28,41 @@ public class NotificationLog {
     private String sentTo;
     private String sentTimestamp;
     private String companyName;
+    private String actionPerformedBy;
 
     private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
 
     private final Map<String, Consumer<EmailData>> fromEmailData = Map.of(
-            AUTH_CODE_CONFIRMATION_MESSAGE_TYPE, emailData -> companyName = ((AuthCodeConfirmationEmailData) emailData).getCompanyName(),
-            AUTHORISATION_REMOVED_MESSAGE_TYPE, emailData -> companyName = ((AuthorisationRemovedEmailData) emailData).getCompanyName(),
-            INVITATION_CANCELLED_MESSAGE_TYPE, emailData -> companyName = ((InvitationCancelledEmailData) emailData).getCompanyName(),
-            INVITATION_MESSAGE_TYPE, emailData -> companyName = ((InvitationEmailData) emailData).getCompanyName(),
-            INVITATION_ACCEPTED_MESSAGE_TYPE, emailData -> companyName = ((InvitationAcceptedEmailData) emailData).getCompanyName(),
-            INVITATION_REJECTED_MESSAGE_TYPE, emailData -> companyName = ((InvitationRejectedEmailData) emailData).getCompanyName()
+        AUTH_CODE_CONFIRMATION_MESSAGE_TYPE, emailData -> {
+            final var authCodeConfirmationEmailData = ((AuthCodeConfirmationEmailData) emailData);
+            companyName = authCodeConfirmationEmailData.getCompanyName();
+            actionPerformedBy = authCodeConfirmationEmailData.getAuthorisedPerson();
+        },
+        AUTHORISATION_REMOVED_MESSAGE_TYPE, emailData -> {
+            final var authorisationRemovedEmailData = ((AuthorisationRemovedEmailData) emailData);
+            companyName = authorisationRemovedEmailData.getCompanyName();
+            actionPerformedBy = authorisationRemovedEmailData.getPersonWhoRemovedAuthorisation();
+        },
+        INVITATION_CANCELLED_MESSAGE_TYPE, emailData -> {
+            final var invitationCancelledEmailData = ((InvitationCancelledEmailData) emailData);
+            companyName = invitationCancelledEmailData.getCompanyName();
+            actionPerformedBy = invitationCancelledEmailData.getPersonWhoCancelledInvite();
+        },
+        INVITATION_MESSAGE_TYPE, emailData -> {
+            final var invitationEmailData = ((InvitationEmailData) emailData);
+            companyName = invitationEmailData.getCompanyName();
+            actionPerformedBy = invitationEmailData.getPersonWhoCreatedInvite();
+        },
+        INVITATION_ACCEPTED_MESSAGE_TYPE, emailData -> {
+            final var invitationAcceptedEmailData = ((InvitationAcceptedEmailData) emailData);
+            companyName = invitationAcceptedEmailData.getCompanyName();
+            actionPerformedBy = invitationAcceptedEmailData.getPersonWhoCreatedInvite();
+        },
+        INVITATION_REJECTED_MESSAGE_TYPE, emailData -> {
+            final var invitationRejectedEmailData = ((InvitationRejectedEmailData) emailData);
+            companyName = invitationRejectedEmailData.getCompanyName();
+            actionPerformedBy = invitationRejectedEmailData.getPersonWhoDeclined();
+        }
     );
 
     public NotificationLog( EmailData emailData, String messageType ){
@@ -50,6 +75,7 @@ public class NotificationLog {
     public void print(){
         var logMessage = String.format( "%s notification sent to %s at %s.", notificationType, sentTo, sentTimestamp );
         logMessage += Objects.isNull( companyName ) ? "" : String.format( " This was in relation to company %s.", companyName );
+        logMessage += Objects.isNull( actionPerformedBy ) ? "" : String.format( " This action was performed by %s.", actionPerformedBy );
         LOG.debug( logMessage );
     }
 
