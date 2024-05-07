@@ -3,35 +3,34 @@ package uk.gov.companieshouse.accounts.association.models.email.builders;
 import java.util.Objects;
 
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
-import uk.gov.companieshouse.email_producer.model.EmailData;
 
-public class InvitationAcceptedEmailBuilder extends EmailBuilder {
-
+public class InvitationAcceptedEmailBuilder extends EmailBuilder<InvitationAcceptedEmailBuilder, InvitationAcceptedEmailData> {
 
     private String inviterDisplayName;
 
-
     private String inviteeDisplayName;
 
-    public void setInviterDisplayName(String inviterDisplayName) {
+    public InvitationAcceptedEmailBuilder setInviterDisplayName( final String inviterDisplayName ) {
         this.inviterDisplayName = inviterDisplayName;
+        return this;
     }
 
-    public void setInviteeDisplayName(String inviteeDisplayName) {
+    public InvitationAcceptedEmailBuilder setInviteeDisplayName( final String inviteeDisplayName ) {
         this.inviteeDisplayName = inviteeDisplayName;
+        return this;
     }
 
     @Override
-    public EmailData buildEmailData() {
+    protected InvitationAcceptedEmailBuilder self(){
+        return this;
+    }
 
+    @Override
+    public InvitationAcceptedEmailData build() {
         if (Objects.isNull(recipientEmail) || Objects.isNull(inviterDisplayName) || Objects.isNull(inviteeDisplayName) || Objects.isNull(companyName)) {
             throw new NullPointerException("recipientEmail, inviterDisplayName, inviteeDisplayName, and companyName cannot be null");
         }
 
-        return getInvitationAcceptedEmailData();
-    }
-
-    private InvitationAcceptedEmailData getInvitationAcceptedEmailData() {
         final var subject = String.format("Companies House: %s is now authorised to file online for %s", inviteeDisplayName, companyName);
 
         final var emailData = new InvitationAcceptedEmailData();
@@ -43,6 +42,5 @@ public class InvitationAcceptedEmailBuilder extends EmailBuilder {
 
         return emailData;
     }
-
 
 }

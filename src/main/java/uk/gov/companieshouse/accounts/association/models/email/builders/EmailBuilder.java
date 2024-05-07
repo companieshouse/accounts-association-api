@@ -2,20 +2,24 @@ package uk.gov.companieshouse.accounts.association.models.email.builders;
 
 import uk.gov.companieshouse.email_producer.model.EmailData;
 
-public abstract class EmailBuilder {
+public abstract class EmailBuilder<T extends EmailBuilder<T, U>, U extends EmailData> {
 
-    protected   String companyName;
+    protected String companyName;
 
-    protected   String recipientEmail;
+    protected String recipientEmail;
 
-    public void setCompanyName(String companyName) {
+    public T setCompanyName( final String companyName ) {
         this.companyName = companyName;
+        return self();
     }
 
-    public void setRecipientEmail(String recipientEmail) {
+    public T setRecipientEmail( final String recipientEmail ) {
         this.recipientEmail = recipientEmail;
+        return self();
     }
 
-    public abstract EmailData buildEmailData();
+    protected abstract T self();
+
+    public abstract U build();
 
 }

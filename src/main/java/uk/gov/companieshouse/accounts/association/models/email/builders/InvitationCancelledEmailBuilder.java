@@ -1,34 +1,36 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationCancelledEmailData;
-import uk.gov.companieshouse.email_producer.model.EmailData;
 
 import java.util.Objects;
 
-public class InvitationCancelledEmailBuilder extends EmailBuilder {
+public class InvitationCancelledEmailBuilder extends EmailBuilder<InvitationCancelledEmailBuilder, InvitationCancelledEmailData> {
 
     private String cancelledByDisplayName;
 
     private String cancelledUserDisplayName;
 
-    public void setCancelledByDisplayName(String cancelledByDisplayName) {
+    public InvitationCancelledEmailBuilder setCancelledByDisplayName( final String cancelledByDisplayName ) {
         this.cancelledByDisplayName = cancelledByDisplayName;
+        return this;
     }
 
-    public void setCancelledUserDisplayName(String cancelledUserDisplayName) {
+    public InvitationCancelledEmailBuilder setCancelledUserDisplayName( final String cancelledUserDisplayName ) {
         this.cancelledUserDisplayName = cancelledUserDisplayName;
+        return this;
     }
 
-    public EmailData buildEmailData() {
+    @Override
+    protected InvitationCancelledEmailBuilder self(){
+        return this;
+    }
 
+    @Override
+    public InvitationCancelledEmailData build() {
         if (Objects.isNull(recipientEmail) || Objects.isNull(cancelledByDisplayName) || Objects.isNull(cancelledUserDisplayName) || Objects.isNull(companyName)) {
             throw new NullPointerException("recipientEmail, cancelledByDisplayName, cancelledUserDisplayName, and companyName cannot be null");
         }
 
-        return getInvitationCancelledEmailData(cancelledByDisplayName, cancelledUserDisplayName, companyName);
-    }
-
-    private InvitationCancelledEmailData getInvitationCancelledEmailData(String cancelledByDisplayName, String cancelledUserDisplayName, String companyName) {
         final var subject = String.format("Companies House: Invitation cancelled for %s to be authorised to file online for %s", cancelledUserDisplayName, companyName);
 
         final var emailData = new InvitationCancelledEmailData();
@@ -37,6 +39,7 @@ public class InvitationCancelledEmailBuilder extends EmailBuilder {
         emailData.setPersonWhoCancelledInvite(cancelledByDisplayName);
         emailData.setPersonWhoWasCancelled(cancelledUserDisplayName);
         emailData.setCompanyName(companyName);
+
         return emailData;
     }
 
