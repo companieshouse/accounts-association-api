@@ -1,34 +1,35 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
-import uk.gov.companieshouse.email_producer.model.EmailData;
 
 import java.util.Objects;
 
-public class InvitationEmailBuilder extends EmailBuilder {
+public class InvitationEmailBuilder extends EmailBuilder<InvitationEmailBuilder, InvitationEmailData> {
     private String inviterDisplayName;
 
     private String inviteeDisplayName;
 
-    public void setInviterDisplayName(String inviterDisplayName) {
+    public InvitationEmailBuilder setInviterDisplayName( final String inviterDisplayName ) {
         this.inviterDisplayName = inviterDisplayName;
+        return this;
     }
 
-    public void setInviteeDisplayName(String inviteeDisplayName) {
+    public InvitationEmailBuilder setInviteeDisplayName( final String inviteeDisplayName ) {
         this.inviteeDisplayName = inviteeDisplayName;
+        return this;
     }
 
-    public EmailData buildEmailData() {
-        {
-            if (Objects.isNull(recipientEmail) || Objects.isNull(inviterDisplayName) || Objects.isNull(inviteeDisplayName) || Objects.isNull(companyName)) {
-                throw new NullPointerException("recipientEmail, inviterDisplayName, inviteeDisplayName, and companyName cannot be null");
-            }
+    @Override
+    protected InvitationEmailBuilder self(){
+        return this;
+    }
 
-            return getInvitationEmailData();
+    @Override
+    public InvitationEmailData build() {
+        if (Objects.isNull(recipientEmail) || Objects.isNull(inviterDisplayName) || Objects.isNull(inviteeDisplayName) || Objects.isNull(companyName)) {
+            throw new NullPointerException("recipientEmail, inviterDisplayName, inviteeDisplayName, and companyName cannot be null");
         }
-    }
 
-    private InvitationEmailData getInvitationEmailData() {
         final var subject = String.format("Companies House: %s invited to be authorised to file online for %s", inviteeDisplayName, companyName);
 
         final var emailData = new InvitationEmailData();

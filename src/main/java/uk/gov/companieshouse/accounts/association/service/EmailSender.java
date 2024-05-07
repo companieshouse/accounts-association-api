@@ -20,8 +20,7 @@ public abstract class EmailSender {
         this.emailProducer = emailProducer;
     }
 
-
-    protected void sendEmail(final EmailData emailData, final MessageType messageType ) throws EmailSendingException {
+    protected void sendEmail( final EmailData emailData, final MessageType messageType ) throws EmailSendingException {
         try {
             emailProducer.sendEmail(emailData, messageType.getMessageType());
         } catch (EmailSendingException exception) {
