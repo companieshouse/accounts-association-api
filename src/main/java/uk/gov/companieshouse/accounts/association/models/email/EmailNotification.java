@@ -1,6 +1,5 @@
 package uk.gov.companieshouse.accounts.association.models.email;
 
-import com.google.api.client.util.DateTime;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
 
 import java.time.LocalDateTime;

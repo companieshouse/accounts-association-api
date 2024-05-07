@@ -1,5 +1,7 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
@@ -42,20 +44,22 @@ public class EmailService extends EmailSender {
                 .getContent();
     }
 
-    ;
-
     @Async
     public void sendAuthCodeConfirmationEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String displayName, final List<Supplier<User>> requestsToFetchAssociatedUsers) {
         requestsToFetchAssociatedUsers.forEach(userSupplier -> {
-            User user = userSupplier.get();
-            var builder = new AuthCodeConfirmationEmailBuilder();
-            builder.setRecipientEmail(user.getEmail());
-            builder.setDisplayName(displayName);
-            builder.setCompanyName(companyDetails.getCompanyName());
-            sendEmail(builder.buildEmailData(), MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE);
+            final var user = userSupplier.get();
+
+            final var emailData = new AuthCodeConfirmationEmailBuilder()
+                    .setRecipientEmail( user.getEmail() )
+                    .setDisplayName( displayName )
+                    .setCompanyName( companyDetails.getCompanyName() )
+                    .build();
+
+            sendEmail( emailData, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE );
+
             LOG.infoContext(xRequestId,
                     new EmailNotification(
-                            MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE,
+                            AUTH_CODE_CONFIRMATION_MESSAGE_TYPE,
                             StaticPropertyUtil.APPLICATION_NAMESPACE,
                             user.getEmail(),
                             companyDetails.getCompanyNumber()).toString(), null);
@@ -65,13 +69,16 @@ public class EmailService extends EmailSender {
     @Async
     public void sendAuthorisationRemovedEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String removedByDisplayName, final String removedUserDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers) {
         requestsToFetchAssociatedUsers.forEach(userSupplier -> {
-            User user = userSupplier.get();
-            var builder = new AuthorisationRemovedEmailBuilder();
-            builder.setCompanyName(companyDetails.getCompanyName());
-            builder.setRemovedByDisplayName(removedByDisplayName);
-            builder.setRemovedUserDisplayName(removedUserDisplayName);
-            builder.setRecipientEmail(user.getEmail());
-            sendEmail(builder.buildEmailData(), MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE);
+            final var user = userSupplier.get();
+
+            final var emailData = new AuthorisationRemovedEmailBuilder()
+                    .setCompanyName( companyDetails.getCompanyName() )
+                    .setRemovedByDisplayName( removedByDisplayName )
+                    .setRemovedUserDisplayName( removedUserDisplayName )
+                    .setRecipientEmail( user.getEmail() )
+                    .build();
+
+            sendEmail( emailData, MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE );
             LOG.infoContext(xRequestId,
                     new EmailNotification(
                             MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE,
@@ -84,13 +91,16 @@ public class EmailService extends EmailSender {
     @Async
     public void sendInvitationCancelledEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String cancelledByDisplayName, final String cancelledUserDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers) {
         requestsToFetchAssociatedUsers.forEach(userSupplier -> {
-            User user = userSupplier.get();
-            var builder = new InvitationCancelledEmailBuilder();
-            builder.setCompanyName(companyDetails.getCompanyName());
-            builder.setCancelledByDisplayName(cancelledByDisplayName);
-            builder.setCancelledUserDisplayName(cancelledUserDisplayName);
-            builder.setRecipientEmail(user.getEmail());
-            sendEmail(builder.buildEmailData(), MessageType.INVITATION_CANCELLED_MESSAGE_TYPE);
+            final var user = userSupplier.get();
+
+            final var emailData = new InvitationCancelledEmailBuilder()
+                    .setCompanyName( companyDetails.getCompanyName() )
+                    .setCancelledByDisplayName( cancelledByDisplayName )
+                    .setCancelledUserDisplayName( cancelledUserDisplayName )
+                    .setRecipientEmail( user.getEmail() )
+                    .build();
+
+            sendEmail( emailData, MessageType.INVITATION_CANCELLED_MESSAGE_TYPE );
             LOG.infoContext(xRequestId, new EmailNotification(
                     MessageType.INVITATION_CANCELLED_MESSAGE_TYPE,
                     StaticPropertyUtil.APPLICATION_NAMESPACE,
@@ -103,13 +113,16 @@ public class EmailService extends EmailSender {
     @Async
     public void sendInvitationEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String inviteeDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers) {
         requestsToFetchAssociatedUsers.forEach(userSupplier -> {
-            User user = userSupplier.get();
-            var builder = new InvitationEmailBuilder();
-            builder.setCompanyName(companyDetails.getCompanyName());
-            builder.setInviteeDisplayName(inviteeDisplayName);
-            builder.setInviterDisplayName(inviterDisplayName);
-            builder.setRecipientEmail(user.getEmail());
-            sendEmail(builder.buildEmailData(), MessageType.INVITATION_MESSAGE_TYPE);
+            final var user = userSupplier.get();
+
+            final var emailData = new InvitationEmailBuilder()
+                    .setCompanyName( companyDetails.getCompanyName() )
+                    .setInviteeDisplayName( inviteeDisplayName )
+                    .setInviterDisplayName( inviterDisplayName )
+                    .setRecipientEmail( user.getEmail() )
+                    .build();
+
+            sendEmail( emailData, MessageType.INVITATION_MESSAGE_TYPE );
             LOG.infoContext(xRequestId,
                     new EmailNotification(
                             MessageType.INVITATION_MESSAGE_TYPE,
@@ -123,13 +136,17 @@ public class EmailService extends EmailSender {
     @Async
     public void sendInvitationAcceptedEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String inviteeDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers) {
         requestsToFetchAssociatedUsers.forEach(userSupplier -> {
-            User user = userSupplier.get();
-            var builder = new InvitationAcceptedEmailBuilder();
-            builder.setCompanyName(companyDetails.getCompanyName());
-            builder.setInviteeDisplayName(inviteeDisplayName);
-            builder.setInviterDisplayName(inviterDisplayName);
-            builder.setRecipientEmail(user.getEmail());
-            sendEmail(builder.buildEmailData(), MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE);
+            final var user = userSupplier.get();
+
+            final var emailData = new InvitationAcceptedEmailBuilder()
+                    .setCompanyName( companyDetails.getCompanyName() )
+                    .setInviteeDisplayName( inviteeDisplayName )
+                    .setInviterDisplayName( inviterDisplayName )
+                    .setRecipientEmail( user.getEmail() )
+                    .build();
+
+            sendEmail( emailData, MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE );
+
             LOG.infoContext(xRequestId, new EmailNotification(
                     MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE,
                     StaticPropertyUtil.APPLICATION_NAMESPACE,
@@ -142,12 +159,16 @@ public class EmailService extends EmailSender {
     @Async
     public void sendInvitationRejectedEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String inviteeDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers) {
         requestsToFetchAssociatedUsers.forEach(userSupplier -> {
-            User user = userSupplier.get();
-            var builder = new InvitationRejectedEmailBuilder();
-            builder.setCompanyName(companyDetails.getCompanyName());
-            builder.setInviteeDisplayName(inviteeDisplayName);
-            builder.setRecipientEmail(user.getEmail());
-            sendEmail(builder.buildEmailData(), MessageType.INVITATION_REJECTED_MESSAGE_TYPE);
+            final var user = userSupplier.get();
+
+            final var emailData = new InvitationRejectedEmailBuilder()
+                    .setCompanyName( companyDetails.getCompanyName() )
+                    .setInviteeDisplayName( inviteeDisplayName )
+                    .setRecipientEmail( user.getEmail() )
+                    .build();
+
+            sendEmail( emailData, MessageType.INVITATION_REJECTED_MESSAGE_TYPE );
+
             LOG.infoContext(xRequestId,
                     new EmailNotification(
                             MessageType.INVITATION_REJECTED_MESSAGE_TYPE,
