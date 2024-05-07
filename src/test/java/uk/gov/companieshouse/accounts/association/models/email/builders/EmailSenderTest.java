@@ -1,4 +1,4 @@
-package uk.gov.companieshouse.accounts.association.models.email.senders;
+package uk.gov.companieshouse.accounts.association.models.email.builders;
 
 import static org.mockito.ArgumentMatchers.any;
 
@@ -29,11 +29,11 @@ public class EmailSenderTest {
     @Mock
     Consumer<String> sendEmailForEmailAddress;
 
-    AuthCodeConfirmationEmailSender authCodeConfirmationEmailSender;
+    AuthCodeConfirmationEmailBuilder authCodeConfirmationEmailBuilder;
 
     @BeforeEach
     public void setup(){
-        authCodeConfirmationEmailSender = new AuthCodeConfirmationEmailSender( emailProducer );
+        authCodeConfirmationEmailBuilder = new AuthCodeConfirmationEmailBuilder( emailProducer );
     }
 
     @Test
@@ -42,7 +42,7 @@ public class EmailSenderTest {
         email.setTo( "Jordan Peterson" );
         email.setSubject( "Hello!" );
 
-        authCodeConfirmationEmailSender.sendEmail( email, "Greetings!" );
+        authCodeConfirmationEmailBuilder.sendEmail( email, "Greetings!" );
         Mockito.verify( emailProducer ).sendEmail( email, "Greetings!" );
     }
 
@@ -53,27 +53,27 @@ public class EmailSenderTest {
         email.setSubject( "Hello!" );
 
         Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> authCodeConfirmationEmailSender.sendEmail( email, "Greetings!" ) );
+        Assertions.assertThrows( EmailSendingException.class, () -> authCodeConfirmationEmailBuilder.sendEmail( email, "Greetings!" ) );
     }
 
     @Test
     void sendEmailToUsersAssociatedWithCompanyWithNullCompanyDetailsOrNullConsumerOrNullSupplierThrowsNullPointerException(){
         final List<Supplier<User>> userSuppliers = List.of( () -> new User().email( "bruce.wayne@gotham.city" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailSender.sendEmailToUsersAssociatedWithCompany( "theId12345", null, sendEmailForEmailAddress, userSuppliers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailSender.sendEmailToUsersAssociatedWithCompany( "theId12345", new CompanyDetails(), null, userSuppliers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailSender.sendEmailToUsersAssociatedWithCompany( "theId12345", new CompanyDetails(), sendEmailForEmailAddress, null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailBuilder.sendEmailToUsersAssociatedWithCompany( "theId12345", null, sendEmailForEmailAddress, userSuppliers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailBuilder.sendEmailToUsersAssociatedWithCompany( "theId12345", new CompanyDetails(), null, userSuppliers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> authCodeConfirmationEmailBuilder.sendEmailToUsersAssociatedWithCompany( "theId12345", new CompanyDetails(), sendEmailForEmailAddress, null ) );
     }
 
     @Test
     void sendEmailToUsersAssociatedWithCompanyConsumesEmailAddress(){
         final List<Supplier<User>> userSuppliers = List.of( () -> new User().email( "bruce.wayne@gotham.city" ) );
-        authCodeConfirmationEmailSender.sendEmailToUsersAssociatedWithCompany( "theId12345", new CompanyDetails(), sendEmailForEmailAddress, userSuppliers );
+        authCodeConfirmationEmailBuilder.sendEmailToUsersAssociatedWithCompany( "theId12345", new CompanyDetails(), sendEmailForEmailAddress, userSuppliers );
         Mockito.verify(sendEmailForEmailAddress).accept( "bruce.wayne@gotham.city" );
     }
 
     @Test
     void sendEmailToUsersAssociatedWithCompanyWithEmptyListDoesNotConsume(){
-        authCodeConfirmationEmailSender.sendEmailToUsersAssociatedWithCompany( "theId12345", new CompanyDetails(), sendEmailForEmailAddress, List.of() );
+        authCodeConfirmationEmailBuilder.sendEmailToUsersAssociatedWithCompany( "theId12345", new CompanyDetails(), sendEmailForEmailAddress, List.of() );
         Mockito.verify(sendEmailForEmailAddress, Mockito.never() ).accept( "bruce.wayne@gotham.city" );
     }
 

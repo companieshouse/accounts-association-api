@@ -1,4 +1,4 @@
-package uk.gov.companieshouse.accounts.association.models.email.senders;
+package uk.gov.companieshouse.accounts.association.models.email.builders;
 
 import static org.mockito.ArgumentMatchers.any;
 import static uk.gov.companieshouse.accounts.association.utils.Constants.INVITATION_CANCELLED_MESSAGE_TYPE;
@@ -21,30 +21,30 @@ import uk.gov.companieshouse.email_producer.EmailSendingException;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-public class InvitationCancelledEmailSenderTest {
+public class InvitationCancelledEmailBuilderTest {
 
     @Mock
     EmailProducer emailProducer;
 
-    InvitationCancelledEmailSender invitationCancelledEmailSender;
+    InvitationCancelledEmailBuilder invitationCancelledEmailBuilder;
 
     @BeforeEach
     public void setup(){
-        invitationCancelledEmailSender = new InvitationCancelledEmailSender( emailProducer );
+        invitationCancelledEmailBuilder = new InvitationCancelledEmailBuilder( emailProducer );
     }
 
     @Test
     void sendInvitationCancelledEmailWithNullInputsThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailSender.sendEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( null ) );
-        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailSender.sendEmail(  null, "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailSender.sendEmail(  "Krishna Patel", null, "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailSender.sendEmail( "Krishna Patel", "Elon Musk", null ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailBuilder.sendEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailBuilder.sendEmail(  null, "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailBuilder.sendEmail(  "Krishna Patel", null, "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailBuilder.sendEmail( "Krishna Patel", "Elon Musk", null ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
     void sendInvitationCancelledEmailWithUnexpectedIssueThrowsBadRequestRuntimeException(){
         Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> invitationCancelledEmailSender.sendEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( EmailSendingException.class, () -> invitationCancelledEmailBuilder.sendEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
@@ -56,7 +56,7 @@ public class InvitationCancelledEmailSenderTest {
         emailData.setPersonWhoWasCancelled( "Elon Musk" );
         emailData.setCompanyName( "Tesla" );
 
-        invitationCancelledEmailSender.sendEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" );
+        invitationCancelledEmailBuilder.sendEmail( "Krishna Patel", "Elon Musk", "Tesla" ).accept( "kpatel@companieshouse.gov.uk" );
         Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_CANCELLED_MESSAGE_TYPE );
     }
 
@@ -72,11 +72,11 @@ public class InvitationCancelledEmailSenderTest {
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
-        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailSender.sendEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailSender.sendEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailSender.sendEmailToAssociatedUsers( "theId12345", companyDetails, null, "Elon Musk", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailSender.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", null, requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailSender.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailBuilder.sendEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailBuilder.sendEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailBuilder.sendEmailToAssociatedUsers( "theId12345", companyDetails, null, "Elon Musk", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailBuilder.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", null, requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> invitationCancelledEmailBuilder.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", null ) );
     }
 
     @Test
@@ -91,7 +91,7 @@ public class InvitationCancelledEmailSenderTest {
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
-        invitationCancelledEmailSender.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers );
+        invitationCancelledEmailBuilder.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers );
 
         Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_CANCELLED_MESSAGE_TYPE );
     }
@@ -106,7 +106,7 @@ public class InvitationCancelledEmailSenderTest {
         emailData.setCompanyName( "Tesla" );
 
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        invitationCancelledEmailSender.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", List.of() );
+        invitationCancelledEmailBuilder.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", List.of() );
 
         Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, INVITATION_CANCELLED_MESSAGE_TYPE );
     }
@@ -124,7 +124,7 @@ public class InvitationCancelledEmailSenderTest {
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
         Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> invitationCancelledEmailSender.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( EmailSendingException.class, () -> invitationCancelledEmailBuilder.sendEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
     }
 
 }
