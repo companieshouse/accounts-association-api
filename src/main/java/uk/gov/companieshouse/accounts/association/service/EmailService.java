@@ -6,9 +6,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.email.EmailNotification;
 import uk.gov.companieshouse.accounts.association.models.email.builders.*;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
-import uk.gov.companieshouse.accounts.association.utils.Constants;
+import uk.gov.companieshouse.accounts.association.utils.MessageType;
+import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
@@ -23,6 +25,8 @@ public class EmailService extends EmailSender {
 
     private final AssociationsRepository associationsRepository;
     private final UsersService usersService;
+
+
 
 
     @Autowired
@@ -49,7 +53,13 @@ public class EmailService extends EmailSender {
             builder.setRecipientEmail(userSupplier.get().getEmail());
             builder.setDisplayName(displayName);
             builder.setCompanyName(companyDetails.getCompanyName());
-            sendEmail(builder.buildEmailData(), Constants.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE);
+            sendEmail(builder.buildEmailData(), MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE);
+            LOG.infoContext( xRequestId,
+                    new EmailNotification(
+                            MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE,
+                            StaticPropertyUtil.APPLICATION_NAMESPACE,
+                            userSupplier.get().getEmail(),
+                            companyDetails.getCompanyNumber()).toString(), null );
         });
     }
 
@@ -61,8 +71,13 @@ public class EmailService extends EmailSender {
             builder.setRemovedByDisplayName(removedByDisplayName);
             builder.setRemovedUserDisplayName(removedUserDisplayName);
             builder.setRecipientEmail(userSupplier.get().getEmail());
-
-            sendEmail(builder.buildEmailData(), Constants.AUTHORISATION_REMOVED_MESSAGE_TYPE);
+            sendEmail(builder.buildEmailData(), MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE);
+            LOG.infoContext( xRequestId,
+                    new EmailNotification(
+                            MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE,
+                            StaticPropertyUtil.APPLICATION_NAMESPACE,
+                            userSupplier.get().getEmail(),
+                            companyDetails.getCompanyNumber()).toString(), null );
         });
     }
 
@@ -74,8 +89,13 @@ public class EmailService extends EmailSender {
             builder.setCancelledByDisplayName(cancelledByDisplayName);
             builder.setCancelledUserDisplayName(cancelledUserDisplayName);
             builder.setRecipientEmail(userSupplier.get().getEmail());
+            sendEmail(builder.buildEmailData(), MessageType.INVITATION_CANCELLED_MESSAGE_TYPE);
+            LOG.infoContext( xRequestId, new EmailNotification(
+                    MessageType.INVITATION_CANCELLED_MESSAGE_TYPE,
+                    StaticPropertyUtil.APPLICATION_NAMESPACE,
+                    userSupplier.get().getEmail(),
+                    companyDetails.getCompanyNumber()).toString(), null );
 
-            sendEmail(builder.buildEmailData(), Constants.AUTHORISATION_REMOVED_MESSAGE_TYPE);
         });
     }
 
@@ -87,7 +107,14 @@ public class EmailService extends EmailSender {
             builder.setInviteeDisplayName(inviteeDisplayName);
             builder.setInviterDisplayName(inviterDisplayName);
             builder.setRecipientEmail(userSupplier.get().getEmail());
-            sendEmail(builder.buildEmailData(), Constants.INVITATION_MESSAGE_TYPE);
+            sendEmail(builder.buildEmailData(), MessageType.INVITATION_MESSAGE_TYPE);
+            LOG.infoContext( xRequestId,
+                    new EmailNotification(
+                            MessageType.INVITATION_MESSAGE_TYPE,
+                            StaticPropertyUtil.APPLICATION_NAMESPACE,
+                            userSupplier.get().getEmail(),
+                            companyDetails.getCompanyNumber()).toString(), null );
+
         });
     }
 
@@ -99,7 +126,13 @@ public class EmailService extends EmailSender {
             builder.setInviteeDisplayName(inviteeDisplayName);
             builder.setInviterDisplayName(inviterDisplayName);
             builder.setRecipientEmail(userSupplier.get().getEmail());
-            sendEmail(builder.buildEmailData(), Constants.INVITATION_ACCEPTED_MESSAGE_TYPE);
+            sendEmail(builder.buildEmailData(), MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE);
+            LOG.infoContext( xRequestId, new EmailNotification(
+                    MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE,
+                    StaticPropertyUtil.APPLICATION_NAMESPACE,
+                    userSupplier.get().getEmail(),
+                    companyDetails.getCompanyNumber()).toString() , null );
+
         });
     }
 
@@ -110,7 +143,14 @@ public class EmailService extends EmailSender {
             builder.setCompanyName(companyDetails.getCompanyName());
             builder.setInviteeDisplayName(inviteeDisplayName);
             builder.setRecipientEmail(userSupplier.get().getEmail());
-            sendEmail(builder.buildEmailData(), Constants.INVITATION_REJECTED_MESSAGE_TYPE);
-        });    }
+            sendEmail(builder.buildEmailData(), MessageType.INVITATION_REJECTED_MESSAGE_TYPE);
+            LOG.infoContext( xRequestId,
+                    new EmailNotification(
+                            MessageType.INVITATION_REJECTED_MESSAGE_TYPE,
+                            StaticPropertyUtil.APPLICATION_NAMESPACE,
+                            userSupplier.get().getEmail(),
+                            companyDetails.getCompanyNumber()).toString(), null );
+        });
+    }
 
 }

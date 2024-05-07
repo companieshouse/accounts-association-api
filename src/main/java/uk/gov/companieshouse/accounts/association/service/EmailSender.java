@@ -1,13 +1,8 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 import org.springframework.context.annotation.ComponentScan;
+import uk.gov.companieshouse.accounts.association.utils.MessageType;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
-import uk.gov.companieshouse.api.accounts.user.model.User;
-import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.EmailSendingException;
 import uk.gov.companieshouse.email_producer.model.EmailData;
@@ -26,25 +21,13 @@ public abstract class EmailSender {
     }
 
 
-    protected void sendEmail(final EmailData emailData, final String messageType ) throws EmailSendingException {
+    protected void sendEmail(final EmailData emailData, final MessageType messageType ) throws EmailSendingException {
         try {
-            emailProducer.sendEmail(emailData, messageType);
-            LOG.debug(String.format("Submitted %s email to Kafka", messageType));
+            emailProducer.sendEmail(emailData, messageType.getMessageType());
         } catch (EmailSendingException exception) {
-            LOG.error("Error sending email", exception);
+            LOG.errorContext(messageType.getMessageType(), String.format("Failed to send email due to %s", exception.getMessage()), exception, null);
             throw exception;
         }
     }
-
-    protected void sendEmailToUsersAssociatedWithCompany( final String xRequestId, final CompanyDetails companyDetails, final Consumer<String> sendEmailForEmailAddress, List<Supplier<User>> requestsToFetchAssociatedUsers ){
-        final var companyNumber = companyDetails.getCompanyNumber();
-        LOG.debugContext( xRequestId, String.format( "Attempting to send notifications to users from company %s", companyNumber ), null );
-        requestsToFetchAssociatedUsers.stream()
-                .map( Supplier::get )
-                .map( User::getEmail )
-                .forEach( sendEmailForEmailAddress );
-        LOG.debugContext( xRequestId, String.format( "Successfully sent notifications to users from company %s", companyNumber ), null );
-    }
-
 
 }
