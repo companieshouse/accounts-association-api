@@ -7,11 +7,12 @@ import java.time.LocalDateTime;
 
 public class EmailNotification {
 
-    private MessageType messageType;
-    private String sentFrom;
-    private String sentTo;
-    private String companyNumber;
-    private LocalDateTime sentTime;
+    private final MessageType messageType;
+    private final String sentFrom;
+    private final String sentTo;
+    private final String companyNumber;
+    private final LocalDateTime sentTime;
+
 
     public EmailNotification(MessageType messageType, String sentFrom, String sentTo, String companyNumber) {
         this.messageType = messageType;
