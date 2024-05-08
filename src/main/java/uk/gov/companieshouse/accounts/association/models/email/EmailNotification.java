@@ -21,6 +21,10 @@ public class EmailNotification {
         this.sentTime = LocalDateTime.now();
     }
 
+    public String toMessage(){
+        return String.format( "%s notification sent to %s at %s from %s, regarding company %s.", messageType, sentTo, sentTime.toString(), sentFrom, companyNumber );
+    }
+
     @Override
     public String toString() {
         return "EmailNotification{" +
