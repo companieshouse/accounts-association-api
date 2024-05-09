@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,9 +48,12 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
+import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserUserGet;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.api.model.ApiResponse;
 import uk.gov.companieshouse.api.sdk.ApiClientService;
+import uk.gov.companieshouse.email_producer.EmailProducer;
+import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -89,6 +93,12 @@ public class UserCompanyAssociationsTest {
     @MockBean
     AccountsUserEndpoint accountsUserEndpoint;
 
+    @MockBean
+    EmailProducer emailProducer;
+
+    @MockBean
+    KafkaProducerFactory kafkaProducerFactory;
+
     @Autowired
     AssociationsRepository associationsRepository;
 
@@ -97,6 +107,27 @@ public class UserCompanyAssociationsTest {
 
     @MockBean
     StaticPropertyUtil staticPropertyUtil;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet9999;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet111;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet666;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet5555;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet9191;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet$$$$;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet8888;
 
     private static final String DEFAULT_KIND = "association";
 
@@ -460,12 +491,19 @@ public class UserCompanyAssociationsTest {
         Mockito.doReturn( toCompanyDetailsApiResponse( "x999999", "Instram" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "x999999" );
         Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "919191" );
 
-        Mockito.doReturn( toGetUserDetailsApiResponse( "9999", "scrooge.mcduck@disney.land", "Scrooge McDuck" ) ).when( accountsUserEndpoint ).getUserDetails( "9999" );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "111", "bruce.wayne@gotham.city", "Batman" ) ).when( accountsUserEndpoint ).getUserDetails( "111");
-        Mockito.doReturn( toGetUserDetailsApiResponse( "666", "homer.simpson@springfield.com", null ) ).when( accountsUserEndpoint ).getUserDetails( "666" );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "5555", "ross@friends.com", null ) ).when( accountsUserEndpoint ).getUserDetails( "5555" );
-        Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( accountsUserEndpoint ).getUserDetails( "9191" );
-        Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( accountsUserEndpoint ).getUserDetails( "$$$$" );
+        Mockito.doReturn( privateAccountsUserUserGet9999 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "9999" );
+        Mockito.doReturn( privateAccountsUserUserGet111 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "111" );
+        Mockito.doReturn( privateAccountsUserUserGet666 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "666" );
+        Mockito.doReturn( privateAccountsUserUserGet5555 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "5555" );
+        Mockito.doReturn( privateAccountsUserUserGet9191 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "9191" );
+        Mockito.doReturn( privateAccountsUserUserGet$$$$ ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "$$$$" );
+
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "9999", "scrooge.mcduck@disney.land", "Scrooge McDuck" ) ).when( privateAccountsUserUserGet9999 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "111", "bruce.wayne@gotham.city", "Batman" ) ).when( privateAccountsUserUserGet111 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "666", "homer.simpson@springfield.com", null ) ).when( privateAccountsUserUserGet666 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "5555", "ross@friends.com", null ) ).when( privateAccountsUserUserGet5555 ).execute();
+        Mockito.lenient().doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet9191 ).execute();
+        Mockito.lenient().doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet$$$$ ).execute();
 
         Mockito.doReturn( toCompanyDetailsApiResponse( "000000", "Boston Dynamics" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "000000" );
 
@@ -534,7 +572,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByWithNonexistentCompanyReturnsNotFound() throws Exception {
-        Mockito.doReturn( toGetUserDetailsApiResponse( "8888", "mr.blobby@nightmare.com", "Mr Blobby" ) ).when( accountsUserEndpoint ).getUserDetails(  "8888" );
+        Mockito.doReturn( privateAccountsUserUserGet8888 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "8888" );
+        Mockito.doReturn( toGetUserDetailsApiResponse( "8888", "mr.blobby@nightmare.com", "Mr Blobby" ) ).when( privateAccountsUserUserGet8888 ).execute();
         Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "222222" );
 
         mockMvc.perform( get( "/associations" )
