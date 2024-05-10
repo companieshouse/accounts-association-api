@@ -67,7 +67,7 @@ public class EmailService {
                             AUTH_CODE_CONFIRMATION_MESSAGE_TYPE,
                             StaticPropertyUtil.APPLICATION_NAMESPACE,
                             user.getEmail(),
-                            companyDetails.getCompanyNumber()).toString(), null);
+                            companyDetails.getCompanyNumber()).toMessage(), null);
         });
     }
 
@@ -89,7 +89,7 @@ public class EmailService {
                             MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE,
                             StaticPropertyUtil.APPLICATION_NAMESPACE,
                             user.getEmail(),
-                            companyDetails.getCompanyNumber()).toString(), null);
+                            companyDetails.getCompanyNumber()).toMessage(), null);
         });
     }
 
@@ -110,7 +110,7 @@ public class EmailService {
                     MessageType.INVITATION_CANCELLED_MESSAGE_TYPE,
                     StaticPropertyUtil.APPLICATION_NAMESPACE,
                     user.getEmail(),
-                    companyDetails.getCompanyNumber()).toString(), null);
+                    companyDetails.getCompanyNumber()).toMessage(), null);
 
         });
     }
@@ -133,7 +133,7 @@ public class EmailService {
                             MessageType.INVITATION_MESSAGE_TYPE,
                             StaticPropertyUtil.APPLICATION_NAMESPACE,
                             user.getEmail(),
-                            companyDetails.getCompanyNumber()).toString(), null);
+                            companyDetails.getCompanyNumber()).toMessage(), null);
 
         });
     }
@@ -156,7 +156,7 @@ public class EmailService {
                     MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE,
                     StaticPropertyUtil.APPLICATION_NAMESPACE,
                     user.getEmail(),
-                    companyDetails.getCompanyNumber()).toString(), null);
+                    companyDetails.getCompanyNumber()).toMessage(), null);
 
         });
     }
@@ -179,7 +179,7 @@ public class EmailService {
                             MessageType.INVITATION_REJECTED_MESSAGE_TYPE,
                             StaticPropertyUtil.APPLICATION_NAMESPACE,
                             user.getEmail(),
-                            companyDetails.getCompanyNumber()).toString(), null);
+                            companyDetails.getCompanyNumber()).toMessage(), null);
         });
     }
 

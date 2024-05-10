@@ -14,6 +14,7 @@ import uk.gov.companieshouse.accounts.association.exceptions.InternalServerError
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
+import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 
@@ -34,6 +35,9 @@ class ControllerAdviceTest {
     private UsersService usersService;
     @MockBean
     InterceptorConfig interceptorConfig;
+
+    @MockBean
+    EmailService emailService;
 
     @MockBean
     StaticPropertyUtil staticPropertyUtil;
