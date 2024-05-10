@@ -1,10 +1,16 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
+import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
+import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.REMOVED;
+
+import java.util.LinkedList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
@@ -16,7 +22,7 @@ import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum;
+import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
@@ -71,7 +77,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         }
         LOG.debugContext(xRequestId, String.format("Could not find association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
 
-        final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
+        final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber, List.of() );
         LOG.debugContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
         final var association = associationsService.createAssociation(companyNumber, ericIdentity, null, ApprovalRouteEnum.AUTH_CODE, null);
         LOG.debugContext(xRequestId, String.format("Successfully created association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
@@ -190,9 +196,18 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
     @Override
     public ResponseEntity<Void> updateAssociationStatusForId(final String xRequestId, final String associationId, final RequestBodyPut requestBody) {
-        final var status = requestBody.getStatus();
+        final var newStatus = requestBody.getStatus();
 
-        LOG.debugContext(xRequestId, String.format("Attempting to update association status for association %s to %s.", associationId, status.getValue()), null);
+        // TODO: replace this with ericIdentity header
+        final var requestingUserId = ( (ServletRequestAttributes) RequestContextHolder.getRequestAttributes() ).getRequest().getHeader( "Eric-identity" );
+
+        LOG.debugContext(xRequestId, String.format("Attempting to update association status for association %s to %s.", associationId, newStatus.getValue()), null);
+
+        LOG.debugContext( xRequestId, String.format("Attempting to fetch user for user_id %s from accounts-user-api.", requestingUserId), null );
+        final var requestingUserDetails = usersService.fetchUserDetails( requestingUserId );
+        final var requestingUserEmail = requestingUserDetails.getEmail();
+        final var requestingUserDisplayName = Optional.ofNullable( requestingUserDetails.getDisplayName() ).orElse( requestingUserDetails.getEmail() );
+        LOG.debugContext( xRequestId, String.format("Successfully fetched user for user_id %s from accounts-user-api.", requestingUserId), null );
 
         LOG.debugContext(xRequestId, String.format("Attempting to fetch association %s from user_company_associations.", associationId), null);
         final var associationOptional = associationsService.findAssociationDaoById(associationId);
@@ -203,35 +218,67 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         LOG.debugContext(xRequestId, String.format("Successfully fetched association %s from user_company_associations.", associationId), null);
 
         final var association = associationOptional.get();
-        final var timestampKey = status.equals(RequestBodyPut.StatusEnum.CONFIRMED) ? "approved_at" : "removed_at";
+        final var targetUserId = association.getUserId();
+        final var targetUserEmail = association.getUserEmail();
+        final var companyNumber = association.getCompanyNumber();
+        final var oldStatus = association.getStatus();
+        final var timestampKey = newStatus.equals(CONFIRMED) ? "approved_at" : "removed_at";
 
         var update = new Update()
-                .set("status", status.getValue())
+                .set("status", newStatus.getValue())
                 .set(timestampKey, LocalDateTime.now().toString());
 
-        if (Objects.isNull(association.getUserId())) {
+        Optional<User> targetUserOptional = Optional.empty();
+        if ( Objects.isNull( targetUserId ) ) {
             LOG.debugContext(xRequestId, String.format("Association %s does not have a userId. Attempting to fetch data from accounts-user-api.", associationId), null);
-            final var userEmail = association.getUserEmail();
-            final var usersList = usersService.searchUserDetails(List.of(userEmail));
-            final var userNotFound = Objects.isNull(usersList) || usersList.isEmpty();
 
-            if (status.equals(StatusEnum.CONFIRMED) && userNotFound) {
-                LOG.error(String.format("%s: Could not find user %s, via the accounts-user-api", xRequestId, userEmail));
-                throw new BadRequestRuntimeException(String.format("Could not find data for user %s", userEmail));
+            targetUserOptional =
+            Optional.ofNullable( usersService.searchUserDetails( List.of( targetUserEmail ) ) )
+                    .flatMap( list -> list.stream().findFirst() );
 
+            if ( newStatus.equals(CONFIRMED) && targetUserOptional.isEmpty() ) {
+                LOG.error(String.format("%s: Could not find user %s, via the accounts-user-api", xRequestId, targetUserEmail));
+                throw new BadRequestRuntimeException(String.format("Could not find data for user %s", targetUserEmail));
             }
+
             //if user found, swap out the temporary email id with the user id.
-            if (!userNotFound) {
+            if ( targetUserOptional.isPresent() ) {
                 LOG.debugContext(xRequestId, "Successfully fetched data from accounts-user-api for user.", null);
-                update.set("user_email", null).set("user_id", usersList.getFirst().getUserId());
+                update.set("user_email", null).set("user_id", targetUserOptional.get().getUserId());
             }
-
-
         }
 
-        LOG.debugContext(xRequestId, String.format("Attempting to update the status of association %s to %s", associationId, status.getValue()), null);
+        LOG.debugContext(xRequestId, String.format("Attempting to update the status of association %s to %s", associationId, newStatus.getValue()), null);
         associationsService.updateAssociation(associationId, update);
-        LOG.debugContext(xRequestId, String.format( "Successfully updated association status for association %s to %s.", associationId, status.getValue() ), null);
+        LOG.debugContext(xRequestId, String.format( "Successfully updated association status for association %s to %s.", associationId, newStatus.getValue() ), null);
+
+        final var userIdsMatch = !Objects.isNull( targetUserId ) && targetUserId.equals( requestingUserId );
+        final var userEmailsMatch = !Objects.isNull( targetUserEmail ) && targetUserEmail.equals( requestingUserEmail );
+        final var usersMatch = userIdsMatch || userEmailsMatch;
+        final var authorisedUserRemoved = !usersMatch && oldStatus.equals( CONFIRMED.getValue() ) && newStatus.equals( REMOVED );
+        final var notificationMustBeSent = authorisedUserRemoved;
+        if ( notificationMustBeSent ){
+            LOG.debugContext(xRequestId, String.format("Attempting to fetch company for company_number %s from company profile cache.", companyNumber), null);
+            final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
+            LOG.debugContext(xRequestId, String.format("Successfully fetched company for company_number %s from company profile cache.", companyNumber), null);
+
+            final var targetUser = targetUserOptional.orElseGet( () -> !Objects.isNull( targetUserId ) ? usersService.fetchUserDetails( targetUserId ) : null );
+            final String targetUserDisplayName =
+            Optional.ofNullable( targetUser )
+                    .map( user -> Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() ) )
+                    .orElse( targetUserEmail );
+
+            final var excludedUserIds = new LinkedList<>( List.of( requestingUserId ) );
+            if ( !Objects.isNull( targetUser ) ) {
+                excludedUserIds.add( targetUser.getUserId() );
+            }
+            final var requestsToFetchAssociatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber, excludedUserIds );
+
+            if ( authorisedUserRemoved ) {
+                emailService.sendAuthorisationRemovedEmailToAssociatedUsers( xRequestId, companyDetails, requestingUserDisplayName, targetUserDisplayName, requestsToFetchAssociatedUsers );
+            }
+
+        }
 
         return new ResponseEntity<>(HttpStatus.OK);
     }

@@ -27,6 +27,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.MethodMode;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -35,6 +37,7 @@ import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfi
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConfirmationEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.AuthorisationRemovedEmailData;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
@@ -65,6 +68,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
 
 @AutoConfigureMockMvc
@@ -140,6 +144,15 @@ public class UserCompanyAssociationsTest {
 
     @Mock
     PrivateAccountsUserUserGet privateAccountsUserUserGet000;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet222;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet333;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet444;
 
     private static final String DEFAULT_KIND = "association";
 
@@ -479,10 +492,62 @@ public class UserCompanyAssociationsTest {
         associationThirtySix.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationThirtySix.setEtag("rs");
 
+        final var invitationTwo = new InvitationDao();
+        invitationTwo.setInvitedBy("666");
+        invitationTwo.setInvitedAt( now.plusDays(8) );
+
+        final var associationTwo = new AssociationDao();
+        associationTwo.setCompanyNumber("x999999");
+        associationTwo.setUserId("222");
+        associationTwo.setUserEmail("the.joker@gotham.city");
+        associationTwo.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationTwo.setId("38");
+        associationTwo.setApprovedAt( now.plusDays(5) );
+        associationTwo.setRemovedAt( now.plusDays(6) );
+        associationTwo.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
+        associationTwo.setApprovalExpiryAt( now.plusDays(7) );
+        associationTwo.setInvitations( List.of( invitationTwo ) );
+        associationTwo.setEtag("b");
+
+        final var invitationThree = new InvitationDao();
+        invitationThree.setInvitedBy("666");
+        invitationThree.setInvitedAt( now.plusDays(12) );
+
+        final var associationThree = new AssociationDao();
+        associationThree.setCompanyNumber("x999999");
+        associationThree.setUserId("333");
+        associationThree.setUserEmail("harley.quinn@gotham.city");
+        associationThree.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationThree.setId("39");
+        associationThree.setApprovedAt( now.plusDays(9) );
+        associationThree.setRemovedAt( now.plusDays(10) );
+        associationThree.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
+        associationThree.setApprovalExpiryAt( now.plusDays(11) );
+        associationThree.setInvitations( List.of( invitationThree ) );
+        associationThree.setEtag("c");
+
+        final var invitationFour = new InvitationDao();
+        invitationFour.setInvitedBy("666");
+        invitationFour.setInvitedAt( now.plusDays(16) );
+
+        final var associationFour = new AssociationDao();
+        associationFour.setCompanyNumber("x999999");
+        associationFour.setUserId("444");
+        associationFour.setUserEmail("robin@gotham.city");
+        associationFour.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationFour.setId("40");
+        associationFour.setApprovedAt( now.plusDays(13) );
+        associationFour.setRemovedAt( now.plusDays(14) );
+        associationFour.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
+        associationFour.setApprovalExpiryAt( now.plusDays(15) );
+        associationFour.setInvitations( List.of( invitationFour ) );
+        associationFour.setEtag("d");
+
         associationsRepository.insert( List.of( associationEighteen, associationNineteen, associationTwenty, associationTwentyOne,
                 associationTwentyTwo, associationTwentyThree, associationTwentyFour, associationTwentyFive, associationTwentySix,
                 associationTwentySeven, associationTwentyEight, associationTwentyNine, associationThirty, associationThirtyOne,
-                associationThirtyTwo, associationThirtyThree, associationSeventeen, associationThirtyFour, associationThirtyFive, associationThirtySix ) );
+                associationThirtyTwo, associationThirtyThree, associationSeventeen, associationThirtyFour, associationThirtyFive, associationThirtySix,
+                associationTwo, associationThree, associationFour ) );
         Mockito.doReturn( toCompanyDetailsApiResponse( "111111", "Sainsbury's" ) ).when( companyProfileEndpoint ).fetchCompanyProfile(  "111111" );
 
         Mockito.doReturn( toCompanyDetailsApiResponse( "333333", "Tesco" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "333333" );
@@ -510,6 +575,9 @@ public class UserCompanyAssociationsTest {
         Mockito.doReturn( privateAccountsUserUserGet9191 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "9191" );
         Mockito.doReturn( privateAccountsUserUserGet$$$$ ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "$$$$" );
         Mockito.doReturn( privateAccountsUserUserGet000 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "000" );
+        Mockito.doReturn( privateAccountsUserUserGet222 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "222" );
+        Mockito.doReturn( privateAccountsUserUserGet333 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "333" );
+        Mockito.doReturn( privateAccountsUserUserGet444 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "444" );
 
         Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "9999", "scrooge.mcduck@disney.land", "Scrooge McDuck" ) ).when( privateAccountsUserUserGet9999 ).execute();
         Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "111", "bruce.wayne@gotham.city", "Batman" ) ).when( privateAccountsUserUserGet111 ).execute();
@@ -518,6 +586,9 @@ public class UserCompanyAssociationsTest {
         Mockito.lenient().doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet9191 ).execute();
         Mockito.lenient().doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet$$$$ ).execute();
         Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "000", "zero@coke.com", null ) ).when( privateAccountsUserUserGet000 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "222", "the.joker@gotham.city", null ) ).when( privateAccountsUserUserGet222 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "333", "harley.quinn@gotham.city", null ) ).when( privateAccountsUserUserGet333 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "444", "robin@gotham.city", null ) ).when( privateAccountsUserUserGet444 ).execute();
 
         Mockito.doReturn( toCompanyDetailsApiResponse( "000000", "Boston Dynamics" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "000000" );
 
@@ -1290,6 +1361,90 @@ public class UserCompanyAssociationsTest {
         Assertions.assertNotEquals( associationZero.getEtag(), newAssociationData.getEtag() );
         Assertions.assertEquals( associationZero.getUserEmail(), newAssociationData.getUserEmail() );
         Assertions.assertEquals( associationZero.getUserId(), newAssociationData.getUserId() );
+    }
+
+    ArgumentMatcher<AuthorisationRemovedEmailData> authorisationRemovedEmailDataMatcher( final String to, final String subject, final String personWhoWasRemoved, final String companyName, final String personWhoRemovedAuthorisation ){
+        return emailData ->
+                to.equals( emailData.getTo() ) &&
+                subject.equals( emailData.getSubject() ) &&
+                personWhoWasRemoved.equals( emailData.getPersonWhoWasRemoved() ) &&
+                companyName.equals( emailData.getCompanyName() ) &&
+                personWhoRemovedAuthorisation.equals( emailData.getPersonWhoRemovedAuthorisation() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdNotificationsWhereTargetUserIdExistsSendsNotification() throws Exception {
+        mockMvc.perform( patch( "/associations/{associationId}", "40" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "333")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: robin@gotham.city's authorisation removed to file online for Instram", "robin@gotham.city", "Instram", "harley.quinn@gotham.city") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageType() ) );
+    }
+
+    @Test
+    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD )
+    void updateAssociationStatusForIdNotificationsWhereTargetUserIdDoesNotExistSendsNotification() throws Exception {
+        Mockito.doReturn( toSearchUserDetailsApiResponse( "robin@gotham.city", "444" ) ).when( accountsUserEndpoint ).searchUserDetails( eq( List.of( "robin@gotham.city" ) ) );
+
+        final var association = associationsRepository.findById( "40" ).get();
+        association.setUserId( null );
+        associationsRepository.save( association );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "40" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "333")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: robin@gotham.city's authorisation removed to file online for Instram", "robin@gotham.city", "Instram", "harley.quinn@gotham.city") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageType() ) );
+    }
+
+    @Test
+    void updateAssociationStatusForIdNotificationsWhereUserCannotBeFoundSendsNotification() throws Exception {
+        final var association = associationsRepository.findById( "40" ).get();
+        association.setUserId( null );
+        associationsRepository.save( association );
+
+        Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new UsersList() ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( "robin@gotham.city" ) );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "40" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "333")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: robin@gotham.city's authorisation removed to file online for Instram", "robin@gotham.city", "Instram", "harley.quinn@gotham.city") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageType() ) );
+    }
+
+    @Test
+    void updateAssociationStatusForIdNotificationsUsesDisplayNamesWhenAvailable() throws Exception {
+
+        Mockito.doReturn( privateAccountsUserUserGet333 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "333" );
+        Mockito.doReturn( privateAccountsUserUserGet444 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "444" );
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "333", "harley.quinn@gotham.city", "Harley Quinn" ) ).when( privateAccountsUserUserGet333 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "444", "robin@gotham.city", "Robin" ) ).when( privateAccountsUserUserGet444 ).execute();
+
+        mockMvc.perform( patch( "/associations/{associationId}", "40" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "333")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: Robin's authorisation removed to file online for Instram", "Robin", "Instram", "Harley Quinn") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageType() ) );
     }
 
     @Test
