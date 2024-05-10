@@ -10,6 +10,7 @@ import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeExce
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
+import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
@@ -37,12 +38,14 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     private final AssociationsService associationsService;
 
     private final CompanyService companyService;
+    private final EmailService emailService;
 
     @Autowired
-    public UserCompanyAssociations(UsersService usersService, AssociationsService associationsService, CompanyService companyService) {
+    public UserCompanyAssociations(UsersService usersService, AssociationsService associationsService, CompanyService companyService,  EmailService emailService) {
         this.usersService = usersService;
         this.associationsService = associationsService;
         this.companyService = companyService;
+        this.emailService = emailService;
     }
 
     @Override
@@ -127,14 +130,21 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             LOG.debugContext( xRequestId, String.format( "Attempting to fetch %s from accounts-user-api.", ericIdentity ), null );
             usersService.fetchUserDetails(ericIdentity);
             LOG.debugContext( xRequestId, String.format( "Attempting to fetch %s from company-profile-api.", companyNumber ), null );
-            companyService.fetchCompanyProfile( companyNumber );
+
         } catch( NotFoundRuntimeException notFoundRuntimeException ){
             LOG.error( notFoundRuntimeException.getMessage() );
             throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
+        final var inviterUserDetails =usersService.fetchUserDetails(ericIdentity);
+        final var inviterDisplayName = Optional.ofNullable( inviterUserDetails.getDisplayName() ).orElse( inviterUserDetails.getEmail() );
+        final var companyDetails = companyService.fetchCompanyProfile( companyNumber );
+        final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
 
         LOG.debugContext( xRequestId, String.format( "Attempting to search for %s in accounts-user-api.", inviteeEmail ), null );
         final var inviteeUserDetails = usersService.searchUserDetails( List.of( inviteeEmail ) );
+        final var inviteesUserDetails = inviteeUserDetails.getFirst();
+        final var inviteeDisplayName = Optional.ofNullable( inviteesUserDetails.getDisplayName() ).orElse( inviteesUserDetails.getEmail() );
+
         final var inviteeUserFound = !( Objects.isNull( inviteeUserDetails ) || inviteeUserDetails.isEmpty() );
 
         LOG.debugContext( xRequestId, String.format( "Attempting to fetch association for company %s and user email %s.", companyNumber, inviteeEmail ), null );
@@ -149,6 +159,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                 association.setUserId(inviteeUserDetails.getFirst().getUserId());
             }
             var associationId = associationsService.sendNewInvitation(ericIdentity, association).getId();
+            emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeDisplayName, associatedUsers );
             return new ResponseEntity<>( new ResponseBodyPost().associationId( associationId ), HttpStatus.CREATED );
         }
 
@@ -169,6 +180,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             LOG.infoContext( xRequestId, String.format( "Association for company %s and user id %s found, association id: %s with status %s",  companyNumber, inviteeUserDetails.getFirst().getUserId(), associationWithUserID.get().getId(), associationWithUserID.get().getStatus() ), null );
             LOG.debugContext( xRequestId, String.format( "Attempting to send new invitation for company %s and user id %s for association id: %s", companyNumber, inviteeUserId, associationWithUserID.get().getId() ), null );
             association = associationsService.sendNewInvitation(ericIdentity, associationWithUserID.get());
+            emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeDisplayName, associatedUsers );
             return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
 
         }
