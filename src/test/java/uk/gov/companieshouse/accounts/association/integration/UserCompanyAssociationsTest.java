@@ -33,9 +33,11 @@ import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfi
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConfirmationEmailData;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
+import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.InternalApiClient;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
@@ -56,12 +58,16 @@ import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.EmailSendingException;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
+
 
 @AutoConfigureMockMvc
 @SpringBootTest
@@ -98,6 +104,9 @@ public class UserCompanyAssociationsTest {
     @MockBean
     EmailProducer emailProducer;
 
+    @Autowired
+    EmailService emailService;
+
     @MockBean
     KafkaProducerFactory kafkaProducerFactory;
 
@@ -130,6 +139,9 @@ public class UserCompanyAssociationsTest {
 
     @Mock
     PrivateAccountsUserUserGet privateAccountsUserUserGet8888;
+
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet000;
 
     private static final String DEFAULT_KIND = "association";
 
@@ -499,6 +511,7 @@ public class UserCompanyAssociationsTest {
         Mockito.doReturn( privateAccountsUserUserGet5555 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "5555" );
         Mockito.doReturn( privateAccountsUserUserGet9191 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "9191" );
         Mockito.doReturn( privateAccountsUserUserGet$$$$ ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "$$$$" );
+        Mockito.doReturn( privateAccountsUserUserGet000 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "000" );
 
         Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "9999", "scrooge.mcduck@disney.land", "Scrooge McDuck" ) ).when( privateAccountsUserUserGet9999 ).execute();
         Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "111", "bruce.wayne@gotham.city", "Batman" ) ).when( privateAccountsUserUserGet111 ).execute();
@@ -506,6 +519,7 @@ public class UserCompanyAssociationsTest {
         Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "5555", "ross@friends.com", null ) ).when( privateAccountsUserUserGet5555 ).execute();
         Mockito.lenient().doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet9191 ).execute();
         Mockito.lenient().doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet$$$$ ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "000", "zero@coke.com", null ) ).when( privateAccountsUserUserGet000 ).execute();
 
         Mockito.doReturn( toCompanyDetailsApiResponse( "000000", "Boston Dynamics" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "000000" );
 
@@ -980,6 +994,54 @@ public class UserCompanyAssociationsTest {
         Assertions.assertEquals( StatusEnum.CONFIRMED.getValue(), association.getStatus() );
         Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE.getValue(), association.getApprovalRoute() );
         Assertions.assertNotNull( association.getEtag() );
+    }
+
+    @Test
+    void addAssociationWithNonExistentUserReturnsNotFound() throws Exception {
+        mockMvc.perform( post( "/associations" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9191")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"000000\"}" ) )
+                .andExpect( status().isNotFound() );
+    }
+
+    ArgumentMatcher<AuthCodeConfirmationEmailData> authCodeConfirmationEmailDataMatcher( String to, String subject, String authorisedPerson, String companyName ){
+        return emailData ->
+                to.equals( emailData.getTo() ) &&
+                        subject.equals( emailData.getSubject() ) &&
+                        authorisedPerson.equals( emailData.getAuthorisedPerson() ) &&
+                        companyName.equals( emailData.getCompanyName() );
+    }
+
+    @Test
+    void addAssociationWithUserThatHasDisplayNameUsesDisplayName() throws Exception {
+        mockMvc.perform(post( "/associations" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "111")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"444444\"}" ) )
+                .andExpect( status().isCreated() );
+
+        Mockito.verify( emailProducer ).sendEmail( argThat( authCodeConfirmationEmailDataMatcher( "scrooge.mcduck@disney.land", "Companies House: Batman is now authorised to file online for Sainsbury's", "Batman", "Sainsbury's" ) ), eq( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getMessageType() ) );
+    }
+
+    @Test
+    void addAssociationReturnsCreatedWhenEmailIsNotSentOut() throws Exception {
+        Mockito.doThrow( new EmailSendingException("Failed to send email", new Exception()) ).when( emailProducer ).sendEmail( any(), any() );
+
+        mockMvc.perform(post( "/associations" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "111")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"444444\"}" ) )
+                .andExpect( status().isCreated() );
     }
 
     @Test

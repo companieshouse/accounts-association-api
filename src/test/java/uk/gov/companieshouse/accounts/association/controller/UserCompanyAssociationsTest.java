@@ -686,6 +686,7 @@ class UserCompanyAssociationsTest {
     @Test
     void addAssociationWithExistingAssociationReturnsBadRequest() throws Exception {
         Mockito.doReturn(true).when(associationsService).associationExists("333333", "9999");
+        Mockito.doReturn( new User().displayName("Scrooge McDuck") ).when( usersService ).fetchUserDetails( "9999" );
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "9999")
@@ -700,6 +701,7 @@ class UserCompanyAssociationsTest {
     @Test
     void addAssociationWithNonexistentCompanyNumberReturnsNotFound() throws Exception {
         Mockito.doThrow(new NotFoundRuntimeException("accounts-association-api", "Not found")).when(companyService).fetchCompanyProfile("919191");
+        Mockito.doReturn( new User().displayName("Zero") ).when( usersService ).fetchUserDetails( "000" );
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "000")
@@ -717,6 +719,7 @@ class UserCompanyAssociationsTest {
         associationDao.setId("99");
         Mockito.doReturn(associationDao).when(associationsService).createAssociation("000000", "000", null, ApprovalRouteEnum.AUTH_CODE, null);
         Mockito.doReturn(false).when(associationsService).associationExists("000000", "000");
+        Mockito.doReturn( new User().displayName("Zero") ).when( usersService ).fetchUserDetails( "000" );
 
         final var responseJson =
                 mockMvc.perform(post("/associations")
@@ -736,6 +739,74 @@ class UserCompanyAssociationsTest {
 
         Assertions.assertEquals("99", response.getAssociationId());
 
+    }
+
+    @Test
+    void addAssociationWithNonExistentUserReturnsNotFound() throws Exception {
+        Mockito.doThrow( new NotFoundRuntimeException( "accounts-association-api", "Not found." ) ).when( usersService ).fetchUserDetails( any() );
+
+        mockMvc.perform(post("/associations")
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9191")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"company_number\":\"000000\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    ArgumentMatcher<CompanyDetails> companyDetailsMatcher( final String companyNumber, final String companyName ){
+        return companyDetails -> companyNumber.equals( companyDetails.getCompanyNumber() ) && companyName.equals( companyDetails.getCompanyName() );
+    }
+
+    @Test
+    void addAssociationWithUserThatHasNoDisplayNameSetsDisplayNameToEmailAddress() throws Exception {
+        Supplier<User> userSupplier = () -> new User().userId("9999");
+
+        final var associationDao = new AssociationDao();
+        associationDao.setId("99");
+
+        Mockito.doReturn( new User().email( "homer.simpson@springfield.com" ) ).when( usersService ).fetchUserDetails( anyString() );
+        Mockito.doReturn( new CompanyDetails().companyNumber( "444444" ).companyName( "Sainsbury's" ) ).when( companyService ).fetchCompanyProfile( anyString() );
+        Mockito.doReturn(false).when(associationsService).associationExists("444444", "666");
+        Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "444444" );
+        Mockito.doReturn(associationDao).when(associationsService).createAssociation("444444", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
+
+        mockMvc.perform(post( "/associations" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "666")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"444444\"}" ) )
+                .andExpect( status().isCreated() );
+
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUsers( eq( "theId123" ), argThat( companyDetailsMatcher( "444444", "Sainsbury's" ) ), eq( "homer.simpson@springfield.com" ), argThat( list -> list.size() == 1 ) );
+    }
+
+    @Test
+    void addAssociationWithUserThatHasDisplayNameUsesDisplayName() throws Exception {
+        Supplier<User> userSupplier = () -> new User().userId("9999");
+
+        final var associationDao = new AssociationDao();
+        associationDao.setId("99");
+
+        Mockito.doReturn( new User().email( "homer.simpson@springfield.com" ).displayName( "Homer Simpson" ) ).when( usersService ).fetchUserDetails( anyString() );
+        Mockito.doReturn( new CompanyDetails().companyNumber( "444444" ).companyName( "Sainsbury's" ) ).when( companyService ).fetchCompanyProfile( anyString() );
+        Mockito.doReturn(false).when(associationsService).associationExists("444444", "666");
+        Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "444444" );
+        Mockito.doReturn(associationDao).when(associationsService).createAssociation("444444", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
+
+        mockMvc.perform(post( "/associations" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "666")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"444444\"}" ) )
+                .andExpect( status().isCreated() );
+
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUsers( eq( "theId123" ), argThat( companyDetailsMatcher( "444444", "Sainsbury's" ) ), eq( "Homer Simpson" ), argThat( list -> list.size() == 1 ) );
     }
 
     @Test

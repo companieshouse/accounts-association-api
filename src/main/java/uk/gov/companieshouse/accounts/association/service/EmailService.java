@@ -17,23 +17,28 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusE
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
+import uk.gov.companieshouse.logging.Logger;
+import uk.gov.companieshouse.logging.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
 @Service
-public class EmailService extends EmailSender {
+public class EmailService {
+
+    protected static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
 
     private final AssociationsRepository associationsRepository;
     private final UsersService usersService;
+    private final EmailProducer emailProducer;
 
 
     @Autowired
-    public EmailService(EmailProducer emailProducer, AssociationsRepository associationsRepository, UsersService usersService) {
-        super(emailProducer);
+    public EmailService(AssociationsRepository associationsRepository, UsersService usersService, EmailProducer emailProducer) {
         this.associationsRepository = associationsRepository;
         this.usersService = usersService;
+        this.emailProducer = emailProducer;
     }
 
     @Transactional(readOnly = true)
@@ -55,14 +60,14 @@ public class EmailService extends EmailSender {
                     .setCompanyName( companyDetails.getCompanyName() )
                     .build();
 
-            sendEmail( emailData, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE );
+            emailProducer.sendEmail( emailData, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getMessageType() );
 
             LOG.infoContext(xRequestId,
                     new EmailNotification(
                             AUTH_CODE_CONFIRMATION_MESSAGE_TYPE,
                             StaticPropertyUtil.APPLICATION_NAMESPACE,
                             user.getEmail(),
-                            companyDetails.getCompanyNumber()).toString(), null);
+                            companyDetails.getCompanyNumber()).toMessage(), null);
         });
     }
 
@@ -78,13 +83,13 @@ public class EmailService extends EmailSender {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            sendEmail( emailData, MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE );
+            emailProducer.sendEmail( emailData, MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageType() );
             LOG.infoContext(xRequestId,
                     new EmailNotification(
                             MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE,
                             StaticPropertyUtil.APPLICATION_NAMESPACE,
                             user.getEmail(),
-                            companyDetails.getCompanyNumber()).toString(), null);
+                            companyDetails.getCompanyNumber()).toMessage(), null);
         });
     }
 
@@ -100,12 +105,12 @@ public class EmailService extends EmailSender {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            sendEmail( emailData, MessageType.INVITATION_CANCELLED_MESSAGE_TYPE );
+            emailProducer.sendEmail( emailData, MessageType.INVITATION_CANCELLED_MESSAGE_TYPE.getMessageType() );
             LOG.infoContext(xRequestId, new EmailNotification(
                     MessageType.INVITATION_CANCELLED_MESSAGE_TYPE,
                     StaticPropertyUtil.APPLICATION_NAMESPACE,
                     user.getEmail(),
-                    companyDetails.getCompanyNumber()).toString(), null);
+                    companyDetails.getCompanyNumber()).toMessage(), null);
 
         });
     }
@@ -122,13 +127,13 @@ public class EmailService extends EmailSender {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            sendEmail( emailData, MessageType.INVITATION_MESSAGE_TYPE );
+            emailProducer.sendEmail( emailData, MessageType.INVITATION_MESSAGE_TYPE.getMessageType() );
             LOG.infoContext(xRequestId,
                     new EmailNotification(
                             MessageType.INVITATION_MESSAGE_TYPE,
                             StaticPropertyUtil.APPLICATION_NAMESPACE,
                             user.getEmail(),
-                            companyDetails.getCompanyNumber()).toString(), null);
+                            companyDetails.getCompanyNumber()).toMessage(), null);
 
         });
     }
@@ -145,13 +150,13 @@ public class EmailService extends EmailSender {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            sendEmail( emailData, MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE );
+            emailProducer.sendEmail( emailData, MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageType() );
 
             LOG.infoContext(xRequestId, new EmailNotification(
                     MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE,
                     StaticPropertyUtil.APPLICATION_NAMESPACE,
                     user.getEmail(),
-                    companyDetails.getCompanyNumber()).toString(), null);
+                    companyDetails.getCompanyNumber()).toMessage(), null);
 
         });
     }
@@ -167,14 +172,14 @@ public class EmailService extends EmailSender {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            sendEmail( emailData, MessageType.INVITATION_REJECTED_MESSAGE_TYPE );
+            emailProducer.sendEmail( emailData, MessageType.INVITATION_REJECTED_MESSAGE_TYPE.getMessageType() );
 
             LOG.infoContext(xRequestId,
                     new EmailNotification(
                             MessageType.INVITATION_REJECTED_MESSAGE_TYPE,
                             StaticPropertyUtil.APPLICATION_NAMESPACE,
                             user.getEmail(),
-                            companyDetails.getCompanyNumber()).toString(), null);
+                            companyDetails.getCompanyNumber()).toMessage(), null);
         });
     }
 
