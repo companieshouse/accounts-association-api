@@ -1,7 +1,5 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
-import static org.mockito.ArgumentMatchers.any;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.api.client.http.HttpHeaders;
@@ -15,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,6 +32,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfig;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
+import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
@@ -53,13 +53,15 @@ import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.api.model.ApiResponse;
 import uk.gov.companieshouse.api.sdk.ApiClientService;
 import uk.gov.companieshouse.email_producer.EmailProducer;
+import uk.gov.companieshouse.email_producer.EmailSendingException;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
 
 @AutoConfigureMockMvc
 @SpringBootTest
@@ -1496,6 +1498,41 @@ public class UserCompanyAssociationsTest {
                         .content( "{\"company_number\":\"111111\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
                 .andExpect( status().isBadRequest() ).andReturn();
 
+    }
+    @Test
+    void inviteUserReturnsCreatedWhenEmailIsNotSentOut() throws Exception {
+        Mockito.doThrow( new EmailSendingException("Failed to send email", new Exception()) ).when( emailProducer ).sendEmail( any(), any() );
+
+        mockMvc.perform(post( "/associations/invitations" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content(  "{\"company_number\":\"111111\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"  ) )
+                .andExpect( status().isCreated() );
+    }
+
+    ArgumentMatcher<InvitationEmailData> InvitationEmailDataMatcher(String to, String subject, String personWhoCreatedInvite, String invitee , String companyName ){
+        return emailData ->
+                to.equals( emailData.getTo() ) &&
+                        subject.equals( emailData.getSubject() ) &&
+                        personWhoCreatedInvite.equals( emailData.getPersonWhoCreatedInvite() ) &&
+                        invitee.equals(emailData.getInvitee()) &&
+                        companyName.equals( emailData.getCompanyName() );
+    }
+    @Test
+    void inviteUserWithUserThatHasDisplayNameUsesDisplayName() throws Exception {
+        mockMvc.perform(post( "/associations/invitations" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content(  "{\"company_number\":\"111111\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"  ) )
+                .andExpect( status().isCreated() );
+
+        Mockito.verify( emailProducer ).sendEmail( argThat( InvitationEmailDataMatcher( "scrooge.mcduck@disney.land", "Companies House: Batman invited to be authorised to file online for Sainsbury's", "Scrooge McDuck","Batman", "Sainsbury's" ) ), eq( INVITATION_MESSAGE_TYPE.getMessageType() ) );
     }
 
 

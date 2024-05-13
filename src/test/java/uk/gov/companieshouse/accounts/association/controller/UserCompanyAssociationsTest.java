@@ -2,6 +2,7 @@ package uk.gov.companieshouse.accounts.association.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -21,6 +22,7 @@ import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeExce
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
+import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.*;
@@ -68,6 +70,8 @@ class UserCompanyAssociationsTest {
     private CompanyService companyService;
     @MockBean
     private AssociationsService associationsService;
+    @MockBean
+    private EmailService emailService;
     private Association associationOne;
     private Association associationTwo;
     private AssociationDao associationDaoOne;
@@ -1243,5 +1247,36 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isBadRequest()).andReturn();
         assertEquals("{\"errors\":[{\"error\":\"There is an existing association with Confirmed status for the user\",\"type\":\"ch:service\"}]}",
                 response.getResponse().getContentAsString());
+    }
+
+    @Test
+    void sendInvitationEmailToAssociatedUsersWhenAssociationWithUserEmailIsPresent() throws Exception{
+        final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName("Scrooge McDuck");
+        Mockito.doReturn(user).when(usersService).fetchUserDetails("9999");
+        assertEquals("Scrooge McDuck", user.getDisplayName());
+
+        final var company = new CompanyDetails().companyNumber("333333").companyName("Tesco");
+        Mockito.doReturn(company).when(companyService).fetchCompanyProfile("333333");
+
+        Supplier<User> userSupplier = () -> new User().userId("9999");
+        Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "333333" );
+
+        final var usersList = new UsersList();
+        usersList.add(new User().userId("111").email("bruce.wayne@gotham.city").displayName("Bruce Wayne"));
+        Mockito.doReturn(usersList).when(usersService).searchUserDetails(List.of("bruce.wayne@gotham.city"));
+
+        final var inviteeDisplayName = usersList.getFirst().getDisplayName();
+        assertEquals("Bruce Wayne", inviteeDisplayName);
+
+        final var response =mockMvc.perform(post("/associations/invitations")
+                .header("X-Request-Id", "theId123")
+                .header("Eric-identity", "9999")
+                .header("ERIC-Identity-Type", "oauth2")
+                .header("ERIC-Authorised-Key-Roles", "*")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
+                .andExpect(status().isOk());
+
+
     }
 }
