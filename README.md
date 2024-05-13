@@ -204,5 +204,5 @@ To set up and build the service using Docker, follow these steps:
 
 Note: These instructions are tailored for a local Docker environment.
 
-For further details, please refer to the documentation and associated resources.
+For  further details, please refer to the documentation and associated resources.
 
