@@ -1,8 +1,11 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.INVITATION;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.REMOVED;
 
+import java.util.Comparator;
 import java.util.LinkedList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Update;
@@ -14,6 +17,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
@@ -222,6 +226,8 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         final var targetUserEmail = association.getUserEmail();
         final var companyNumber = association.getCompanyNumber();
         final var oldStatus = association.getStatus();
+        final var approvalRoute = association.getApprovalRoute();
+        final var invitations = association.getInvitations();
         final var timestampKey = newStatus.equals(CONFIRMED) ? "approved_at" : "removed_at";
 
         var update = new Update()
@@ -256,13 +262,17 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         final var userEmailsMatch = !Objects.isNull( targetUserEmail ) && targetUserEmail.equals( requestingUserEmail );
         final var usersMatch = userIdsMatch || userEmailsMatch;
         final var authorisedUserRemoved = !usersMatch && oldStatus.equals( CONFIRMED.getValue() ) && newStatus.equals( REMOVED );
-        final var notificationMustBeSent = authorisedUserRemoved;
+        final var userAcceptedInvitation = usersMatch && INVITATION.getValue().equals( approvalRoute ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( CONFIRMED );
+        final var notificationMustBeSent = authorisedUserRemoved || userAcceptedInvitation ;
         if ( notificationMustBeSent ){
             LOG.debugContext(xRequestId, String.format("Attempting to fetch company for company_number %s from company profile cache.", companyNumber), null);
             final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
             LOG.debugContext(xRequestId, String.format("Successfully fetched company for company_number %s from company profile cache.", companyNumber), null);
 
-            final var targetUser = targetUserOptional.orElseGet( () -> !Objects.isNull( targetUserId ) ? usersService.fetchUserDetails( targetUserId ) : null );
+            var targetUser = requestingUserDetails;
+            if ( !usersMatch ){
+                targetUser = targetUserOptional.orElseGet( () -> !Objects.isNull( targetUserId ) ? usersService.fetchUserDetails( targetUserId ) : null );
+            }
             final String targetUserDisplayName =
             Optional.ofNullable( targetUser )
                     .map( user -> Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() ) )
@@ -278,6 +288,17 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                 emailService.sendAuthorisationRemovedEmailToAssociatedUsers( xRequestId, companyDetails, requestingUserDisplayName, targetUserDisplayName, requestsToFetchAssociatedUsers );
             }
 
+            if ( userAcceptedInvitation ) {
+                final var invitedByDisplayName =
+                invitations.stream()
+                           .max( Comparator.comparing( InvitationDao::getInvitedAt ) )
+                           .map( InvitationDao::getInvitedBy )
+                           .map( usersService::fetchUserDetails )
+                           .map( user -> Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() ) )
+                           .orElseThrow( () -> new NullPointerException( "Inviter does not exist." ) );
+
+                emailService.sendInvitationAcceptedEmailToAssociatedUsers( xRequestId, companyDetails, invitedByDisplayName, requestingUserDisplayName, requestsToFetchAssociatedUsers );
+            }
         }
 
         return new ResponseEntity<>(HttpStatus.OK);
