@@ -39,6 +39,7 @@ import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConfirmationEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.AuthorisationRemovedEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
@@ -65,12 +66,14 @@ import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
 
 @AutoConfigureMockMvc
@@ -545,11 +548,58 @@ public class UserCompanyAssociationsTest {
         associationFour.setInvitations( List.of( invitationFour ) );
         associationFour.setEtag("d");
 
+        final var associationFortyOne = new AssociationDao();
+        associationFortyOne.setCompanyNumber("x888888");
+        associationFortyOne.setUserId("222");
+        associationFortyOne.setUserEmail("the.joker@gotham.city");
+        associationFortyOne.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationFortyOne.setId("41");
+        associationFortyOne.setApprovedAt( now.plusDays(5) );
+        associationFortyOne.setRemovedAt( now.plusDays(6) );
+        associationFortyOne.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
+        associationFortyOne.setApprovalExpiryAt( now.plusDays(7) );
+        associationFortyOne.setInvitations( List.of() );
+        associationFortyOne.setEtag("b");
+
+        final var invitationFortyTwoA = new InvitationDao();
+        invitationFortyTwoA.setInvitedBy("222");
+        invitationFortyTwoA.setInvitedAt( now.plusDays(16) );
+
+        final var invitationFortyTwoB = new InvitationDao();
+        invitationFortyTwoB.setInvitedBy("444");
+        invitationFortyTwoB.setInvitedAt( now.plusDays(14) );
+
+        final var associationFortyTwo = new AssociationDao();
+        associationFortyTwo.setCompanyNumber("x888888");
+        associationFortyTwo.setUserId("333");
+        associationFortyTwo.setUserEmail("harley.quinn@gotham.city");
+        associationFortyTwo.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationFortyTwo.setId("42");
+        associationFortyTwo.setApprovedAt( now.plusDays(9) );
+        associationFortyTwo.setRemovedAt( now.plusDays(10) );
+        associationFortyTwo.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationFortyTwo.setApprovalExpiryAt( now.plusDays(11) );
+        associationFortyTwo.setInvitations( List.of( invitationFortyTwoA, invitationFortyTwoB ) );
+        associationFortyTwo.setEtag("c");
+
+        final var associationFortyThree = new AssociationDao();
+        associationFortyThree.setCompanyNumber("x888888");
+        associationFortyThree.setUserId("444");
+        associationFortyThree.setUserEmail("robin@gotham.city");
+        associationFortyThree.setStatus(StatusEnum.CONFIRMED.getValue());
+        associationFortyThree.setId("43");
+        associationFortyThree.setApprovedAt( now.plusDays(13) );
+        associationFortyThree.setRemovedAt( now.plusDays(14) );
+        associationFortyThree.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
+        associationFortyThree.setApprovalExpiryAt( now.plusDays(15) );
+        associationFortyThree.setInvitations( List.of() );
+        associationFortyThree.setEtag("d");
+
         associationsRepository.insert( List.of( associationEighteen, associationNineteen, associationTwenty, associationTwentyOne,
                 associationTwentyTwo, associationTwentyThree, associationTwentyFour, associationTwentyFive, associationTwentySix,
                 associationTwentySeven, associationTwentyEight, associationTwentyNine, associationThirty, associationThirtyOne,
                 associationThirtyTwo, associationThirtyThree, associationSeventeen, associationThirtyFour, associationThirtyFive, associationThirtySix,
-                associationTwo, associationThree, associationFour ) );
+                associationTwo, associationThree, associationFour, associationFortyOne, associationFortyTwo, associationFortyThree ) );
         Mockito.doReturn( toCompanyDetailsApiResponse( "111111", "Sainsbury's" ) ).when( companyProfileEndpoint ).fetchCompanyProfile(  "111111" );
 
         Mockito.doReturn( toCompanyDetailsApiResponse( "333333", "Tesco" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "333333" );
@@ -1447,6 +1497,49 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isOk() );
 
         Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: Robin's authorisation removed to file online for Instram", "Robin", "Instram", "Harley Quinn") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageType() ) );
+    }
+
+    ArgumentMatcher<InvitationAcceptedEmailData> invitationAcceptedEmailDataMatcher( List<String> to, String subject, String authorisedPerson, String companyName, String personWhoCreatedInvite ){
+        return emailData -> to.contains( emailData.getTo() ) ||
+                            subject.equals( emailData.getSubject() ) ||
+                            authorisedPerson.equals( emailData.getAuthorisedPerson() ) ||
+                            companyName.equals( emailData.getCompanyName() ) ||
+                            personWhoCreatedInvite.equals( emailData.getPersonWhoCreatedInvite() );
+    }
+
+    @Test
+    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD )
+    void updateAssociationStatusForIdUserAcceptedInvitationNotificationsSendsNotification() throws Exception {
+        mockMvc.perform( patch( "/associations/{associationId}", "42" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "333")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( invitationAcceptedEmailDataMatcher( List.of("the.joker@gotham.city", "robin@gotham.city" ), "Companies House: harley.quinn@gotham.city is now authorised to file online for Twitter", "harley.quinn@gotham.city", "Twitter", "the.joker@gotham.city" ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageType() ) );
+    }
+
+    @Test
+    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD )
+    void updateAssociationStatusForIdUserAcceptedInvitationNotificationsUsesDisplayNamesWhenAvailable() throws Exception {
+        Mockito.doReturn( privateAccountsUserUserGet222 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "222" );
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "222", "the.joker@gotham.city", "Joker" ) ).when( privateAccountsUserUserGet222 ).execute();
+        Mockito.doReturn( privateAccountsUserUserGet333 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "333" );
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "333", "harley.quinn@gotham.city", "Harley Quinn" ) ).when( privateAccountsUserUserGet333 ).execute();
+
+        mockMvc.perform( patch( "/associations/{associationId}", "42" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "333")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( invitationAcceptedEmailDataMatcher( List.of("the.joker@gotham.city", "robin@gotham.city" ), "Companies House: Harley Quinn is now authorised to file online for Twitter", "Harley Quinn", "Twitter", "Joker" ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageType() ) );
     }
 
     @Test
