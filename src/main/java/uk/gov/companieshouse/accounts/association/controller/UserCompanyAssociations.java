@@ -12,8 +12,6 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
@@ -262,8 +260,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         final var userAcceptedInvitation = usersMatch && INVITATION.getValue().equals( approvalRoute ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( CONFIRMED );
         final var userCancelledInvitation = !usersMatch && INVITATION.getValue().equals( approvalRoute ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
         final var userRejectedInvitation = usersMatch && INVITATION.getValue().equals( approvalRoute ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
-        final var notificationMustBeSent = authorisedUserRemoved || userAcceptedInvitation || userCancelledInvitation || userRejectedInvitation;
-        if ( notificationMustBeSent ){
+        if ( authorisedUserRemoved || userAcceptedInvitation || userCancelledInvitation || userRejectedInvitation ){
             LOG.debugContext(xRequestId, String.format("Attempting to fetch company for company_number %s from company profile cache.", companyNumber), null);
             final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
             LOG.debugContext(xRequestId, String.format("Successfully fetched company for company_number %s from company profile cache.", companyNumber), null);
