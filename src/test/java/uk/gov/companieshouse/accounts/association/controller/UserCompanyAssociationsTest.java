@@ -1171,6 +1171,13 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isCreated());
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoOne, "8888", null)));
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
+                argThat( companyDetailsMatcher(
+                        "333333",
+                        "Tesco" ) ),
+                eq("Scrooge McDuck"),
+                eq("russell.howard@comedy.com"),
+                argThat( list -> list.size() == 0 ) );
     }
 
     @Test
@@ -1199,6 +1206,13 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isCreated());
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoOne, null, "russell.howard@comedy.com")));
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
+                argThat( companyDetailsMatcher(
+                        "333333",
+                        "Tesco" ) ),
+                eq("Scrooge McDuck"),
+                eq("russell.howard@comedy.com"),
+                argThat( list -> list.size() == 0 ) );
     }
 
     @Test
@@ -1231,6 +1245,13 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isCreated());
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoTwo, "111", null)));
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
+                argThat( companyDetailsMatcher(
+                        "333333",
+                        "Tesco" ) ),
+                eq("Scrooge McDuck"),
+                eq("bruce.wayne@gotham.city"),
+                argThat( list -> list.size() == 0 ) );
     }
 
     @Test
@@ -1261,6 +1282,13 @@ class UserCompanyAssociationsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
                 .andExpect(status().isCreated());
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
+                argThat( companyDetailsMatcher(
+                        "444444",
+                        "Sainsbury's" ) ),
+                eq("Scrooge McDuck"),
+                eq("bruce.wayne@gotham.city"),
+                argThat( list -> list.size() == 0 ) );
     }
 
     @Test
@@ -1287,6 +1315,13 @@ class UserCompanyAssociationsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"madonna@singer.com\"}"))
                 .andExpect(status().isCreated());
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
+                argThat( companyDetailsMatcher(
+                        "333333",
+                        "Tesco" ) ),
+                eq("Scrooge McDuck"),
+                eq("madonna@singer.com"),
+                argThat( list -> list.size() == 0 ) );
     }
 
     @Test
