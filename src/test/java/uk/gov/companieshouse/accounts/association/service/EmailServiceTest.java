@@ -94,26 +94,7 @@ public class EmailServiceTest {
         Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( eq( "111111" ), any(), any() );
         Mockito.doReturn( userSupplier ).when( usersService ).createFetchUserDetailsRequest( anyString() );
 
-        Assertions.assertEquals( "111", emailService.createRequestsToFetchAssociatedUsers( "111111", List.of() ).get( 0 ).get().getUserId() );
-    }
-
-    @Test
-    void createRequestsToFetchAssociatedUsersAppliesFilterCorrectly(){
-        final var associationTwo = new AssociationDao();
-        associationTwo.setUserId("222");
-
-        final var content = List.of( associationOne, associationTwo );
-        final var pageRequest = PageRequest.of(0, 20);
-        final var page = new PageImpl<>(content, pageRequest, content.size());
-
-        Supplier<User> userSupplier = () -> new User().userId( "111" );
-
-        Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( eq( "111111" ), any(), any() );
-        Mockito.doReturn( userSupplier ).when( usersService ).createFetchUserDetailsRequest( "111" );
-
-        final var requests = emailService.createRequestsToFetchAssociatedUsers( "111111", List.of("222") );
-        Assertions.assertEquals( 1, requests.size() );
-        Assertions.assertEquals( "111", requests.get( 0 ).get().getUserId() );
+        Assertions.assertEquals( "111", emailService.createRequestsToFetchAssociatedUsers( "111111" ).get( 0 ).get().getUserId() );
     }
 
     @Test

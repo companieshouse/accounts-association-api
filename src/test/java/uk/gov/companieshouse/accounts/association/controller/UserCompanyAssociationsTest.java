@@ -770,7 +770,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( new User().email( "homer.simpson@springfield.com" ) ).when( usersService ).fetchUserDetails( anyString() );
         Mockito.doReturn( new CompanyDetails().companyNumber( "444444" ).companyName( "Sainsbury's" ) ).when( companyService ).fetchCompanyProfile( anyString() );
         Mockito.doReturn(false).when(associationsService).associationExists("444444", "666");
-        Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "444444", List.of() );
+        Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "444444" );
         Mockito.doReturn(associationDao).when(associationsService).createAssociation("444444", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
 
         mockMvc.perform(post( "/associations" )
@@ -795,7 +795,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( new User().email( "homer.simpson@springfield.com" ).displayName( "Homer Simpson" ) ).when( usersService ).fetchUserDetails( anyString() );
         Mockito.doReturn( new CompanyDetails().companyNumber( "444444" ).companyName( "Sainsbury's" ) ).when( companyService ).fetchCompanyProfile( anyString() );
         Mockito.doReturn(false).when(associationsService).associationExists("444444", "666");
-        Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "444444", List.of() );
+        Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "444444" );
         Mockito.doReturn(associationDao).when(associationsService).createAssociation("444444", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
 
         mockMvc.perform(post( "/associations" )
@@ -1086,7 +1086,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( "x999999" );
 
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "the.joker@gotham.city" ) );
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x999999", List.of( "333", "444" ) );
+        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x999999" );
 
         mockMvc.perform( patch( "/associations/{associationId}", "40" )
                         .header("X-Request-Id", "theId123")
@@ -1124,7 +1124,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( "x999999" );
 
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "the.joker@gotham.city" ) );
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x999999", List.of( "333", "444" ) );
+        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x999999" );
 
         mockMvc.perform( patch( "/associations/{associationId}", "40" )
                         .header("X-Request-Id", "theId123")
@@ -1159,7 +1159,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( "x999999" );
 
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "the.joker@gotham.city" ) );
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x999999", List.of( "333", "444" ) );
+        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x999999" );
 
         mockMvc.perform( patch( "/associations/{associationId}", "40" )
                         .header("X-Request-Id", "theId123")
@@ -1200,7 +1200,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( "444" );
 
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "the.joker@gotham.city" ) );
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x999999", List.of( "333", "444" ) );
+        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x999999" );
 
         mockMvc.perform( patch( "/associations/{associationId}", "40" )
                         .header("X-Request-Id", "theId123")
@@ -1250,7 +1250,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( "x888888" );
 
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "the.joker@gotham.city" ), () -> new User().email( "robin@gotham.city" ) );
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x888888", List.of( "333", "333" ) );
+        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x888888" );
 
         mockMvc.perform( patch( "/associations/{associationId}", "42" )
                         .header("X-Request-Id", "theId123")
@@ -1301,7 +1301,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( "x888888" );
 
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "the.joker@gotham.city" ), () -> new User().email( "robin@gotham.city" ) );
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x888888", List.of( "333", "333" ) );
+        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x888888" );
 
         mockMvc.perform( patch( "/associations/{associationId}", "42" )
                         .header("X-Request-Id", "theId123")
@@ -1352,7 +1352,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( "x888888" );
 
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "robin@gotham.city" ) );
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x888888", List.of( "222", "333" ) );
+        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x888888" );
 
         mockMvc.perform( patch( "/associations/{associationId}", "42" )
                         .header("X-Request-Id", "theId123")
@@ -1397,7 +1397,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( "x888888" );
 
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "robin@gotham.city" ), () -> new User().email( "joker@gotham.city" ) );
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x888888", List.of( "333", "333" ) );
+        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x888888" );
 
         mockMvc.perform( patch( "/associations/{associationId}", "42" )
                         .header("X-Request-Id", "theId123")
