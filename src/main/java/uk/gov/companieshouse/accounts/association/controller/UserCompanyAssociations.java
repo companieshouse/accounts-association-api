@@ -208,11 +208,8 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<Void> updateAssociationStatusForId(final String xRequestId, final String associationId, final RequestBodyPut requestBody) {
+    public ResponseEntity<Void> updateAssociationStatusForId(final String xRequestId, final String associationId, final String requestingUserId, final RequestBodyPut requestBody) {
         final var newStatus = requestBody.getStatus();
-
-        // TODO: replace this with ericIdentity header
-        final var requestingUserId = ( (ServletRequestAttributes) RequestContextHolder.getRequestAttributes() ).getRequest().getHeader( "Eric-identity" );
 
         LOG.debugContext(xRequestId, String.format("Attempting to update association status for association %s to %s.", associationId, newStatus.getValue()), null);
 
