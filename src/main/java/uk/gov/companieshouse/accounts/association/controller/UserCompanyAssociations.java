@@ -55,26 +55,20 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         LOG.debugContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s", companyNumber, ericIdentity), null);
 
-        LOG.debugContext( xRequestId, String.format("Attempting to fetch user for user_id %s from accounts-user-api.", ericIdentity), null );
         final var userDetails = usersService.fetchUserDetails( ericIdentity );
         final var displayName = Optional.ofNullable( userDetails.getDisplayName() ).orElse( userDetails.getEmail() );
-        LOG.debugContext( xRequestId, String.format("Successfully fetched user for user_id %s from accounts-user-api.", ericIdentity), null );
 
-        LOG.debugContext(xRequestId, String.format("Attempting to fetch company for company_number %s from company profile cache.", companyNumber), null);
         final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
-        LOG.debugContext(xRequestId, String.format("Successfully fetched company for company_number %s from company profile cache.", companyNumber), null);
 
-        LOG.debugContext(xRequestId, String.format("Attempting to check if association between company_number %s and user_id %s exists in user_company_associations.", companyNumber, ericIdentity), null);
         if (associationsService.associationExists(companyNumber, ericIdentity)) {
             LOG.error(String.format("%s: Association between user_id %s and company_number %s already exists.", xRequestId, ericIdentity, companyNumber));
             throw new BadRequestRuntimeException("Association already exists.");
         }
-        LOG.debugContext(xRequestId, String.format("Could not find association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
 
-        final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
-        LOG.debugContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
         final var association = associationsService.createAssociation(companyNumber, ericIdentity, null, ApprovalRouteEnum.AUTH_CODE, null);
         LOG.debugContext(xRequestId, String.format("Successfully created association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
+
+        final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
         emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( xRequestId, companyDetails, displayName, associatedUsers );
 
         return new ResponseEntity<>(new ResponseBodyPost().associationId(association.getId()), HttpStatus.CREATED);
