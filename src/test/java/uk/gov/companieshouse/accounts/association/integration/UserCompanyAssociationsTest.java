@@ -35,6 +35,7 @@ import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfi
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConfirmationEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
@@ -66,6 +67,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
 
 @AutoConfigureMockMvc
 @SpringBootTest
@@ -1559,7 +1561,34 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isBadRequest() ).andReturn();
 
     }
+    ArgumentMatcher<InvitationEmailData> InvitationEmailDataMatcher(String to, String subject, String personWhoCreatedInvite, String invitee , String companyName ){
+        return emailData ->
+                to.equals( emailData.getTo() ) &&
+                        subject.equals( emailData.getSubject() ) &&
+                        personWhoCreatedInvite.equals( emailData.getPersonWhoCreatedInvite() ) &&
+                        invitee.equals(emailData.getInvitee()) &&
+                        companyName.equals( emailData.getCompanyName() );
+    }
+    @Test
+    void inviteUserWithUserThatHasDisplayNameUsesDisplayName()  throws Exception {
+        mockMvc.perform(post( "/associations/invitations" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "111")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"444444\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
+                .andExpect( status().isCreated() );
 
+        Mockito.verify( emailProducer ).sendEmail( argThat(
+                        InvitationEmailDataMatcher(
+                                "scrooge.mcduck@disney.land",
+                                "Companies House: Batman invited to be authorised to file online for Sainsbury's",
+                                "Scrooge McDuck",
+                                "bruce.wayne@gotham.city",
+                                "Sainsbury's" ) ),
+                eq( INVITATION_MESSAGE_TYPE.getMessageType() ) );
+    }
 
     @AfterEach
     public void after() {
