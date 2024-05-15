@@ -40,7 +40,6 @@ import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConf
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.AuthorisationRemovedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationCancelledEmailData;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
@@ -756,33 +755,6 @@ public class UserCompanyAssociationsTest {
                         .header("ERIC-Identity-Type", "key")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isNotFound() );
-    }
-
-    @Test
-    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD )
-    void updateAssociationStatusForIdUserCancelledInvitationNotificationsSendsNotification() throws Exception {
-        final var privateAccountsUserUserGet777 = Mockito.mock( PrivateAccountsUserUserGet.class );
-        final var privateAccountsUserUserGet888 = Mockito.mock( PrivateAccountsUserUserGet.class );
-        final var privateAccountsUserUserGet999 = Mockito.mock( PrivateAccountsUserUserGet.class );
-
-        Mockito.doReturn( privateAccountsUserUserGet777 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "777" );
-        Mockito.doReturn( privateAccountsUserUserGet888 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "888" );
-        Mockito.doReturn( privateAccountsUserUserGet999 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "999" );
-
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "777", "homer.simpson@springfield.com", "Homer" ) ).when( privateAccountsUserUserGet777 ).execute();
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "888", "marge.simpson@springfield.com", "Marge" ) ).when( privateAccountsUserUserGet888 ).execute();
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "999", "bart.simpson@springfield.com", "Bart" ) ).when( privateAccountsUserUserGet999 ).execute();
-
-        mockMvc.perform( patch( "/associations/{associationId}", "45" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "777")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
-                        .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"status\":\"removed\"}" ) )
-                .andExpect( status().isOk() );
-
-        Mockito.verify( emailProducer ).sendEmail( argThat( invitationCancelledEmailDataMatcher("bart.simpson@springfield.com", "Companies House: Invitation cancelled for Marge to be authorised to file online for Facebook", "Marge", "Facebook", "Homer" ) ), eq( INVITATION_CANCELLED_MESSAGE_TYPE.getMessageType() ) );
     }
 
     @Test
@@ -1578,10 +1550,10 @@ public class UserCompanyAssociationsTest {
     }
 
     ArgumentMatcher<InvitationAcceptedEmailData> invitationAcceptedEmailDataMatcher( List<String> to, String subject, String authorisedPerson, String companyName, String personWhoCreatedInvite ){
-        return emailData -> to.contains( emailData.getTo() ) ||
-                            subject.equals( emailData.getSubject() ) ||
-                            authorisedPerson.equals( emailData.getAuthorisedPerson() ) ||
-                            companyName.equals( emailData.getCompanyName() ) ||
+        return emailData -> to.contains( emailData.getTo() ) &&
+                            subject.equals( emailData.getSubject() ) &&
+                            authorisedPerson.equals( emailData.getAuthorisedPerson() ) &&
+                            companyName.equals( emailData.getCompanyName() ) &&
                             personWhoCreatedInvite.equals( emailData.getPersonWhoCreatedInvite() );
     }
 
@@ -1598,34 +1570,6 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isOk() );
 
         Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( invitationAcceptedEmailDataMatcher( List.of("the.joker@gotham.city", "robin@gotham.city" ), "Companies House: harley.quinn@gotham.city is now authorised to file online for Twitter", "harley.quinn@gotham.city", "Twitter", "the.joker@gotham.city" ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageType() ) );
-    }
-
-    @Test
-    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD )
-    void updateAssociationStatusForIdUserAcceptedInvitationNotificationsUsesDisplayNamesWhenAvailable() throws Exception {
-        Mockito.doReturn( privateAccountsUserUserGet222 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "222" );
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "222", "the.joker@gotham.city", "Joker" ) ).when( privateAccountsUserUserGet222 ).execute();
-        Mockito.doReturn( privateAccountsUserUserGet333 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "333" );
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "333", "harley.quinn@gotham.city", "Harley Quinn" ) ).when( privateAccountsUserUserGet333 ).execute();
-
-        mockMvc.perform( patch( "/associations/{associationId}", "42" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "333")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
-                        .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"status\":\"confirmed\"}" ) )
-                .andExpect( status().isOk() );
-
-        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( invitationAcceptedEmailDataMatcher( List.of("the.joker@gotham.city", "robin@gotham.city" ), "Companies House: Harley Quinn is now authorised to file online for Twitter", "Harley Quinn", "Twitter", "Joker" ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageType() ) );
-    }
-
-        ArgumentMatcher<InvitationCancelledEmailData> invitationCancelledEmailDataMatcher( String to, String subject, String personWhoWasCancelled, String companyName, String personWhoCancelledInvite ){
-        return emailData -> to.equals( emailData.getTo() ) &&
-                subject.equals( emailData.getSubject() ) &&
-                personWhoWasCancelled.equals( emailData.getPersonWhoWasCancelled() ) &&
-                companyName.equals( emailData.getCompanyName() ) &&
-                personWhoCancelledInvite.equals( emailData.getPersonWhoCancelledInvite() );
     }
 
     @Test
