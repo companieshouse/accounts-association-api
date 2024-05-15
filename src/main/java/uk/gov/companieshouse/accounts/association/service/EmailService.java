@@ -42,9 +42,8 @@ public class EmailService {
     }
 
     @Transactional(readOnly = true)
-    public List<Supplier<User>> createRequestsToFetchAssociatedUsers( final String companyNumber, final List<String> excludeUserIds ) {
+    public List<Supplier<User>> createRequestsToFetchAssociatedUsers( final String companyNumber ) {
         return associationsRepository.fetchAssociatedUsers(companyNumber, Set.of(StatusEnum.CONFIRMED.getValue()), Pageable.unpaged())
-                .filter( association -> !excludeUserIds.contains( association.getUserId() ) )
                 .map(AssociationDao::getUserId)
                 .map(usersService::createFetchUserDetailsRequest)
                 .toList();
