@@ -6,7 +6,6 @@ import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyP
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.REMOVED;
 
 import java.util.Comparator;
-import java.util.LinkedList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
@@ -79,7 +78,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         }
         LOG.debugContext(xRequestId, String.format("Could not find association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
 
-        final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber, List.of() );
+        final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
         LOG.debugContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
         final var association = associationsService.createAssociation(companyNumber, ericIdentity, null, ApprovalRouteEnum.AUTH_CODE, null);
         LOG.debugContext(xRequestId, String.format("Successfully created association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
@@ -274,11 +273,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                     .map( user -> Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() ) )
                     .orElse( targetUserEmail );
 
-            final var excludedUserIds = new LinkedList<>( List.of( requestingUserId ) );
-            if ( !Objects.isNull( targetUser ) ) {
-                excludedUserIds.add( targetUser.getUserId() );
-            }
-            final var requestsToFetchAssociatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber, excludedUserIds );
+            final var requestsToFetchAssociatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
 
             if ( authorisedUserRemoved ) {
                 emailService.sendAuthorisationRemovedEmailToAssociatedUsers( xRequestId, companyDetails, requestingUserDisplayName, targetUserDisplayName, requestsToFetchAssociatedUsers );
