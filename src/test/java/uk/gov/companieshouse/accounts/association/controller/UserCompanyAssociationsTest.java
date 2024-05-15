@@ -1367,6 +1367,51 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
+    void updateAssociationStatusForIdUserRejectedInvitationNotificationsSendsNotification() throws Exception {
+
+        final var invitationFortyTwoA = new InvitationDao();
+        invitationFortyTwoA.setInvitedBy("222");
+        invitationFortyTwoA.setInvitedAt( now.plusDays(16) );
+
+        final var invitationFortyTwoB = new InvitationDao();
+        invitationFortyTwoB.setInvitedBy("444");
+        invitationFortyTwoB.setInvitedAt( now.plusDays(14) );
+
+        final var associationFortyTwo = new AssociationDao();
+        associationFortyTwo.setCompanyNumber("x888888");
+        associationFortyTwo.setUserId("333");
+        associationFortyTwo.setUserEmail("harley.quinn@gotham.city");
+        associationFortyTwo.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationFortyTwo.setId("42");
+        associationFortyTwo.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationFortyTwo.setInvitations( List.of( invitationFortyTwoA, invitationFortyTwoB ) );
+
+        Mockito.doReturn(Optional.of(associationFortyTwo)).when(associationsService).findAssociationDaoById("42");
+
+        final var requestingUser = new User()
+                .userId("333")
+                .email("harley.quinn@gotham.city");
+        Mockito.doReturn( requestingUser ).when( usersService ).fetchUserDetails( "333" );
+
+        final var companyDetails = new CompanyDetails().companyName( "Twitter" );
+        Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( "x888888" );
+
+        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "robin@gotham.city" ), () -> new User().email( "joker@gotham.city" ) );
+        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x888888", List.of( "333", "333" ) );
+
+        mockMvc.perform( patch( "/associations/{associationId}", "42" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "333")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( emailService ).sendInvitationRejectedEmailToAssociatedUsers( eq( "theId123" ), eq( companyDetails ), eq( "harley.quinn@gotham.city" ), any() );
+    }
+
+    @Test
     void inviteUserWithoutXRequestIdReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/associations/invitations")
                         .header("Eric-identity", "9999")

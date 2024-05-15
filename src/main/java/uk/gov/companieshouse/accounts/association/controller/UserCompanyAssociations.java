@@ -264,7 +264,8 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         final var authorisedUserRemoved = !usersMatch && oldStatus.equals( CONFIRMED.getValue() ) && newStatus.equals( REMOVED );
         final var userAcceptedInvitation = usersMatch && INVITATION.getValue().equals( approvalRoute ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( CONFIRMED );
         final var userCancelledInvitation = !usersMatch && INVITATION.getValue().equals( approvalRoute ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
-        final var notificationMustBeSent = authorisedUserRemoved || userAcceptedInvitation || userCancelledInvitation;
+        final var userRejectedInvitation = usersMatch && INVITATION.getValue().equals( approvalRoute ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
+        final var notificationMustBeSent = authorisedUserRemoved || userAcceptedInvitation || userCancelledInvitation || userRejectedInvitation;
         if ( notificationMustBeSent ){
             LOG.debugContext(xRequestId, String.format("Attempting to fetch company for company_number %s from company profile cache.", companyNumber), null);
             final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
@@ -303,6 +304,10 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
             if ( userCancelledInvitation ){
                 emailService.sendInvitationCancelledEmailToAssociatedUsers( xRequestId, companyDetails, requestingUserDisplayName, targetUserDisplayName, requestsToFetchAssociatedUsers );
+            }
+
+            if ( userRejectedInvitation ){
+                emailService.sendInvitationRejectedEmailToAssociatedUsers( xRequestId, companyDetails, requestingUserDisplayName, requestsToFetchAssociatedUsers );
             }
         }
 
