@@ -263,7 +263,8 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         final var usersMatch = userIdsMatch || userEmailsMatch;
         final var authorisedUserRemoved = !usersMatch && oldStatus.equals( CONFIRMED.getValue() ) && newStatus.equals( REMOVED );
         final var userAcceptedInvitation = usersMatch && INVITATION.getValue().equals( approvalRoute ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( CONFIRMED );
-        final var notificationMustBeSent = authorisedUserRemoved || userAcceptedInvitation ;
+        final var userCancelledInvitation = !usersMatch && INVITATION.getValue().equals( approvalRoute ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
+        final var notificationMustBeSent = authorisedUserRemoved || userAcceptedInvitation || userCancelledInvitation;
         if ( notificationMustBeSent ){
             LOG.debugContext(xRequestId, String.format("Attempting to fetch company for company_number %s from company profile cache.", companyNumber), null);
             final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
@@ -298,6 +299,10 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                            .orElseThrow( () -> new NullPointerException( "Inviter does not exist." ) );
 
                 emailService.sendInvitationAcceptedEmailToAssociatedUsers( xRequestId, companyDetails, invitedByDisplayName, requestingUserDisplayName, requestsToFetchAssociatedUsers );
+            }
+
+            if ( userCancelledInvitation ){
+                emailService.sendInvitationCancelledEmailToAssociatedUsers( xRequestId, companyDetails, requestingUserDisplayName, targetUserDisplayName, requestsToFetchAssociatedUsers );
             }
         }
 
