@@ -1142,7 +1142,9 @@ class UserCompanyAssociationsTest {
             return associationDao.equals(baseAssociation);
         };
     }
-
+    ArgumentMatcher<CompanyDetails> companyDetailsMatcher( final String companyNumber, final String companyName ){
+        return companyDetails -> companyNumber.equals( companyDetails.getCompanyNumber() ) && companyName.equals( companyDetails.getCompanyName() );
+    }
     @Test
     void inviteUserWhereAssociationBetweenInviteeEmailAndCompanyNumberExistsAndInviteeUserIsFoundPerformsSwapAndUpdateOperations() throws Exception {
         final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName("Scrooge McDuck");
@@ -1171,6 +1173,13 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isCreated());
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoOne, "8888", null)));
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
+                argThat( companyDetailsMatcher(
+                        "333333",
+                        "Tesco" ) ),
+                eq("Scrooge McDuck"),
+                eq("russell.howard@comedy.com"),
+                argThat( list -> list.size() == 0 ) );
     }
 
     @Test
@@ -1181,9 +1190,9 @@ class UserCompanyAssociationsTest {
         final var company = new CompanyDetails().companyNumber("333333").companyName("Tesco");
         Mockito.doReturn(company).when(companyService).fetchCompanyProfile("333333");
 
-        Mockito.doReturn(new UsersList()).when(usersService).searchUserDetails(List.of("russell.howard@comedy.com"));
+        Mockito.doReturn(new UsersList()).when(usersService).searchUserDetails(List.of("bruce.wayne@gotham.city"));
 
-        Mockito.doReturn(Optional.of(associationDaoOne)).when(associationsService).fetchAssociationForCompanyNumberAndUserEmail("333333", "russell.howard@comedy.com");
+        Mockito.doReturn(Optional.of(associationDaoOne)).when(associationsService).fetchAssociationForCompanyNumberAndUserEmail("333333", "bruce.wayne@gotham.city");
 
         final var association = new AssociationDao();
         association.setId("34");
@@ -1195,10 +1204,11 @@ class UserCompanyAssociationsTest {
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"russell.howard@comedy.com\"}"))
+                        .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
                 .andExpect(status().isCreated());
 
-        Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoOne, null, "russell.howard@comedy.com")));
+        Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoOne, null, "bruce.wayne@gotham.city")));
+
     }
 
     @Test
@@ -1231,6 +1241,13 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isCreated());
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoTwo, "111", null)));
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
+                argThat( companyDetailsMatcher(
+                        "333333",
+                        "Tesco" ) ),
+                eq("Scrooge McDuck"),
+                eq("bruce.wayne@gotham.city"),
+                argThat( list -> list.size() == 0 ) );
     }
 
     @Test
@@ -1261,6 +1278,14 @@ class UserCompanyAssociationsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
                 .andExpect(status().isCreated());
+
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
+                argThat( companyDetailsMatcher(
+                        "444444",
+                        "Sainsbury's" ) ),
+                eq("Scrooge McDuck"),
+                eq("bruce.wayne@gotham.city"),
+                argThat( list -> list.size() == 0 ) );
     }
 
     @Test
@@ -1287,6 +1312,14 @@ class UserCompanyAssociationsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"madonna@singer.com\"}"))
                 .andExpect(status().isCreated());
+
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
+                argThat( companyDetailsMatcher(
+                        "333333",
+                        "Tesco" ) ),
+                eq("Scrooge McDuck"),
+                eq("madonna@singer.com"),
+                argThat( list -> list.size() == 0 ) );
     }
 
     @Test
@@ -1318,36 +1351,5 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isBadRequest()).andReturn();
         assertEquals("{\"errors\":[{\"error\":\"There is an existing association with Confirmed status for the user\",\"type\":\"ch:service\"}]}",
                 response.getResponse().getContentAsString());
-    }
-
-    @Test
-    void sendInvitationEmailToAssociatedUsersWhenAssociationWithUserEmailIsPresent() throws Exception{
-        final var user = new User().userId("9999").email("scrooge.mcduck@disney.land").displayName("Scrooge McDuck");
-        Mockito.doReturn(user).when(usersService).fetchUserDetails("9999");
-        assertEquals("Scrooge McDuck", user.getDisplayName());
-
-        final var company = new CompanyDetails().companyNumber("333333").companyName("Tesco");
-        Mockito.doReturn(company).when(companyService).fetchCompanyProfile("333333");
-
-        Supplier<User> userSupplier = () -> new User().userId("9999");
-        Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "333333" );
-
-        final var usersList = new UsersList();
-        usersList.add(new User().userId("111").email("bruce.wayne@gotham.city").displayName("Bruce Wayne"));
-        Mockito.doReturn(usersList).when(usersService).searchUserDetails(List.of("bruce.wayne@gotham.city"));
-
-        final var inviteeDisplayName = usersList.getFirst().getDisplayName();
-        assertEquals("Bruce Wayne", inviteeDisplayName);
-
-        final var response =mockMvc.perform(post("/associations/invitations")
-                .header("X-Request-Id", "theId123")
-                .header("Eric-identity", "9999")
-                .header("ERIC-Identity-Type", "oauth2")
-                .header("ERIC-Authorised-Key-Roles", "*")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
-                .andExpect(status().isOk());
-
-
     }
 }

@@ -1594,7 +1594,14 @@ public class UserCompanyAssociationsTest {
                         .content(  "{\"company_number\":\"111111\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"  ) )
                 .andExpect( status().isCreated() );
 
-        Mockito.verify( emailProducer ).sendEmail( argThat( InvitationEmailDataMatcher( "scrooge.mcduck@disney.land", "Companies House: Batman invited to be authorised to file online for Sainsbury's", "Scrooge McDuck","Batman", "Sainsbury's" ) ), eq( INVITATION_MESSAGE_TYPE.getMessageType() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat(
+                InvitationEmailDataMatcher(
+                        "scrooge.mcduck@disney.land",
+                        "Companies House: Batman invited to be authorised to file online for Sainsbury's",
+                        "Scrooge McDuck",
+                        "Batman",
+                        "Sainsbury's" ) ),
+                eq( INVITATION_MESSAGE_TYPE.getMessageType() ) );
     }
 
 

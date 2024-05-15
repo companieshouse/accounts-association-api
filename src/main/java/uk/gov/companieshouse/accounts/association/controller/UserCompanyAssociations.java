@@ -17,6 +17,8 @@ import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociatio
 import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum;
+import uk.gov.companieshouse.api.accounts.user.model.User;
+import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
@@ -136,27 +138,25 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             LOG.error( String.format( "%s: inviteeEmail is null.", xRequestId ) );
             throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
-
+        User inviterUserDetails= null;
+        CompanyDetails companyDetails = null;
         try {
             LOG.debugContext( xRequestId, String.format( "Attempting to fetch %s from accounts-user-api.", ericIdentity ), null );
-            usersService.fetchUserDetails(ericIdentity);
+            inviterUserDetails = usersService.fetchUserDetails(ericIdentity);
             LOG.debugContext( xRequestId, String.format( "Attempting to fetch %s from company-profile-api.", companyNumber ), null );
-            companyService.fetchCompanyProfile( companyNumber );
+            companyDetails= companyService.fetchCompanyProfile( companyNumber );
         } catch( NotFoundRuntimeException notFoundRuntimeException ){
             LOG.error( notFoundRuntimeException.getMessage() );
             throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
-        final var inviterUserDetails =usersService.fetchUserDetails(ericIdentity);
+
         final var inviterDisplayName = Optional.ofNullable( inviterUserDetails.getDisplayName() ).orElse( inviterUserDetails.getEmail() );
-        final var companyDetails = companyService.fetchCompanyProfile( companyNumber );
         final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
 
         LOG.debugContext( xRequestId, String.format( "Attempting to search for %s in accounts-user-api.", inviteeEmail ), null );
         final var inviteeUserDetails = usersService.searchUserDetails( List.of( inviteeEmail ) );
-        final var inviteesUserDetails = inviteeUserDetails.getFirst();
-        final var inviteeDisplayName = Optional.ofNullable( inviteesUserDetails.getDisplayName() ).orElse( inviteesUserDetails.getEmail() );
 
-        final var inviteeUserFound = !( Objects.isNull( inviteeUserDetails ) || inviteeUserDetails.isEmpty() );
+        final var inviteeUserFound = !inviteeUserDetails.isEmpty();
 
         LOG.debugContext( xRequestId, String.format( "Attempting to fetch association for company %s and user email %s.", companyNumber, inviteeEmail ), null );
         final var associationWithUserEmail = associationsService.fetchAssociationForCompanyNumberAndUserEmail( companyNumber, inviteeEmail );
@@ -165,11 +165,15 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         if ( associationWithUserEmail.isPresent()){
             LOG.debugContext( xRequestId, String.format( "Association for company %s and user email %s was found.", companyNumber, inviteeEmail), null );
             association = associationWithUserEmail.get();
+            final var inviteesUserDetails = inviteeUserDetails.getFirst();
             if( inviteeUserFound ) {
                 association.setUserEmail(null);
-                association.setUserId(inviteeUserDetails.getFirst().getUserId());
+                association.setUserId(inviteesUserDetails.getUserId());
             }
             var associationId = associationsService.sendNewInvitation(ericIdentity, association).getId();
+
+            final var inviteeDisplayName = Optional.ofNullable( inviteesUserDetails.getDisplayName() ).orElse( inviteesUserDetails.getEmail() );
+
             emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeDisplayName, associatedUsers );
             return new ResponseEntity<>( new ResponseBodyPost().associationId( associationId ), HttpStatus.CREATED );
         }
@@ -180,10 +184,13 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             final var inviteeUserId = userDetails.getUserId();
             LOG.debugContext( xRequestId, String.format( "Attempting to fetch association for company %s and user id %s", companyNumber, inviteeUserId ), null );
             Optional<AssociationDao> associationWithUserID = associationsService.fetchAssociationForCompanyNumberAndUserId( companyNumber, inviteeUserId );
+            final var inviteeDisplayName = Optional.ofNullable( userDetails.getDisplayName() ).orElse( userDetails.getEmail() );
 
             if(associationWithUserID.isEmpty()){
                 LOG.infoContext( xRequestId, String.format( "Creating association and invitation for company %s and user id %s", companyNumber, inviteeUserDetails.getFirst().getUserId() ), null );
+
                 association = associationsService.createAssociation(companyNumber,inviteeUserId,null,ApprovalRouteEnum.INVITATION,ericIdentity);
+                emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeDisplayName, associatedUsers );
                 return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
             } else if(associationWithUserID.get().getStatus().equals("confirmed")) {
                 throw new BadRequestRuntimeException(String.format("There is an existing association with Confirmed status for the user %s", inviteeEmail));
@@ -197,6 +204,8 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         }
         //if association with email not found, user not found
         association = associationsService.createAssociation(companyNumber, null ,inviteeEmail,ApprovalRouteEnum.INVITATION,ericIdentity);
+        emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeEmail, associatedUsers );
+
         return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
     }
 
