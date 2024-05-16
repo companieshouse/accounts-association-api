@@ -9,6 +9,7 @@ import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVIT
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_CANCELLED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_REJECTED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +33,7 @@ import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAc
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationCancelledEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationRejectedEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.InviteEmailData;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
@@ -485,6 +487,56 @@ public class EmailServiceTest {
 
         Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetails, "Elon Musk", requestsToFetchAssociatedUsers ) );
+    }
+
+    @Test
+    void sendInviteEmailWithNullCompanyDetailsOrNullCompanyNameOrNullInviterDisplayNameOrNullInvitationExpiryTimestampOrNullInvitationLinkOrNullUserOrNullUserEmailThrowsNullPointerException(){
+        final var user = new User().email( "kpatel@companieshouse.gov.uk" );
+        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
+
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", null, "Elon Musk", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", user ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", new CompanyDetails(), "Elon Musk", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", user ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, null, "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", user ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Elon Musk", null, "https://companieshouse/authorised-person-confirmation-5xbk3ft88", user ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Elon Musk", "1992-05-01T10:30:00.000000", null, user ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Elon Musk", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Elon Musk", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", new User() ) );
+    }
+
+    @Test
+    void sendInviteEmailThrowsEmailOnKafkaQueue(){
+        final var emailData = new InviteEmailData();
+        emailData.setTo( "kpatel@companieshouse.gov.uk" );
+        emailData.setSubject( "Companies House: invitation to be authorised to file online for Tesla" );
+        emailData.setInviterDisplayName( "Krishna Patel" );
+        emailData.setCompanyName( "Tesla" );
+        emailData.setInvitationExpiryTimestamp( "1992-05-01T10:30:00.000000" );
+        emailData.setInvitationLink( "https://companieshouse/authorised-person-confirmation-5xbk3ft88" );
+
+        final var user = new User().email( "kpatel@companieshouse.gov.uk" );
+        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
+
+        emailService.sendInviteEmail( "theId12345", companyDetails, "Krishna Patel", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", user );
+
+        Mockito.verify( emailProducer ).sendEmail( emailData, INVITE_MESSAGE_TYPE.getMessageType() );
+    }
+
+    @Test
+    void sendInviteEmailWithUnexpectedIssueThrowsEmailSendingException(){
+        final var emailData = new InviteEmailData();
+        emailData.setTo( "kpatel@companieshouse.gov.uk" );
+        emailData.setSubject( "Companies House: invitation to be authorised to file online for Tesla" );
+        emailData.setInviterDisplayName( "Krishna Patel" );
+        emailData.setCompanyName( "Tesla" );
+        emailData.setInvitationExpiryTimestamp( "1992-05-01T10:30:00.000000" );
+        emailData.setInvitationLink( "https://companieshouse/authorised-person-confirmation-5xbk3ft88" );
+
+        final var user = new User().email( "kpatel@companieshouse.gov.uk" );
+        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
+
+        Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
+
+        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Krishna Patel", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", user ) );
     }
 
 }

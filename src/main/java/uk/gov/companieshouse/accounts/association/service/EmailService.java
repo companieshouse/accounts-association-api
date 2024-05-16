@@ -187,4 +187,24 @@ public class EmailService {
         });
     }
 
+    @Async
+    public void sendInviteEmail( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String invitationExpiryTimestamp, final String invitationLink, final User user ){
+        final var emailData = new InviteEmailBuilder()
+                .setRecipientEmail( user.getEmail() )
+                .setInviterDisplayName( inviterDisplayName )
+                .setCompanyName( companyDetails.getCompanyName() )
+                .setInvitationExpiryTimestamp( invitationExpiryTimestamp )
+                .setInvitationLink( invitationLink )
+                .build();
+
+        emailProducer.sendEmail( emailData, MessageType.INVITE_MESSAGE_TYPE.getMessageType() );
+
+        LOG.infoContext( xRequestId,
+                new EmailNotification(
+                        MessageType.INVITE_MESSAGE_TYPE,
+                        StaticPropertyUtil.APPLICATION_NAMESPACE,
+                        user.getEmail(),
+                        companyDetails.getCompanyNumber() ).toMessage(), null );
+    }
+
 }
