@@ -20,6 +20,7 @@ import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfi
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
+import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
@@ -52,6 +53,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
     @MockBean
     CompanyService companyService;
+
+    @MockBean
+    UsersService usersService;
 
     @InjectMocks
     AssociationsListForCompanyController associationsListForCompanyController;
