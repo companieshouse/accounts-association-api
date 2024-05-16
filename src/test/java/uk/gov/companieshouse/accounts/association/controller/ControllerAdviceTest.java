@@ -20,6 +20,7 @@ import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -55,7 +56,7 @@ class ControllerAdviceTest {
     @Test
     void testNotFoundRuntimeError() throws Exception {
         Mockito.doThrow(new NotFoundRuntimeException("accounts-association-api", "Couldn't find association"))
-                .when(usersService).fetchUserDetails("111");
+                .when(associationsService).fetchAssociationsForUserStatusAndCompany(any(),anyList(),any(),any(),any());
 
         mockMvc.perform(get("/associations")
                         .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
@@ -81,7 +82,7 @@ class ControllerAdviceTest {
     @Test
     void testOnInternalServerError() throws Exception {
         Mockito.doThrow(new NullPointerException("Couldn't find association"))
-                .when(usersService).fetchUserDetails("111");
+                .when(associationsService).fetchAssociationsForUserStatusAndCompany(any(),anyList(),any(),any(),any());
 
         mockMvc.perform(get("/associations?company_number=123445")
                         .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
@@ -90,7 +91,8 @@ class ControllerAdviceTest {
     @Test
     void testOnInternalServerErrorRuntimeException() throws Exception {
         Mockito.doThrow(new InternalServerErrorRuntimeException("Couldn't find association"))
-                .when(usersService).fetchUserDetails("111");
+                .when(associationsService).fetchAssociationsForUserStatusAndCompany(any(),anyList(),any(),any(),any());
+
 
         mockMvc.perform(get("/associations")
                         .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))

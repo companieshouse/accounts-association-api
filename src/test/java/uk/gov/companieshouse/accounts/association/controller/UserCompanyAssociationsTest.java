@@ -82,6 +82,12 @@ class UserCompanyAssociationsTest {
     @BeforeEach
     public void setup() {
 
+        final var requestingUser = new User()
+                .userId("000")
+                .email("light.yagami@death.note")
+                .displayName("Kira");
+        Mockito.doReturn( requestingUser ).when( usersService ).fetchUserDetails( "000" );
+
         final var invitationOne =
                 new Invitation().invitedBy("homer.simpson@springfield.com")
                         .invitedAt(now.plusDays(4).toString());
@@ -167,18 +173,6 @@ class UserCompanyAssociationsTest {
 
 
     @Test
-    void fetchAssociationsByTestShouldThrowBadRequestIfUserIdFromEricNotFound() throws Exception {
-        var response = mockMvc.perform(get("/associations").header("Eric-identity", "abcd12345")
-                .header("X-Request-Id", "theId")
-                .header("Eric-identity", "abcd12345")
-                .header("ERIC-Identity-Type", "oauth2")
-                .header("ERIC-Authorised-Key-Roles", "*")).andExpect(status().isBadRequest()).andReturn();
-        assertEquals("{\"errors\":[{\"error\":\"Eric id is not valid\",\"type\":\"ch:service\"}]}",
-                response.getResponse().getContentAsString());
-
-    }
-
-    @Test
     void fetchAssociationsByTestShouldReturnEmptyDataWhenNoAssociationsFoundForEricIdentity() throws Exception {
         when(usersService.fetchUserDetails("abcd12345")).thenReturn(new User("abc", "abc", "abc@abc.com").userId("abcd12345"));
         var response = mockMvc.perform(get("/associations")
@@ -235,9 +229,14 @@ class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByWithInvalidPageIndexReturnsBadRequest() throws Exception {
+        final var requestingUser = new User()
+                .userId("000")
+                .email("light.yagami@death.note")
+                .displayName("Kira");
+        Mockito.doReturn( requestingUser ).when( usersService ).fetchUserDetails( "000" );
         mockMvc.perform(get("/associations?page_index=-1")
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
+                        .header("Eric-identity", "000")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*"))
                 .andExpect(status().isBadRequest());
@@ -247,7 +246,7 @@ class UserCompanyAssociationsTest {
     void fetchAssociationsByWithInvalidItemsPerPageReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/associations?items_per_page=0")
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
+                        .header("Eric-identity", "000")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*"))
                 .andExpect(status().isBadRequest());
@@ -589,7 +588,7 @@ class UserCompanyAssociationsTest {
     @Test
     void getAssociationsDetailsWithoutXRequestIdReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/associations/{id}", "1")
-                        .header("Eric-identity", "9999")
+                        .header("Eric-identity", "000")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*"))
                 .andExpect(status().isBadRequest());
@@ -609,7 +608,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(Optional.empty()).when(associationsService).findAssociationById("11");
         final var response = mockMvc.perform(get("/associations/{id}", "11")
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
+                        .header("Eric-identity", "000")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*"))
                 .andExpect(status().isNotFound()).andReturn();
@@ -623,7 +622,7 @@ class UserCompanyAssociationsTest {
         final var response =
                 mockMvc.perform(get("/associations/{id}", "18")
                                 .header("X-Request-Id", "theId123")
-                                .header("Eric-identity", "9999")
+                                .header("Eric-identity", "000")
                                 .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*"))
                         .andExpect(status().isOk())
@@ -651,6 +650,11 @@ class UserCompanyAssociationsTest {
 
     @Test
     void addAssociationWithoutRequestBodyReturnsBadRequest() throws Exception {
+        final var requestingUser = new User()
+                .userId("000")
+                .email("light.yagami@death.note")
+                .displayName("Kira");
+        Mockito.doReturn( requestingUser ).when( usersService ).fetchUserDetails( "000" );
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "000")
                         .header("X-Request-Id", "theId123")
@@ -813,7 +817,7 @@ class UserCompanyAssociationsTest {
     @Test
     void updateAssociationStatusForIdWithoutXRequestIdReturnsBadRequest() throws Exception {
         mockMvc.perform(patch("/associations/{associationId}", "18")
-                        .header("Eric-identity", "9999")
+                        .header("Eric-identity", "000")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -848,7 +852,7 @@ class UserCompanyAssociationsTest {
     void updateAssociationStatusForIdWithoutStatusReturnsBadRequest() throws Exception {
         mockMvc.perform(patch("/associations/{associationId}", "18")
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
+                        .header("Eric-identity", "000")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -860,7 +864,7 @@ class UserCompanyAssociationsTest {
     void updateAssociationStatusForIdWithMalformedStatusReturnsBadRequest() throws Exception {
         mockMvc.perform(patch("/associations/{associationId}", "18")
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
+                        .header("Eric-identity", "000")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -959,12 +963,6 @@ class UserCompanyAssociationsTest {
         final var usersList = new UsersList();
         usersList.add(user);
         Mockito.doReturn(usersList).when(usersService).searchUserDetails(List.of("light.yagami@death.note"));
-
-        final var requestingUser = new User()
-                .userId("000")
-                .email("light.yagami@death.note")
-                .displayName("Kira");
-        Mockito.doReturn( requestingUser ).when( usersService ).fetchUserDetails( "000" );
 
         mockMvc.perform(patch("/associations/{associationId}", "0")
                         .header("X-Request-Id", "theId123")
@@ -1414,7 +1412,7 @@ class UserCompanyAssociationsTest {
     @Test
     void inviteUserWithoutXRequestIdReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/associations/invitations")
-                        .header("Eric-identity", "9999")
+                        .header("Eric-identity", "000")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -1437,8 +1435,8 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void inviteUserWithNonexistentEricIdentityReturnsBadRequest() throws Exception {
-        Mockito.doThrow(new NotFoundRuntimeException("accounts-association-api", "Not found")).when(usersService).fetchUserDetails("9191");
+    void inviteUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
+      //  Mockito.doThrow(new NotFoundRuntimeException("accounts-association-api", "Not found")).when(usersService).fetchUserDetails("9191");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -1447,7 +1445,7 @@ class UserCompanyAssociationsTest {
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().is(403));
     }
 
     @Test
@@ -1465,7 +1463,7 @@ class UserCompanyAssociationsTest {
     void inviteUserWithoutCompanyNumberReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
+                        .header("Eric-identity", "000")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -1477,7 +1475,7 @@ class UserCompanyAssociationsTest {
     void inviteUserWithMalformedCompanyNumberReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
+                        .header("Eric-identity", "000")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -1506,7 +1504,7 @@ class UserCompanyAssociationsTest {
     void inviteUserWithoutInviteeEmailIdReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
+                        .header("Eric-identity", "000")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
