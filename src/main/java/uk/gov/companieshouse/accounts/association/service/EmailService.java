@@ -204,7 +204,9 @@ public class EmailService {
                         MessageType.INVITE_MESSAGE_TYPE,
                         StaticPropertyUtil.APPLICATION_NAMESPACE,
                         user.getEmail(),
-                        companyDetails.getCompanyNumber() ).toMessage(), null );
+                        companyDetails.getCompanyNumber() )
+                        .setInvitationExpiryTimestamp( invitationExpiryTimestamp )
+                        .toMessage(), null );
     }
 
 }
