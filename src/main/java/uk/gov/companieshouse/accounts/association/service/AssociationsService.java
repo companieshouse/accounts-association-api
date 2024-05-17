@@ -1,6 +1,15 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
+
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,11 +33,6 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
-
-import java.time.LocalDateTime;
-import java.util.*;
-
-import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 
 @Service
 public class AssociationsService {
