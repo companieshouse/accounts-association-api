@@ -20,7 +20,6 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.api.model.ApiResponse;
-import uk.gov.companieshouse.api.model.company.CompanyProfileApi;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
