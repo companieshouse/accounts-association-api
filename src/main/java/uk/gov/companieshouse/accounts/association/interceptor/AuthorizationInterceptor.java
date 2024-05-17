@@ -32,8 +32,8 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
     }
 
     private boolean isOauth2User(HttpServletRequest request, HttpServletResponse response) {
-        final var hasEricIdentity = !Objects.isNull( request.getHeader( "Eric-Identity" ) );
-        final var hasEricIdentityType = !Objects.isNull( request.getHeader( "Eric-Identity-Type" ) );
+        final var hasEricIdentity = Objects.nonNull( request.getHeader( "Eric-Identity" ) );
+        final var hasEricIdentityType = Objects.nonNull( request.getHeader( "Eric-Identity-Type" ) );
         if ( hasEricIdentity && hasEricIdentityType && AuthorisationUtil.isOauth2User(request) ) {
             return true;
         }

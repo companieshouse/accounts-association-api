@@ -1,8 +1,17 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import java.util.Set;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import org.bson.Document;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,17 +41,6 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
@@ -986,8 +984,8 @@ class AssociationsServiceTest {
             final var userEmailIsCorrect = Objects.isNull(userEmail) ? Objects.isNull(associationDao.getUserEmail()) : userEmail.equals(associationDao.getUserEmail());
             final var statusIsCorrect = associationDao.getStatus().equals(statusEnum.getValue());
             final var approvalRouteIsCorrect = associationDao.getApprovalRoute().equals(approvalRouteEnum.getValue());
-            final var etagIsCorrect = !Objects.isNull(associationDao.getEtag());
-            final var approvalExpiryAtIsCorrect = approvalExpiryAtIsNull ? Objects.isNull(associationDao.getApprovalExpiryAt()) : !Objects.isNull(associationDao.getApprovalExpiryAt());
+            final var etagIsCorrect = Objects.nonNull(associationDao.getEtag());
+            final var approvalExpiryAtIsCorrect = approvalExpiryAtIsNull ? Objects.isNull(associationDao.getApprovalExpiryAt()) : Objects.nonNull(associationDao.getApprovalExpiryAt());
 
             boolean invitationsIsCorrect;
             if ( Objects.isNull( inviters ) || inviters.isEmpty() ){
@@ -1067,7 +1065,7 @@ class AssociationsServiceTest {
             final var statusIsCorrect = expectedStatus.equals( document.get( "status" ) );
             final var approvedAtIsCorrect = Objects.isNull( document.getOrDefault( "approved_at", null ) ) == approvedAtShouldBeNull;
             final var removedAtIsCorrect = Objects.isNull( document.getOrDefault( "removed_at", null ) ) == removedAtShouldBeNull;
-            final var etagIsNotNull = !Objects.isNull( document.getOrDefault( "etag", null ) );
+            final var etagIsNotNull = Objects.nonNull( document.getOrDefault( "etag", null ) );
             final var userEmail = document.getOrDefault( "user_email", null );
             boolean userEmailIsCorrect = Objects.isNull( expectedUserEmail ) ? Objects.isNull( userEmail ) : expectedUserEmail.equals( userEmail );
             final var userId = document.getOrDefault( "user_id", null );
