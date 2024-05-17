@@ -1847,7 +1847,7 @@ public class UserCompanyAssociationsTest {
     void inviteUserWithUserThatHasDisplayNameUsesDisplayName()  throws Exception {
         mockMvc.perform(post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "111")
+                        .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
@@ -1857,7 +1857,7 @@ public class UserCompanyAssociationsTest {
         Mockito.verify( emailProducer ).sendEmail( argThat(
                         InvitationEmailDataMatcher(
                                 "scrooge.mcduck@disney.land",
-                                "Companies House: Batman invited to be authorised to file online for Sainsbury's",
+                                "Companies House: bruce.wayne@gotham.city invited to be authorised to file online for Sainsbury's",
                                 "Scrooge McDuck",
                                 "bruce.wayne@gotham.city",
                                 "Sainsbury's" ) ),
