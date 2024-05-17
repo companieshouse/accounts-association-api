@@ -12,12 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.email.EmailNotification;
-import uk.gov.companieshouse.accounts.association.models.email.builders.AuthCodeConfirmationEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.AuthorisationRemovedEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationAcceptedEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationCancelledEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationRejectedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.*;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
@@ -185,6 +180,28 @@ public class EmailService {
                             user.getEmail(),
                             companyDetails.getCompanyNumber()).toMessage(), null);
         });
+    }
+
+    @Async
+    public void sendInviteEmail( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String invitationExpiryTimestamp, final String invitationLink, final User user ){
+        final var emailData = new InviteEmailBuilder()
+                .setRecipientEmail( user.getEmail() )
+                .setInviterDisplayName( inviterDisplayName )
+                .setCompanyName( companyDetails.getCompanyName() )
+                .setInvitationExpiryTimestamp( invitationExpiryTimestamp )
+                .setInvitationLink( invitationLink )
+                .build();
+
+        emailProducer.sendEmail( emailData, MessageType.INVITE_MESSAGE_TYPE.getMessageType() );
+
+        LOG.infoContext( xRequestId,
+                new EmailNotification(
+                        MessageType.INVITE_MESSAGE_TYPE,
+                        StaticPropertyUtil.APPLICATION_NAMESPACE,
+                        user.getEmail(),
+                        companyDetails.getCompanyNumber() )
+                        .setInvitationExpiryTimestamp( invitationExpiryTimestamp )
+                        .toMessage(), null );
     }
 
 }
