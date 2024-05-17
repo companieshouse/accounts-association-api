@@ -2,8 +2,6 @@ package uk.gov.companieshouse.accounts.association.models;
 
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
-import java.util.Optional;
-
 public final class UserContext {
 
     private static ThreadLocal<User> userContext;

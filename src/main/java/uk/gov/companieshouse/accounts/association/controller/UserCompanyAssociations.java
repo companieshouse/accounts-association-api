@@ -227,7 +227,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         boolean requestingAndTargetUserMatches;
         String targetUserDisplayValue = "";
-        Optional<User> targetUserOptional = Optional.empty();
+        Optional<User> targetUserOptional;
         if (Objects.isNull(associationOptional.get().getUserId())) {
             var targetUserEmail = associationOptional.get().getUserEmail();
             requestingAndTargetUserMatches = requestingUserDetails.getEmail().equals(targetUserEmail);

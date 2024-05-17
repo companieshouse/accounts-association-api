@@ -207,7 +207,7 @@ class UserCompanyAssociationsTest {
     void fetchAssociationsByTestShouldTrowErrorWhenCompanyNumberIsOfWrongFormat() throws Exception {
 
         var response = mockMvc.perform(get("/associations?page_index=0&items_per_page=15&company_number=abc")
-                .header("Eric-identity", "abcd12345")
+                .header("Eric-identity", "000")
                 .header("X-Request-Id", "theId")
                 .header("ERIC-Identity-Type", "oauth2")
                 .header("ERIC-Authorised-Key-Roles", "*")).andExpect(status().isBadRequest()).andReturn();
@@ -1452,7 +1452,7 @@ class UserCompanyAssociationsTest {
     void inviteUserWithoutRequestBodyReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
+                        .header("Eric-identity", "000")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON))
