@@ -1,7 +1,9 @@
 package uk.gov.companieshouse.accounts.association.models.email;
 
-import java.time.LocalDateTime;
+import java.util.Objects;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
+
+import java.time.LocalDateTime;
 
 public class EmailNotification {
 
@@ -10,6 +12,7 @@ public class EmailNotification {
     private final String sentTo;
     private final String companyNumber;
     private final LocalDateTime sentTime;
+    private String invitationExpiryTimestamp;
 
 
     public EmailNotification(MessageType messageType, String sentFrom, String sentTo, String companyNumber) {
@@ -20,8 +23,15 @@ public class EmailNotification {
         this.sentTime = LocalDateTime.now();
     }
 
+    public EmailNotification setInvitationExpiryTimestamp( final String invitationExpiryTimestamp ){
+        this.invitationExpiryTimestamp = invitationExpiryTimestamp;
+        return this;
+    }
+
     public String toMessage(){
-        return String.format( "%s notification sent to %s at %s from %s, regarding company %s.", messageType, sentTo, sentTime.toString(), sentFrom, companyNumber );
+        var message = String.format( "%s notification sent to %s at %s from %s, regarding company %s.", messageType, sentTo, sentTime.toString(), sentFrom, companyNumber );
+        message += Objects.isNull( invitationExpiryTimestamp ) ? "" : String.format( " Invitation expires at %s.", invitationExpiryTimestamp );
+        return message;
     }
 
     @Override
@@ -32,6 +42,7 @@ public class EmailNotification {
                 ", sentTo='" + sentTo + '\'' +
                 ", companyNumber='" + companyNumber + '\'' +
                 ", sentTime=" + sentTime +
+                ", invitationExpiryTimestamp='" + invitationExpiryTimestamp + '\'' +
                 '}';
     }
 }
