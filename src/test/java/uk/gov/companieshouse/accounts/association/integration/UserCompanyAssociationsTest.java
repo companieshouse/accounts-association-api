@@ -122,9 +122,6 @@ public class UserCompanyAssociationsTest {
     AssociationsRepository associationsRepository;
 
     @MockBean
-    InterceptorConfig interceptorConfig;
-
-    @MockBean
     StaticPropertyUtil staticPropertyUtil;
 
     @Mock
@@ -696,25 +693,39 @@ public class UserCompanyAssociationsTest {
 
         Mockito.doReturn( toSearchUserDetailsApiResponse( "bruce.wayne@gotham.city", "111" ) ).when( accountsUserEndpoint ).searchUserDetails( eq( List.of( "bruce.wayne@gotham.city" ) ) );
 
-        Mockito.doNothing().when(interceptorConfig).addInterceptors( any() );
+    }
+
+    @Test
+    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD )
+    void updateAssociationStatusForIdUserAcceptedInvitationNotificationsSendsNotification() throws Exception {
+        mockMvc.perform( patch( "/associations/{associationId}", "42" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "333")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( emailProducer, times( 3 ) ).sendEmail( argThat( invitationAcceptedEmailDataMatcher( List.of("the.joker@gotham.city", "robin@gotham.city", "harley.quinn@gotham.city" ), "Companies House: harley.quinn@gotham.city is now authorised to file online for Twitter", "harley.quinn@gotham.city", "Twitter", "the.joker@gotham.city" ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageType() ) );
     }
 
     @Test
     void fetchAssociationsByWithoutXRequestIdReturnsBadRequest() throws Exception {
         mockMvc.perform( get( "/associations" )
-                        .header("Eric-identity", "333333")
-                        .header("ERIC-Identity-Type", "key")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isBadRequest() );
     }
 
     @Test
-    void fetchAssociationsByWithoutEricIdentityReturnsBadRequest() throws Exception {
+    void fetchAssociationsByWithoutEricIdentityReturnsUnauthorised() throws Exception {
         mockMvc.perform( get( "/associations" )
                         .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isBadRequest() );
+                .andExpect( status().isUnauthorized() );
     }
 
     @Test
@@ -722,7 +733,7 @@ public class UserCompanyAssociationsTest {
         mockMvc.perform( get( "/associations?page_index=-1" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isBadRequest() );
     }
@@ -732,7 +743,7 @@ public class UserCompanyAssociationsTest {
         mockMvc.perform( get( "/associations?items_per_page=0" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isBadRequest() );
     }
@@ -742,19 +753,19 @@ public class UserCompanyAssociationsTest {
         mockMvc.perform( get( "/associations?company_number=$$$$$$" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isBadRequest() );
     }
 
     @Test
-    void fetchAssociationsByWithNonExistentUserReturnsNotFound() throws Exception {
+    void fetchAssociationsByWithNonExistentUserReturnsForbidden() throws Exception {
         mockMvc.perform( get( "/associations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9191")
-                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isNotFound() );
+                .andExpect( status().isForbidden() );
     }
 
     @Test
@@ -766,7 +777,7 @@ public class UserCompanyAssociationsTest {
         mockMvc.perform( get( "/associations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "8888")
-                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isNotFound() );
     }
@@ -777,7 +788,7 @@ public class UserCompanyAssociationsTest {
                 mockMvc.perform( get( "/associations?status=$$$$" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
-                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
                         .andExpect( status().isOk() )
                         .andReturn()
@@ -796,7 +807,7 @@ public class UserCompanyAssociationsTest {
                 mockMvc.perform( get( "/associations" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
-                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
                         .andExpect( status().isOk() )
                         .andReturn()
@@ -828,7 +839,7 @@ public class UserCompanyAssociationsTest {
                 mockMvc.perform( get( "/associations?status=removed" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
-                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
                         .andExpect( status().isOk() )
                         .andReturn()
@@ -860,7 +871,7 @@ public class UserCompanyAssociationsTest {
                 mockMvc.perform( get( "/associations?status=confirmed&status=removed" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
-                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
                         .andExpect( status().isOk() )
                         .andReturn()
@@ -892,7 +903,7 @@ public class UserCompanyAssociationsTest {
                 mockMvc.perform( get( "/associations?status=confirmed&status=awaiting-approval&status=removed&page_index=2&items_per_page=3" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
-                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
                         .andExpect( status().isOk() )
                         .andReturn()
@@ -924,7 +935,7 @@ public class UserCompanyAssociationsTest {
                 mockMvc.perform( get( "/associations?company_number=333333" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
-                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
                         .andExpect( status().isOk() )
                         .andReturn()
@@ -966,7 +977,7 @@ public class UserCompanyAssociationsTest {
                 mockMvc.perform( get( "/associations?company_number=333333" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
-                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
                         .andExpect( status().isOk() )
                         .andReturn()
@@ -1005,7 +1016,7 @@ public class UserCompanyAssociationsTest {
         mockMvc.perform( get( "/associations/" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isNotFound() );
     }
@@ -1013,7 +1024,7 @@ public class UserCompanyAssociationsTest {
     void getAssociationsDetailsWithoutXRequestIdReturnsBadRequest() throws Exception {
         mockMvc.perform( get( "/associations/{id}", "1" )
                         .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect(status().isBadRequest());
     }
@@ -1022,7 +1033,7 @@ public class UserCompanyAssociationsTest {
         mockMvc.perform( get( "/associations/{id}", "$" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isBadRequest() );
     }
@@ -1032,7 +1043,7 @@ public class UserCompanyAssociationsTest {
         mockMvc.perform( get( "/associations/{id}", "1" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isNotFound() );
     }
@@ -1043,7 +1054,7 @@ public class UserCompanyAssociationsTest {
                 mockMvc.perform( get( "/associations/{id}", "18" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
-                                .header("ERIC-Identity-Type", "key")
+                                .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
                         .andExpect( status().isOk() )
                         .andReturn()
@@ -1069,14 +1080,14 @@ public class UserCompanyAssociationsTest {
     }
 
     @Test
-    void addAssociationWithoutEricIdentityReturnsBadRequest() throws Exception {
+    void addAssociationWithoutEricIdentityReturnsUnauthorised() throws Exception {
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"company_number\":\"000000\"}" ) )
-                .andExpect( status().isBadRequest() );
+                .andExpect( status().isUnauthorized() );
     }
 
     @Test
@@ -1168,7 +1179,7 @@ public class UserCompanyAssociationsTest {
     }
 
     @Test
-    void addAssociationWithNonExistentUserReturnsNotFound() throws Exception {
+    void addAssociationWithNonExistentUserReturnsForbidden() throws Exception {
         mockMvc.perform( post( "/associations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9191")
@@ -1176,7 +1187,7 @@ public class UserCompanyAssociationsTest {
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"company_number\":\"000000\"}" ) )
-                .andExpect( status().isNotFound() );
+                .andExpect( status().isForbidden() );
     }
 
     ArgumentMatcher<AuthCodeConfirmationEmailData> authCodeConfirmationEmailDataMatcher( String to, String subject, String authorisedPerson, String companyName ){
@@ -1558,21 +1569,6 @@ public class UserCompanyAssociationsTest {
     }
 
     @Test
-    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD )
-    void updateAssociationStatusForIdUserAcceptedInvitationNotificationsSendsNotification() throws Exception {
-        mockMvc.perform( patch( "/associations/{associationId}", "42" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "333")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
-                        .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"status\":\"confirmed\"}" ) )
-                .andExpect( status().isOk() );
-
-        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( invitationAcceptedEmailDataMatcher( List.of("the.joker@gotham.city", "robin@gotham.city" ), "Companies House: harley.quinn@gotham.city is now authorised to file online for Twitter", "harley.quinn@gotham.city", "Twitter", "the.joker@gotham.city" ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageType() ) );
-    }
-
-    @Test
     void inviteUserWithoutXRequestIdReturnsBadRequest() throws Exception {
         mockMvc.perform( post( "/associations/invitations" )
                         .header("Eric-identity", "9999")
@@ -1584,18 +1580,18 @@ public class UserCompanyAssociationsTest {
     }
 
     @Test
-    void inviteUserWithoutEricIdentityReturnsBadRequest() throws Exception {
+    void inviteUserWithoutEricIdentityReturnsUnauthorised() throws Exception {
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
-                .andExpect( status().isBadRequest() );
+                .andExpect( status().isUnauthorized() );
     }
 
     @Test
-    void inviteUserWithMalformedEricIdentityReturnsBadRequest() throws Exception {
+    void inviteUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "$$$$")
@@ -1603,11 +1599,11 @@ public class UserCompanyAssociationsTest {
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
-                .andExpect( status().isBadRequest() );
+                .andExpect( status().isForbidden() );
     }
 
     @Test
-    void inviteUserWithNonexistentEricIdentityReturnsBadRequest() throws Exception {
+    void inviteUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9191")
@@ -1615,7 +1611,7 @@ public class UserCompanyAssociationsTest {
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
-                .andExpect( status().isBadRequest() );
+                .andExpect( status().isForbidden() );
     }
 
     @Test
