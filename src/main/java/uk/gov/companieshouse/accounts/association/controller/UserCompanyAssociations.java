@@ -136,11 +136,10 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             LOG.error(String.format("%s: inviteeEmail is null.", xRequestId));
             throw new BadRequestRuntimeException("Please check the request and try again");
         }
-        User inviterUserDetails= null;
+
+        final var inviterUserDetails= Objects.requireNonNull(UserContext.getLoggedUser());
         CompanyDetails companyDetails = null;
         try {
-            LOG.debugContext( xRequestId, String.format( "Attempting to fetch %s from accounts-user-api.", ericIdentity ), null );
-            inviterUserDetails = usersService.fetchUserDetails(ericIdentity);
             LOG.debugContext( xRequestId, String.format( "Attempting to fetch %s from company-profile-api.", companyNumber ), null );
             companyDetails= companyService.fetchCompanyProfile( companyNumber );
         } catch( NotFoundRuntimeException notFoundRuntimeException ){
