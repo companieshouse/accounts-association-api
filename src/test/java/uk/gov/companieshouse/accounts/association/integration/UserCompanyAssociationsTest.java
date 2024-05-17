@@ -707,6 +707,12 @@ public class UserCompanyAssociationsTest {
     @Test
     @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD )
     void updateAssociationStatusForIdUserAcceptedInvitationNotificationsSendsNotification() throws Exception {
+        latch = new CountDownLatch(3);
+        doAnswer( invocation -> {
+            latch.countDown();
+            return null;
+        } ).when(emailProducer).sendEmail(any(), any());
+
         mockMvc.perform( patch( "/associations/{associationId}", "42" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "333")
