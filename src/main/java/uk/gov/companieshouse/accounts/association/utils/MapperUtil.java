@@ -1,5 +1,9 @@
 package uk.gov.companieshouse.accounts.association.utils;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -10,11 +14,6 @@ import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsListLinks;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.user.model.User;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Component
 public class MapperUtil {

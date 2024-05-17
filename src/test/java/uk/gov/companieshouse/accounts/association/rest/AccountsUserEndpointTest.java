@@ -15,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import uk.gov.companieshouse.accounts.association.utils.ApiClientUtil;
 import uk.gov.companieshouse.api.InternalApiClient;
 import uk.gov.companieshouse.api.accounts.user.model.User;

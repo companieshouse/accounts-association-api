@@ -1,5 +1,8 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -19,10 +22,6 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association.Approva
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")

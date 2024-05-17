@@ -2,6 +2,9 @@ package uk.gov.companieshouse.accounts.association.service;
 
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
 
+import java.util.List;
+import java.util.Set;
+import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
@@ -9,7 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.email.EmailNotification;
-import uk.gov.companieshouse.accounts.association.models.email.builders.*;
+import uk.gov.companieshouse.accounts.association.models.email.builders.AuthCodeConfirmationEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.AuthorisationRemovedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationAcceptedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationCancelledEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationRejectedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
@@ -19,10 +27,6 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
-
-import java.util.List;
-import java.util.Set;
-import java.util.function.Supplier;
 
 @Service
 public class EmailService {
@@ -42,11 +46,11 @@ public class EmailService {
     }
 
     @Transactional(readOnly = true)
-    public List<Supplier<User>> createRequestsToFetchAssociatedUsers(final String companyNumber) {
+    public List<Supplier<User>> createRequestsToFetchAssociatedUsers( final String companyNumber ) {
         return associationsRepository.fetchAssociatedUsers(companyNumber, Set.of(StatusEnum.CONFIRMED.getValue()), Pageable.unpaged())
                 .map(AssociationDao::getUserId)
                 .map(usersService::createFetchUserDetailsRequest)
-                .getContent();
+                .toList();
     }
 
     @Async
