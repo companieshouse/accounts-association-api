@@ -8,12 +8,12 @@ import static org.mockito.Mockito.times;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +55,7 @@ import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConf
 import uk.gov.companieshouse.accounts.association.models.email.data.AuthorisationRemovedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.InviteEmailData;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
@@ -1737,8 +1739,13 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWhereAssociationBetweenInviteeEmailAndCompanyNumberExistsAndInviteeUserIsNotFoundDoesNotPerformSwapButDoesPerformUpdateOperation() throws Exception {
-
         Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new UsersList() ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( "russell.howard@comedy.com" ) );
+
+        latch = new CountDownLatch(2);
+        doAnswer( invocation -> {
+            latch.countDown();
+            return null;
+        } ).when(emailProducer).sendEmail(any(), any());
 
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
@@ -1762,10 +1769,37 @@ public class UserCompanyAssociationsTest {
         Assertions.assertNotEquals( "qq", association.getEtag() );
         Assertions.assertNotNull( invitation.getInvitedAt() );
         Assertions.assertEquals( "9999", invitation.getInvitedBy() );
+
+        final var invitationEmailMatches =
+                InvitationEmailDataMatcher(
+                        "scrooge.mcduck@disney.land",
+                        "Companies House: russell.howard@comedy.com invited to be authorised to file online for Tesco",
+                        "Scrooge McDuck",
+                        "russell.howard@comedy.com",
+                        "Tesco" );
+
+        final var inviteEmailMatches =
+                InviteEmailDataMatcher( "russell.howard@comedy.com",
+                        "Companies House: invitation to be authorised to file online for Tesco",
+                        "Scrooge McDuck",
+                        "Tesco",
+                        "TODO" );
+
+        latch.await( 10, TimeUnit.SECONDS );
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
+            if ( emailData instanceof InvitationEmailData ) return invitationEmailMatches.test( (InvitationEmailData) emailData );
+            if ( emailData instanceof InviteEmailData ) return inviteEmailMatches.test( (InviteEmailData) emailData );
+            return false;
+        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getMessageType(), INVITE_MESSAGE_TYPE.getMessageType() ).contains( messageType ) ) );
     }
 
     @Test
     void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberExistsDoesNotPerformSwapButDoesPerformUpdateOperation() throws Exception {
+        latch = new CountDownLatch(2);
+        doAnswer( invocation -> {
+            latch.countDown();
+            return null;
+        } ).when(emailProducer).sendEmail(any(), any());
 
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
@@ -1789,6 +1823,28 @@ public class UserCompanyAssociationsTest {
         Assertions.assertNotEquals( "rr", association.getEtag() );
         Assertions.assertNotNull( invitation.getInvitedAt() );
         Assertions.assertEquals( "9999", invitation.getInvitedBy() );
+
+        final var invitationEmailMatches =
+                InvitationEmailDataMatcher(
+                        "scrooge.mcduck@disney.land",
+                        "Companies House: bruce.wayne@gotham.city invited to be authorised to file online for Tesco",
+                        "Scrooge McDuck",
+                        "bruce.wayne@gotham.city",
+                        "Tesco" );
+
+        final var inviteEmailMatches =
+                InviteEmailDataMatcher( "bruce.wayne@gotham.city",
+                        "Companies House: invitation to be authorised to file online for Tesco",
+                        "Scrooge McDuck",
+                        "Tesco",
+                        "TODO" );
+
+        latch.await( 10, TimeUnit.SECONDS );
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
+            if ( emailData instanceof InvitationEmailData ) return invitationEmailMatches.test( (InvitationEmailData) emailData );
+            if ( emailData instanceof InviteEmailData ) return inviteEmailMatches.test( (InviteEmailData) emailData );
+            return false;
+        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getMessageType(), INVITE_MESSAGE_TYPE.getMessageType() ).contains( messageType ) ) );
     }
 
     @Test
@@ -1820,6 +1876,12 @@ public class UserCompanyAssociationsTest {
     void inviteUserWhereAssociationBetweenInviteeUserEmailAndCompanyNumberDoesNotExistAndInviteeUserIsNotFoundCreatesNewAssociation() throws Exception {
         Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new UsersList() ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( "madonna@singer.com" ) );
 
+        latch = new CountDownLatch(2);
+        doAnswer( invocation -> {
+            latch.countDown();
+            return null;
+        } ).when(emailProducer).sendEmail(any(), any());
+
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
@@ -1841,6 +1903,28 @@ public class UserCompanyAssociationsTest {
         Assertions.assertNotNull( association.getApprovalExpiryAt() );
         Assertions.assertNotNull( invitation.getInvitedAt() );
         Assertions.assertEquals( "9999", invitation.getInvitedBy() );
+
+        final var invitationEmailMatches =
+                InvitationEmailDataMatcher(
+                        "scrooge.mcduck@disney.land",
+                        "Companies House: madonna@singer.com invited to be authorised to file online for Tesco",
+                        "Scrooge McDuck",
+                        "madonna@singer.com",
+                        "Tesco" );
+
+        final var inviteEmailMatches =
+                InviteEmailDataMatcher( "madonna@singer.com",
+                        "Companies House: invitation to be authorised to file online for Tesco",
+                        "Scrooge McDuck",
+                        "Tesco",
+                        "TODO" );
+
+        latch.await( 10, TimeUnit.SECONDS );
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
+            if ( emailData instanceof InvitationEmailData ) return invitationEmailMatches.test( (InvitationEmailData) emailData );
+            if ( emailData instanceof InviteEmailData ) return inviteEmailMatches.test( (InviteEmailData) emailData );
+            return false;
+        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getMessageType(), INVITE_MESSAGE_TYPE.getMessageType() ).contains( messageType ) ) );
     }
 
     @Test
@@ -1856,7 +1940,8 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isBadRequest() ).andReturn();
 
     }
-    ArgumentMatcher<InvitationEmailData> InvitationEmailDataMatcher(String to, String subject, String personWhoCreatedInvite, String invitee , String companyName ){
+
+    Predicate<InvitationEmailData> InvitationEmailDataMatcher( String to, String subject, String personWhoCreatedInvite, String invitee, String companyName ){
         return emailData ->
                 to.equals( emailData.getTo() ) &&
                         subject.equals( emailData.getSubject() ) &&
@@ -1864,8 +1949,24 @@ public class UserCompanyAssociationsTest {
                         invitee.equals(emailData.getInvitee()) &&
                         companyName.equals( emailData.getCompanyName() );
     }
+
+    Predicate<InviteEmailData> InviteEmailDataMatcher( String to, String subject, String inviterDisplayName, String companyName, String invitationLink ){
+        return emailData ->
+                to.equals( emailData.getTo() ) &&
+                        subject.equals( emailData.getSubject() ) &&
+                        inviterDisplayName.equals( emailData.getInviterDisplayName() ) &&
+                        companyName.equals( emailData.getCompanyName() ) &&
+                        invitationLink.equals( emailData.getInvitationLink() );
+    }
+
     @Test
     void inviteUserWithUserThatHasDisplayNameUsesDisplayName()  throws Exception {
+        latch = new CountDownLatch(2);
+        doAnswer( invocation -> {
+            latch.countDown();
+            return null;
+        } ).when(emailProducer).sendEmail(any(), any());
+
         mockMvc.perform(post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
@@ -1875,15 +1976,27 @@ public class UserCompanyAssociationsTest {
                         .content( "{\"company_number\":\"444444\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
                 .andExpect( status().isCreated() );
 
+        final var invitationEmailMatches =
+        InvitationEmailDataMatcher(
+                "scrooge.mcduck@disney.land",
+                "Companies House: bruce.wayne@gotham.city invited to be authorised to file online for Sainsbury's",
+                "Scrooge McDuck",
+                "bruce.wayne@gotham.city",
+                "Sainsbury's" );
+
+        final var inviteEmailMatches =
+        InviteEmailDataMatcher( "bruce.wayne@gotham.city",
+                "Companies House: invitation to be authorised to file online for Sainsbury's",
+                "Scrooge McDuck",
+                "Sainsbury's",
+                "TODO" );
+
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat(
-                        InvitationEmailDataMatcher(
-                                "scrooge.mcduck@disney.land",
-                                "Companies House: bruce.wayne@gotham.city invited to be authorised to file online for Sainsbury's",
-                                "Scrooge McDuck",
-                                "bruce.wayne@gotham.city",
-                                "Sainsbury's" ) ),
-                eq( INVITATION_MESSAGE_TYPE.getMessageType() ) );
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
+            if ( emailData instanceof InvitationEmailData ) return invitationEmailMatches.test( (InvitationEmailData) emailData );
+            if ( emailData instanceof InviteEmailData ) return inviteEmailMatches.test( (InviteEmailData) emailData );
+            return false;
+        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getMessageType(), INVITE_MESSAGE_TYPE.getMessageType() ).contains( messageType ) ) );
     }
 
     @AfterEach
