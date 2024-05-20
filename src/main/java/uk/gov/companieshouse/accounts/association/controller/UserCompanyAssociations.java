@@ -165,10 +165,10 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                 association.setUserEmail(null);
                 association.setUserId(inviteeUserDetails.getFirst().getUserId());
             }
-            var associationId = associationsService.sendNewInvitation(ericIdentity, association).getId();
-
+            final var invitationAssociation = associationsService.sendNewInvitation(ericIdentity, association);
+            emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, invitationAssociation.getApprovalExpiryAt().toString(), "TODO", inviteeEmail );
             emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeEmail, associatedUsers );
-            return new ResponseEntity<>( new ResponseBodyPost().associationId( associationId ), HttpStatus.CREATED );
+            return new ResponseEntity<>( new ResponseBodyPost().associationId( invitationAssociation.getId() ), HttpStatus.CREATED );
         }
 
         //if association with email not found and user found
@@ -183,6 +183,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                 LOG.infoContext( xRequestId, String.format( "Creating association and invitation for company %s and user id %s", companyNumber, inviteeUserDetails.getFirst().getUserId() ), null );
 
                 association = associationsService.createAssociation(companyNumber,inviteeUserId,null,ApprovalRouteEnum.INVITATION,ericIdentity);
+                emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, association.getApprovalExpiryAt().toString(), "TODO", inviteeEmail );
                 emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeDisplayName, associatedUsers );
                 return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
             } else if(associationWithUserID.get().getStatus().equals("confirmed")) {
@@ -190,12 +191,14 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             }
             LOG.infoContext(xRequestId, String.format("Association for company %s and user id %s found, association id: %s with status %s", companyNumber, inviteeUserDetails.getFirst().getUserId(), associationWithUserID.get().getId(), associationWithUserID.get().getStatus()), null);
             association = associationsService.sendNewInvitation(ericIdentity, associationWithUserID.get());
+            emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, association.getApprovalExpiryAt().toString(), "TODO", inviteeEmail );
             emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeDisplayName, associatedUsers );
             return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
 
         }
         //if association with email not found, user not found
         association = associationsService.createAssociation(companyNumber, null ,inviteeEmail,ApprovalRouteEnum.INVITATION,ericIdentity);
+        emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, association.getApprovalExpiryAt().toString(), "TODO", inviteeEmail );
         emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeEmail, associatedUsers );
 
         return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );

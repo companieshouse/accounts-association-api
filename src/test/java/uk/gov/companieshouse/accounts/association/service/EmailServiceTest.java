@@ -490,17 +490,15 @@ public class EmailServiceTest {
     }
 
     @Test
-    void sendInviteEmailWithNullCompanyDetailsOrNullCompanyNameOrNullInviterDisplayNameOrNullInvitationExpiryTimestampOrNullInvitationLinkOrNullUserOrNullUserEmailThrowsNullPointerException(){
-        final var user = new User().email( "kpatel@companieshouse.gov.uk" );
+    void sendInviteEmailWithNullCompanyDetailsOrNullCompanyNameOrNullInviterDisplayNameOrNullInvitationExpiryTimestampOrNullInvitationLinkOrNullInviteeEmailThrowsNullPointerException(){
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
 
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", null, "Elon Musk", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", user ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", new CompanyDetails(), "Elon Musk", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", user ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, null, "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", user ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Elon Musk", null, "https://companieshouse/authorised-person-confirmation-5xbk3ft88", user ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Elon Musk", "1992-05-01T10:30:00.000000", null, user ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", null, "Elon Musk", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", new CompanyDetails(), "Elon Musk", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, null, "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Elon Musk", null, "https://companieshouse/authorised-person-confirmation-5xbk3ft88", "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Elon Musk", "1992-05-01T10:30:00.000000", null, "kpatel@companieshouse.gov.uk" ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Elon Musk", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", null ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Elon Musk", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", new User() ) );
     }
 
     @Test
@@ -513,10 +511,9 @@ public class EmailServiceTest {
         emailData.setInvitationExpiryTimestamp( "1992-05-01T10:30:00.000000" );
         emailData.setInvitationLink( "https://companieshouse/authorised-person-confirmation-5xbk3ft88" );
 
-        final var user = new User().email( "kpatel@companieshouse.gov.uk" );
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
 
-        emailService.sendInviteEmail( "theId12345", companyDetails, "Krishna Patel", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", user );
+        emailService.sendInviteEmail( "theId12345", companyDetails, "Krishna Patel", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", "kpatel@companieshouse.gov.uk" );
 
         Mockito.verify( emailProducer ).sendEmail( emailData, INVITE_MESSAGE_TYPE.getMessageType() );
     }
@@ -531,12 +528,11 @@ public class EmailServiceTest {
         emailData.setInvitationExpiryTimestamp( "1992-05-01T10:30:00.000000" );
         emailData.setInvitationLink( "https://companieshouse/authorised-person-confirmation-5xbk3ft88" );
 
-        final var user = new User().email( "kpatel@companieshouse.gov.uk" );
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
 
         Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
 
-        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Krishna Patel", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", user ) );
+        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Krishna Patel", "1992-05-01T10:30:00.000000", "https://companieshouse/authorised-person-confirmation-5xbk3ft88", "kpatel@companieshouse.gov.uk" ) );
     }
 
 }

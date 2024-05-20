@@ -183,9 +183,9 @@ public class EmailService {
     }
 
     @Async
-    public void sendInviteEmail( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String invitationExpiryTimestamp, final String invitationLink, final User user ){
+    public void sendInviteEmail( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String invitationExpiryTimestamp, final String invitationLink, final String inviteeEmail ){
         final var emailData = new InviteEmailBuilder()
-                .setRecipientEmail( user.getEmail() )
+                .setRecipientEmail( inviteeEmail )
                 .setInviterDisplayName( inviterDisplayName )
                 .setCompanyName( companyDetails.getCompanyName() )
                 .setInvitationExpiryTimestamp( invitationExpiryTimestamp )
@@ -198,7 +198,7 @@ public class EmailService {
                 new EmailNotification(
                         MessageType.INVITE_MESSAGE_TYPE,
                         StaticPropertyUtil.APPLICATION_NAMESPACE,
-                        user.getEmail(),
+                        inviteeEmail,
                         companyDetails.getCompanyNumber() )
                         .setInvitationExpiryTimestamp( invitationExpiryTimestamp )
                         .toMessage(), null );
