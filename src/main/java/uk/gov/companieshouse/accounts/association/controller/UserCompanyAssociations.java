@@ -153,7 +153,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         LOG.debugContext( xRequestId, String.format( "Attempting to search for %s in accounts-user-api.", inviteeEmail ), null );
         final var inviteeUserDetails = usersService.searchUserDetails( List.of( inviteeEmail ) );
 
-        final var inviteeUserFound = !inviteeUserDetails.isEmpty();
+        final var inviteeUserFound = !( Objects.isNull( inviteeUserDetails ) || inviteeUserDetails.isEmpty() );
 
         final var associationWithUserEmail = associationsService.fetchAssociationForCompanyNumberAndUserEmail(companyNumber, inviteeEmail);
         AssociationDao association;
