@@ -1459,6 +1459,7 @@ class UserCompanyAssociationsTest {
 
         final var association = new AssociationDao();
         association.setId("34");
+        association.setApprovalExpiryAt( now );
         Mockito.doReturn(association).when(associationsService).sendNewInvitation(eq("9999"), any());
 
         mockMvc.perform(post("/associations/invitations")
@@ -1471,13 +1472,14 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isCreated());
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoOne, "8888", null)));
+        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("333333", "Tesco" ) ), eq("Scrooge McDuck"), anyString(), anyString(), eq( "russell.howard@comedy.com" ) );
         Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
                 argThat( companyDetailsMatcher(
                         "333333",
                         "Tesco" ) ),
                 eq("Scrooge McDuck"),
                 eq("russell.howard@comedy.com"),
-                argThat( list -> list.size() == 0 ) );
+                argThat( List::isEmpty ) );
     }
 
     @Test
@@ -1492,6 +1494,7 @@ class UserCompanyAssociationsTest {
 
         final var association = new AssociationDao();
         association.setId("34");
+        association.setApprovalExpiryAt( now );
         Mockito.doReturn(association).when(associationsService).sendNewInvitation(eq("9999"), any());
 
         mockMvc.perform(post("/associations/invitations")
@@ -1504,13 +1507,14 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isCreated());
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoOne, null, "russell.howard@comedy.com")));
+        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("333333", "Tesco" ) ), eq("Scrooge McDuck"), anyString(), anyString(), eq( "russell.howard@comedy.com" ) );
         Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
                 argThat( companyDetailsMatcher(
                         "333333",
                         "Tesco" ) ),
                 eq("Scrooge McDuck"),
                 eq("russell.howard@comedy.com"),
-                argThat( list -> list.size() == 0 ) );
+                argThat( List::isEmpty ) );
     }
 
     @Test
@@ -1529,6 +1533,7 @@ class UserCompanyAssociationsTest {
 
         final var association = new AssociationDao();
         association.setId("35");
+        association.setApprovalExpiryAt( now );
         Mockito.doReturn(association).when(associationsService).sendNewInvitation(eq("9999"), any());
 
         mockMvc.perform(post("/associations/invitations")
@@ -1541,13 +1546,14 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isCreated());
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoTwo, "111", null)));
+        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("333333", "Tesco" ) ), eq("Scrooge McDuck"), anyString(), anyString(), eq( "bruce.wayne@gotham.city" ) );
         Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
                 argThat( companyDetailsMatcher(
                         "333333",
                         "Tesco" ) ),
                 eq("Scrooge McDuck"),
                 eq("bruce.wayne@gotham.city"),
-                argThat( list -> list.size() == 0 ) );
+                argThat( List::isEmpty ) );
     }
 
     @Test
@@ -1566,6 +1572,7 @@ class UserCompanyAssociationsTest {
 
         final var association = new AssociationDao();
         association.setId("99");
+        association.setApprovalExpiryAt( now );
         Mockito.doReturn(association).when(associationsService).createAssociation("444444", "111", null, ApprovalRouteEnum.INVITATION, "9999");
 
         mockMvc.perform(post("/associations/invitations")
@@ -1576,13 +1583,14 @@ class UserCompanyAssociationsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
                 .andExpect(status().isCreated());
+        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("444444", "Sainsbury's" ) ), eq("Scrooge McDuck"), anyString(), anyString(), eq( "bruce.wayne@gotham.city" ) );
         Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
                 argThat( companyDetailsMatcher(
                         "444444",
                         "Sainsbury's" ) ),
                 eq("Scrooge McDuck"),
                 eq("bruce.wayne@gotham.city"),
-                argThat( list -> list.size() == 0 ) );
+                argThat( List::isEmpty ) );
     }
 
     @Test
@@ -1597,6 +1605,7 @@ class UserCompanyAssociationsTest {
 
         final var association = new AssociationDao();
         association.setId("99");
+        association.setApprovalExpiryAt( now );
         Mockito.doReturn(association).when(associationsService).createAssociation("333333", null, "madonna@singer.com", ApprovalRouteEnum.INVITATION, "9999");
 
         mockMvc.perform(post("/associations/invitations")
@@ -1607,13 +1616,14 @@ class UserCompanyAssociationsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"madonna@singer.com\"}"))
                 .andExpect(status().isCreated());
+        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("333333", "Tesco" ) ), eq("Scrooge McDuck"), anyString(), anyString(), eq( "madonna@singer.com" ) );
         Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
                 argThat( companyDetailsMatcher(
                         "333333",
                         "Tesco" ) ),
                 eq("Scrooge McDuck"),
                 eq("madonna@singer.com"),
-                argThat( list -> list.size() == 0 ) );
+                argThat( List::isEmpty ) );
     }
 
     @Test
