@@ -1472,7 +1472,7 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isCreated());
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoOne, "8888", null)));
-        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("333333", "Tesco" ) ), eq("Scrooge McDuck"), anyString(), anyString(), eq( "russell.howard@comedy.com" ) );
+        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("333333", "Tesco" ) ), eq("Scrooge McDuck"), anyString(), eq( "russell.howard@comedy.com" ) );
         Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
                 argThat( companyDetailsMatcher(
                         "333333",
@@ -1507,7 +1507,7 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isCreated());
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoOne, null, "russell.howard@comedy.com")));
-        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("333333", "Tesco" ) ), eq("Scrooge McDuck"), anyString(), anyString(), eq( "russell.howard@comedy.com" ) );
+        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("333333", "Tesco" ) ), eq("Scrooge McDuck"), anyString(), eq( "russell.howard@comedy.com" ) );
         Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
                 argThat( companyDetailsMatcher(
                         "333333",
@@ -1546,7 +1546,7 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isCreated());
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(associationDaoMatches(associationDaoTwo, "111", null)));
-        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("333333", "Tesco" ) ), eq("Scrooge McDuck"), anyString(), anyString(), eq( "bruce.wayne@gotham.city" ) );
+        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("333333", "Tesco" ) ), eq("Scrooge McDuck"), anyString(), eq( "bruce.wayne@gotham.city" ) );
         Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
                 argThat( companyDetailsMatcher(
                         "333333",
@@ -1583,7 +1583,7 @@ class UserCompanyAssociationsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
                 .andExpect(status().isCreated());
-        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("444444", "Sainsbury's" ) ), eq("Scrooge McDuck"), anyString(), anyString(), eq( "bruce.wayne@gotham.city" ) );
+        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("444444", "Sainsbury's" ) ), eq("Scrooge McDuck"), anyString(), eq( "bruce.wayne@gotham.city" ) );
         Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
                 argThat( companyDetailsMatcher(
                         "444444",
@@ -1616,7 +1616,7 @@ class UserCompanyAssociationsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"madonna@singer.com\"}"))
                 .andExpect(status().isCreated());
-        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("333333", "Tesco" ) ), eq("Scrooge McDuck"), anyString(), anyString(), eq( "madonna@singer.com" ) );
+        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( companyDetailsMatcher("333333", "Tesco" ) ), eq("Scrooge McDuck"), anyString(), eq( "madonna@singer.com" ) );
         Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123") ,
                 argThat( companyDetailsMatcher(
                         "333333",

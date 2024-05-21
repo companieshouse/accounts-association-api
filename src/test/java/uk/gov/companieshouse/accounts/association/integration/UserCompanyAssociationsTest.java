@@ -162,6 +162,10 @@ public class UserCompanyAssociationsTest {
 
     private static final String DEFAULT_KIND = "association";
 
+    @Value( "${invitation.url}")
+    private String COMPANY_INVITATIONS_URL;
+
+
     private final LocalDateTime now = LocalDateTime.now();
 
     private ApiResponse<CompanyDetails> toCompanyDetailsApiResponse( final String companyNumber, final String companyName ){
@@ -1783,7 +1787,7 @@ public class UserCompanyAssociationsTest {
                         "Companies House: invitation to be authorised to file online for Tesco",
                         "Scrooge McDuck",
                         "Tesco",
-                        "TODO" );
+                        COMPANY_INVITATIONS_URL );
 
         latch.await( 10, TimeUnit.SECONDS );
         Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
@@ -1837,7 +1841,7 @@ public class UserCompanyAssociationsTest {
                         "Companies House: invitation to be authorised to file online for Tesco",
                         "Scrooge McDuck",
                         "Tesco",
-                        "TODO" );
+                        COMPANY_INVITATIONS_URL );
 
         latch.await( 10, TimeUnit.SECONDS );
         Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
@@ -1917,7 +1921,7 @@ public class UserCompanyAssociationsTest {
                         "Companies House: invitation to be authorised to file online for Tesco",
                         "Scrooge McDuck",
                         "Tesco",
-                        "TODO" );
+                        COMPANY_INVITATIONS_URL );
 
         latch.await( 10, TimeUnit.SECONDS );
         Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
@@ -1952,11 +1956,12 @@ public class UserCompanyAssociationsTest {
 
     Predicate<InviteEmailData> InviteEmailDataMatcher( String to, String subject, String inviterDisplayName, String companyName, String invitationLink ){
         return emailData ->
-                to.equals( emailData.getTo() ) &&
-                        subject.equals( emailData.getSubject() ) &&
-                        inviterDisplayName.equals( emailData.getInviterDisplayName() ) &&
-                        companyName.equals( emailData.getCompanyName() ) &&
-                        invitationLink.equals( emailData.getInvitationLink() );
+                to.equals(emailData.getTo()) &&
+                subject.equals(emailData.getSubject()) &&
+                inviterDisplayName.equals(emailData.getInviterDisplayName()) &&
+                companyName.equals(emailData.getCompanyName()) &&
+                invitationLink.equals(emailData.getInvitationLink())
+                ;
     }
 
     @Test
@@ -1989,7 +1994,7 @@ public class UserCompanyAssociationsTest {
                 "Companies House: invitation to be authorised to file online for Sainsbury's",
                 "Scrooge McDuck",
                 "Sainsbury's",
-                "TODO" );
+                COMPANY_INVITATIONS_URL );
 
         latch.await( 10, TimeUnit.SECONDS );
         Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {

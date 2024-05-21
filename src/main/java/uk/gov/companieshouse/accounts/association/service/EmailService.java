@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,9 @@ import uk.gov.companieshouse.logging.LoggerFactory;
 
 @Service
 public class EmailService {
+
+    @Value( "${invitation.url}" )
+    private String invitationLink;
 
     protected static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
 
@@ -183,7 +187,7 @@ public class EmailService {
     }
 
     @Async
-    public void sendInviteEmail( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String invitationExpiryTimestamp, final String invitationLink, final String inviteeEmail ){
+    public void sendInviteEmail( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String invitationExpiryTimestamp, final String inviteeEmail ){
         final var emailData = new InviteEmailBuilder()
                 .setRecipientEmail( inviteeEmail )
                 .setInviterDisplayName( inviterDisplayName )
