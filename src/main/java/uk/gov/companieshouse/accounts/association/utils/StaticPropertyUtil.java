@@ -8,7 +8,7 @@ public class StaticPropertyUtil {
 
     public static String APPLICATION_NAMESPACE;
 
-    public StaticPropertyUtil(@Value("${spring.application.name}") String applicationNameSpace) {
+    public StaticPropertyUtil(@Value("${spring.application.name}") String applicationNameSpace ) {
         StaticPropertyUtil.APPLICATION_NAMESPACE = applicationNameSpace;
     }
 
