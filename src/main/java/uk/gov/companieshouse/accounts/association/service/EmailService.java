@@ -183,13 +183,12 @@ public class EmailService {
     }
 
     @Async
-    public void sendInviteEmail( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String invitationExpiryTimestamp, final String invitationLink, final String inviteeEmail ){
+    public void sendInviteEmail( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String invitationExpiryTimestamp, final String inviteeEmail ){
         final var emailData = new InviteEmailBuilder()
                 .setRecipientEmail( inviteeEmail )
                 .setInviterDisplayName( inviterDisplayName )
                 .setCompanyName( companyDetails.getCompanyName() )
                 .setInvitationExpiryTimestamp( invitationExpiryTimestamp )
-                .setInvitationLink( invitationLink )
                 .build();
 
         emailProducer.sendEmail( emailData, MessageType.INVITE_MESSAGE_TYPE.getMessageType() );

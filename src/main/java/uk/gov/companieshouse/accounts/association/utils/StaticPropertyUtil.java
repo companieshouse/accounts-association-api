@@ -7,9 +7,11 @@ import org.springframework.stereotype.Component;
 public class StaticPropertyUtil {
 
     public static String APPLICATION_NAMESPACE;
+    public static String CHS_URL;
 
-    public StaticPropertyUtil(@Value("${spring.application.name}") String applicationNameSpace) {
+    public StaticPropertyUtil(@Value("${spring.application.name}") String applicationNameSpace, @Value("${chs.url}") String chsUrl ) {
         StaticPropertyUtil.APPLICATION_NAMESPACE = applicationNameSpace;
+        StaticPropertyUtil.CHS_URL = chsUrl;
     }
 
 }
