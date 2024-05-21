@@ -10,7 +10,6 @@ import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVIT
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_REJECTED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.CHS_URL;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +25,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConfirmationEmailData;
@@ -62,10 +62,13 @@ public class EmailServiceTest {
 
     private AssociationDao associationOne;
 
-    private static final String COMPANY_INVITATIONS_URL = CHS_URL + "/your-companies/company-invitations?mtm_campaign=associations_invite";
+    private final String COMPANY_INVITATIONS_URL = "http://chs.local/your-companies/company-invitations?mtm_campaign=associations_invite";
 
     @BeforeEach
     void setup(){
+        ReflectionTestUtils.setField(emailService, "invitationLink", COMPANY_INVITATIONS_URL);
+
+
         final var now = LocalDateTime.now();
 
         final var invitationOne = new InvitationDao();

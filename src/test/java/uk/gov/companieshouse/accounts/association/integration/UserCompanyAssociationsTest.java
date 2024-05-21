@@ -14,7 +14,6 @@ import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.CHS_URL;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -162,7 +161,9 @@ public class UserCompanyAssociationsTest {
     PrivateAccountsUserUserGet privateAccountsUserUserGet444;
 
     private static final String DEFAULT_KIND = "association";
-    private static final String COMPANY_INVITATIONS_URL = CHS_URL + "/your-companies/company-invitations?mtm_campaign=associations_invite";
+
+    @Value( "${invitation.url}")
+    private String COMPANY_INVITATIONS_URL;
 
 
     private final LocalDateTime now = LocalDateTime.now();
@@ -1955,11 +1956,12 @@ public class UserCompanyAssociationsTest {
 
     Predicate<InviteEmailData> InviteEmailDataMatcher( String to, String subject, String inviterDisplayName, String companyName, String invitationLink ){
         return emailData ->
-                to.equals( emailData.getTo() ) &&
-                        subject.equals( emailData.getSubject() ) &&
-                        inviterDisplayName.equals( emailData.getInviterDisplayName() ) &&
-                        companyName.equals( emailData.getCompanyName() ) &&
-                        invitationLink.equals( emailData.getInvitationLink() );
+                to.equals(emailData.getTo()) &&
+                subject.equals(emailData.getSubject()) &&
+                inviterDisplayName.equals(emailData.getInviterDisplayName()) &&
+                companyName.equals(emailData.getCompanyName()) &&
+                invitationLink.equals(emailData.getInvitationLink())
+                ;
     }
 
     @Test
