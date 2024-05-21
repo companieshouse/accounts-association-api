@@ -1,5 +1,7 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
+import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.CHS_URL;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -11,6 +13,8 @@ import uk.gov.companieshouse.accounts.association.models.email.data.InviteEmailD
 @Tag("unit-test")
 public class InviteEmailBuilderTest {
 
+    private static final String COMPANY_INVITATIONS_URL = CHS_URL + "/your-companies/company-invitations?mtm_campaign=associations_invite";
+
     @Test
     void buildInstantiatesEmailData() {
         final var expectedEmailData = new InviteEmailData();
@@ -19,14 +23,13 @@ public class InviteEmailBuilderTest {
         expectedEmailData.setInviterDisplayName( "Krishna Patel" );
         expectedEmailData.setCompanyName( "Tesla" );
         expectedEmailData.setInvitationExpiryTimestamp( "1992-05-01T10:30:00.000000" );
-        expectedEmailData.setInvitationLink( "https://companieshouse/authorised-person-confirmation-5xbk3ft88" );
+        expectedEmailData.setInvitationLink( COMPANY_INVITATIONS_URL );
 
         final var actualEmailData = new InviteEmailBuilder()
                 .setRecipientEmail( "kpatel@companieshouse.gov.uk" )
                 .setInviterDisplayName( "Krishna Patel" )
                 .setCompanyName( "Tesla" )
                 .setInvitationExpiryTimestamp( "1992-05-01T10:30:00.000000" )
-                .setInvitationLink( "https://companieshouse/authorised-person-confirmation-5xbk3ft88" )
                 .build();
 
         Assertions.assertEquals( expectedEmailData, actualEmailData );

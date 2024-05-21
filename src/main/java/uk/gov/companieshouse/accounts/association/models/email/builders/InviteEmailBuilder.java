@@ -1,5 +1,7 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
+import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.CHS_URL;
+
 import java.util.Objects;
 import uk.gov.companieshouse.accounts.association.models.email.data.InviteEmailData;
 
@@ -9,7 +11,7 @@ public class InviteEmailBuilder extends EmailBuilder<InviteEmailBuilder, InviteE
 
     private String invitationExpiryTimestamp;
 
-    private String invitationLink;
+    private final String invitationLink = CHS_URL + "/your-companies/company-invitations?mtm_campaign=associations_invite";
 
     public InviteEmailBuilder setInviterDisplayName( final String inviterDisplayName ){
         this.inviterDisplayName = inviterDisplayName;
@@ -18,11 +20,6 @@ public class InviteEmailBuilder extends EmailBuilder<InviteEmailBuilder, InviteE
 
     public InviteEmailBuilder setInvitationExpiryTimestamp( final String invitationExpiryTimestamp ){
         this.invitationExpiryTimestamp = invitationExpiryTimestamp;
-        return this;
-    }
-
-    public InviteEmailBuilder setInvitationLink( final String invitationLink ){
-        this.invitationLink = invitationLink;
         return this;
     }
 

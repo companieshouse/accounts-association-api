@@ -14,6 +14,7 @@ import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.CHS_URL;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -161,6 +162,8 @@ public class UserCompanyAssociationsTest {
     PrivateAccountsUserUserGet privateAccountsUserUserGet444;
 
     private static final String DEFAULT_KIND = "association";
+    private static final String COMPANY_INVITATIONS_URL = CHS_URL + "/your-companies/company-invitations?mtm_campaign=associations_invite";
+
 
     private final LocalDateTime now = LocalDateTime.now();
 
@@ -1783,7 +1786,7 @@ public class UserCompanyAssociationsTest {
                         "Companies House: invitation to be authorised to file online for Tesco",
                         "Scrooge McDuck",
                         "Tesco",
-                        "TODO" );
+                        COMPANY_INVITATIONS_URL );
 
         latch.await( 10, TimeUnit.SECONDS );
         Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
@@ -1837,7 +1840,7 @@ public class UserCompanyAssociationsTest {
                         "Companies House: invitation to be authorised to file online for Tesco",
                         "Scrooge McDuck",
                         "Tesco",
-                        "TODO" );
+                        COMPANY_INVITATIONS_URL );
 
         latch.await( 10, TimeUnit.SECONDS );
         Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
@@ -1917,7 +1920,7 @@ public class UserCompanyAssociationsTest {
                         "Companies House: invitation to be authorised to file online for Tesco",
                         "Scrooge McDuck",
                         "Tesco",
-                        "TODO" );
+                        COMPANY_INVITATIONS_URL );
 
         latch.await( 10, TimeUnit.SECONDS );
         Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
@@ -1989,7 +1992,7 @@ public class UserCompanyAssociationsTest {
                 "Companies House: invitation to be authorised to file online for Sainsbury's",
                 "Scrooge McDuck",
                 "Sainsbury's",
-                "TODO" );
+                COMPANY_INVITATIONS_URL );
 
         latch.await( 10, TimeUnit.SECONDS );
         Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
