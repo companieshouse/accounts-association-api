@@ -9,8 +9,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
+import uk.gov.companieshouse.api.accounts.associations.model.AssociationWithInvitations;
 
 @Mapper(componentModel = "spring")
 public abstract class BaseMapper {
@@ -20,22 +20,22 @@ public abstract class BaseMapper {
 
 
     @AfterMapping
-    protected void enrichAssociation(@MappingTarget Association association) {
+    protected void enrichAssociation(@MappingTarget AssociationWithInvitations association) {
         enrichAssociationWithLinks(association);
     }
 
     @Mapping(target = "status",
-            expression = "java(Association.StatusEnum.fromValue(associationDao.getStatus()))")
+            expression = "java(AssociationWithInvitations.StatusEnum.fromValue(associationDao.getStatus()))")
     @Mapping(target = "approvalRoute",
-            expression = "java(Association.ApprovalRouteEnum.fromValue(associationDao.getApprovalRoute()))")
-    public abstract Association daoToDto(final AssociationDao associationDao);
+            expression = "java(AssociationWithInvitations.ApprovalRouteEnum.fromValue(associationDao.getApprovalRoute()))")
+    public abstract AssociationWithInvitations daoToDto(final AssociationDao associationDao);
 
     public OffsetDateTime localDateTimeToOffsetDateTime(LocalDateTime localDateTime) {
         return Objects.isNull(localDateTime) ? null : OffsetDateTime.of(localDateTime, ZoneOffset.UTC);
     }
 
 
-    public void enrichAssociationWithLinks(Association association) {
+    public void enrichAssociationWithLinks(AssociationWithInvitations association) {
         final var associationId = association.getId();
         final var self = String.format("/associations/%s", associationId);
         final var links = new AssociationLinks().self(self);

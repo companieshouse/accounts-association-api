@@ -28,6 +28,7 @@ import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.AssociationWithInvitations;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
@@ -98,7 +99,7 @@ public class AssociationsService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<Association> findAssociationById(final String id) {
+    public Optional<AssociationWithInvitations> findAssociationById(final String id) {
 
         return associationsRepository.findById(id).map(associationMapper::daoToDto);
     }

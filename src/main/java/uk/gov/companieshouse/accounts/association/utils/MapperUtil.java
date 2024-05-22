@@ -7,31 +7,30 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+import uk.gov.companieshouse.accounts.association.mapper.RemoveInvitationsFromAssociationMapper;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsListLinks;
-import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
+import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
 @Component
 public class MapperUtil {
 
     protected UsersService usersService;
-
     protected CompanyService companyService;
+    private final RemoveInvitationsFromAssociationMapper removeInvitationsFromAssociationMapper;
 
 
     private static final String DEFAULT_DISPLAY_NAME = "Not provided";
 
     @Autowired
-    public MapperUtil(final UsersService usersService, final CompanyService companyService) {
+    public MapperUtil(final UsersService usersService, final CompanyService companyService, RemoveInvitationsFromAssociationMapper removeInvitationsFromAssociationMapper) {
         this.usersService = usersService;
         this.companyService = companyService;
+        this.removeInvitationsFromAssociationMapper = removeInvitationsFromAssociationMapper;
     }
 
-    public Association enrichAssociationWithUserDetails(final Association association) {
+    public AssociationWithInvitations enrichAssociationWithUserDetails(final AssociationWithInvitations association) {
         var userEmail = "";
         var displayName = "";
         if (Objects.nonNull(association.getUserId())) {
@@ -54,7 +53,7 @@ public class MapperUtil {
         return association;
     }
 
-    public Association enrichInvitations(final Association association) {
+    public AssociationWithInvitations enrichInvitations(final AssociationWithInvitations association) {
         if (Objects.nonNull(association.getInvitations())) {
             List<Invitation> invitationsList = association.
                     getInvitations().stream()
@@ -70,13 +69,13 @@ public class MapperUtil {
         return invitation;
     }
 
-    public Association enrichAssociationWithCompanyName(final Association association) {
+    public AssociationWithInvitations enrichAssociationWithCompanyName(final AssociationWithInvitations association) {
         final var companyProfile = companyService.fetchCompanyProfile(association.getCompanyNumber());
         association.setCompanyName(companyProfile.getCompanyName());
         return association;
     }
 
-    public AssociationsList enrichWithMetadata(final Page<Association> page, final String endpointUrl) {
+    public AssociationsList enrichWithMetadata(final Page<AssociationWithInvitations> page, final String endpointUrl) {
 
 
         AssociationsList list = new AssociationsList();
@@ -90,7 +89,11 @@ public class MapperUtil {
         final var next = isLastPage ? "" : String.format("%s%s?page_index=%d&items_per_page=%d", associations, endpointUrl, pageIndex + 1, itemsPerPage);
         final var links = new AssociationsListLinks().self(self).next(next);
 
-        list.setItems(page.getContent());
+
+        List<Association> associationsWithoutInvitations = page.getContent()
+                .stream()
+                .map(removeInvitationsFromAssociationMapper::removeInvitationsFromAssociation).toList();
+        list.setItems(associationsWithoutInvitations);
         list.links(links)
                 .pageNumber(pageIndex)
                 .itemsPerPage(itemsPerPage)

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
+import uk.gov.companieshouse.api.accounts.associations.model.AssociationWithInvitations;
 
 @Component
 public class AssociationMapper {
@@ -22,18 +23,18 @@ public class AssociationMapper {
         this.baseMapper = baseMapper;
     }
 
-    protected void enrichAssociation(Association association) {
+    protected void enrichAssociation(AssociationWithInvitations association) {
         mapperUtil.enrichAssociationWithUserDetails(association);
         mapperUtil.enrichAssociationWithCompanyName(association);
         mapperUtil.enrichInvitations(association);
     }
 
 
-    public Association daoToDto(final AssociationDao associationDao) {
+    public AssociationWithInvitations daoToDto(final AssociationDao associationDao) {
         if(Objects.isNull(associationDao)){
             return null;
         }
-        Association association = baseMapper.daoToDto(associationDao);
+        AssociationWithInvitations association = baseMapper.daoToDto(associationDao);
         enrichAssociation(association);
         return association;
     }

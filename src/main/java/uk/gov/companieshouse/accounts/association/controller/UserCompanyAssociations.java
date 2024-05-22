@@ -9,6 +9,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
@@ -25,13 +28,8 @@ import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
+import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.InvitationRequestBodyPost;
-import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPost;
-import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
-import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
@@ -85,6 +83,12 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         return new ResponseEntity<>(new ResponseBodyPost().associationId(association.getId()), HttpStatus.CREATED);
     }
 
+
+    @Override
+    public ResponseEntity<ActiveInvitations> fetchActiveInvitationsForUser(@NotNull String s, @NotNull String s1, @Valid Integer integer, @Valid Integer integer1) {
+        return null; // TODO(IDVA6-1069)
+    }
+
     @Override
     public ResponseEntity<AssociationsList> fetchAssociationsBy(
             final String xRequestId,
@@ -115,7 +119,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<Association> getAssociationForId(final String xRequestId, final String id) {
+    public ResponseEntity<AssociationWithInvitations> getAssociationForId(final String xRequestId, final String id) {
         LOG.debugContext(xRequestId, String.format("Attempting to get the Association details : %s", id), null);
         final var association = associationsService.findAssociationById(id);
         if (association.isEmpty()) {
