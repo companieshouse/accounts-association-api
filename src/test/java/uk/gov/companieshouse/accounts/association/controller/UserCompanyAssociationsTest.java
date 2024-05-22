@@ -11,6 +11,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.companieshouse.api.accounts.associations.model.AssociationWithInvitations.ApprovalRouteEnum.AUTH_CODE;
+import static uk.gov.companieshouse.api.accounts.associations.model.AssociationWithInvitations.StatusEnum.CONFIRMED;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -36,6 +38,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
+import uk.gov.companieshouse.accounts.association.mapper.RemoveInvitationsFromAssociationMapper;
+import uk.gov.companieshouse.accounts.association.mapper.RemoveInvitationsFromAssociationMapperImpl;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
@@ -47,6 +51,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
+import uk.gov.companieshouse.api.accounts.associations.model.AssociationWithInvitations;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsListLinks;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
@@ -77,8 +82,13 @@ class UserCompanyAssociationsTest {
     private AssociationDao associationDaoZero;
     private AssociationDao associationDaoOne;
     private AssociationDao associationDaoTwo;
+    private AssociationWithInvitations associationWithInvitationOne;
 
+    private RemoveInvitationsFromAssociationMapper removeInvitationsFromAssociationMapper = new RemoveInvitationsFromAssociationMapperImpl();
     private User scrooge;
+
+    UserCompanyAssociationsTest() {
+    }
 
     @BeforeEach
     public void setup() {
@@ -112,23 +122,25 @@ class UserCompanyAssociationsTest {
                 .id("0")
                 .userEmail("light.yagami@death.note");
 
-        associationOne =
-                new Association().etag("aa")
+        associationWithInvitationOne =
+                new AssociationWithInvitations().etag("aa")
                         .id("18")
                         .userId("9999")
                         .userEmail("scrooge.mcduck@disney.land")
                         .displayName("Scrooge McDuck")
                         .companyNumber("333333")
                         .companyName("Tesco")
-                        .status(StatusEnum.CONFIRMED)
+                        .status(CONFIRMED)
                         .createdAt(LocalDateTime.now().atOffset(ZoneOffset.UTC))
                         .approvedAt(now.plusDays(1).atOffset(ZoneOffset.UTC))
                         .removedAt(now.plusDays(2).atOffset(ZoneOffset.UTC))
                         .kind(DEFAULT_KIND)
-                        .approvalRoute(ApprovalRouteEnum.AUTH_CODE)
+                        .approvalRoute(AUTH_CODE)
                         .approvalExpiryAt(now.plusDays(3).toString())
-                        .invitations(List.of(invitationOne))
                         .links(new AssociationLinks().self("/18"));
+
+        associationOne = removeInvitationsFromAssociationMapper.removeInvitationsFromAssociation( associationWithInvitationOne );
+
 
         final var invitationTwo =
                 new Invitation().invitedBy("homer.simpson@springfield.com")
@@ -149,7 +161,6 @@ class UserCompanyAssociationsTest {
                         .kind(DEFAULT_KIND)
                         .approvalRoute(ApprovalRouteEnum.AUTH_CODE)
                         .approvalExpiryAt(now.plusDays(7).toString())
-                        .invitations(List.of(invitationTwo))
                         .links(new AssociationLinks().self("/19"));
 
 
@@ -560,7 +571,6 @@ class UserCompanyAssociationsTest {
 
         final var associations = associationsList.getItems();
         final var associationOne = associations.getFirst();
-        final var invitationsOne = associationOne.getInvitations();
 
         Assertions.assertEquals("aa", associationOne.getEtag());
         Assertions.assertEquals("18", associationOne.getId());
@@ -576,9 +586,6 @@ class UserCompanyAssociationsTest {
         Assertions.assertEquals(DEFAULT_KIND, associationOne.getKind());
         Assertions.assertEquals(ApprovalRouteEnum.AUTH_CODE, associationOne.getApprovalRoute());
         Assertions.assertEquals(localDateTimeToNormalisedString(now.plusDays(3)), reduceTimestampResolution(associationOne.getApprovalExpiryAt()));
-        Assertions.assertEquals(1, invitationsOne.size());
-        Assertions.assertEquals("homer.simpson@springfield.com", invitationsOne.get(0).getInvitedBy());
-        Assertions.assertEquals(localDateTimeToNormalisedString(now.plusDays(4)), reduceTimestampResolution(invitationsOne.get(0).getInvitedAt()));
         Assertions.assertEquals("/18", associationOne.getLinks().getSelf());
     }
 
@@ -625,7 +632,7 @@ class UserCompanyAssociationsTest {
 
     @Test
     void getAssociationDetailsFetchesAssociationDetails() throws Exception {
-        Mockito.doReturn(Optional.of(associationOne)).when(associationsService).findAssociationById("18");
+        Mockito.doReturn(Optional.of(associationWithInvitationOne)).when(associationsService).findAssociationById("18");
         final var response =
                 mockMvc.perform(get("/associations/{id}", "18")
                                 .header("X-Request-Id", "theId123")
@@ -638,7 +645,7 @@ class UserCompanyAssociationsTest {
 
         final var objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        final Association associations = objectMapper.readValue(response.getContentAsByteArray(), Association.class);
+        final var associations = objectMapper.readValue(response.getContentAsByteArray(), AssociationWithInvitations.class);
 
         Assertions.assertEquals("18", associationOne.getId());
 

@@ -1,6 +1,8 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
 import static org.mockito.ArgumentMatchers.any;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.REMOVED;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,9 +20,9 @@ import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.AssociationWithInvitations;
+import uk.gov.companieshouse.api.accounts.associations.model.AssociationWithInvitations.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
@@ -35,6 +37,7 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
     @Mock
     private UsersService usersService;
 
+    private RemoveInvitationsFromAssociationMapper removeInvitationsFromAssociationMapper = new RemoveInvitationsFromAssociationMapperImpl();
 
 
     @InjectMocks
@@ -45,7 +48,7 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
 
     @BeforeEach
     public void setup(){
-        associationUserDaoToDtoMapper = new AssociationMapper(new MapperUtil(usersService,companyService),new BaseMapperImpl());
+        associationUserDaoToDtoMapper = new AssociationMapper(new MapperUtil(usersService,companyService,removeInvitationsFromAssociationMapper),new BaseMapperImpl());
     }
 
     @Test
@@ -55,7 +58,7 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
 
     @Test
     void enrichAssociationWithUserDetailsWithoutDisplayNameSetsDefaultDisplayName() {
-        final var association = new Association().userId("111");
+        final var association = new AssociationWithInvitations().userId("111");
         final var company = new CompanyDetails();
         company.setCompanyNumber("111111");
         company.setCompanyName("Hogwarts");
@@ -71,7 +74,7 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
 
     @Test
     void enrichAssociationWithUserDetailsSetsDisplayName() {
-        final var association = new Association().userId("111");
+        final var association = new AssociationWithInvitations().userId("111");
 
         final var user = new User().email("anne@the.chase.com").displayName("The Governess");
         Mockito.doReturn(user).when(usersService).fetchUserDetails(any());
@@ -98,7 +101,7 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
         dao.setUserId("111");
         dao.setCompanyNumber("111111");
         dao.setStatus(StatusEnum.CONFIRMED.getValue());
-        dao.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
+        dao.setApprovalRoute(AUTH_CODE.getValue());
         final var company = new CompanyDetails();
         company.setCompanyNumber("111111");
         company.setCompanyName("Hogwarts");
@@ -150,8 +153,8 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
         dao.setUserId("111");
         dao.setUserEmail("bruce.wayne@gotham.city");
         dao.setCompanyNumber("111111");
-        dao.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        dao.setStatus(StatusEnum.REMOVED.getValue());
+        dao.setApprovalRoute(AUTH_CODE.getValue());
+        dao.setStatus(REMOVED.getValue());
         dao.setRemovedAt(now);
         dao.setInvitations(List.of(invitationDao));
         dao.setEtag("theTag");
@@ -172,7 +175,7 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
         Assertions.assertEquals("bruce.wayne@gotham.city", dto.getUserEmail());
         Assertions.assertEquals("111111", dto.getCompanyNumber());
         Assertions.assertEquals(ApprovalRouteEnum.AUTH_CODE, dto.getApprovalRoute());
-        Assertions.assertEquals(StatusEnum.REMOVED, dto.getStatus());
+        Assertions.assertEquals(AssociationWithInvitations.StatusEnum.REMOVED, dto.getStatus());
         Assertions.assertEquals( localDateTimeToNormalisedString( now ), localDateTimeToNormalisedString( dto.getRemovedAt().toLocalDateTime() ) );
         Assertions.assertEquals( 1, dto.getInvitations().size() );
         Assertions.assertEquals( invitationDto.getInvitedBy(), dto.getInvitations().get(0).getInvitedBy() );

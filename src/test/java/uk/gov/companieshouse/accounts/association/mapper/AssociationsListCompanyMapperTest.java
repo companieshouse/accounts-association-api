@@ -40,13 +40,14 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
 
     private AssociationDao associationAlfieDao;
 
+    private RemoveInvitationsFromAssociationMapper removeInvitationsFromAssociationMapper = new RemoveInvitationsFromAssociationMapperImpl();
 
     @BeforeEach
     void setup() {
 
         BaseMapper baseMapper = new BaseMapperImpl();
 
-        MapperUtil mapperUtil = new MapperUtil(usersService, companyService);
+        MapperUtil mapperUtil = new MapperUtil(usersService, companyService,removeInvitationsFromAssociationMapper);
 
         associationsListCompanyMapper = new AssociationsListCompanyMapper(baseMapper, mapperUtil);
 

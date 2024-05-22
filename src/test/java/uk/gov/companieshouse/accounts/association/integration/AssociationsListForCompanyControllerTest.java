@@ -686,7 +686,6 @@ class AssociationsListForCompanyControllerTest {
 
         final var associations = associationsList.getItems();
         final var associationOne = associations.getFirst();
-        final var invitationsOne = associationOne.getInvitations();
 
         Assertions.assertEquals( "a", associationOne.getEtag() );
         Assertions.assertEquals( "1", associationOne.getId() );
@@ -702,9 +701,6 @@ class AssociationsListForCompanyControllerTest {
         Assertions.assertEquals( DEFAULT_KIND, associationOne.getKind() );
         Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE, associationOne.getApprovalRoute() );
         Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(3) ), reduceTimestampResolution( associationOne.getApprovalExpiryAt() ) );
-        Assertions.assertEquals( 1, invitationsOne.size() );
-        Assertions.assertEquals( "homer.simpson@springfield.com", invitationsOne.get(0).getInvitedBy() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(4) ), reduceTimestampResolution( invitationsOne.get(0).getInvitedAt() ) );
         Assertions.assertEquals( "/associations/1", associationOne.getLinks().getSelf() );
 
         final var associationTwo = associations.get( 1 );
