@@ -9,6 +9,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
@@ -25,13 +29,8 @@ import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
+import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.InvitationRequestBodyPost;
-import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPost;
-import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
-import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
@@ -86,6 +85,11 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
+    public ResponseEntity<List<Invitation>> fetchActiveInvitationsForUser(@NotNull String s, @NotNull String s1, @Valid Integer integer, @Valid Integer integer1) {
+        return null;
+    }
+
+    @Override
     public ResponseEntity<AssociationsList> fetchAssociationsBy(
             final String xRequestId,
             final String ericIdentity,
@@ -124,6 +128,11 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             throw new NotFoundRuntimeException(StaticPropertyUtil.APPLICATION_NAMESPACE, errorMessage);
         }
         return new ResponseEntity<>(association.get(), HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<List<Invitation>> getInvitationsForAssociation(@NotNull String s, @Pattern(regexp = "^[a-zA-Z0-9]*$") String s1) {
+        return null;
     }
 
     @Override

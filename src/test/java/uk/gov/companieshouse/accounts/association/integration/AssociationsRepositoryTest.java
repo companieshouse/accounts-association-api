@@ -4,11 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +33,7 @@ import uk.gov.companieshouse.accounts.association.utils.ApiClientUtil;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
@@ -61,6 +59,7 @@ class AssociationsRepositoryTest {
 
     @Autowired
     AssociationsRepository associationsRepository;
+
     List<AssociationDao> associationDaos;
     List<InvitationDao> invitationDaos = new ArrayList<>();
 
@@ -181,20 +180,50 @@ class AssociationsRepositoryTest {
 
         final var invitationThirtyOne = new InvitationDao();
         invitationThirtyOne.setInvitedBy("111");
-        invitationThirtyOne.setInvitedAt( now.plusDays(56) );
+        invitationThirtyOne.setInvitedAt( now.plusDays(53) );
+
+        final var invitationThirtyTwo = new InvitationDao();
+        invitationThirtyOne.setInvitedBy("222");
+        invitationThirtyOne.setInvitedAt( now.plusDays(54) );
 
         final var associationThirtyOne = new AssociationDao();
         associationThirtyOne.setCompanyNumber("x777777");
         associationThirtyOne.setUserId("99999");
         associationThirtyOne.setUserEmail("scrooge.mcduck@disney.land");
-        associationThirtyOne.setStatus(StatusEnum.REMOVED.getValue());
+        associationThirtyOne.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
         associationThirtyOne.setId("31");
         associationThirtyOne.setApprovedAt( now.plusDays(53) );
         associationThirtyOne.setRemovedAt( now.plusDays(54) );
         associationThirtyOne.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
         associationThirtyOne.setApprovalExpiryAt( now.plusDays(55) );
-        associationThirtyOne.setInvitations( List.of( invitationThirtyOne ) );
+        associationThirtyOne.setInvitations( List.of( invitationThirtyTwo, invitationThirtyOne ) );
         associationThirtyOne.setEtag("nn");
+
+        final var associationThirtyTwo = new AssociationDao();
+        associationThirtyTwo.setCompanyNumber("x777778");
+        associationThirtyTwo.setUserId("99999");
+        associationThirtyTwo.setUserEmail("scrooge.mcduck@disney.land2");
+        associationThirtyTwo.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationThirtyTwo.setId("32");
+        associationThirtyTwo.setApprovedAt( now.plusDays(53) );
+        associationThirtyTwo.setRemovedAt( now.plusDays(54) );
+        associationThirtyTwo.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationThirtyTwo.setApprovalExpiryAt( now.plusDays(55) );
+        associationThirtyTwo.setInvitations( List.of( invitationThirtyTwo, invitationThirtyOne ) );
+        associationThirtyTwo.setEtag("nn");
+
+        final var associationThirtyThree = new AssociationDao();
+        associationThirtyThree.setCompanyNumber("x777779");
+        associationThirtyThree.setUserId("99999");
+        associationThirtyThree.setUserEmail("scrooge.mcduck@disney.land3");
+        associationThirtyThree.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationThirtyThree.setId("33");
+        associationThirtyThree.setApprovedAt( now.plusDays(53) );
+        associationThirtyThree.setRemovedAt( now.plusDays(54) );
+        associationThirtyThree.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationThirtyThree.setApprovalExpiryAt( now.plusDays(55) );
+        associationThirtyThree.setInvitations( List.of( invitationThirtyTwo, invitationThirtyOne ) );
+        associationThirtyThree.setEtag("nn");
 
         final var associationTest = new AssociationDao();
         associationTest.setId("1111");
@@ -233,7 +262,7 @@ class AssociationsRepositoryTest {
         associationDaos = associationsRepository.saveAll( List.of(
                 associationOne, associationTwo, associationThree, associationFour,
                 associationFive, associationSix, associationSeven, associationEight,
-                associationNine, associationTen, associationEleven, associationThirtyOne, associationTest, associationTestTwo  ) );
+                associationNine, associationTen, associationEleven, associationThirtyOne, associationThirtyTwo, associationThirtyThree, associationTest, associationTestTwo  ) );
 
     }
 
@@ -806,6 +835,13 @@ class AssociationsRepositoryTest {
     @Test
     void fetchAssociationForCompanyNumberAndUserIdRetrievesAssociation(){
         Assertions.assertEquals( "31", associationsRepository.fetchAssociationForCompanyNumberAndUserId( "x777777", "99999" ).get().getId() ); ;
+    }
+
+    @Test
+    void fetchAssociationsForUserIdAndStatusWithInvitationAfterTest(){
+        List<LinkedHashMap> ad = associationsRepository.findUserWithLatestInvitation( "99999" );
+
+        Assertions.assertNotNull( ad ); ;
     }
 
     @AfterEach

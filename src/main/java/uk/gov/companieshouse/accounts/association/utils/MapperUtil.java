@@ -54,17 +54,6 @@ public class MapperUtil {
         return association;
     }
 
-    public Association enrichInvitations(final Association association) {
-        if (Objects.nonNull(association.getInvitations())) {
-            List<Invitation> invitationsList = association.
-                    getInvitations().stream()
-                    .map(this::enrichInvitation).collect(Collectors.toList());
-
-            association.setInvitations(invitationsList);
-        }
-        return association;
-    }
-
     private Invitation enrichInvitation(Invitation invitation) {
         invitation.setInvitedBy(usersService.fetchUserDetails(invitation.getInvitedBy()).getEmail());
         return invitation;

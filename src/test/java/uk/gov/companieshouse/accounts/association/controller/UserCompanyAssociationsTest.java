@@ -127,7 +127,6 @@ class UserCompanyAssociationsTest {
                         .kind(DEFAULT_KIND)
                         .approvalRoute(ApprovalRouteEnum.AUTH_CODE)
                         .approvalExpiryAt(now.plusDays(3).toString())
-                        .invitations(List.of(invitationOne))
                         .links(new AssociationLinks().self("/18"));
 
         final var invitationTwo =
@@ -149,7 +148,6 @@ class UserCompanyAssociationsTest {
                         .kind(DEFAULT_KIND)
                         .approvalRoute(ApprovalRouteEnum.AUTH_CODE)
                         .approvalExpiryAt(now.plusDays(7).toString())
-                        .invitations(List.of(invitationTwo))
                         .links(new AssociationLinks().self("/19"));
 
 
@@ -560,7 +558,6 @@ class UserCompanyAssociationsTest {
 
         final var associations = associationsList.getItems();
         final var associationOne = associations.getFirst();
-        final var invitationsOne = associationOne.getInvitations();
 
         Assertions.assertEquals("aa", associationOne.getEtag());
         Assertions.assertEquals("18", associationOne.getId());
@@ -576,9 +573,6 @@ class UserCompanyAssociationsTest {
         Assertions.assertEquals(DEFAULT_KIND, associationOne.getKind());
         Assertions.assertEquals(ApprovalRouteEnum.AUTH_CODE, associationOne.getApprovalRoute());
         Assertions.assertEquals(localDateTimeToNormalisedString(now.plusDays(3)), reduceTimestampResolution(associationOne.getApprovalExpiryAt()));
-        Assertions.assertEquals(1, invitationsOne.size());
-        Assertions.assertEquals("homer.simpson@springfield.com", invitationsOne.get(0).getInvitedBy());
-        Assertions.assertEquals(localDateTimeToNormalisedString(now.plusDays(4)), reduceTimestampResolution(invitationsOne.get(0).getInvitedAt()));
         Assertions.assertEquals("/18", associationOne.getLinks().getSelf());
     }
 
