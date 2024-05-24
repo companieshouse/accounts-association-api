@@ -89,11 +89,23 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         return new ResponseEntity<>(new ResponseBodyPost().associationId(association.getId()), HttpStatus.CREATED);
     }
 
+
+
+
+    // TODO: test this
     @Override
-    public ResponseEntity<List<Invitation>> fetchActiveInvitationsForUser(@NotNull String s,
-            @NotNull String s1, @Valid Integer integer, @Valid Integer integer1) {
-        return null;
+    public ResponseEntity<List<Invitation>> fetchActiveInvitationsForUser( final String xRequestId, final String ericIdentity, final Integer pageIndex, final Integer itemsPerPage ) {
+        // TODO: Kartheek said to remove pagination, and just return them all. Will need to update spec to remove pageIndex and itemsPerPage
+        // TODO: Found error in spec. invited_at < expiry_timestamp requirement should be current_time < expiry timestamp. Recoded.
+        LOG.debugContext( xRequestId, String.format( "Attempting to fetch active invitations for user %s", ericIdentity ), null );
+        final var invitations = associationsService.fetchActiveInvitations( ericIdentity );
+        LOG.debugContext( xRequestId, String.format( "Successfully retrieved active invitations for user %s", ericIdentity ), null );
+        return new ResponseEntity<>( invitations, HttpStatus.OK );
     }
+
+
+
+
 
     @Override
     public ResponseEntity<AssociationsList> fetchAssociationsBy(
