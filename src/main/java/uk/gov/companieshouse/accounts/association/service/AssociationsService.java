@@ -21,14 +21,17 @@ import uk.gov.companieshouse.accounts.association.exceptions.InternalServerError
 import uk.gov.companieshouse.accounts.association.mapper.AssociationMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
+import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
+import uk.gov.companieshouse.accounts.association.repositories.InvitationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
@@ -39,25 +42,30 @@ public class AssociationsService {
 
 
     private final AssociationsRepository associationsRepository;
-
-
+    private final InvitationsRepository invitationsRepository;
     private final AssociationsListUserMapper associationsListUserMapper;
 
     private final AssociationsListCompanyMapper associationsListCompanyMapper;
 
     private final AssociationMapper associationMapper;
 
+    private final InvitationsMapper invitationMapper;
+
     private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
 
     @Autowired
     public AssociationsService(AssociationsRepository associationsRepository,
+                               InvitationsRepository invitationsRepository,
                                AssociationsListUserMapper associationsListUserMapper,
                                AssociationsListCompanyMapper associationsListCompanyMapper,
-                               AssociationMapper associationMapper) {
+                               AssociationMapper associationMapper,
+                               InvitationsMapper invitationMapper) {
         this.associationsRepository = associationsRepository;
         this.associationsListUserMapper = associationsListUserMapper;
         this.associationsListCompanyMapper = associationsListCompanyMapper;
         this.associationMapper = associationMapper;
+        this.invitationsRepository = invitationsRepository;
+        this.invitationMapper = invitationMapper;
     }
 
     @Transactional(readOnly = true)
@@ -189,6 +197,18 @@ public class AssociationsService {
             throw new InternalServerErrorRuntimeException("Failed to update association");
         }
 
+    }
+
+
+
+
+    // TODO: test this
+    @Transactional( readOnly = true )
+    public List<Invitation> fetchActiveInvitations( final String userId ){
+        return invitationsRepository.fetchActiveInvitations( userId )
+                                    .stream()
+                                    .flatMap( invitationMapper::daoToDto )
+                                    .toList();
     }
 
 }

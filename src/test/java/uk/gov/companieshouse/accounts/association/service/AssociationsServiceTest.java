@@ -32,9 +32,11 @@ import uk.gov.companieshouse.accounts.association.exceptions.InternalServerError
 import uk.gov.companieshouse.accounts.association.mapper.AssociationMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
+import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
+import uk.gov.companieshouse.accounts.association.repositories.InvitationsRepository;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.user.model.User;
@@ -51,6 +53,12 @@ class AssociationsServiceTest {
 
     @Mock
     AssociationsRepository associationsRepository;
+
+    @Mock
+    InvitationsRepository invitationsRepository;
+
+    @Mock
+    InvitationsMapper invitationMapper;
 
     @Mock
     AssociationsListCompanyMapper associationsListCompanyMapper;
@@ -645,9 +653,11 @@ class AssociationsServiceTest {
 
         associationsService = new AssociationsService(
                 associationsRepository,
+                invitationsRepository,
                 associationsListUserMapper,
                 associationsListCompanyMapper,
-                associationMapper
+                associationMapper,
+                invitationMapper
         );
     }
 
