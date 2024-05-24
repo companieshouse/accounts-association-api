@@ -54,6 +54,11 @@ public class MapperUtil {
         return association;
     }
 
+    private Invitation enrichInvitation(Invitation invitation) {
+        invitation.setInvitedBy(usersService.fetchUserDetails(invitation.getInvitedBy()).getEmail());
+        return invitation;
+    }
+
     public Association enrichAssociationWithCompanyName(final Association association) {
         final var companyProfile = companyService.fetchCompanyProfile(association.getCompanyNumber());
         association.setCompanyName(companyProfile.getCompanyName());
