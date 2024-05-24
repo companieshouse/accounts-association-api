@@ -39,7 +39,7 @@ public class AssociationsListUserMapper {
                                     user.getDisplayName()
                             ).orElse(DEFAULT_DISPLAY_NAME));
                     return association;
-                }).map(mapperUtil::enrichInvitations);
+                });
         return mapperUtil.enrichWithMetadata(associationList, END_POINT_URL);
     }
 
