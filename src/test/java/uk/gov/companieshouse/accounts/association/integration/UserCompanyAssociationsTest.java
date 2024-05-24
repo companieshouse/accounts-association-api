@@ -1011,7 +1011,6 @@ public class UserCompanyAssociationsTest {
 
         final var associations = associationsList.getItems();
         final var associationOne = associations.getFirst();
-        final var invitationsOne = associationOne.getInvitations();
 
         Assertions.assertEquals( "aa", associationOne.getEtag() );
         Assertions.assertEquals( "18", associationOne.getId() );
@@ -1027,9 +1026,6 @@ public class UserCompanyAssociationsTest {
         Assertions.assertEquals( DEFAULT_KIND, associationOne.getKind() );
         Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE, associationOne.getApprovalRoute() );
         Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(3) ), reduceTimestampResolution( associationOne.getApprovalExpiryAt() ) );
-        Assertions.assertEquals( 1, invitationsOne.size() );
-        Assertions.assertEquals( "homer.simpson@springfield.com", invitationsOne.get(0).getInvitedBy() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(4) ), reduceTimestampResolution( invitationsOne.get(0).getInvitedAt() ) );
         Assertions.assertEquals( "/associations/18", associationOne.getLinks().getSelf() );
     }
 

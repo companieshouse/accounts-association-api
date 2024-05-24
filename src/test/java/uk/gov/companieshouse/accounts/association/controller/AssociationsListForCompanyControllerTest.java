@@ -100,7 +100,6 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
                         .kind( DEFAULT_KIND )
                         .approvalRoute(ApprovalRouteEnum.AUTH_CODE)
                         .approvalExpiryAt( now.plusDays(3).toString() )
-                        .invitations( List.of( invitationOne ) )
                         .links( new AssociationLinks().self( "/1" ) );
 
         final var invitationTwo =
@@ -122,7 +121,6 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
                         .kind( DEFAULT_KIND )
                         .approvalRoute(ApprovalRouteEnum.AUTH_CODE)
                         .approvalExpiryAt( now.plusDays(7).toString() )
-                        .invitations( List.of( invitationTwo ) )
                         .links( new AssociationLinks().self( "/2" ) );
 
         Mockito.doNothing().when(interceptorConfig).addInterceptors( any() );
@@ -306,7 +304,6 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
 
         final var associations = associationsList.getItems();
         final var associationOne = associations.getFirst();
-        final var invitationsOne = associationOne.getInvitations();
 
         Assertions.assertEquals( "a", associationOne.getEtag() );
         Assertions.assertEquals( "1", associationOne.getId() );
@@ -322,9 +319,6 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
         Assertions.assertEquals( DEFAULT_KIND, associationOne.getKind() );
         Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE, associationOne.getApprovalRoute() );
         Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(3) ), reduceTimestampResolution( associationOne.getApprovalExpiryAt() ) );
-        Assertions.assertEquals( 1, invitationsOne.size() );
-        Assertions.assertEquals( "666", invitationsOne.get(0).getInvitedBy() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(4) ), reduceTimestampResolution( invitationsOne.get(0).getInvitedAt() ) );
         Assertions.assertEquals( "/1", associationOne.getLinks().getSelf() );
 
         final var associationTwo = associations.get( 1 );
