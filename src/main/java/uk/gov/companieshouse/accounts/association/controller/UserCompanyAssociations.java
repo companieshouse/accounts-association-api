@@ -4,6 +4,9 @@ import static uk.gov.companieshouse.api.accounts.associations.model.Association.
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.REMOVED;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -28,6 +31,7 @@ import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociatio
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationRequestBodyPost;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPost;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
@@ -86,6 +90,12 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
+    public ResponseEntity<List<Invitation>> fetchActiveInvitationsForUser(@NotNull String s,
+            @NotNull String s1, @Valid Integer integer, @Valid Integer integer1) {
+        return null;
+    }
+
+    @Override
     public ResponseEntity<AssociationsList> fetchAssociationsBy(
             final String xRequestId,
             final String ericIdentity,
@@ -124,6 +134,12 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             throw new NotFoundRuntimeException(StaticPropertyUtil.APPLICATION_NAMESPACE, errorMessage);
         }
         return new ResponseEntity<>(association.get(), HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<List<Invitation>> getInvitationsForAssociation(@NotNull String s,
+            @Pattern(regexp = "^[a-zA-Z0-9]*$") String s1) {
+        return null;
     }
 
     @Override

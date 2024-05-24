@@ -30,7 +30,7 @@ public class AssociationsListCompanyMapper {
                 .map(association -> {
                     association.setCompanyName(companyDetails.getCompanyName());
                     return association;
-                }).map(mapperUtil::enrichInvitations);
+                });
         return mapperUtil.enrichWithMetadata(associationList, END_POINT_URL.concat(companyDetails.getCompanyNumber()));
     }
 
