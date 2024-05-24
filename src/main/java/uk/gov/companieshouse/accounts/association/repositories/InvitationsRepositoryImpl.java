@@ -1,7 +1,6 @@
 package uk.gov.companieshouse.accounts.association.repositories;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -31,11 +30,10 @@ public class InvitationsRepositoryImpl implements InvitationsRepository {
         final var sortByInvitedAt = Aggregation.sort( Sort.Direction.DESC, "invitations.invited_at" );
 
         final var groupByIdAndComputeMostRecentInvitation = Aggregation.group("_id" )
-                .first("invitations" ).as( "most_recent_invitation" )
-                .first( "approval_expiry_at" ).as( "approval_expiry_at" );
+                .first("invitations" ).as( "most_recent_invitation" );
 
         final var mostRecentInvitationToInvitations = Aggregation.addFields()
-                .addField( "invitations" ).withValue( Arrays.asList( "$most_recent_invitation" ) )
+                .addField( "invitations" ).withValue( List.of("$most_recent_invitation") )
                 .build();
 
         final var aggregation = Aggregation.newAggregation(
