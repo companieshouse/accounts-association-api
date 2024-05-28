@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
+import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.models.UserContext;
@@ -151,9 +152,17 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<List<Invitation>> getInvitationsForAssociation(@NotNull String s,
-            @Pattern(regexp = "^[a-zA-Z0-9]*$") String s1) {
-        return null;
+    public ResponseEntity<List<Invitation>> getInvitationsForAssociation(final String xRequestId, final String associationId) {
+        final Optional<AssociationDao> associationDaoOptional = associationsService.findAssociationDaoById(associationId);
+        if (associationDaoOptional.isEmpty()) {
+            LOG.error(String.format("%s: Could not find association %s in user_company_associations.", xRequestId, associationId));
+            throw new NotFoundRuntimeException("accounts-association-api", String.format("Association %s was not found.", associationId));
+        }
+
+        final AssociationDao associationDao = associationDaoOptional.get();
+        final List<Invitation> invitations = associationsService.fetchInvitations(associationDao);
+
+        return new ResponseEntity<>(invitations, HttpStatus.OK);
     }
 
     @Override
