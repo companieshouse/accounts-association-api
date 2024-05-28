@@ -21,4 +21,16 @@
         <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback\-classic@.*$</packageUrl>
         <cve>CVE-2023-6378</cve>
     </suppress>
+    <suppress until="2024-09-01Z">
+        <notes><![CDATA[
+   file name: kafka-clients-3.1.0.jar
+   ]]></notes>
+        <cve>CVE-2023-25194</cve>
+    </suppress>
+    <suppress until="2024-09-01Z">
+        <notes><![CDATA[
+   file name: kafka-clients-3.1.0.jar
+   ]]></notes>
+        <cve>CVE-2022-34917</cve>
+    </suppress>
 </suppressions>
