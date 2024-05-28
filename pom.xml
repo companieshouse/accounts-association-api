@@ -17,18 +17,18 @@
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.2.2</maven-surefire-plugin.version>
-        <structured-logging.version>3.0.7</structured-logging.version>
+        <structured-logging.version>3.0.8</structured-logging.version>
         <common-web-java.version>3.0.0</common-web-java.version>
         <dependency-check-plugin.version>8.4.3</dependency-check-plugin.version>
         <sonar-maven-plugin.version>3.11.0.3922</sonar-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.10</jacoco-maven-plugin.version>
         <encryption-java-library.version>2.0.3</encryption-java-library.version>
         <rest-service-common-library-version>2.0.2</rest-service-common-library-version>
-        <private-api-sdk-java.version>4.0.129</private-api-sdk-java.version>
+        <private-api-sdk-java.version>4.0.130</private-api-sdk-java.version>
         <api-sdk-manager-java-library.version>3.0.5</api-sdk-manager-java-library.version>
         <api-security-java-version>2.0.4</api-security-java-version>
-        <org.mapstruct.version>1.6.0.Beta1</org.mapstruct.version>
-        <junit-jupiter.version>1.19.7</junit-jupiter.version>
+        <org.mapstruct.version>1.6.0.Beta2</org.mapstruct.version>
+        <junit-jupiter.version>1.19.8</junit-jupiter.version>
         <version.kafka-clients>3.1.0</version.kafka-clients>
     </properties>
     <profiles>
@@ -106,7 +106,18 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-testcontainers</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-compress</artifactId>
+                </exclusion>
+            </exclusions>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>1.26.2</version>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -143,7 +154,7 @@
         <dependency>
             <groupId>com.google.http-client</groupId>
             <artifactId>google-http-client</artifactId>
-            <version>1.43.3</version>
+            <version>1.44.2</version>
         </dependency>
         <dependency>
             <groupId>uk.gov.companieshouse</groupId>
