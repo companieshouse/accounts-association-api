@@ -12,8 +12,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 import org.bson.Document;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,8 +28,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.MethodMode;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
@@ -1119,6 +1115,58 @@ class AssociationsServiceTest {
 
         Mockito.doReturn( Optional.of( association ) ).when( associationsRepository ).fetchAssociationForCompanyNumberAndUserId( anyString(), anyString() );
         Assertions.assertEquals( "1", associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "111" ).get().getId() );
+    }
+
+    @Test
+    void fetchInvitationsReturnsCorrectListOfInvitations() {
+        InvitationDao invitationDao1 = new InvitationDao();
+        invitationDao1.setInvitedBy("user1");
+        invitationDao1.setInvitedAt(LocalDateTime.parse("2023-05-28T12:34:56"));
+
+        InvitationDao invitationDao2 = new InvitationDao();
+        invitationDao2.setInvitedBy("user2");
+        invitationDao2.setInvitedAt(LocalDateTime.parse("2023-05-29T12:34:56"));
+
+        AssociationDao associationDao = new AssociationDao();
+        associationDao.setId("18");
+        associationDao.setInvitations(List.of(invitationDao1, invitationDao2));
+        associationDao.setApprovalExpiryAt(LocalDateTime.now().plusDays(1));
+
+        Invitation invitation1 = new Invitation();
+        invitation1.setInvitedBy("user1@example.com");
+        invitation1.setInvitedAt("2023-05-28T12:34:56");
+        invitation1.setIsActive(false);
+
+        Invitation invitation2 = new Invitation();
+        invitation2.setInvitedBy("user2@example.com");
+        invitation2.setInvitedAt("2023-05-29T12:34:56");
+        invitation2.setIsActive(true);
+
+        Mockito.when(invitationMapper.daoToDto(invitationDao1)).thenReturn(invitation1);
+        Mockito.when(invitationMapper.daoToDto(invitationDao2)).thenReturn(invitation2);
+
+        List<Invitation> invitations = associationsService.fetchInvitations(associationDao);
+
+        Assertions.assertEquals(2, invitations.size());
+        Assertions.assertEquals("18", invitations.get(0).getAssociationId());
+        Assertions.assertEquals("18", invitations.get(1).getAssociationId());
+        Assertions.assertFalse(invitations.get(0).getIsActive());
+        Assertions.assertTrue(invitations.get(1).getIsActive());
+        Assertions.assertEquals("user1@example.com", invitations.get(0).getInvitedBy());
+        Assertions.assertEquals("user2@example.com", invitations.get(1).getInvitedBy());
+        Assertions.assertEquals("2023-05-28T12:34:56", invitations.get(0).getInvitedAt());
+        Assertions.assertEquals("2023-05-29T12:34:56", invitations.get(1).getInvitedAt());
+    }
+
+    @Test
+    void fetchInvitationsWithNullInvitationsListReturnsEmptyList() {
+        AssociationDao associationDao = new AssociationDao();
+        associationDao.setId("18");
+        associationDao.setInvitations(Collections.emptyList());
+
+        List<Invitation> invitations = associationsService.fetchInvitations(associationDao);
+
+        Assertions.assertTrue(invitations.isEmpty());
     }
 
     @Test
