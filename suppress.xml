@@ -21,4 +21,34 @@
         <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback\-classic@.*$</packageUrl>
         <cve>CVE-2023-6378</cve>
     </suppress>
+    <suppress until="2024-09-01Z">
+        <notes><![CDATA[
+   file name: kafka-clients-3.1.0.jar
+   ]]></notes>
+        <cve>CVE-2022-34917</cve>
+        <cve>CVE-2023-25194</cve>
+    </suppress>
+    <suppress until="2024-09-01Z">
+        <notes><![CDATA[
+   file name: commons-compress-1.24.0.jar
+   ]]></notes>
+        <cve>CVE-2024-26308</cve>
+        <cve>CVE-2024-25710</cve>
+    </suppress>
+    <suppress until="2024-09-01Z">
+        <notes><![CDATA[
+   file name: http2-common-11.0.16.jar
+   ]]></notes>
+        <cve>CVE-2023-44487</cve>
+        <cve>CVE-2024-22201</cve>
+    </suppress>
+    <suppress until="2024-09-01Z">
+        <notes><![CDATA[
+   file name: snappy-java-1.1.8.4.jar
+   ]]></notes>
+        <cve>CVE-2023-34455</cve>
+        <cve>CVE-2023-34454</cve>
+        <cve>CVE-2023-34453</cve>
+        <cve>CVE-2023-43642</cve>
+    </suppress>
 </suppressions>
