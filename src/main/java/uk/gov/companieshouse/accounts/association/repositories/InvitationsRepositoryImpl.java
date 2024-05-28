@@ -30,6 +30,7 @@ public class InvitationsRepositoryImpl implements InvitationsRepository {
         final var sortByInvitedAt = Aggregation.sort( Sort.Direction.DESC, "invitations.invited_at" );
 
         final var groupByIdAndComputeMostRecentInvitation = Aggregation.group("_id" )
+                .first( "approval_expiry_at" ).as( "approval_expiry_at" )
                 .first("invitations" ).as( "most_recent_invitation" );
 
         final var mostRecentInvitationToInvitations = Aggregation.addFields()
