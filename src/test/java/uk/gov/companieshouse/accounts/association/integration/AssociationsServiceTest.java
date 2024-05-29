@@ -671,7 +671,7 @@ public class AssociationsServiceTest {
         associationThirtyFour.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
         associationThirtyFour.setId("34");
         associationThirtyFour.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationThirtyFour.setApprovalExpiryAt(now.plusDays(10));
+        associationThirtyFour.setApprovalExpiryAt(now.plusDays(11));
         associationThirtyFour.setInvitations( List.of( invitationThirtyFourMedian, invitationThirtyFourOldest, invitationThirtyFourNewest ) );
         associationThirtyFour.setEtag( "aa" );
 
@@ -694,7 +694,7 @@ public class AssociationsServiceTest {
         associationThirtyFive.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
         associationThirtyFive.setId("35");
         associationThirtyFive.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationThirtyFive.setApprovalExpiryAt( now.plusDays(20) );
+        associationThirtyFive.setApprovalExpiryAt( now.plusDays(8) );
         associationThirtyFive.setInvitations( List.of( invitationThirtyFiveOldest, invitationThirtyFiveMedian, invitationThirtyFiveNewest ) );
         associationThirtyFive.setEtag("bb");
 
@@ -1091,7 +1091,7 @@ public class AssociationsServiceTest {
 
         associationsService.fetchActiveInvitations( "99999", 1, 1 );
 
-        Mockito.verify( invitationsMapper ).daoToDto( argThat( associationDaoMatches( "34", now.plusDays( 10 ), "444", now.minusDays(4) ) ) );
+        Mockito.verify( invitationsMapper ).daoToDto( argThat( associationDaoMatches( "34", now.plusDays( 11 ), "444", now.minusDays(4) ) ) );
     }
 
 }

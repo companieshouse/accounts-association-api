@@ -677,7 +677,7 @@ public class UserCompanyAssociationsTest {
         associationFortySeven.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
         associationFortySeven.setId("47");
         associationFortySeven.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationFortySeven.setApprovalExpiryAt(now.plusDays(10));
+        associationFortySeven.setApprovalExpiryAt(now.plusDays(11));
         associationFortySeven.setInvitations( List.of( invitationFortySevenMedian, invitationFortySevenOldest, invitationFortySevenNewest ) );
         associationFortySeven.setEtag( "aa" );
 
@@ -700,7 +700,7 @@ public class UserCompanyAssociationsTest {
         associationFortyEight.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
         associationFortyEight.setId("48");
         associationFortyEight.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationFortyEight.setApprovalExpiryAt( now.plusDays(20) );
+        associationFortyEight.setApprovalExpiryAt( now.plusDays(8) );
         associationFortyEight.setInvitations( List.of( invitationFortyEightOldest, invitationFortyEightMedian, invitationFortyEightNewest ) );
         associationFortyEight.setEtag("bb");
 
