@@ -223,13 +223,7 @@ public class AssociationsService {
     }
 
     public List<Invitation> fetchInvitations( final AssociationDao associationDao ) {
-        return associationDao.getInvitations().stream()
-                .map(invitationMapper::daoToDto)
-                .peek(invitation -> {
-                    invitation.setAssociationId(associationDao.getId());
-                    invitation.setIsActive(associationDao.getApprovalExpiryAt().isAfter(LocalDateTime.now()));
-                })
-                .toList();
+        return invitationMapper.daoToDto(associationDao).toList();
     }
 
 }

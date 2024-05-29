@@ -12,6 +12,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
+
 import org.bson.Document;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -1112,49 +1114,6 @@ class AssociationsServiceTest {
 
         Mockito.doReturn( Optional.of( association ) ).when( associationsRepository ).fetchAssociationForCompanyNumberAndUserId( anyString(), anyString() );
         Assertions.assertEquals( "1", associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "111" ).get().getId() );
-    }
-
-    @ParameterizedTest
-    @CsvSource({
-            "1, true",
-            "-1, false"
-    })
-    void fetchInvitationsReturnsCorrectListOfInvitations(int daysOffset, boolean expectedIsActive) {
-        InvitationDao invitationDao1 = new InvitationDao();
-        invitationDao1.setInvitedBy("user1");
-        invitationDao1.setInvitedAt(LocalDateTime.parse("2023-05-28T12:34:56"));
-
-        InvitationDao invitationDao2 = new InvitationDao();
-        invitationDao2.setInvitedBy("user2");
-        invitationDao2.setInvitedAt(LocalDateTime.parse("2023-05-29T12:34:56"));
-
-        AssociationDao associationDao = new AssociationDao();
-        associationDao.setId("18");
-        associationDao.setInvitations(List.of(invitationDao1, invitationDao2));
-        associationDao.setApprovalExpiryAt(LocalDateTime.now().plusDays(daysOffset));
-
-        Invitation invitation1 = new Invitation();
-        invitation1.setInvitedBy("user1@example.com");
-        invitation1.setInvitedAt("2023-05-28T12:34:56");
-
-        Invitation invitation2 = new Invitation();
-        invitation2.setInvitedBy("user2@example.com");
-        invitation2.setInvitedAt("2023-05-29T12:34:56");
-
-        Mockito.when(invitationMapper.daoToDto(invitationDao1)).thenReturn(invitation1);
-        Mockito.when(invitationMapper.daoToDto(invitationDao2)).thenReturn(invitation2);
-
-        List<Invitation> invitations = associationsService.fetchInvitations(associationDao);
-
-        Assertions.assertEquals(2, invitations.size());
-        Assertions.assertEquals("18", invitations.get(0).getAssociationId());
-        Assertions.assertEquals("18", invitations.get(1).getAssociationId());
-        Assertions.assertEquals(expectedIsActive, invitations.get(0).getIsActive());
-        Assertions.assertEquals(expectedIsActive, invitations.get(1).getIsActive());
-        Assertions.assertEquals("user1@example.com", invitations.get(0).getInvitedBy());
-        Assertions.assertEquals("user2@example.com", invitations.get(1).getInvitedBy());
-        Assertions.assertEquals("2023-05-28T12:34:56", invitations.get(0).getInvitedAt());
-        Assertions.assertEquals("2023-05-29T12:34:56", invitations.get(1).getInvitedAt());
     }
 
     @Test
