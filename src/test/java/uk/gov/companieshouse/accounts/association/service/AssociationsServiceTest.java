@@ -36,7 +36,6 @@ import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
-import uk.gov.companieshouse.accounts.association.repositories.InvitationsRepository;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
@@ -54,9 +53,6 @@ class AssociationsServiceTest {
 
     @Mock
     AssociationsRepository associationsRepository;
-
-    @Mock
-    InvitationsRepository invitationsRepository;
 
     @Mock
     InvitationsMapper invitationMapper;
@@ -654,7 +650,6 @@ class AssociationsServiceTest {
 
         associationsService = new AssociationsService(
                 associationsRepository,
-                invitationsRepository,
                 associationsListUserMapper,
                 associationsListCompanyMapper,
                 associationMapper,
