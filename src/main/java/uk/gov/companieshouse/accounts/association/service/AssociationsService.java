@@ -26,7 +26,6 @@ import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
-import uk.gov.companieshouse.accounts.association.repositories.InvitationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
@@ -43,7 +42,6 @@ public class AssociationsService {
 
 
     private final AssociationsRepository associationsRepository;
-    private final InvitationsRepository invitationsRepository;
     private final AssociationsListUserMapper associationsListUserMapper;
 
     private final AssociationsListCompanyMapper associationsListCompanyMapper;
@@ -56,7 +54,6 @@ public class AssociationsService {
 
     @Autowired
     public AssociationsService(AssociationsRepository associationsRepository,
-                               InvitationsRepository invitationsRepository,
                                AssociationsListUserMapper associationsListUserMapper,
                                AssociationsListCompanyMapper associationsListCompanyMapper,
                                AssociationMapper associationMapper,
@@ -65,7 +62,6 @@ public class AssociationsService {
         this.associationsListUserMapper = associationsListUserMapper;
         this.associationsListCompanyMapper = associationsListCompanyMapper;
         this.associationMapper = associationMapper;
-        this.invitationsRepository = invitationsRepository;
         this.invitationMapper = invitationMapper;
     }
 
