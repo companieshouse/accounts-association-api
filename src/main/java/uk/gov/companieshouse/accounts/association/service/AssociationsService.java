@@ -215,11 +215,7 @@ public class AssociationsService {
     public List<Invitation> fetchActiveInvitations( final String userId, final int pageIndex, final int itemsPerPage ){
         return associationsRepository.fetchAssociationsWithActiveInvitations( userId, LocalDateTime.now() )
                 .map( this::filterForMostRecentInvitation )
-                .sorted( ( firstAssociation, secondAssociation ) -> {
-                            final var firstAssociationInvitation = firstAssociation.getInvitations().getFirst().getInvitedAt();
-                            final var secondAssociationInvitation = secondAssociation.getInvitations().getFirst().getInvitedAt();
-                            return secondAssociationInvitation.compareTo( firstAssociationInvitation );
-                        } )
+                .sorted(Comparator.comparing(AssociationDao::getApprovalExpiryAt))
                 .skip((long) pageIndex * itemsPerPage )
                 .limit( itemsPerPage )
                 .flatMap( invitationMapper::daoToDto )
@@ -227,11 +223,13 @@ public class AssociationsService {
     }
 
     public List<Invitation> fetchInvitations( final AssociationDao associationDao ) {
-        List<Invitation> invitations = associationDao.getInvitations().stream()
+        return associationDao.getInvitations().stream()
                 .map(invitationMapper::daoToDto)
-                .peek(invitation -> invitation.setAssociationId(associationDao.getId()))
+                .peek(invitation -> {
+                    invitation.setAssociationId(associationDao.getId());
+                    invitation.setIsActive(associationDao.getApprovalExpiryAt().isAfter(LocalDateTime.now()));
+                })
                 .toList();
-        return invitations;
     }
 
 }
