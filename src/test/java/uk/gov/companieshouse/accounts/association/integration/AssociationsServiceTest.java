@@ -1,10 +1,14 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +16,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,17 +35,24 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
+import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
+import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.InternalApiClient;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
+import uk.gov.companieshouse.api.error.ApiErrorResponseException;
+import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserUserGet;
+import uk.gov.companieshouse.api.handler.exception.URIValidationException;
+import uk.gov.companieshouse.api.model.ApiResponse;
 import uk.gov.companieshouse.api.sdk.ApiClientService;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
@@ -79,15 +91,19 @@ public class AssociationsServiceTest {
     @MockBean
     AssociationsListUserMapper associationsListUserMapper;
 
+    @MockBean
+    InvitationsMapper invitationsMapper;
+
     @Autowired
     private AssociationsService associationsService;
 
     @MockBean
     StaticPropertyUtil staticPropertyUtil;
 
+    final LocalDateTime now = LocalDateTime.now();
+
     @BeforeEach
     public void setup() {
-        final var now = LocalDateTime.now();
 
         final var invitationOne = new InvitationDao();
         invitationOne.setInvitedBy("666");
@@ -636,13 +652,59 @@ public class AssociationsServiceTest {
         associationThirtyThree.setInvitations( List.of( invitationThirtyThree ) );
         associationThirtyThree.setEtag("pp");
 
+        final var invitationThirtyFourOldest = new InvitationDao();
+        invitationThirtyFourOldest.setInvitedBy("666");
+        invitationThirtyFourOldest.setInvitedAt(now.minusDays(9));
+
+        final var invitationThirtyFourMedian = new InvitationDao();
+        invitationThirtyFourMedian.setInvitedBy("333");
+        invitationThirtyFourMedian.setInvitedAt(now.minusDays(6));
+
+        final var invitationThirtyFourNewest = new InvitationDao();
+        invitationThirtyFourNewest.setInvitedBy("444");
+        invitationThirtyFourNewest.setInvitedAt(now.minusDays(4));
+
+        final var associationThirtyFour = new AssociationDao();
+        associationThirtyFour.setCompanyNumber("333333P");
+        associationThirtyFour.setUserId("99999");
+        associationThirtyFour.setUserEmail("scrooge.mcduck1@disney.land");
+        associationThirtyFour.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationThirtyFour.setId("34");
+        associationThirtyFour.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationThirtyFour.setApprovalExpiryAt(now.plusDays(10));
+        associationThirtyFour.setInvitations( List.of( invitationThirtyFourMedian, invitationThirtyFourOldest, invitationThirtyFourNewest ) );
+        associationThirtyFour.setEtag( "aa" );
+
+        final var invitationThirtyFiveOldest = new InvitationDao();
+        invitationThirtyFiveOldest.setInvitedBy("111");
+        invitationThirtyFiveOldest.setInvitedAt( now.minusDays(3) );
+
+        final var invitationThirtyFiveMedian = new InvitationDao();
+        invitationThirtyFiveMedian.setInvitedBy("222");
+        invitationThirtyFiveMedian.setInvitedAt( now.minusDays(2) );
+
+        final var invitationThirtyFiveNewest = new InvitationDao();
+        invitationThirtyFiveNewest.setInvitedBy("444");
+        invitationThirtyFiveNewest.setInvitedAt( now.minusDays(1) );
+
+        final var associationThirtyFive = new AssociationDao();
+        associationThirtyFive.setCompanyNumber("444444P");
+        associationThirtyFive.setUserId("99999");
+        associationThirtyFive.setUserEmail("scrooge.mcduck1@disney.land");
+        associationThirtyFive.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationThirtyFive.setId("35");
+        associationThirtyFive.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationThirtyFive.setApprovalExpiryAt( now.plusDays(20) );
+        associationThirtyFive.setInvitations( List.of( invitationThirtyFiveOldest, invitationThirtyFiveMedian, invitationThirtyFiveNewest ) );
+        associationThirtyFive.setEtag("bb");
+
         associationsRepository.insert( List.of( associationOne, associationTwo, associationThree, associationFour,
                 associationFive, associationSix, associationSeven, associationEight, associationNine, associationTen,
                 associationEleven, associationTwelve, associationThirteen, associationFourteen, associationFifteen,
                 associationSixteen, associationEighteen, associationNineteen, associationTwenty, associationTwentyOne,
                 associationTwentyTwo, associationTwentyThree, associationTwentyFour, associationTwentyFive, associationTwentySix,
                 associationTwentySeven, associationTwentyEight, associationTwentyNine, associationThirty, associationThirtyOne,
-                associationThirtyTwo, associationThirtyThree ) );
+                associationThirtyTwo, associationThirtyThree, associationThirtyFour, associationThirtyFive ) );
     }
 
     @Test
@@ -972,6 +1034,64 @@ public class AssociationsServiceTest {
     @Test
     void fetchAssociationForCompanyNumberAndUserIdShouldFetchAssociation(){
         Assertions.assertEquals( "1", associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "111" ).get().getId() );
+    }
+
+    @Test
+    void fetchActiveInvitationsWithNullOrMalformedOrNonexistentUserIdReturnsEmptyList(){
+        Assertions.assertEquals( List.of(), associationsService.fetchActiveInvitations( null, 0, 1 ) );
+        Assertions.assertEquals( List.of(), associationsService.fetchActiveInvitations( "$$$", 0, 1 ) );
+        Assertions.assertEquals( List.of(), associationsService.fetchActiveInvitations( "9191", 0, 1 ) );
+    }
+
+    ArgumentMatcher<AssociationDao> associationIdMatches( String associationId ){
+        return associationDao -> associationId.equals( associationDao.getId() );
+    }
+
+    private String reduceTimestampResolution( String timestamp ){
+        return timestamp.substring( 0, timestamp.indexOf( ":" ) );
+    }
+
+    private String localDateTimeToNormalisedString( LocalDateTime localDateTime ){
+        final var timestamp = localDateTime.toString();
+        return reduceTimestampResolution( timestamp );
+    }
+
+    private Predicate<InvitationDao> invitationDaoMatches( String invitedBy, LocalDateTime invitedAt ){
+        return invitationDao ->
+                invitedBy.equals( invitationDao.getInvitedBy() ) &&
+                        localDateTimeToNormalisedString( invitedAt ).equals( localDateTimeToNormalisedString( invitationDao.getInvitedAt() ) );
+    }
+
+    ArgumentMatcher<AssociationDao> associationDaoMatches( String associationId, LocalDateTime expectedExpiry, String expectedInvitedBy, LocalDateTime expectedInvitedAt ){
+        return associationDao -> {
+            final var firstInvitationDao = associationDao.getInvitations().getFirst();
+            return associationId.equals( associationDao.getId() ) &&
+                    localDateTimeToNormalisedString( expectedExpiry ).equals( localDateTimeToNormalisedString( associationDao.getApprovalExpiryAt() ) ) &&
+                    invitationDaoMatches( expectedInvitedBy, expectedInvitedAt ).test( firstInvitationDao );
+        };
+    }
+
+    @Test
+    void fetchActiveInvitationsReturnsPaginatedResultsInCorrectOrderAndOnlyRetainsMostRecentInvitationPerAssociation(){
+
+        final var invitationThirtyFour = new Invitation();
+        invitationThirtyFour.setInvitedBy( "444" );
+        invitationThirtyFour.setInvitedAt( now.minusDays(4).toString() );
+        invitationThirtyFour.setAssociationId( "34" );
+        invitationThirtyFour.setIsActive( true );
+
+        final var invitationThirtyFive = new Invitation();
+        invitationThirtyFive.setInvitedBy( "444" );
+        invitationThirtyFive.setInvitedAt( now.minusDays(1).toString() );
+        invitationThirtyFive.setAssociationId( "35" );
+        invitationThirtyFive.setIsActive( true );
+
+        Mockito.doReturn( Stream.of( invitationThirtyFive ) ).when( invitationsMapper ).daoToDto( argThat( associationIdMatches( "34" ) ) );
+        Mockito.doReturn( Stream.of( invitationThirtyFive ) ).when( invitationsMapper ).daoToDto( argThat( associationIdMatches( "35" ) ) );
+
+        associationsService.fetchActiveInvitations( "99999", 1, 1 );
+
+        Mockito.verify( invitationsMapper ).daoToDto( argThat( associationDaoMatches( "34", now.plusDays( 10 ), "444", now.minusDays(4) ) ) );
     }
 
 }

@@ -32,6 +32,4 @@ public abstract class InvitationsMapper {
                           .map( invitation -> invitation.isActive( association.getApprovalExpiryAt().isAfter( LocalDateTime.now() ) ) );
     }
 
-    // TODO: test this file
-
 }
