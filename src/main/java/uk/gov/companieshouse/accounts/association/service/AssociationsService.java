@@ -5,6 +5,7 @@ import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -199,16 +200,34 @@ public class AssociationsService {
 
     }
 
+    private AssociationDao filterForMostRecentInvitation( AssociationDao associationDao ){
+        final var invitations = associationDao.getInvitations();
 
+        if ( invitations.size() > 1 ){
+            final var mostRecentInvitation = invitations.stream()
+                    .max( Comparator.comparing( InvitationDao::getInvitedAt ) )
+                    .orElseThrow();
 
+            invitations.clear();
+            associationDao.setInvitations( List.of( mostRecentInvitation ) );
+        }
 
-    // TODO: test this
+        return associationDao;
+    }
+
     @Transactional( readOnly = true )
-    public List<Invitation> fetchActiveInvitations( final String userId ){
-        return invitationsRepository.fetchActiveInvitations( userId )
-                                    .stream()
-                                    .flatMap( invitationMapper::daoToDto )
-                                    .toList();
+    public List<Invitation> fetchActiveInvitations( final String userId, final int pageIndex, final int itemsPerPage ){
+        return associationsRepository.fetchAssociationsWithActiveInvitations( userId, LocalDateTime.now() )
+                .map( this::filterForMostRecentInvitation )
+                .sorted( ( firstAssociation, secondAssociation ) -> {
+                            final var firstAssociationInvitation = firstAssociation.getInvitations().getFirst().getInvitedAt();
+                            final var secondAssociationInvitation = secondAssociation.getInvitations().getFirst().getInvitedAt();
+                            return secondAssociationInvitation.compareTo( firstAssociationInvitation );
+                        } )
+                .skip((long) pageIndex * itemsPerPage )
+                .limit( itemsPerPage )
+                .flatMap( invitationMapper::daoToDto )
+                .toList();
     }
 
 }

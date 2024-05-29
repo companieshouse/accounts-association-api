@@ -12,6 +12,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 import org.bson.Document;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +30,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.MethodMode;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
@@ -39,6 +43,7 @@ import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepos
 import uk.gov.companieshouse.accounts.association.repositories.InvitationsRepository;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
@@ -105,7 +110,7 @@ class AssociationsServiceTest {
     @BeforeEach
     public void setup() {
 
-        final var now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now();
 
         final var invitationOne = new InvitationDao();
         invitationOne.setInvitedBy("666");
@@ -1114,6 +1119,13 @@ class AssociationsServiceTest {
 
         Mockito.doReturn( Optional.of( association ) ).when( associationsRepository ).fetchAssociationForCompanyNumberAndUserId( anyString(), anyString() );
         Assertions.assertEquals( "1", associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "111" ).get().getId() );
+    }
+
+    @Test
+    void fetchActiveInvitationsWithNullOrMalformedOrNonexistentUserIdReturnsEmptyList(){
+        Assertions.assertEquals( List.of(), associationsService.fetchActiveInvitations( null, 0, 1 ) );
+        Assertions.assertEquals( List.of(), associationsService.fetchActiveInvitations( "$$$", 0, 1 ) );
+        Assertions.assertEquals( List.of(), associationsService.fetchActiveInvitations( "9191", 0, 1 ) );
     }
 
 }

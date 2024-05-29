@@ -160,6 +160,9 @@ public class UserCompanyAssociationsTest {
     @Mock
     PrivateAccountsUserUserGet privateAccountsUserUserGet444;
 
+    @Mock
+    PrivateAccountsUserUserGet privateAccountsUserUserGet99999;
+
     private static final String DEFAULT_KIND = "association";
 
     @Value( "${invitation.url}")
@@ -650,12 +653,63 @@ public class UserCompanyAssociationsTest {
         associationFortySix.setEtag("d");
 
 
+
+
+
+
+
+        final var invitationFortySevenOldest = new InvitationDao();
+        invitationFortySevenOldest.setInvitedBy("666");
+        invitationFortySevenOldest.setInvitedAt(now.minusDays(9));
+
+        final var invitationFortySevenMedian = new InvitationDao();
+        invitationFortySevenMedian.setInvitedBy("333");
+        invitationFortySevenMedian.setInvitedAt(now.minusDays(6));
+
+        final var invitationFortySevenNewest = new InvitationDao();
+        invitationFortySevenNewest.setInvitedBy("444");
+        invitationFortySevenNewest.setInvitedAt(now.minusDays(4));
+
+        final var associationFortySeven = new AssociationDao();
+        associationFortySeven.setCompanyNumber("333333P");
+        associationFortySeven.setUserId("99999");
+        associationFortySeven.setUserEmail("scrooge.mcduck1@disney.land");
+        associationFortySeven.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationFortySeven.setId("47");
+        associationFortySeven.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationFortySeven.setApprovalExpiryAt(now.plusDays(10));
+        associationFortySeven.setInvitations( List.of( invitationFortySevenMedian, invitationFortySevenOldest, invitationFortySevenNewest ) );
+        associationFortySeven.setEtag( "aa" );
+
+        final var invitationFortyEightOldest = new InvitationDao();
+        invitationFortyEightOldest.setInvitedBy("111");
+        invitationFortyEightOldest.setInvitedAt( now.minusDays(3) );
+
+        final var invitationFortyEightMedian = new InvitationDao();
+        invitationFortyEightMedian.setInvitedBy("222");
+        invitationFortyEightMedian.setInvitedAt( now.minusDays(2) );
+
+        final var invitationFortyEightNewest = new InvitationDao();
+        invitationFortyEightNewest.setInvitedBy("444");
+        invitationFortyEightNewest.setInvitedAt( now.minusDays(1) );
+
+        final var associationFortyEight = new AssociationDao();
+        associationFortyEight.setCompanyNumber("444444P");
+        associationFortyEight.setUserId("99999");
+        associationFortyEight.setUserEmail("scrooge.mcduck1@disney.land");
+        associationFortyEight.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationFortyEight.setId("48");
+        associationFortyEight.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationFortyEight.setApprovalExpiryAt( now.plusDays(20) );
+        associationFortyEight.setInvitations( List.of( invitationFortyEightOldest, invitationFortyEightMedian, invitationFortyEightNewest ) );
+        associationFortyEight.setEtag("bb");
+
         associationsRepository.insert( List.of( associationEighteen, associationNineteen, associationTwenty, associationTwentyOne,
                 associationTwentyTwo, associationTwentyThree, associationTwentyFour, associationTwentyFive, associationTwentySix,
                 associationTwentySeven, associationTwentyEight, associationTwentyNine, associationThirty, associationThirtyOne,
                 associationThirtyTwo, associationThirtyThree, associationSeventeen, associationThirtyFour, associationThirtyFive, associationThirtySix,
                 associationTwo, associationThree, associationFour, associationFortyOne, associationFortyTwo, associationFortyThree,
-                associationFortyFour, associationFortyFive, associationFortySix ) );
+                associationFortyFour, associationFortyFive, associationFortySix, associationFortySeven, associationFortyEight ) );
         Mockito.doReturn( toCompanyDetailsApiResponse( "111111", "Sainsbury's" ) ).when( companyProfileEndpoint ).fetchCompanyProfile(  "111111" );
 
         Mockito.doReturn( toCompanyDetailsApiResponse( "333333", "Tesco" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "333333" );
@@ -686,6 +740,7 @@ public class UserCompanyAssociationsTest {
         Mockito.doReturn( privateAccountsUserUserGet222 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "222" );
         Mockito.doReturn( privateAccountsUserUserGet333 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "333" );
         Mockito.doReturn( privateAccountsUserUserGet444 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "444" );
+        Mockito.doReturn( privateAccountsUserUserGet99999 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "99999" );
 
         Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "9999", "scrooge.mcduck@disney.land", "Scrooge McDuck" ) ).when( privateAccountsUserUserGet9999 ).execute();
         Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "111", "bruce.wayne@gotham.city", "Batman" ) ).when( privateAccountsUserUserGet111 ).execute();
@@ -697,6 +752,7 @@ public class UserCompanyAssociationsTest {
         Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "222", "the.joker@gotham.city", null ) ).when( privateAccountsUserUserGet222 ).execute();
         Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "333", "harley.quinn@gotham.city", null ) ).when( privateAccountsUserUserGet333 ).execute();
         Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "444", "robin@gotham.city", null ) ).when( privateAccountsUserUserGet444 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "99999", "scrooge.mcduck1@disney.land", null ) ).when( privateAccountsUserUserGet99999 ).execute();
 
         Mockito.doReturn( toCompanyDetailsApiResponse( "000000", "Boston Dynamics" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "000000" );
 
@@ -1998,6 +2054,104 @@ public class UserCompanyAssociationsTest {
             if ( emailData instanceof InviteEmailData ) return inviteEmailMatches.test( (InviteEmailData) emailData );
             return false;
         } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getMessageType(), INVITE_MESSAGE_TYPE.getMessageType() ).contains( messageType ) ) );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithoutXRequestIdReturnsBadRequest() throws Exception {
+        mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+                        .header("Eric-identity", "99999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithoutEricIdentityReturnsUnauthorised() throws Exception {
+        mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isUnauthorized() );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
+        mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "$$$$")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isForbidden() );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
+        mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9191")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isForbidden() );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithUnacceptablePageIndexReturnsBadRequest() throws Exception {
+        mockMvc.perform( get( "/associations/invitations?page_index=-1&items_per_page=1" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "99999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithUnacceptableItemsPerPageReturnsBadRequest() throws Exception {
+        mockMvc.perform( get( "/associations/invitations?page_index=0&items_per_page=-1" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "99999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserRetrievesActiveInvitationsInCorrectOrderAndPaginatesCorrectly() throws Exception {
+        final var response =
+                mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+                                .header("X-Request-Id", "theId123")
+                                .header("Eric-identity", "99999")
+                                .header("ERIC-Identity-Type", "oauth2")
+                                .header("ERIC-Authorised-Key-Roles", "*") )
+                        .andExpect( status().isOk() )
+                        .andReturn()
+                        .getResponse();
+
+        final var objectMapper = new ObjectMapper();
+        final var invitations = (List<Map<String, Object>>) objectMapper.readValue( response.getContentAsByteArray(), List.class );
+        final var invitation = invitations.getFirst();
+
+        Assertions.assertEquals( 1, invitations.size() );
+        Assertions.assertEquals( "robin@gotham.city", invitation.get("invited_by") );
+        Assertions.assertNotNull( invitation.get("invited_at") );
+        Assertions.assertEquals( "47", invitation.get("association_id") );
+        Assertions.assertTrue( (boolean)invitation.get("isActive") );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithoutActiveInvitationsReturnsEmptyList() throws Exception {
+        final var response =
+                mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+                                .header("X-Request-Id", "theId123")
+                                .header("Eric-identity", "111")
+                                .header("ERIC-Identity-Type", "oauth2")
+                                .header("ERIC-Authorised-Key-Roles", "*") )
+                        .andExpect( status().isOk() )
+                        .andReturn()
+                        .getResponse();
+
+        final var objectMapper = new ObjectMapper();
+        final var invitations = (List<Map<String, Object>>) objectMapper.readValue( response.getContentAsByteArray(), List.class );
+        Assertions.assertTrue( invitations.isEmpty() );
     }
 
     @AfterEach

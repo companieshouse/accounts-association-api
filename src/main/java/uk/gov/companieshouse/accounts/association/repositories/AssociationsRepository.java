@@ -1,9 +1,11 @@
 package uk.gov.companieshouse.accounts.association.repositories;
 
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Update;
@@ -39,4 +41,8 @@ public interface AssociationsRepository extends MongoRepository<AssociationDao, 
 
     @Query( " { '_id': ?0 } " )
     int updateAssociation( String associationId, Update update );
+
+    @Query( "{ 'user_id': ?0, 'status': 'awaiting-approval', 'approval_expiry_at': { $gt: ?1 } }" )
+    Stream<AssociationDao> fetchAssociationsWithActiveInvitations( final String userId, final LocalDateTime now );
+
 }
