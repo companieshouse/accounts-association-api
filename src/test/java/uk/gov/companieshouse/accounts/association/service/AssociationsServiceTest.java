@@ -18,6 +18,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -1112,8 +1114,12 @@ class AssociationsServiceTest {
         Assertions.assertEquals( "1", associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "111" ).get().getId() );
     }
 
-    @Test
-    void fetchInvitationsReturnsCorrectListOfInvitations() {
+    @ParameterizedTest
+    @CsvSource({
+            "1, true",
+            "-1, false"
+    })
+    void fetchInvitationsReturnsCorrectListOfInvitations(int daysOffset, boolean expectedIsActive) {
         InvitationDao invitationDao1 = new InvitationDao();
         invitationDao1.setInvitedBy("user1");
         invitationDao1.setInvitedAt(LocalDateTime.parse("2023-05-28T12:34:56"));
@@ -1125,17 +1131,15 @@ class AssociationsServiceTest {
         AssociationDao associationDao = new AssociationDao();
         associationDao.setId("18");
         associationDao.setInvitations(List.of(invitationDao1, invitationDao2));
-        associationDao.setApprovalExpiryAt(LocalDateTime.now().plusDays(1));
+        associationDao.setApprovalExpiryAt(LocalDateTime.now().plusDays(daysOffset));
 
         Invitation invitation1 = new Invitation();
         invitation1.setInvitedBy("user1@example.com");
         invitation1.setInvitedAt("2023-05-28T12:34:56");
-        invitation1.setIsActive(false);
 
         Invitation invitation2 = new Invitation();
         invitation2.setInvitedBy("user2@example.com");
         invitation2.setInvitedAt("2023-05-29T12:34:56");
-        invitation2.setIsActive(true);
 
         Mockito.when(invitationMapper.daoToDto(invitationDao1)).thenReturn(invitation1);
         Mockito.when(invitationMapper.daoToDto(invitationDao2)).thenReturn(invitation2);
@@ -1145,8 +1149,8 @@ class AssociationsServiceTest {
         Assertions.assertEquals(2, invitations.size());
         Assertions.assertEquals("18", invitations.get(0).getAssociationId());
         Assertions.assertEquals("18", invitations.get(1).getAssociationId());
-        Assertions.assertFalse(invitations.get(0).getIsActive());
-        Assertions.assertTrue(invitations.get(1).getIsActive());
+        Assertions.assertEquals(expectedIsActive, invitations.get(0).getIsActive());
+        Assertions.assertEquals(expectedIsActive, invitations.get(1).getIsActive());
         Assertions.assertEquals("user1@example.com", invitations.get(0).getInvitedBy());
         Assertions.assertEquals("user2@example.com", invitations.get(1).getInvitedBy());
         Assertions.assertEquals("2023-05-28T12:34:56", invitations.get(0).getInvitedAt());
