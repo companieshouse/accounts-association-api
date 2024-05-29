@@ -4,9 +4,6 @@ import static uk.gov.companieshouse.api.accounts.associations.model.Association.
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.REMOVED;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -151,9 +148,17 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<List<Invitation>> getInvitationsForAssociation(@NotNull String s,
-            @Pattern(regexp = "^[a-zA-Z0-9]*$") String s1) {
-        return null;
+    public ResponseEntity<List<Invitation>> getInvitationsForAssociation(final String xRequestId, final String associationId) {
+        final Optional<AssociationDao> associationDaoOptional = associationsService.findAssociationDaoById(associationId);
+        if (associationDaoOptional.isEmpty()) {
+            LOG.error(String.format("%s: Could not find association %s in user_company_associations.", xRequestId, associationId));
+            throw new NotFoundRuntimeException("accounts-association-api", String.format("Association %s was not found.", associationId));
+        }
+
+        final AssociationDao associationDao = associationDaoOptional.get();
+        final List<Invitation> invitations = associationsService.fetchInvitations(associationDao);
+
+        return new ResponseEntity<>(invitations, HttpStatus.OK);
     }
 
     @Override

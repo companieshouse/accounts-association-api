@@ -230,4 +230,12 @@ public class AssociationsService {
                 .toList();
     }
 
+    public List<Invitation> fetchInvitations( final AssociationDao associationDao ) {
+        List<Invitation> invitations = associationDao.getInvitations().stream()
+                .map(invitationMapper::daoToDto)
+                .peek(invitation -> invitation.setAssociationId(associationDao.getId()))
+                .toList();
+        return invitations;
+    }
+
 }
