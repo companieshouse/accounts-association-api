@@ -54,7 +54,7 @@ public class MapperUtil {
         return association;
     }
 
-    private Invitation enrichInvitation(Invitation invitation) {
+    public Invitation enrichInvitation(Invitation invitation) {
         invitation.setInvitedBy(usersService.fetchUserDetails(invitation.getInvitedBy()).getEmail());
         return invitation;
     }

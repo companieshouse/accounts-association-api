@@ -4,9 +4,6 @@ import static uk.gov.companieshouse.api.accounts.associations.model.Association.
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.REMOVED;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -90,9 +87,23 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<List<Invitation>> fetchActiveInvitationsForUser(@NotNull String s,
-            @NotNull String s1, @Valid Integer integer, @Valid Integer integer1) {
-        return null;
+    public ResponseEntity<List<Invitation>> fetchActiveInvitationsForUser( final String xRequestId, final String ericIdentity, final Integer pageIndex, final Integer itemsPerPage ) {
+        LOG.debugContext( xRequestId, String.format( "Attempting to fetch active invitations for user %s", ericIdentity ), null );
+
+        if (pageIndex < 0) {
+            LOG.error("pageIndex was less then 0");
+            throw new BadRequestRuntimeException("Please check the request and try again");
+        }
+
+        if (itemsPerPage <= 0) {
+            LOG.error("itemsPerPage was less then 0");
+            throw new BadRequestRuntimeException("Please check the request and try again");
+        }
+
+        final var invitations = associationsService.fetchActiveInvitations( ericIdentity, pageIndex, itemsPerPage );
+        LOG.debugContext( xRequestId, String.format( "Successfully retrieved active invitations for user %s", ericIdentity ), null );
+
+       return new ResponseEntity<>( invitations, HttpStatus.OK );
     }
 
     @Override
@@ -137,9 +148,17 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<List<Invitation>> getInvitationsForAssociation(@NotNull String s,
-            @Pattern(regexp = "^[a-zA-Z0-9]*$") String s1) {
-        return null;
+    public ResponseEntity<List<Invitation>> getInvitationsForAssociation(final String xRequestId, final String associationId) {
+        final Optional<AssociationDao> associationDaoOptional = associationsService.findAssociationDaoById(associationId);
+        if (associationDaoOptional.isEmpty()) {
+            LOG.error(String.format("%s: Could not find association %s in user_company_associations.", xRequestId, associationId));
+            throw new NotFoundRuntimeException("accounts-association-api", String.format("Association %s was not found.", associationId));
+        }
+
+        final AssociationDao associationDao = associationDaoOptional.get();
+        final List<Invitation> invitations = associationsService.fetchInvitations(associationDao);
+
+        return new ResponseEntity<>(invitations, HttpStatus.OK);
     }
 
     @Override

@@ -12,12 +12,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
+
 import org.bson.Document;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -32,11 +36,13 @@ import uk.gov.companieshouse.accounts.association.exceptions.InternalServerError
 import uk.gov.companieshouse.accounts.association.mapper.AssociationMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
+import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
@@ -51,6 +57,9 @@ class AssociationsServiceTest {
 
     @Mock
     AssociationsRepository associationsRepository;
+
+    @Mock
+    InvitationsMapper invitationMapper;
 
     @Mock
     AssociationsListCompanyMapper associationsListCompanyMapper;
@@ -97,7 +106,7 @@ class AssociationsServiceTest {
     @BeforeEach
     public void setup() {
 
-        final var now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now();
 
         final var invitationOne = new InvitationDao();
         invitationOne.setInvitedBy("666");
@@ -647,7 +656,8 @@ class AssociationsServiceTest {
                 associationsRepository,
                 associationsListUserMapper,
                 associationsListCompanyMapper,
-                associationMapper
+                associationMapper,
+                invitationMapper
         );
     }
 
@@ -1104,6 +1114,24 @@ class AssociationsServiceTest {
 
         Mockito.doReturn( Optional.of( association ) ).when( associationsRepository ).fetchAssociationForCompanyNumberAndUserId( anyString(), anyString() );
         Assertions.assertEquals( "1", associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "111" ).get().getId() );
+    }
+
+    @Test
+    void fetchInvitationsWithNullInvitationsListReturnsEmptyList() {
+        AssociationDao associationDao = new AssociationDao();
+        associationDao.setId("18");
+        associationDao.setInvitations(Collections.emptyList());
+
+        List<Invitation> invitations = associationsService.fetchInvitations(associationDao);
+
+        Assertions.assertTrue(invitations.isEmpty());
+    }
+
+    @Test
+    void fetchActiveInvitationsWithNullOrMalformedOrNonexistentUserIdReturnsEmptyList(){
+        Assertions.assertEquals( List.of(), associationsService.fetchActiveInvitations( null, 0, 1 ) );
+        Assertions.assertEquals( List.of(), associationsService.fetchActiveInvitations( "$$$", 0, 1 ) );
+        Assertions.assertEquals( List.of(), associationsService.fetchActiveInvitations( "9191", 0, 1 ) );
     }
 
 }

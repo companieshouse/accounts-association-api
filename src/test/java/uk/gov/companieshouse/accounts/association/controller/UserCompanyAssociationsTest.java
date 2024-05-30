@@ -12,12 +12,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Assertions;
@@ -1648,4 +1650,172 @@ class UserCompanyAssociationsTest {
         assertEquals("{\"errors\":[{\"error\":\"There is an existing association with Confirmed status for the user\",\"type\":\"ch:service\"}]}",
                 response.getResponse().getContentAsString());
     }
+
+    @Test
+    void getInvitationsForAssociationWithoutXRequestIdReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/associations/{id}/invitations", "1")
+                        .header("Eric-identity", "000")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getInvitationsForAssociationWithMalformedInputReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/associations/{id}/invitations", "$")
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "000")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getInvitationsForAssociationWithNonexistentIdReturnsNotFound() throws Exception {
+        Mockito.doReturn(Optional.empty()).when(associationsService).findAssociationDaoById("11");
+        final var response = mockMvc.perform(get("/associations/{id}/invitations", "11")
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "000")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*"))
+                .andExpect(status().isNotFound())
+                .andReturn();
+        String error = "{\"errors\":[{\"error\":\"Association 11 was not found.\",\"type\":\"ch:service\"}]}";
+        assertEquals(error, response.getResponse().getContentAsString());
+    }
+
+    @Test
+    void getInvitationsForAssociationFetchesInvitations() throws Exception {
+        Invitation invitation1 = new Invitation();
+        invitation1.setAssociationId("18");
+        invitation1.setIsActive(true);
+        invitation1.setInvitedBy("user1");
+        invitation1.setInvitedAt("2023-05-28T12:34:56");
+
+        Invitation invitation2 = new Invitation();
+        invitation2.setAssociationId("18");
+        invitation2.setIsActive(false);
+        invitation2.setInvitedBy("user2");
+        invitation2.setInvitedAt("2023-05-29T12:34:56");
+
+        List<Invitation> invitations = List.of(invitation1, invitation2);
+        AssociationDao associationDao = new AssociationDao();
+        Mockito.doReturn(Optional.of(associationDao)).when(associationsService).findAssociationDaoById("18");
+        Mockito.doReturn(invitations).when(associationsService).fetchInvitations(associationDao);
+
+        final var response = mockMvc.perform(get("/associations/{id}/invitations", "18")
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "000")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse();
+
+        final var objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        List<Invitation> resultInvitations = objectMapper.readValue(response.getContentAsByteArray(), new TypeReference<List<Invitation>>() {});
+
+        Assertions.assertEquals(invitations.size(), resultInvitations.size());
+        Assertions.assertEquals(invitations.get(0).getAssociationId(), resultInvitations.get(0).getAssociationId());
+        Assertions.assertEquals(invitations.get(0).getIsActive(), resultInvitations.get(0).getIsActive());
+        Assertions.assertEquals(invitations.get(0).getInvitedBy(), resultInvitations.get(0).getInvitedBy());
+        Assertions.assertEquals(invitations.get(0).getInvitedAt(), resultInvitations.get(0).getInvitedAt());
+
+        Assertions.assertEquals(invitations.get(1).getAssociationId(), resultInvitations.get(1).getAssociationId());
+        Assertions.assertEquals(invitations.get(1).getIsActive(), resultInvitations.get(1).getIsActive());
+        Assertions.assertEquals(invitations.get(1).getInvitedBy(), resultInvitations.get(1).getInvitedBy());
+        Assertions.assertEquals(invitations.get(1).getInvitedAt(), resultInvitations.get(1).getInvitedAt());
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithoutXRequestIdReturnsBadRequest() throws Exception {
+        mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+                        .header("Eric-identity", "99999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithoutEricIdentityReturnsUnauthorised() throws Exception {
+        mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isUnauthorized() );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
+        Mockito.doThrow( new NotFoundRuntimeException( "accounts-association-api", "Not found." ) ).when( usersService ).fetchUserDetails( any() );
+
+        mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "$$$$")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isForbidden() );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
+        Mockito.doThrow( new NotFoundRuntimeException( "accounts-association-api", "Not found." ) ).when( usersService ).fetchUserDetails( any() );
+
+        mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9191")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isForbidden() );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithUnacceptablePageIndexReturnsBadRequest() throws Exception {
+        mockMvc.perform( get( "/associations/invitations?page_index=-1&items_per_page=1" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "99999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithUnacceptableItemsPerPageReturnsBadRequest() throws Exception {
+        mockMvc.perform( get( "/associations/invitations?page_index=0&items_per_page=-1" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "99999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserRetrievesActiveInvitationsInCorrectOrderAndPaginatesCorrectly() throws Exception {
+            mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+                            .header("X-Request-Id", "theId123")
+                            .header("Eric-identity", "99999")
+                            .header("ERIC-Identity-Type", "oauth2")
+                            .header("ERIC-Authorised-Key-Roles", "*") )
+                    .andExpect( status().isOk() )
+                    .andReturn()
+                    .getResponse();
+
+        Mockito.verify( associationsService ).fetchActiveInvitations( eq( "99999" ), eq( 1 ), eq( 1 ) );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithoutPageIndexAndItemsPerPageUsesDefaults() throws Exception {
+        mockMvc.perform( get( "/associations/invitations" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "99999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isOk() )
+                .andReturn()
+                .getResponse();
+
+        Mockito.verify( associationsService ).fetchActiveInvitations( eq( "99999" ), eq( 0 ), eq( 15 ) );
+    }
+
 }
