@@ -5,6 +5,7 @@ import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -21,6 +22,7 @@ import uk.gov.companieshouse.accounts.association.exceptions.InternalServerError
 import uk.gov.companieshouse.accounts.association.mapper.AssociationMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
+import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
@@ -29,6 +31,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
@@ -39,13 +42,13 @@ public class AssociationsService {
 
 
     private final AssociationsRepository associationsRepository;
-
-
     private final AssociationsListUserMapper associationsListUserMapper;
 
     private final AssociationsListCompanyMapper associationsListCompanyMapper;
 
     private final AssociationMapper associationMapper;
+
+    private final InvitationsMapper invitationMapper;
 
     private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
 
@@ -53,11 +56,13 @@ public class AssociationsService {
     public AssociationsService(AssociationsRepository associationsRepository,
                                AssociationsListUserMapper associationsListUserMapper,
                                AssociationsListCompanyMapper associationsListCompanyMapper,
-                               AssociationMapper associationMapper) {
+                               AssociationMapper associationMapper,
+                               InvitationsMapper invitationMapper) {
         this.associationsRepository = associationsRepository;
         this.associationsListUserMapper = associationsListUserMapper;
         this.associationsListCompanyMapper = associationsListCompanyMapper;
         this.associationMapper = associationMapper;
+        this.invitationMapper = invitationMapper;
     }
 
     @Transactional(readOnly = true)
@@ -189,6 +194,36 @@ public class AssociationsService {
             throw new InternalServerErrorRuntimeException("Failed to update association");
         }
 
+    }
+
+    private AssociationDao filterForMostRecentInvitation( AssociationDao associationDao ){
+        final var invitations = associationDao.getInvitations();
+
+        if ( invitations.size() > 1 ){
+            final var mostRecentInvitation = invitations.stream()
+                    .max( Comparator.comparing( InvitationDao::getInvitedAt ) )
+                    .orElseThrow();
+
+            invitations.clear();
+            associationDao.setInvitations( List.of( mostRecentInvitation ) );
+        }
+
+        return associationDao;
+    }
+
+    @Transactional( readOnly = true )
+    public List<Invitation> fetchActiveInvitations( final String userId, final int pageIndex, final int itemsPerPage ){
+        return associationsRepository.fetchAssociationsWithActiveInvitations( userId, LocalDateTime.now() )
+                .map( this::filterForMostRecentInvitation )
+                .sorted(Comparator.comparing(AssociationDao::getApprovalExpiryAt))
+                .skip((long) pageIndex * itemsPerPage )
+                .limit( itemsPerPage )
+                .flatMap( invitationMapper::daoToDto )
+                .toList();
+    }
+
+    public List<Invitation> fetchInvitations( final AssociationDao associationDao ) {
+        return invitationMapper.daoToDto(associationDao).toList();
     }
 
 }
