@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -219,7 +220,7 @@ public class AssociationsService {
                 .skip((long) pageIndex * itemsPerPage )
                 .limit( itemsPerPage )
                 .flatMap( invitationMapper::daoToDto )
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public List<Invitation> fetchInvitations( final AssociationDao associationDao ) {
