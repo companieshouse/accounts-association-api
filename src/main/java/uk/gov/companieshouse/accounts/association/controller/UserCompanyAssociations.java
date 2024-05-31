@@ -1,14 +1,5 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
-import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
-import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
-import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.REMOVED;
-
-import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
@@ -25,18 +16,22 @@ import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
+import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
-import uk.gov.companieshouse.api.accounts.associations.model.InvitationRequestBodyPost;
-import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPost;
-import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
-import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
+
+import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
+import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
+import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.REMOVED;
 
 @RestController
 public class UserCompanyAssociations implements UserCompanyAssociationsInterface {
@@ -87,7 +82,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<List<Invitation>> fetchActiveInvitationsForUser( final String xRequestId, final String ericIdentity, final Integer pageIndex, final Integer itemsPerPage ) {
+    public ResponseEntity<InvitationsList> fetchActiveInvitationsForUser( final String xRequestId, final String ericIdentity, final Integer pageIndex, final Integer itemsPerPage ) {
         LOG.debugContext( xRequestId, String.format( "Attempting to fetch active invitations for user %s", ericIdentity ), null );
 
         if (pageIndex < 0) {
@@ -148,7 +143,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<List<Invitation>> getInvitationsForAssociation(final String xRequestId, final String associationId) {
+    public ResponseEntity<InvitationsList> getInvitationsForAssociation(final String xRequestId, final String associationId) {
         final Optional<AssociationDao> associationDaoOptional = associationsService.findAssociationDaoById(associationId);
         if (associationDaoOptional.isEmpty()) {
             LOG.error(String.format("%s: Could not find association %s in user_company_associations.", xRequestId, associationId));
@@ -156,7 +151,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         }
 
         final AssociationDao associationDao = associationDaoOptional.get();
-        final List<Invitation> invitations = associationsService.fetchInvitations(associationDao);
+        final InvitationsList invitations = associationsService.fetchInvitations(associationDao);
 
         return new ResponseEntity<>(invitations, HttpStatus.OK);
     }

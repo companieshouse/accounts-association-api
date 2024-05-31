@@ -1,17 +1,6 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
-
 import jakarta.validation.constraints.NotNull;
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,10 +22,17 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association.Approva
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
+import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
+
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 
 @Service
 public class AssociationsService {
@@ -213,18 +209,23 @@ public class AssociationsService {
     }
 
     @Transactional( readOnly = true )
-    public List<Invitation> fetchActiveInvitations( final String userId, final int pageIndex, final int itemsPerPage ){
-        return associationsRepository.fetchAssociationsWithActiveInvitations( userId, LocalDateTime.now() )
+    public InvitationsList fetchActiveInvitations( final String userId, final int pageIndex, final int itemsPerPage ){
+        final InvitationsList invitationsList = new InvitationsList();
+        final List<Invitation> invitations =  associationsRepository.fetchAssociationsWithActiveInvitations( userId, LocalDateTime.now() )
                 .map( this::filterForMostRecentInvitation )
                 .sorted(Comparator.comparing(AssociationDao::getApprovalExpiryAt))
                 .skip((long) pageIndex * itemsPerPage )
                 .limit( itemsPerPage )
                 .flatMap( invitationMapper::daoToDto )
                 .collect(Collectors.toList());
+        invitationsList.items(invitations);
+        return invitationsList;
     }
 
-    public List<Invitation> fetchInvitations( final AssociationDao associationDao ) {
-        return invitationMapper.daoToDto(associationDao).toList();
+    public InvitationsList fetchInvitations(final AssociationDao associationDao ) {
+        final InvitationsList invitationsList = new InvitationsList();
+        invitationsList.items(invitationMapper.daoToDto(associationDao).toList());
+        return invitationsList;
     }
 
 }
