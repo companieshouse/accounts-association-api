@@ -1,27 +1,8 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -45,17 +26,26 @@ import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
+import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsListLinks;
-import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
-import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.company.CompanyDetails;
+
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserCompanyAssociations.class)
 @Tag("unit-test")
@@ -1698,10 +1688,11 @@ class UserCompanyAssociationsTest {
         invitation2.setInvitedBy("user2");
         invitation2.setInvitedAt("2023-05-29T12:34:56");
 
-        List<Invitation> invitations = List.of(invitation1, invitation2);
+        InvitationsList invitationsList = new InvitationsList();
+        invitationsList.items(List.of(invitation1, invitation2));
         AssociationDao associationDao = new AssociationDao();
         Mockito.doReturn(Optional.of(associationDao)).when(associationsService).findAssociationDaoById("18");
-        Mockito.doReturn(invitations).when(associationsService).fetchInvitations(associationDao);
+        Mockito.doReturn(invitationsList).when(associationsService).fetchInvitations(associationDao);
 
         final var response = mockMvc.perform(get("/associations/{id}/invitations", "18")
                         .header("X-Request-Id", "theId123")
@@ -1714,7 +1705,10 @@ class UserCompanyAssociationsTest {
 
         final var objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        List<Invitation> resultInvitations = objectMapper.readValue(response.getContentAsByteArray(), new TypeReference<List<Invitation>>() {});
+        InvitationsList resultInvitationsList = objectMapper.readValue(response.getContentAsByteArray(), new TypeReference<InvitationsList>() {});
+
+        List<Invitation> resultInvitations = resultInvitationsList.getItems();
+        List<Invitation> invitations = invitationsList.getItems();
 
         Assertions.assertEquals(invitations.size(), resultInvitations.size());
         Assertions.assertEquals(invitations.get(0).getAssociationId(), resultInvitations.get(0).getAssociationId());
