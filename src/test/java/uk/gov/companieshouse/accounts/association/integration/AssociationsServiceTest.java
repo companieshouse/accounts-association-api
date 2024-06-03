@@ -1,6 +1,10 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
@@ -1081,7 +1085,7 @@ public class AssociationsServiceTest {
 
         associationsService.fetchActiveInvitations( "99999", 1, 1 );
 
-        Mockito.verify( invitationsMapper ).daoToDto( argThat( associationDaoMatches( "34", now.plusDays( 11 ), "444", now.minusDays(4) ) ) );
+        Mockito.verify(invitationsMapper).daoToDto(argThat(associationDaoMatches("35", now.plusDays(8), "444", now.minusDays(1))));
     }
 
 }

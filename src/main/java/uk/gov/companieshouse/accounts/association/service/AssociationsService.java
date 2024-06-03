@@ -29,7 +29,13 @@ import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
@@ -213,7 +219,7 @@ public class AssociationsService {
         final InvitationsList invitationsList = new InvitationsList();
         final List<Invitation> invitations =  associationsRepository.fetchAssociationsWithActiveInvitations( userId, LocalDateTime.now() )
                 .map( this::filterForMostRecentInvitation )
-                .sorted(Comparator.comparing(AssociationDao::getApprovalExpiryAt))
+                .sorted(Comparator.comparing(AssociationDao::getApprovalExpiryAt).reversed())
                 .skip((long) pageIndex * itemsPerPage )
                 .limit( itemsPerPage )
                 .flatMap( invitationMapper::daoToDto )
