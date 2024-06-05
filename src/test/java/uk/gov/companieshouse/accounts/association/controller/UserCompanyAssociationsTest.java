@@ -284,6 +284,26 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
+    void getInvitationsForAssociationWithUnacceptablePageIndexReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/associations/12345/invitations?page_index=-1&items_per_page=1")
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "99999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getInvitationsForAssociationWithUnacceptableItemsPerPageReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/associations/12345/invitations?page_index=0&items_per_page=-1")
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "99999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void fetchAssociationsByWithNonexistentCompanyReturnsNotFound() throws Exception {
         final var user = new User().userId("8888").email("mr.blobby@nightmare.com").displayName("Mr Blobby");
         Mockito.doReturn(user).when(usersService).fetchUserDetails("8888");
