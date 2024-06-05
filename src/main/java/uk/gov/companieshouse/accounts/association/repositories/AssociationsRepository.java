@@ -27,7 +27,7 @@ public interface AssociationsRepository extends MongoRepository<AssociationDao, 
     @Query( "{ 'company_number': ?0, 'status': { $in: ?1 } }" )
     Page<AssociationDao> fetchAssociatedUsers( final String companyNumber, final Set<String> statuses, final Pageable pageable );
 
-    @Query( value = "{ 'company_number': ?0, 'user_id': ?1 }", exists = true )
+    @Query( value = "{ 'company_number': ?0, 'user_id': ?1, 'status': 'confirmed' }", exists = true )
     boolean associationExists( String companyNumber, String userId );
 
     @Query( value = "{ 'company_number': ?0, 'user_email': ?1 }")

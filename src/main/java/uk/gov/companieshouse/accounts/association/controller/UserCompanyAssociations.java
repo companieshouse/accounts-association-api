@@ -192,6 +192,10 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             LOG.error( notFoundRuntimeException.getMessage() );
             throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
+        if(!associationsService.associationExists(companyNumber,ericIdentity)){
+            LOG.error(String.format("%s: requesting user %s does not have access to invite", xRequestId, ericIdentity));
+            throw new BadRequestRuntimeException("requesting user does not have access");
+        }
 
         final var inviterDisplayName = Optional.ofNullable( inviterUserDetails.getDisplayName() ).orElse( inviterUserDetails.getEmail() );
         final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
@@ -265,6 +269,10 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         if (associationOptional.isEmpty()) {
             LOG.error(String.format("%s: Could not find association %s in user_company_associations.", xRequestId, associationId));
             throw new NotFoundRuntimeException("accounts-association-api", String.format("Association %s was not found.", associationId));
+        }
+        if(!associationsService.associationExists(associationOptional.get().getCompanyNumber(), requestingUserId)){
+            LOG.error(String.format("%s: requesting %s  user does not have access to perform the action", xRequestId, requestingUserId));
+            throw new BadRequestRuntimeException("requesting user does not have access to perform the action");
         }
         final var oldStatus = associationOptional.get().getStatus();
 
