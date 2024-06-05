@@ -119,8 +119,8 @@ public class AssociationsService {
     }
 
     @Transactional(readOnly = true)
-    public boolean associationExists(final String companyNumber, final String userId) {
-        return associationsRepository.associationExists(companyNumber, userId);
+    public boolean confirmedAssociationExists(final String companyNumber, final String userId) {
+        return associationsRepository.confirmedAssociationExists(companyNumber, userId);
     }
 
     @Transactional(readOnly = true)
