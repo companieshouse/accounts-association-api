@@ -6,6 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -37,8 +39,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -96,6 +105,7 @@ class AssociationsServiceTest {
     private AssociationDao associationThirtyOne;
     private AssociationDao associationThirtyTwo;
     private AssociationDao associationThirtyThree;
+    private AssociationDao associationThirtyFour;
 
     @BeforeEach
     public void setup() {
@@ -779,7 +789,7 @@ class AssociationsServiceTest {
         Mockito.when(associationsRepository.findById("1111")).thenReturn(Optional.empty());
 
         var association = associationsService.findAssociationById("1111");
-        Assertions.assertTrue(association.isEmpty());
+        assertTrue(association.isEmpty());
 
     }
 
@@ -948,18 +958,18 @@ class AssociationsServiceTest {
     @Test
     void associationExistsWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(){
         Mockito.doReturn( false ).when( associationsRepository ).associationExists( any(), any() );
-        Assertions.assertFalse( associationsService.associationExists( null, "111" ) );
-        Assertions.assertFalse( associationsService.associationExists( "$$$$$$", "111" ) );
-        Assertions.assertFalse( associationsService.associationExists( "919191", "111" ) );
-        Assertions.assertFalse( associationsService.associationExists( "111111", null ) );
-        Assertions.assertFalse( associationsService.associationExists( "111111", "$$$" ) );
-        Assertions.assertFalse( associationsService.associationExists( "111111", "9191" ) );
+        assertFalse( associationsService.associationExists( null, "111" ) );
+        assertFalse( associationsService.associationExists( "$$$$$$", "111" ) );
+        assertFalse( associationsService.associationExists( "919191", "111" ) );
+        assertFalse( associationsService.associationExists( "111111", null ) );
+        assertFalse( associationsService.associationExists( "111111", "$$$" ) );
+        assertFalse( associationsService.associationExists( "111111", "9191" ) );
     }
 
     @Test
     void associationExistsWithExistingAssociationReturnsTrue(){
         Mockito.doReturn( true ).when( associationsRepository ).associationExists( "111111", "111" );
-        Assertions.assertTrue( associationsService.associationExists( "111111", "111" ) );
+        assertTrue( associationsService.associationExists( "111111", "111" ) );
     }
 
     @Test
@@ -1088,17 +1098,17 @@ class AssociationsServiceTest {
     void fetchAssociationForCompanyNumberAndUserIdWithNullOrMalformedOrNonexistentCompanyNumberReturnsNothing(){
         Mockito.doReturn( Optional.empty() ).when( associationsRepository ).fetchAssociationForCompanyNumberAndUserId( any(), anyString() );
 
-        Assertions.assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( null, "111" ).isEmpty() );
-        Assertions.assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( "$$$$$$", "111" ).isEmpty() );
-        Assertions.assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( "919191", "111" ).isEmpty() );
+        assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( null, "111" ).isEmpty() );
+        assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( "$$$$$$", "111" ).isEmpty() );
+        assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( "919191", "111" ).isEmpty() );
     }
 
     @Test
     void fetchAssociationForCompanyNumberAndUserIdWithMalformedOrNonexistentUserIdReturnsNothing() {
         Mockito.doReturn( Optional.empty() ).when( associationsRepository ).fetchAssociationForCompanyNumberAndUserId( anyString(), anyString() );
 
-        Assertions.assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "$$$" ).isEmpty() );
-        Assertions.assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "9191" ).isEmpty() );
+        assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "$$$" ).isEmpty() );
+        assertTrue( associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "9191" ).isEmpty() );
     }
 
     @Test
@@ -1107,7 +1117,7 @@ class AssociationsServiceTest {
         association.setId( "1" );
 
         Mockito.doReturn( Optional.of( association ) ).when( associationsRepository ).fetchAssociationForCompanyNumberAndUserId( anyString(), anyString() );
-        Assertions.assertEquals( "1", associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "111" ).get().getId() );
+        assertEquals( "1", associationsService.fetchAssociationForCompanyNumberAndUserId( "111111", "111" ).get().getId() );
     }
 
     @Test
@@ -1116,16 +1126,33 @@ class AssociationsServiceTest {
         associationDao.setId("18");
         associationDao.setInvitations(Collections.emptyList());
 
-        InvitationsList invitations = associationsService.fetchInvitations(associationDao);
+        InvitationsList invitations = associationsService.fetchInvitations(associationDao, 0, 1);
 
-        Assertions.assertTrue(invitations.getItems().isEmpty());
+        assertTrue(invitations.getItems().isEmpty());
+        assertEquals(1, invitations.getItemsPerPage());
+        assertEquals(0, invitations.getPageNumber());
+        assertEquals(0, invitations.getTotalResults());
+        assertEquals(0, invitations.getTotalPages());
+        assertEquals("/associations/18/invitations?page_index=0&items_per_page=1", invitations.getLinks().getSelf());
+        assertTrue(invitations.getLinks().getNext().isEmpty());
     }
 
-    @Test
-    void fetchActiveInvitationsWithNullOrMalformedOrNonexistentUserIdReturnsEmptyList(){
-        Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( null, 0, 1 ).getItems() );
-        Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( "$$$", 0, 1 ).getItems() );
-        Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( "9191", 0, 1 ).getItems() );
+    @ParameterizedTest
+    @MethodSource("userIdsProvider")
+    void fetchActiveInvitationsWithNullOrMalformedOrNonexistentUserIdReturnsEmptyList(String userId) {
+        InvitationsList invitations = associationsService.fetchActiveInvitations(userId, 0, 1);
+
+        assertTrue(invitations.getItems().isEmpty());
+        assertEquals(1, invitations.getItemsPerPage());
+        assertEquals(0, invitations.getPageNumber());
+        assertEquals(0, invitations.getTotalResults());
+        assertEquals(0, invitations.getTotalPages());
+        assertEquals("/associations/invitations?page_index=0&items_per_page=1", invitations.getLinks().getSelf());
+        assertTrue(invitations.getLinks().getNext().isEmpty());
+    }
+
+    private static Stream<String> userIdsProvider() {
+        return Stream.of(null, "$$$", "9191");
     }
 
 }

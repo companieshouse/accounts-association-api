@@ -16,8 +16,14 @@ import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
-import uk.gov.companieshouse.api.accounts.associations.model.*;
+import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.InvitationRequestBodyPost;
+import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPost;
+import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
+import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
@@ -143,7 +149,17 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<InvitationsList> getInvitationsForAssociation(final String xRequestId, final String associationId) {
+    public ResponseEntity<InvitationsList> getInvitationsForAssociation(final String xRequestId, final String associationId, final Integer pageIndex, final Integer itemsPerPage) {
+        if (pageIndex < 0) {
+            LOG.error("pageIndex was less then 0");
+            throw new BadRequestRuntimeException("Please check the request and try again");
+        }
+
+        if (itemsPerPage <= 0) {
+            LOG.error("itemsPerPage was less then 0");
+            throw new BadRequestRuntimeException("Please check the request and try again");
+        }
+
         final Optional<AssociationDao> associationDaoOptional = associationsService.findAssociationDaoById(associationId);
         if (associationDaoOptional.isEmpty()) {
             LOG.error(String.format("%s: Could not find association %s in user_company_associations.", xRequestId, associationId));
@@ -151,7 +167,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         }
 
         final AssociationDao associationDao = associationDaoOptional.get();
-        final InvitationsList invitations = associationsService.fetchInvitations(associationDao);
+        final InvitationsList invitations = associationsService.fetchInvitations(associationDao, pageIndex, itemsPerPage);
 
         return new ResponseEntity<>(invitations, HttpStatus.OK);
     }

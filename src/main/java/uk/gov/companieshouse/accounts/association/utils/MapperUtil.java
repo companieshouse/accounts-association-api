@@ -1,9 +1,5 @@
 package uk.gov.companieshouse.accounts.association.utils;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -11,9 +7,12 @@ import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsListLinks;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
+import uk.gov.companieshouse.api.accounts.associations.model.Links;
 import uk.gov.companieshouse.api.accounts.user.model.User;
+
+import java.util.Objects;
+import java.util.Optional;
 
 @Component
 public class MapperUtil {
@@ -66,8 +65,6 @@ public class MapperUtil {
     }
 
     public AssociationsList enrichWithMetadata(final Page<Association> page, final String endpointUrl) {
-
-
         AssociationsList list = new AssociationsList();
         final var pageIndex = page.getNumber();
         final var itemsPerPage = page.getSize();
@@ -75,9 +72,9 @@ public class MapperUtil {
         final var totalResults = page.getTotalElements();
         final var isLastPage = page.isLast();
         final var associations = "/associations";
-        final var self = totalResults == 0 || pageIndex >= totalResults ? "" : String.format("%s%s?page_index=%d&items_per_page=%d", associations, endpointUrl, pageIndex, itemsPerPage);
+        final var self = String.format("%s%s?page_index=%d&items_per_page=%d", associations, endpointUrl, pageIndex, itemsPerPage);
         final var next = isLastPage ? "" : String.format("%s%s?page_index=%d&items_per_page=%d", associations, endpointUrl, pageIndex + 1, itemsPerPage);
-        final var links = new AssociationsListLinks().self(self).next(next);
+        final var links = new Links().self(self).next(next);
 
         list.setItems(page.getContent());
         list.links(links)
