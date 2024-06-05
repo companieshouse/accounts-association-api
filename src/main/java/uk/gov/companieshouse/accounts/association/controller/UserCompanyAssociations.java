@@ -73,7 +73,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
 
-        if (associationsService.associationExists(companyNumber, ericIdentity)) {
+        if (associationsService.confirmedAssociationExists(companyNumber, ericIdentity)) {
             LOG.error(String.format("%s: Association between user_id %s and company_number %s already exists.", xRequestId, ericIdentity, companyNumber));
             throw new BadRequestRuntimeException("Association already exists.");
         }
@@ -192,7 +192,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             LOG.error( notFoundRuntimeException.getMessage() );
             throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
-        if(!associationsService.associationExists(companyNumber,ericIdentity)){
+        if(!associationsService.confirmedAssociationExists(companyNumber,ericIdentity)){
             LOG.error(String.format("%s: requesting user %s does not have access to invite", xRequestId, ericIdentity));
             throw new BadRequestRuntimeException("requesting user does not have access");
         }
@@ -270,7 +270,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             LOG.error(String.format("%s: Could not find association %s in user_company_associations.", xRequestId, associationId));
             throw new NotFoundRuntimeException("accounts-association-api", String.format("Association %s was not found.", associationId));
         }
-        if(!associationsService.associationExists(associationOptional.get().getCompanyNumber(), requestingUserId)){
+        if(!associationsService.confirmedAssociationExists(associationOptional.get().getCompanyNumber(), requestingUserId)){
             LOG.error(String.format("%s: requesting %s  user does not have access to perform the action", xRequestId, requestingUserId));
             throw new BadRequestRuntimeException("requesting user does not have access to perform the action");
         }

@@ -956,20 +956,20 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void associationExistsWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(){
-        Mockito.doReturn( false ).when( associationsRepository ).associationExists( any(), any() );
-        assertFalse( associationsService.associationExists( null, "111" ) );
-        assertFalse( associationsService.associationExists( "$$$$$$", "111" ) );
-        assertFalse( associationsService.associationExists( "919191", "111" ) );
-        assertFalse( associationsService.associationExists( "111111", null ) );
-        assertFalse( associationsService.associationExists( "111111", "$$$" ) );
-        assertFalse( associationsService.associationExists( "111111", "9191" ) );
+    void confirmedAssociationExistsWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(){
+        Mockito.doReturn( false ).when( associationsRepository ).confirmedAssociationExists( any(), any() );
+        assertFalse( associationsService.confirmedAssociationExists( null, "111" ) );
+        assertFalse( associationsService.confirmedAssociationExists( "$$$$$$", "111" ) );
+        assertFalse( associationsService.confirmedAssociationExists( "919191", "111" ) );
+        assertFalse( associationsService.confirmedAssociationExists( "111111", null ) );
+        assertFalse( associationsService.confirmedAssociationExists( "111111", "$$$" ) );
+        assertFalse( associationsService.confirmedAssociationExists( "111111", "9191" ) );
     }
 
     @Test
-    void associationExistsWithExistingAssociationReturnsTrue(){
-        Mockito.doReturn( true ).when( associationsRepository ).associationExists( "111111", "111" );
-        assertTrue( associationsService.associationExists( "111111", "111" ) );
+    void associationExistsWithExistingConfirmedAssociationReturnsTrue(){
+        Mockito.doReturn( true ).when( associationsRepository ).confirmedAssociationExists( "111111", "111" );
+        assertTrue( associationsService.confirmedAssociationExists( "111111", "111" ) );
     }
 
     @Test
