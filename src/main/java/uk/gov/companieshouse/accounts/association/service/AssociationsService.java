@@ -23,6 +23,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusE
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.Links;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
@@ -214,24 +215,50 @@ public class AssociationsService {
         return associationDao;
     }
 
-    @Transactional( readOnly = true )
-    public InvitationsList fetchActiveInvitations( final String userId, final int pageIndex, final int itemsPerPage ){
-        final InvitationsList invitationsList = new InvitationsList();
-        final List<Invitation> invitations =  associationsRepository.fetchAssociationsWithActiveInvitations( userId, LocalDateTime.now() )
-                .map( this::filterForMostRecentInvitation )
+    @Transactional(readOnly = true)
+    public InvitationsList fetchActiveInvitations(final String userId, final int pageIndex, final int itemsPerPage) {
+        List<Invitation> allInvitations = associationsRepository.fetchAssociationsWithActiveInvitations(userId, LocalDateTime.now())
+                .map(this::filterForMostRecentInvitation)
                 .sorted(Comparator.comparing(AssociationDao::getApprovalExpiryAt).reversed())
-                .skip((long) pageIndex * itemsPerPage )
-                .limit( itemsPerPage )
-                .flatMap( invitationMapper::daoToDto )
+                .flatMap(invitationMapper::daoToDto)
                 .collect(Collectors.toList());
+        return createInvitationsList(allInvitations, pageIndex, itemsPerPage, "/associations/invitations");
+    }
+
+    @Transactional(readOnly = true)
+    public InvitationsList fetchInvitations(final AssociationDao associationDao, final int pageIndex, final int itemsPerPage) {
+        List<Invitation> allInvitations = invitationMapper.daoToDto(associationDao).toList();
+        String basePath = "/associations/" + associationDao.getId() + "/invitations";
+        return createInvitationsList(allInvitations, pageIndex, itemsPerPage, basePath);
+    }
+
+    private InvitationsList createInvitationsList(List<Invitation> allInvitations, int pageIndex, int itemsPerPage, String basePath) {
+        final InvitationsList invitationsList = new InvitationsList();
+        int totalResults = allInvitations.size();
+        int totalPages = (int) Math.ceil((double) totalResults / itemsPerPage);
+
+        List<Invitation> invitations = allInvitations.stream()
+                .skip((long) pageIndex * itemsPerPage)
+                .limit(itemsPerPage)
+                .collect(Collectors.toList());
+
         invitationsList.items(invitations);
+        invitationsList.setItemsPerPage(itemsPerPage);
+        invitationsList.setPageNumber(pageIndex);
+        invitationsList.setTotalResults(totalResults);
+        invitationsList.setTotalPages(totalPages);
+
+        Links links = new Links();
+        links.setSelf(basePath + "?page_index=" + pageIndex + "&items_per_page=" + itemsPerPage);
+        if (pageIndex + 1 < totalPages) {
+            links.setNext(basePath + "?page_index=" + (pageIndex + 1) + "&items_per_page=" + itemsPerPage);
+        } else {
+            links.setNext("");
+        }
+
+        invitationsList.setLinks(links);
         return invitationsList;
     }
 
-    public InvitationsList fetchInvitations(final AssociationDao associationDao ) {
-        final InvitationsList invitationsList = new InvitationsList();
-        invitationsList.items(invitationMapper.daoToDto(associationDao).toList());
-        return invitationsList;
-    }
 
 }

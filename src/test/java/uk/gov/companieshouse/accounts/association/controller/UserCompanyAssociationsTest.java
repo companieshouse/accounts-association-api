@@ -16,6 +16,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
@@ -26,9 +27,15 @@ import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
-import uk.gov.companieshouse.api.accounts.associations.model.*;
+import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
+import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
+import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.Links;
+import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.company.CompanyDetails;
@@ -41,10 +48,16 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserCompanyAssociations.class)
@@ -313,7 +326,7 @@ class UserCompanyAssociationsTest {
 
         final var expectedAssociationsList = new AssociationsList();
         expectedAssociationsList.setItems(List.of(associationOne));
-        expectedAssociationsList.setLinks(new AssociationsListLinks().self("/associations?page_index=0&items_per_page=15").next(""));
+        expectedAssociationsList.setLinks(new Links().self("/associations?page_index=0&items_per_page=15").next(""));
         expectedAssociationsList.setItemsPerPage(15);
         expectedAssociationsList.setPageNumber(0);
         expectedAssociationsList.setTotalPages(1);
@@ -354,7 +367,7 @@ class UserCompanyAssociationsTest {
     void fetchAssociationsByWithOneStatusAppliesStatusFilterCorrectly() throws Exception {
         final var expectedAssociationsList = new AssociationsList();
         expectedAssociationsList.setItems(List.of(associationTwo));
-        expectedAssociationsList.setLinks(new AssociationsListLinks().self("/associations?page_index=0&items_per_page=15").next(""));
+        expectedAssociationsList.setLinks(new Links().self("/associations?page_index=0&items_per_page=15").next(""));
         expectedAssociationsList.setItemsPerPage(15);
         expectedAssociationsList.setPageNumber(0);
         expectedAssociationsList.setTotalPages(1);
@@ -395,7 +408,7 @@ class UserCompanyAssociationsTest {
     void fetchAssociationsByWithMultipleStatusesAppliesStatusFilterCorrectly() throws Exception {
         final var expectedAssociationsList = new AssociationsList();
         expectedAssociationsList.setItems(List.of(associationOne, associationTwo));
-        expectedAssociationsList.setLinks(new AssociationsListLinks().self("/associations?page_index=0&items_per_page=15").next(""));
+        expectedAssociationsList.setLinks(new Links().self("/associations?page_index=0&items_per_page=15").next(""));
         expectedAssociationsList.setItemsPerPage(15);
         expectedAssociationsList.setPageNumber(0);
         expectedAssociationsList.setTotalPages(1);
@@ -436,7 +449,7 @@ class UserCompanyAssociationsTest {
     void fetchAssociationsByImplementsPaginationCorrectly() throws Exception {
         final var expectedAssociationsList = new AssociationsList();
         expectedAssociationsList.setItems(List.of(associationTwo));
-        expectedAssociationsList.setLinks(new AssociationsListLinks().self("/associations?page_index=1&items_per_page=1").next(""));
+        expectedAssociationsList.setLinks(new Links().self("/associations?page_index=1&items_per_page=1").next(""));
         expectedAssociationsList.setItemsPerPage(1);
         expectedAssociationsList.setPageNumber(1);
         expectedAssociationsList.setTotalPages(2);
@@ -477,7 +490,7 @@ class UserCompanyAssociationsTest {
     void fetchAssociationsByFiltersBasedOnCompanyNumberCorrectly() throws Exception {
         final var expectedAssociationsList = new AssociationsList();
         expectedAssociationsList.setItems(List.of(associationTwo));
-        expectedAssociationsList.setLinks(new AssociationsListLinks().self("/associations?page_index=0&items_per_page=15").next(""));
+        expectedAssociationsList.setLinks(new Links().self("/associations?page_index=0&items_per_page=15").next(""));
         expectedAssociationsList.setItemsPerPage(15);
         expectedAssociationsList.setPageNumber(0);
         expectedAssociationsList.setTotalPages(1);
@@ -527,7 +540,7 @@ class UserCompanyAssociationsTest {
     void fetchAssociationsByDoesMappingCorrectly() throws Exception {
         final var expectedAssociationsList = new AssociationsList();
         expectedAssociationsList.setItems(List.of(associationOne));
-        expectedAssociationsList.setLinks(new AssociationsListLinks().self("/associations?page_index=0&items_per_page=15").next(""));
+        expectedAssociationsList.setLinks(new Links().self("/associations?page_index=0&items_per_page=15").next(""));
         expectedAssociationsList.setItemsPerPage(15);
         expectedAssociationsList.setPageNumber(0);
         expectedAssociationsList.setTotalPages(1);
@@ -1692,7 +1705,7 @@ class UserCompanyAssociationsTest {
         invitationsList.items(List.of(invitation1, invitation2));
         AssociationDao associationDao = new AssociationDao();
         Mockito.doReturn(Optional.of(associationDao)).when(associationsService).findAssociationDaoById("18");
-        Mockito.doReturn(invitationsList).when(associationsService).fetchInvitations(associationDao);
+        Mockito.doReturn(invitationsList).when(associationsService).fetchInvitations(associationDao, 0, 15);
 
         final var response = mockMvc.perform(get("/associations/{id}/invitations", "18")
                         .header("X-Request-Id", "theId123")
@@ -1810,6 +1823,110 @@ class UserCompanyAssociationsTest {
                 .getResponse();
 
         Mockito.verify( associationsService ).fetchActiveInvitations( eq( "99999" ), eq( 0 ), eq( 15 ) );
+    }
+
+    @Test
+    void fetchActiveInvitationsForUserWithPaginationAndVerifyResponse() throws Exception {
+        Invitation invitation1 = new Invitation();
+        invitation1.setInvitedBy("user1@example.com");
+        invitation1.setInvitedAt(LocalDateTime.now().toString());
+
+        Invitation invitation2 = new Invitation();
+        invitation2.setInvitedBy("user2@example.com");
+        invitation2.setInvitedAt(LocalDateTime.now().toString());
+
+        List<Invitation> mockInvitations = List.of(invitation1, invitation2);
+        InvitationsList mockInvitationsList = new InvitationsList();
+        mockInvitationsList.setItemsPerPage(1);
+        mockInvitationsList.setPageNumber(1);
+        mockInvitationsList.setTotalResults(2);
+        mockInvitationsList.setTotalPages(2);
+        mockInvitationsList.setItems(mockInvitations);
+
+        Links mockLinks = new Links();
+        mockLinks.setSelf("/associations/invitations?page_index=1&items_per_page=1");
+        mockLinks.setNext("/associations/invitations?page_index=2&items_per_page=1");
+        mockInvitationsList.setLinks(mockLinks);
+
+        when(associationsService.fetchActiveInvitations(eq("99999"), eq(1), eq(1)))
+                .thenReturn(mockInvitationsList);
+
+        MvcResult result = mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "99999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String responseContent = result.getResponse().getContentAsString();
+
+        InvitationsList invitationsList = new ObjectMapper().readValue(responseContent, InvitationsList.class);
+
+        assertNotNull(invitationsList);
+        assertEquals(1, invitationsList.getItemsPerPage().intValue());
+        assertEquals(1, invitationsList.getPageNumber().intValue());
+        assertEquals(2, invitationsList.getTotalResults().intValue());
+        assertEquals(2, invitationsList.getTotalPages().intValue());
+        assertNotNull(invitationsList.getLinks());
+        assertEquals("/associations/invitations?page_index=1&items_per_page=1", invitationsList.getLinks().getSelf());
+        assertEquals("/associations/invitations?page_index=2&items_per_page=1", invitationsList.getLinks().getNext());
+
+        Mockito.verify(associationsService).fetchActiveInvitations(eq("99999"), eq(1), eq(1));
+    }
+
+    @Test
+    void getInvitationsForAssociationWithPaginationAndVerifyResponse() throws Exception {
+        Invitation invitation1 = new Invitation();
+        invitation1.setInvitedBy("user1@example.com");
+        invitation1.setInvitedAt(LocalDateTime.now().toString());
+
+        Invitation invitation2 = new Invitation();
+        invitation2.setInvitedBy("user2@example.com");
+        invitation2.setInvitedAt(LocalDateTime.now().toString());
+
+        List<Invitation> mockInvitations = List.of(invitation1, invitation2);
+        InvitationsList mockInvitationsList = new InvitationsList();
+        mockInvitationsList.setItemsPerPage(1);
+        mockInvitationsList.setPageNumber(1);
+        mockInvitationsList.setTotalResults(2);
+        mockInvitationsList.setTotalPages(2);
+        mockInvitationsList.setItems(mockInvitations);
+
+        Links mockLinks = new Links();
+        mockLinks.setSelf("/associations/12345/invitations?page_index=1&items_per_page=1");
+        mockLinks.setNext("/associations/12345/invitations?page_index=2&items_per_page=1");
+        mockInvitationsList.setLinks(mockLinks);
+
+        AssociationDao mockAssociationDao = new AssociationDao();
+        when(associationsService.findAssociationDaoById(eq("12345")))
+                .thenReturn(Optional.of(mockAssociationDao));
+        when(associationsService.fetchInvitations(eq(mockAssociationDao), eq(1), eq(1)))
+                .thenReturn(mockInvitationsList);
+
+        MvcResult result = mockMvc.perform(get("/associations/12345/invitations?page_index=1&items_per_page=1")
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "99999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String responseContent = result.getResponse().getContentAsString();
+
+        InvitationsList invitationsList = new ObjectMapper().readValue(responseContent, InvitationsList.class);
+
+        assertNotNull(invitationsList);
+        assertEquals(1, invitationsList.getItemsPerPage().intValue());
+        assertEquals(1, invitationsList.getPageNumber().intValue());
+        assertEquals(2, invitationsList.getTotalResults().intValue());
+        assertEquals(2, invitationsList.getTotalPages().intValue());
+        assertNotNull(invitationsList.getLinks());
+        assertEquals("/associations/12345/invitations?page_index=1&items_per_page=1", invitationsList.getLinks().getSelf());
+        assertEquals("/associations/12345/invitations?page_index=2&items_per_page=1", invitationsList.getLinks().getNext());
+
+        Mockito.verify(associationsService).findAssociationDaoById(eq("12345"));
+        Mockito.verify(associationsService).fetchInvitations(eq(mockAssociationDao), eq(1), eq(1));
     }
 
 }

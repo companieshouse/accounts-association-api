@@ -1,15 +1,7 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -35,9 +27,18 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association.Approva
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsListLinks;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
+import uk.gov.companieshouse.api.accounts.associations.model.Links;
 import uk.gov.companieshouse.api.company.CompanyDetails;
+
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
 @WebMvcTest(AssociationsListForCompanyController.class)
@@ -155,7 +156,7 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
         expectedAssociationsList.setTotalPages( 1 );
         expectedAssociationsList.setPageNumber( 0 );
         expectedAssociationsList.setItemsPerPage( 15 );
-        expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
+        expectedAssociationsList.setLinks( new Links().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationOne ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
 
@@ -178,7 +179,7 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
         expectedAssociationsList.setTotalPages( 1 );
         expectedAssociationsList.setPageNumber( 0 );
         expectedAssociationsList.setItemsPerPage( 15 );
-        expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
+        expectedAssociationsList.setLinks( new Links().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationOne ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
 
@@ -200,7 +201,7 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
         expectedAssociationsList.setTotalPages( 1 );
         expectedAssociationsList.setPageNumber( 0 );
         expectedAssociationsList.setItemsPerPage( 15 );
-        expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
+        expectedAssociationsList.setLinks( new Links().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationOne, associationTwo ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 15 ), eq( 0 ) );
 
@@ -222,7 +223,7 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
         expectedAssociationsList.setTotalPages( 2 );
         expectedAssociationsList.setPageNumber( 1 );
         expectedAssociationsList.setItemsPerPage( 1 );
-        expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
+        expectedAssociationsList.setLinks( new Links().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationTwo ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 1 ), eq( 1 ) );
 
@@ -283,7 +284,7 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
         expectedAssociationsList.setTotalPages( 1 );
         expectedAssociationsList.setPageNumber( 0 );
         expectedAssociationsList.setItemsPerPage( 2 );
-        expectedAssociationsList.setLinks( new AssociationsListLinks().self(String.format("%s/associations", internalApiUrl)).next("") );
+        expectedAssociationsList.setLinks( new Links().self(String.format("%s/associations", internalApiUrl)).next("") );
         expectedAssociationsList.setItems(List.of( associationOne, associationTwo ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 2 ), eq( 0 ) );
 
