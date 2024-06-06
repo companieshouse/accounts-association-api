@@ -87,6 +87,7 @@ class UserCompanyAssociationsTest {
 
     @BeforeEach
     public void setup() {
+        Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
 
         final var kira = new User()
                 .userId("000")
@@ -1947,6 +1948,20 @@ class UserCompanyAssociationsTest {
 
         Mockito.verify(associationsService).findAssociationDaoById(eq("12345"));
         Mockito.verify(associationsService).fetchInvitations(eq(mockAssociationDao), eq(1), eq(1));
+    }
+
+    @Test
+    void whenConfirmedAssociationDoesNotExist_thenThrowsBadRequestException() throws Exception {
+        when(associationsService.confirmedAssociationExists(anyString(), anyString())).thenReturn(false);
+
+        mockMvc.perform(post("/associations/invitations")
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"russell.howard@comedy.com\"}"))
+                .andExpect(status().isBadRequest());
     }
 
 }
