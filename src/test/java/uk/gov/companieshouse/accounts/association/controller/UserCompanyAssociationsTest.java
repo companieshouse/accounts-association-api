@@ -87,6 +87,7 @@ class UserCompanyAssociationsTest {
 
     @BeforeEach
     public void setup() {
+        Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
 
         final var kira = new User()
                 .userId("000")
@@ -711,7 +712,7 @@ class UserCompanyAssociationsTest {
 
     @Test
     void addAssociationWithExistingAssociationReturnsBadRequest() throws Exception {
-        Mockito.doReturn(true).when(associationsService).associationExists("333333", "9999");
+        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists("333333", "9999");
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "9999")
@@ -742,7 +743,7 @@ class UserCompanyAssociationsTest {
         final var associationDao = new AssociationDao();
         associationDao.setId("99");
         Mockito.doReturn(associationDao).when(associationsService).createAssociation("000000", "000", null, ApprovalRouteEnum.AUTH_CODE, null);
-        Mockito.doReturn(false).when(associationsService).associationExists("000000", "000");
+        Mockito.doReturn(false).when(associationsService).confirmedAssociationExists("000000", "000");
 
         final var responseJson =
                 mockMvc.perform(post("/associations")
@@ -791,7 +792,7 @@ class UserCompanyAssociationsTest {
 
         Mockito.doReturn( new User().email( "homer.simpson@springfield.com" ) ).when( usersService ).fetchUserDetails( anyString() );
         Mockito.doReturn( new CompanyDetails().companyNumber( "444444" ).companyName( "Sainsbury's" ) ).when( companyService ).fetchCompanyProfile( anyString() );
-        Mockito.doReturn(false).when(associationsService).associationExists("444444", "666");
+        Mockito.doReturn(false).when(associationsService).confirmedAssociationExists("444444", "666");
         Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "444444" );
         Mockito.doReturn(associationDao).when(associationsService).createAssociation("444444", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
 
@@ -816,7 +817,7 @@ class UserCompanyAssociationsTest {
 
         Mockito.doReturn( new User().email( "homer.simpson@springfield.com" ).displayName( "Homer Simpson" ) ).when( usersService ).fetchUserDetails( anyString() );
         Mockito.doReturn( new CompanyDetails().companyNumber( "444444" ).companyName( "Sainsbury's" ) ).when( companyService ).fetchCompanyProfile( anyString() );
-        Mockito.doReturn(false).when(associationsService).associationExists("444444", "666");
+        Mockito.doReturn(false).when(associationsService).confirmedAssociationExists("444444", "666");
         Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "444444" );
         Mockito.doReturn(associationDao).when(associationsService).createAssociation("444444", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
 
@@ -1947,6 +1948,20 @@ class UserCompanyAssociationsTest {
 
         Mockito.verify(associationsService).findAssociationDaoById(eq("12345"));
         Mockito.verify(associationsService).fetchInvitations(eq(mockAssociationDao), eq(1), eq(1));
+    }
+
+    @Test
+    void whenConfirmedAssociationDoesNotExist_thenThrowsBadRequestException() throws Exception {
+        when(associationsService.confirmedAssociationExists(anyString(), anyString())).thenReturn(false);
+
+        mockMvc.perform(post("/associations/invitations")
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"russell.howard@comedy.com\"}"))
+                .andExpect(status().isBadRequest());
     }
 
 }
