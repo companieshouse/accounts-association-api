@@ -1,14 +1,6 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import jakarta.validation.ConstraintViolationException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +30,15 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association.Approva
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @Testcontainers(parallel = true)
@@ -588,18 +589,18 @@ class AssociationsRepositoryTest {
     }
 
     @Test
-    void associationExistsWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(){
-        Assertions.assertFalse( associationsRepository.associationExists( null, "111" ) );
-        Assertions.assertFalse( associationsRepository.associationExists( "$$$$$$", "111" ) );
-        Assertions.assertFalse( associationsRepository.associationExists( "919191", "111" ) );
-        Assertions.assertFalse( associationsRepository.associationExists( "111111", null ) );
-        Assertions.assertFalse( associationsRepository.associationExists( "111111", "$$$" ) );
-        Assertions.assertFalse( associationsRepository.associationExists( "111111", "9191" ) );
+    void confirmedAssociationExistsWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(){
+        Assertions.assertFalse( associationsRepository.confirmedAssociationExists( null, "111" ) );
+        Assertions.assertFalse( associationsRepository.confirmedAssociationExists( "$$$$$$", "111" ) );
+        Assertions.assertFalse( associationsRepository.confirmedAssociationExists( "919191", "111" ) );
+        Assertions.assertFalse( associationsRepository.confirmedAssociationExists( "111111", null ) );
+        Assertions.assertFalse( associationsRepository.confirmedAssociationExists( "111111", "$$$" ) );
+        Assertions.assertFalse( associationsRepository.confirmedAssociationExists( "111111", "9191" ) );
     }
 
     @Test
-    void associationExistsWithExistingAssociationReturnsTrue(){
-        Assertions.assertTrue( associationsRepository.associationExists( "111111", "111" ) );
+    void associationExistsWithExistingConfirmedAssociationReturnsTrue(){
+        Assertions.assertTrue( associationsRepository.confirmedAssociationExists( "111111", "111" ) );
     }
 
     @Test

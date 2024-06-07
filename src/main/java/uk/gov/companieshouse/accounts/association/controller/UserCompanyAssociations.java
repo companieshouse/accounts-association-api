@@ -73,7 +73,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
 
-        if (associationsService.associationExists(companyNumber, ericIdentity)) {
+        if (associationsService.confirmedAssociationExists(companyNumber, ericIdentity)) {
             LOG.error(String.format("%s: Association between user_id %s and company_number %s already exists.", xRequestId, ericIdentity, companyNumber));
             throw new BadRequestRuntimeException("Association already exists.");
         }
@@ -192,6 +192,10 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             LOG.error( notFoundRuntimeException.getMessage() );
             throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
+        if (!associationsService.confirmedAssociationExists(companyNumber,ericIdentity)) {
+            LOG.error(String.format("%s: requesting user %s does not have access to invite", xRequestId, ericIdentity));
+            throw new BadRequestRuntimeException("requesting user does not have access");
+        }
 
         final var inviterDisplayName = Optional.ofNullable( inviterUserDetails.getDisplayName() ).orElse( inviterUserDetails.getEmail() );
         final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
@@ -266,10 +270,10 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             LOG.error(String.format("%s: Could not find association %s in user_company_associations.", xRequestId, associationId));
             throw new NotFoundRuntimeException("accounts-association-api", String.format("Association %s was not found.", associationId));
         }
-        final var oldStatus = associationOptional.get().getStatus();
 
+        final AssociationDao associationDao = associationOptional.get();
+        final var oldStatus = associationDao.getStatus();
         final var timestampKey = newStatus.equals(CONFIRMED) ? "approved_at" : "removed_at";
-
         var update = new Update()
                 .set("status", newStatus.getValue())
                 .set(timestampKey, LocalDateTime.now().toString());
@@ -278,13 +282,12 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         boolean requestingAndTargetUserMatches;
         String targetUserDisplayValue = "";
         Optional<User> targetUserOptional;
-        if (Objects.isNull(associationOptional.get().getUserId())) {
-            var targetUserEmail = associationOptional.get().getUserEmail();
+        if (Objects.isNull(associationDao.getUserId())) {
+            var targetUserEmail = associationDao.getUserEmail();
             requestingAndTargetUserMatches = requestingUserDetails.getEmail().equals(targetUserEmail);
             targetUserOptional =
                     Optional.ofNullable(usersService.searchUserDetails(List.of(targetUserEmail)))
                             .flatMap(list -> list.stream().findFirst());
-
 
             if (newStatus.equals(CONFIRMED) && targetUserOptional.isEmpty()) {
                 LOG.error(String.format("%s: Could not find user %s, via the accounts-user-api", xRequestId, targetUserEmail));
@@ -300,12 +303,16 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                 targetUserDisplayValue = targetUserEmail;
             }
         } else {
-            requestingAndTargetUserMatches = requestingUserDetails.getUserId().equals(associationOptional.get().getUserId());
-            if (requestingAndTargetUserMatches){
+            requestingAndTargetUserMatches = requestingUserDetails.getUserId().equals(associationDao.getUserId());
+            if (requestingAndTargetUserMatches) {
                 targetUserDisplayValue=requestingUserDisplayValue;
-            }else {
-               var tempUser = usersService.fetchUserDetails(associationOptional.get().getUserId());
-               targetUserDisplayValue=Optional.ofNullable(tempUser.getDisplayName()).orElse(tempUser.getEmail());
+            } else {
+                if (!associationsService.confirmedAssociationExists(associationDao.getCompanyNumber(), requestingUserId)) {
+                    LOG.error(String.format("%s: requesting %s  user does not have access to perform the action", xRequestId, requestingUserId));
+                    throw new BadRequestRuntimeException("requesting user does not have access to perform the action");
+                }
+                var tempUser = usersService.fetchUserDetails(associationDao.getUserId());
+                targetUserDisplayValue=Optional.ofNullable(tempUser.getDisplayName()).orElse(tempUser.getEmail());
             }
         }
 
@@ -320,8 +327,8 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                 requestingAndTargetUserMatches,
                 newStatus,
                 oldStatus,
-                associationOptional.get().getCompanyNumber()
-                , associationOptional.get().getInvitations());
+                associationDao.getCompanyNumber()
+                , associationDao.getInvitations());
 
         return new ResponseEntity<>(HttpStatus.OK);
     }

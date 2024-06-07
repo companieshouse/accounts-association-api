@@ -849,18 +849,18 @@ public class AssociationsServiceTest {
     }
 
     @Test
-    void associationExistsWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(){
-        Assertions.assertFalse( associationsService.associationExists( null, "111" ) );
-        Assertions.assertFalse( associationsService.associationExists( "$$$$$$", "111" ) );
-        Assertions.assertFalse( associationsService.associationExists( "919191", "111" ) );
-        Assertions.assertFalse( associationsService.associationExists( "111111", null ) );
-        Assertions.assertFalse( associationsService.associationExists( "111111", "$$$" ) );
-        Assertions.assertFalse( associationsService.associationExists( "111111", "9191" ) );
+    void confirmedAssociationExistsWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(){
+        Assertions.assertFalse( associationsService.confirmedAssociationExists( null, "111" ) );
+        Assertions.assertFalse( associationsService.confirmedAssociationExists( "$$$$$$", "111" ) );
+        Assertions.assertFalse( associationsService.confirmedAssociationExists( "919191", "111" ) );
+        Assertions.assertFalse( associationsService.confirmedAssociationExists( "111111", null ) );
+        Assertions.assertFalse( associationsService.confirmedAssociationExists( "111111", "$$$" ) );
+        Assertions.assertFalse( associationsService.confirmedAssociationExists( "111111", "9191" ) );
     }
 
     @Test
-    void associationExistsWithExistingAssociationReturnsTrue(){
-        Assertions.assertTrue( associationsService.associationExists( "111111", "111" ) );
+    void associationExistsWithExistingConfirmedAssociationReturnsTrue(){
+        Assertions.assertTrue( associationsService.confirmedAssociationExists( "111111", "111" ) );
     }
 
     @Test

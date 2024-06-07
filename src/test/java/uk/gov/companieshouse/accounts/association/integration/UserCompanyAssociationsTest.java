@@ -1524,6 +1524,7 @@ public class UserCompanyAssociationsTest {
         final var associationZero = new AssociationDao();
         associationZero.setCompanyNumber("000000");
         associationZero.setUserEmail("light.yagami@death.note");
+        associationZero.setUserId("000");
         associationZero.setStatus(StatusEnum.CONFIRMED.getValue());
         associationZero.setId("0");
         associationZero.setApprovedAt(now.plusDays(1));
@@ -1768,7 +1769,6 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWhereAssociationBetweenInviteeEmailAndCompanyNumberExistsAndInviteeUserIsFoundPerformsSwapAndUpdateOperations() throws Exception {
-
         Mockito.doReturn( toSearchUserDetailsApiResponse( "russell.howard@comedy.com", "8888" ) ).when( accountsUserEndpoint ).searchUserDetails( eq( List.of( "russell.howard@comedy.com" ) ) );
 
         mockMvc.perform( post( "/associations/invitations" )
