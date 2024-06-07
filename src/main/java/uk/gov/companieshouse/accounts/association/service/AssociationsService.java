@@ -120,7 +120,11 @@ public class AssociationsService {
 
     @Transactional(readOnly = true)
     public boolean confirmedAssociationExists(final String companyNumber, final String userId) {
-        return associationsRepository.confirmedAssociationExists(companyNumber, userId);
+        return associationsRepository.associationExistsWithStatuses(
+                companyNumber,
+                userId,
+                List.of(StatusEnum.CONFIRMED.getValue())
+        );
     }
 
     @Transactional(readOnly = true)
@@ -134,7 +138,7 @@ public class AssociationsService {
     }
 
     @Transactional
-    public AssociationDao createAssociation(final String companyNumber,
+    public AssociationDao upsertAssociation(final String companyNumber,
                                             final String userId,
                                             final String userEmail,
                                             final ApprovalRouteEnum approvalRoute,
@@ -147,20 +151,26 @@ public class AssociationsService {
             throw new NullPointerException("UserId or UserEmail should be provided");
         }
 
-        final var association = new AssociationDao();
+        Optional<AssociationDao> existingAssociation;
+        if (userId != null) {
+            existingAssociation = associationsRepository.fetchAssociationForCompanyNumberAndUserId(companyNumber, userId);
+        } else {
+            existingAssociation = associationsRepository.fetchAssociationForCompanyNumberAndUserEmail(companyNumber, userEmail);
+        }
+
+        final var association = existingAssociation.orElseGet(AssociationDao::new);
         association.setCompanyNumber(companyNumber);
         association.setUserId(userId);
         association.setUserEmail(userEmail);
         association.setApprovalRoute(approvalRoute.getValue());
         association.setEtag(generateEtag());
 
-
         if (ApprovalRouteEnum.INVITATION.equals(approvalRoute)) {
             addInvitation(invitedByUserId, association);
-
         } else {
             association.setStatus(StatusEnum.CONFIRMED.getValue());
         }
+
         return associationsRepository.save(association);
     }
 
