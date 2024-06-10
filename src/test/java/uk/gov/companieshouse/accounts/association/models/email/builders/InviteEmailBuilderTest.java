@@ -11,7 +11,7 @@ import uk.gov.companieshouse.accounts.association.models.email.data.InviteEmailD
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-public class InviteEmailBuilderTest {
+class InviteEmailBuilderTest {
 
     private final String COMPANY_INVITATIONS_URL = "http://chs.local/your-companies/company-invitations?mtm_campaign=associations_invite";
 
@@ -40,7 +40,8 @@ public class InviteEmailBuilderTest {
 
     @Test
     void buildWithNullsThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> new InviteEmailBuilder().build() );
+        final var inviteEmailBuilder = new InviteEmailBuilder();
+        Assertions.assertThrows( NullPointerException.class, inviteEmailBuilder::build);
     }
 
 }
