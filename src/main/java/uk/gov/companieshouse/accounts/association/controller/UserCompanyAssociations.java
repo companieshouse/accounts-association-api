@@ -78,8 +78,8 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             throw new BadRequestRuntimeException("Association already exists.");
         }
 
-        final var association = associationsService.createAssociation(companyNumber, ericIdentity, null, ApprovalRouteEnum.AUTH_CODE, null);
-        LOG.debugContext(xRequestId, String.format("Successfully created association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
+        final var association = associationsService.upsertAssociation(companyNumber, ericIdentity, null, ApprovalRouteEnum.AUTH_CODE, null);
+        LOG.debugContext(xRequestId, String.format("Successfully created/updated association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
 
         final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
         emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( xRequestId, companyDetails, displayName, associatedUsers );
@@ -232,7 +232,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             if(associationWithUserID.isEmpty()){
                 LOG.infoContext( xRequestId, String.format( "Creating association and invitation for company %s and user id %s", companyNumber, inviteeUserDetails.getFirst().getUserId() ), null );
 
-                association = associationsService.createAssociation(companyNumber,inviteeUserId,null,ApprovalRouteEnum.INVITATION,ericIdentity);
+                association = associationsService.upsertAssociation(companyNumber,inviteeUserId,null,ApprovalRouteEnum.INVITATION,ericIdentity);
                 emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, association.getApprovalExpiryAt().toString(), inviteeEmail );
                 emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeDisplayName, associatedUsers );
                 return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
@@ -247,7 +247,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         }
         //if association with email not found, user not found
-        association = associationsService.createAssociation(companyNumber, null ,inviteeEmail,ApprovalRouteEnum.INVITATION,ericIdentity);
+        association = associationsService.upsertAssociation(companyNumber, null ,inviteeEmail,ApprovalRouteEnum.INVITATION,ericIdentity);
         emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, association.getApprovalExpiryAt().toString(), inviteeEmail );
         emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeEmail, associatedUsers );
 

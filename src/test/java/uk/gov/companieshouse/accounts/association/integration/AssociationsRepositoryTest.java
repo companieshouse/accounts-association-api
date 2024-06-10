@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -33,10 +36,12 @@ import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -588,19 +593,27 @@ class AssociationsRepositoryTest {
         Assertions.assertTrue( secondPageContent.containsAll( List.of( "888", "101010" ) ) );
     }
 
-    @Test
-    void confirmedAssociationExistsWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(){
-        Assertions.assertFalse( associationsRepository.confirmedAssociationExists( null, "111" ) );
-        Assertions.assertFalse( associationsRepository.confirmedAssociationExists( "$$$$$$", "111" ) );
-        Assertions.assertFalse( associationsRepository.confirmedAssociationExists( "919191", "111" ) );
-        Assertions.assertFalse( associationsRepository.confirmedAssociationExists( "111111", null ) );
-        Assertions.assertFalse( associationsRepository.confirmedAssociationExists( "111111", "$$$" ) );
-        Assertions.assertFalse( associationsRepository.confirmedAssociationExists( "111111", "9191" ) );
+    static Stream<Arguments> nullAndMalformedParameters() {
+        return Stream.of(
+                Arguments.of(null, "111"),
+                Arguments.of("$$$$$$", "111"),
+                Arguments.of("919191", "111"),
+                Arguments.of("111111", null),
+                Arguments.of("111111", "$$$"),
+                Arguments.of("111111", "9191")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("nullAndMalformedParameters")
+    void associationExistsWithStatusesWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(String companyNumber, String userId) {
+        final List<String> statuses = Arrays.stream(StatusEnum.values()).map(StatusEnum::toString).toList();
+        Assertions.assertFalse(associationsRepository.associationExistsWithStatuses(companyNumber, userId, statuses));
     }
 
     @Test
     void associationExistsWithExistingConfirmedAssociationReturnsTrue(){
-        Assertions.assertTrue( associationsRepository.confirmedAssociationExists( "111111", "111" ) );
+        Assertions.assertTrue( associationsRepository.associationExistsWithStatuses( "111111", "111", List.of(StatusEnum.CONFIRMED.getValue()) ) );
     }
 
     @Test

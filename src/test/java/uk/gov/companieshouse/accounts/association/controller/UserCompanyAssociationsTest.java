@@ -742,7 +742,7 @@ class UserCompanyAssociationsTest {
     void addAssociationCreatesNewAssociationCorrectlyAndReturnsAssociationIdWithCreatedHttpStatus() throws Exception {
         final var associationDao = new AssociationDao();
         associationDao.setId("99");
-        Mockito.doReturn(associationDao).when(associationsService).createAssociation("000000", "000", null, ApprovalRouteEnum.AUTH_CODE, null);
+        Mockito.doReturn(associationDao).when(associationsService).upsertAssociation("000000", "000", null, ApprovalRouteEnum.AUTH_CODE, null);
         Mockito.doReturn(false).when(associationsService).confirmedAssociationExists("000000", "000");
 
         final var responseJson =
@@ -794,7 +794,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( new CompanyDetails().companyNumber( "444444" ).companyName( "Sainsbury's" ) ).when( companyService ).fetchCompanyProfile( anyString() );
         Mockito.doReturn(false).when(associationsService).confirmedAssociationExists("444444", "666");
         Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "444444" );
-        Mockito.doReturn(associationDao).when(associationsService).createAssociation("444444", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
+        Mockito.doReturn(associationDao).when(associationsService).upsertAssociation("444444", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
 
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
@@ -819,7 +819,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( new CompanyDetails().companyNumber( "444444" ).companyName( "Sainsbury's" ) ).when( companyService ).fetchCompanyProfile( anyString() );
         Mockito.doReturn(false).when(associationsService).confirmedAssociationExists("444444", "666");
         Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "444444" );
-        Mockito.doReturn(associationDao).when(associationsService).createAssociation("444444", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
+        Mockito.doReturn(associationDao).when(associationsService).upsertAssociation("444444", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
 
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
@@ -1593,7 +1593,7 @@ class UserCompanyAssociationsTest {
         final var association = new AssociationDao();
         association.setId("99");
         association.setApprovalExpiryAt( now );
-        Mockito.doReturn(association).when(associationsService).createAssociation("444444", "111", null, ApprovalRouteEnum.INVITATION, "9999");
+        Mockito.doReturn(association).when(associationsService).upsertAssociation("444444", "111", null, ApprovalRouteEnum.INVITATION, "9999");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -1626,7 +1626,7 @@ class UserCompanyAssociationsTest {
         final var association = new AssociationDao();
         association.setId("99");
         association.setApprovalExpiryAt( now );
-        Mockito.doReturn(association).when(associationsService).createAssociation("333333", null, "madonna@singer.com", ApprovalRouteEnum.INVITATION, "9999");
+        Mockito.doReturn(association).when(associationsService).upsertAssociation("333333", null, "madonna@singer.com", ApprovalRouteEnum.INVITATION, "9999");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
