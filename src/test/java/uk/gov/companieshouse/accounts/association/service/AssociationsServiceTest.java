@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
@@ -42,7 +43,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -955,43 +955,50 @@ class AssociationsServiceTest {
         Mockito.verify(associationsListUserMapper).daoToDto(argThat(associationsPageMatches(0, 0, 0, Collections.emptyList())), eq(user));
     }
 
-    @Test
-    void confirmedAssociationExistsWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(){
-        Mockito.doReturn( false ).when( associationsRepository ).confirmedAssociationExists( any(), any() );
-        assertFalse( associationsService.confirmedAssociationExists( null, "111" ) );
-        assertFalse( associationsService.confirmedAssociationExists( "$$$$$$", "111" ) );
-        assertFalse( associationsService.confirmedAssociationExists( "919191", "111" ) );
-        assertFalse( associationsService.confirmedAssociationExists( "111111", null ) );
-        assertFalse( associationsService.confirmedAssociationExists( "111111", "$$$" ) );
-        assertFalse( associationsService.confirmedAssociationExists( "111111", "9191" ) );
+    static Stream<Arguments> provideInvalidCompanyNumberOrUserId() {
+        return Stream.of(
+                Arguments.of(null, "111"),
+                Arguments.of("$$$$$$", "111"),
+                Arguments.of("919191", "111"),
+                Arguments.of("111111", null),
+                Arguments.of("111111", "$$$"),
+                Arguments.of("111111", "9191")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidCompanyNumberOrUserId")
+    void confirmedAssociationExistsWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(String companyNumber, String userId) {
+        Mockito.doReturn(false).when(associationsRepository).associationExistsWithStatuses(Mockito.any(), Mockito.any(), Mockito.anyList());
+        Assertions.assertFalse(associationsService.confirmedAssociationExists(companyNumber, userId));
     }
 
     @Test
     void associationExistsWithExistingConfirmedAssociationReturnsTrue(){
-        Mockito.doReturn( true ).when( associationsRepository ).confirmedAssociationExists( "111111", "111" );
+        Mockito.doReturn( true ).when( associationsRepository ).associationExistsWithStatuses( "111111", "111", List.of(StatusEnum.CONFIRMED.getValue()));
         assertTrue( associationsService.confirmedAssociationExists( "111111", "111" ) );
     }
 
     @Test
-    void createAssociationWithNullInputsThrowsNullPointerException(){
-        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( null, "000", "the.void@space.com", ApprovalRouteEnum.AUTH_CODE ,"111") );
-        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", null, null, ApprovalRouteEnum.AUTH_CODE ,"111") );
-        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", "000", "the.void@space.com", null ,"111") );
-        Assertions.assertThrows(NullPointerException.class, () -> associationsService.createAssociation( "000000", "000", "the.void@space.com", ApprovalRouteEnum.INVITATION ,null) );
+    void upsertAssociationWithNullInputsThrowsNullPointerException(){
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.upsertAssociation( null, "000", "the.void@space.com", ApprovalRouteEnum.AUTH_CODE ,"111") );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.upsertAssociation( "000000", null, null, ApprovalRouteEnum.AUTH_CODE ,"111") );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.upsertAssociation( "000000", "000", "the.void@space.com", null ,"111") );
+        Assertions.assertThrows(NullPointerException.class, () -> associationsService.upsertAssociation( "000000", "000", "the.void@space.com", ApprovalRouteEnum.INVITATION ,null) );
     }
 
     @Test
-    void createAssociationThatAlreadyExistsThrowsDuplicateKeyException(){
-        associationsService.createAssociation( "000000", "000", null, ApprovalRouteEnum.INVITATION, "111" );
-        associationsService.createAssociation( "000000", null, "bruce.wayne@gotham.city", ApprovalRouteEnum.INVITATION, "111" );
+    void upsertAssociationThatAlreadyExistsThrowsDuplicateKeyException(){
+        associationsService.upsertAssociation( "000000", "000", null, ApprovalRouteEnum.INVITATION, "111" );
+        associationsService.upsertAssociation( "000000", null, "bruce.wayne@gotham.city", ApprovalRouteEnum.INVITATION, "111" );
 
         Mockito.doThrow( new DuplicateKeyException( "Association already exists" ) ).when( associationsRepository ).save( any( AssociationDao.class ) );
 
-        Assertions.assertThrows( DuplicateKeyException.class, () -> associationsService.createAssociation( "000000", "000", null, ApprovalRouteEnum.INVITATION, "111" ) );
-        Assertions.assertThrows( DuplicateKeyException.class, () -> associationsService.createAssociation( "000000", null, "bruce.wayne@gotham.city", ApprovalRouteEnum.INVITATION, "111" ) );
+        Assertions.assertThrows( DuplicateKeyException.class, () -> associationsService.upsertAssociation( "000000", "000", null, ApprovalRouteEnum.INVITATION, "111" ) );
+        Assertions.assertThrows( DuplicateKeyException.class, () -> associationsService.upsertAssociation( "000000", null, "bruce.wayne@gotham.city", ApprovalRouteEnum.INVITATION, "111" ) );
     }
 
-    private ArgumentMatcher<AssociationDao> createAssociationDaoMatches( final String companyNumber, final String userId, final String userEmail, final StatusEnum statusEnum, final ApprovalRouteEnum approvalRouteEnum, final boolean approvalExpiryAtIsNull, final List<String> inviters ){
+    private ArgumentMatcher<AssociationDao> upsertAssociationDaoMatches(final String companyNumber, final String userId, final String userEmail, final StatusEnum statusEnum, final ApprovalRouteEnum approvalRouteEnum, final boolean approvalExpiryAtIsNull, final List<String> inviters ){
         return associationDao -> {
             final var companyNumberIsCorrect = associationDao.getCompanyNumber().equals(companyNumber);
             final var userIdIsCorrect = Objects.isNull(userId) ? Objects.isNull(associationDao.getUserId() ) : userId.equals(associationDao.getUserId());
@@ -1013,27 +1020,27 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void createAssociationWithUserIdAndAuthCodeSuccessfullyCreatesAssociation(){
-        associationsService.createAssociation( "000000", "000", null, ApprovalRouteEnum.AUTH_CODE, null);
-        Mockito.verify( associationsRepository ).save( argThat( createAssociationDaoMatches( "000000", "000", null, StatusEnum.CONFIRMED, ApprovalRouteEnum.AUTH_CODE, true, null ) ) );
+    void createAssociationWithUserIdAndAuthCodeSuccessfullyCreatesOrUpdateAssociation(){
+        associationsService.upsertAssociation( "000000", "000", null, ApprovalRouteEnum.AUTH_CODE, null);
+        Mockito.verify( associationsRepository ).save( argThat( upsertAssociationDaoMatches( "000000", "000", null, StatusEnum.CONFIRMED, ApprovalRouteEnum.AUTH_CODE, true, null ) ) );
     }
 
     @Test
-    void createAssociationWithUserIdAndInvitationSuccessfullyCreatesAssociation(){
-        associationsService.createAssociation( "000000", "000", null, ApprovalRouteEnum.INVITATION, "111");
-        Mockito.verify( associationsRepository ).save( argThat( createAssociationDaoMatches( "000000", "000", null, StatusEnum.AWAITING_APPROVAL, ApprovalRouteEnum.INVITATION, false, List.of("111") ) ) );
+    void createAssociationWithUserIdAndInvitationSuccessfullyCreatesOrUpdateAssociation(){
+        associationsService.upsertAssociation( "000000", "000", null, ApprovalRouteEnum.INVITATION, "111");
+        Mockito.verify( associationsRepository ).save( argThat( upsertAssociationDaoMatches( "000000", "000", null, StatusEnum.AWAITING_APPROVAL, ApprovalRouteEnum.INVITATION, false, List.of("111") ) ) );
     }
 
     @Test
-    void createAssociationWithUserEmailAndAuthCodeSuccessfullyCreatesAssociation(){
-        associationsService.createAssociation( "000000", null, "bruce.wayne@gotham.city", ApprovalRouteEnum.AUTH_CODE, null);
-        Mockito.verify( associationsRepository ).save( argThat( createAssociationDaoMatches( "000000", null, "bruce.wayne@gotham.city", StatusEnum.CONFIRMED, ApprovalRouteEnum.AUTH_CODE, true, List.of("111") ) ) );
+    void createAssociationWithUserEmailAndAuthCodeSuccessfullyCreatesOrUpdateAssociation(){
+        associationsService.upsertAssociation( "000000", null, "bruce.wayne@gotham.city", ApprovalRouteEnum.AUTH_CODE, null);
+        Mockito.verify( associationsRepository ).save( argThat( upsertAssociationDaoMatches( "000000", null, "bruce.wayne@gotham.city", StatusEnum.CONFIRMED, ApprovalRouteEnum.AUTH_CODE, true, List.of("111") ) ) );
     }
 
     @Test
-    void createAssociationWithUserEmailAndInvitationSuccessfullyCreatesAssociation(){
-        associationsService.createAssociation( "000000", null, "bruce.wayne@gotham.city", ApprovalRouteEnum.INVITATION, "111");
-        Mockito.verify( associationsRepository ).save( argThat( createAssociationDaoMatches( "000000", null, "bruce.wayne@gotham.city", StatusEnum.AWAITING_APPROVAL, ApprovalRouteEnum.INVITATION, false, List.of("111") ) ) );
+    void createAssociationWithUserEmailAndInvitationSuccessfullyCreatesOrUpdateAssociation(){
+        associationsService.upsertAssociation( "000000", null, "bruce.wayne@gotham.city", ApprovalRouteEnum.INVITATION, "111");
+        Mockito.verify( associationsRepository ).save( argThat( upsertAssociationDaoMatches( "000000", null, "bruce.wayne@gotham.city", StatusEnum.AWAITING_APPROVAL, ApprovalRouteEnum.INVITATION, false, List.of("111") ) ) );
     }
 
     @Test
@@ -1051,13 +1058,13 @@ class AssociationsServiceTest {
         association.setApprovalRoute( ApprovalRouteEnum.INVITATION.getValue() );
 
         associationsService.sendNewInvitation( "111", association );
-        Mockito.verify( associationsRepository ).save( argThat( createAssociationDaoMatches( "000000", null, "the.void@space.com", StatusEnum.AWAITING_APPROVAL, ApprovalRouteEnum.INVITATION, false, List.of("111") ) ) );
+        Mockito.verify( associationsRepository ).save( argThat( upsertAssociationDaoMatches( "000000", null, "the.void@space.com", StatusEnum.AWAITING_APPROVAL, ApprovalRouteEnum.INVITATION, false, List.of("111") ) ) );
     }
 
     @Test
     void sendNewInvitationWithExistingAssociationCreatesNewInvitation(){
         associationsService.sendNewInvitation( "222", associationOne );
-        Mockito.verify( associationsRepository ).save( argThat( createAssociationDaoMatches( "111111", "111", "bruce.wayne@gotham.city", StatusEnum.AWAITING_APPROVAL, ApprovalRouteEnum.AUTH_CODE, false, List.of("666", "222") ) ) );
+        Mockito.verify( associationsRepository ).save( argThat( upsertAssociationDaoMatches( "111111", "111", "bruce.wayne@gotham.city", StatusEnum.AWAITING_APPROVAL, ApprovalRouteEnum.AUTH_CODE, false, List.of("666", "222") ) ) );
     }
 
     @Test
