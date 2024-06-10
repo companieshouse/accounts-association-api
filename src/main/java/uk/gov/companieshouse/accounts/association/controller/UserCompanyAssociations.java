@@ -44,6 +44,9 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
 
     private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
+    public static final String PAGE_INDEX_WAS_LESS_THEN_0 = "pageIndex was less then 0";
+    public static final String PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN = "Please check the request and try again";
+    public static final String ITEMS_PER_PAGE_WAS_LESS_THEN_0 = "itemsPerPage was less then 0";
 
 
     private final UsersService usersService;
@@ -92,13 +95,13 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         LOG.debugContext( xRequestId, String.format( "Attempting to fetch active invitations for user %s", ericIdentity ), null );
 
         if (pageIndex < 0) {
-            LOG.error("pageIndex was less then 0");
-            throw new BadRequestRuntimeException("Please check the request and try again");
+            LOG.error(PAGE_INDEX_WAS_LESS_THEN_0);
+            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
 
         if (itemsPerPage <= 0) {
-            LOG.error("itemsPerPage was less then 0");
-            throw new BadRequestRuntimeException("Please check the request and try again");
+            LOG.error(ITEMS_PER_PAGE_WAS_LESS_THEN_0);
+            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
 
         final var invitations = associationsService.fetchActiveInvitations( ericIdentity, pageIndex, itemsPerPage );
@@ -119,13 +122,13 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         LOG.debugContext(xRequestId, "Trying to fetch associations data for user in session :".concat(ericIdentity), null);
 
         if (pageIndex < 0) {
-            LOG.error("pageIndex was less then 0");
-            throw new BadRequestRuntimeException("Please check the request and try again");
+            LOG.error(PAGE_INDEX_WAS_LESS_THEN_0);
+            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
 
         if (itemsPerPage <= 0) {
-            LOG.error("itemsPerPage was less then 0");
-            throw new BadRequestRuntimeException("Please check the request and try again");
+            LOG.error(ITEMS_PER_PAGE_WAS_LESS_THEN_0);
+            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
 
         final var user = UserContext.getLoggedUser();
@@ -151,13 +154,13 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     @Override
     public ResponseEntity<InvitationsList> getInvitationsForAssociation(final String xRequestId, final String associationId, final Integer pageIndex, final Integer itemsPerPage) {
         if (pageIndex < 0) {
-            LOG.error("pageIndex was less then 0");
-            throw new BadRequestRuntimeException("Please check the request and try again");
+            LOG.error(PAGE_INDEX_WAS_LESS_THEN_0);
+            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
 
         if (itemsPerPage <= 0) {
-            LOG.error("itemsPerPage was less then 0");
-            throw new BadRequestRuntimeException("Please check the request and try again");
+            LOG.error(ITEMS_PER_PAGE_WAS_LESS_THEN_0);
+            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
 
         final Optional<AssociationDao> associationDaoOptional = associationsService.findAssociationDaoById(associationId);
@@ -180,7 +183,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         LOG.infoContext(xRequestId, String.format("%s is attempting to invite a new user to company %s.", ericIdentity, companyNumber), null);
         if (Objects.isNull(inviteeEmail)) {
             LOG.error(String.format("%s: inviteeEmail is null.", xRequestId));
-            throw new BadRequestRuntimeException("Please check the request and try again");
+            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
 
         final var inviterUserDetails= Objects.requireNonNull(UserContext.getLoggedUser());
@@ -190,7 +193,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             companyDetails= companyService.fetchCompanyProfile( companyNumber );
         } catch( NotFoundRuntimeException notFoundRuntimeException ){
             LOG.error( notFoundRuntimeException.getMessage() );
-            throw new BadRequestRuntimeException( "Please check the request and try again" );
+            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
         if (!associationsService.confirmedAssociationExists(companyNumber,ericIdentity)) {
             LOG.error(String.format("%s: requesting user %s does not have access to invite", xRequestId, ericIdentity));

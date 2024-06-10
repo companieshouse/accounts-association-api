@@ -63,7 +63,7 @@ public class EmailService {
                     .setCompanyName( companyDetails.getCompanyName() )
                     .build();
 
-            emailProducer.sendEmail( emailData, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getMessageType() );
+            emailProducer.sendEmail( emailData, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getMessageTypeLocal() );
 
             LOG.infoContext(xRequestId,
                     new EmailNotification(
@@ -86,7 +86,7 @@ public class EmailService {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            emailProducer.sendEmail( emailData, MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageType() );
+            emailProducer.sendEmail( emailData, MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageTypeLocal() );
             LOG.infoContext(xRequestId,
                     new EmailNotification(
                             MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE,
@@ -108,7 +108,7 @@ public class EmailService {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            emailProducer.sendEmail( emailData, MessageType.INVITATION_CANCELLED_MESSAGE_TYPE.getMessageType() );
+            emailProducer.sendEmail( emailData, MessageType.INVITATION_CANCELLED_MESSAGE_TYPE.getMessageTypeLocal() );
             LOG.infoContext(xRequestId, new EmailNotification(
                     MessageType.INVITATION_CANCELLED_MESSAGE_TYPE,
                     StaticPropertyUtil.APPLICATION_NAMESPACE,
@@ -130,7 +130,7 @@ public class EmailService {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            emailProducer.sendEmail( emailData, MessageType.INVITATION_MESSAGE_TYPE.getMessageType() );
+            emailProducer.sendEmail( emailData, MessageType.INVITATION_MESSAGE_TYPE.getMessageTypeLocal() );
             LOG.infoContext(xRequestId,
                     new EmailNotification(
                             MessageType.INVITATION_MESSAGE_TYPE,
@@ -153,7 +153,7 @@ public class EmailService {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            emailProducer.sendEmail( emailData, MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageType() );
+            emailProducer.sendEmail( emailData, MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageTypeLocal() );
 
             LOG.infoContext(xRequestId, new EmailNotification(
                     MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE,
@@ -175,7 +175,7 @@ public class EmailService {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            emailProducer.sendEmail( emailData, MessageType.INVITATION_REJECTED_MESSAGE_TYPE.getMessageType() );
+            emailProducer.sendEmail( emailData, MessageType.INVITATION_REJECTED_MESSAGE_TYPE.getMessageTypeLocal() );
 
             LOG.infoContext(xRequestId,
                     new EmailNotification(
@@ -196,7 +196,7 @@ public class EmailService {
                 .setInvitationLink( invitationLink )
                 .build();
 
-        emailProducer.sendEmail( emailData, MessageType.INVITE_MESSAGE_TYPE.getMessageType() );
+        emailProducer.sendEmail( emailData, MessageType.INVITE_MESSAGE_TYPE.getMessageTypeLocal() );
 
         LOG.infoContext( xRequestId,
                 new EmailNotification(

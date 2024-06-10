@@ -1070,8 +1070,9 @@ class AssociationsServiceTest {
     @Test
     void updateAssociationStatusWithMalformedOrNonexistentAssociationIdThrowsInternalServerError(){
         Mockito.doReturn( 0 ).when( associationsRepository ).updateAssociation( any(), any() );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "$$$", new Update()) );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "9191", new Update()) );
+        final var update = new Update();
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "$$$", update) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "9191", update) );
     }
 
     @Test
