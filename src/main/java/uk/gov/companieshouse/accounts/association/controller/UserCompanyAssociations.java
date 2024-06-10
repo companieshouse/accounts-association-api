@@ -44,9 +44,9 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
 
     private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
-    public static final String PAGE_INDEX_WAS_LESS_THEN_0 = "pageIndex was less then 0";
-    public static final String PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN = "Please check the request and try again";
-    public static final String ITEMS_PER_PAGE_WAS_LESS_THEN_0 = "itemsPerPage was less then 0";
+    private static final String PAGE_INDEX_WAS_LESS_THEN_0 = "pageIndex was less then 0";
+    private static final String PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN = "Please check the request and try again";
+    private static final String ITEMS_PER_PAGE_WAS_LESS_THEN_0 = "itemsPerPage was less then 0";
 
 
     private final UsersService usersService;

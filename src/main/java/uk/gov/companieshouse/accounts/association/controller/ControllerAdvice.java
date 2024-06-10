@@ -29,7 +29,7 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
     private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
     public static final String X_REQUEST_ID = "X-Request-Id";
     public static final String ACCOUNTS_ASSOCIATION_API = "accounts_association_api";
-    public static final String QUERY_PARAMETERS = "query-parameters";
+    private static final String QUERY_PARAMETERS = "query-parameters";
 
     private String getJsonStringFromErrors(String requestId, Errors errors) {
 
