@@ -137,7 +137,7 @@ class EmailServiceTest {
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
         emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", requestsToFetchAssociatedUsers );
 
-        Mockito.verify( emailProducer ).sendEmail( emailData, MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getMessageTypeLocal() );
+        Mockito.verify( emailProducer ).sendEmail( emailData, MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getMessageValue() );
     }
 
     @Test
@@ -151,7 +151,7 @@ class EmailServiceTest {
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
         emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", List.of() );
 
-        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getMessageTypeLocal() );
+        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getMessageValue() );
     }
 
     @Test
@@ -202,7 +202,7 @@ class EmailServiceTest {
 
         emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers );
 
-        Mockito.verify( emailProducer ).sendEmail( emailData, AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageTypeLocal() );
+        Mockito.verify( emailProducer ).sendEmail( emailData, AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageValue() );
     }
 
     @Test
@@ -217,7 +217,7 @@ class EmailServiceTest {
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
         emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", List.of() );
 
-        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageTypeLocal() );
+        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageValue() );
     }
 
     @Test
@@ -269,7 +269,7 @@ class EmailServiceTest {
 
         emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers );
 
-        Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_CANCELLED_MESSAGE_TYPE.getMessageTypeLocal() );
+        Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_CANCELLED_MESSAGE_TYPE.getMessageValue() );
     }
 
     @Test
@@ -284,7 +284,7 @@ class EmailServiceTest {
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
         emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", List.of() );
 
-        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, INVITATION_CANCELLED_MESSAGE_TYPE.getMessageTypeLocal() );
+        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, INVITATION_CANCELLED_MESSAGE_TYPE.getMessageValue() );
     }
 
     @Test
@@ -336,7 +336,7 @@ class EmailServiceTest {
 
         emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers );
 
-        Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_MESSAGE_TYPE.getMessageTypeLocal() );
+        Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_MESSAGE_TYPE.getMessageValue() );
     }
 
     @Test
@@ -351,7 +351,7 @@ class EmailServiceTest {
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
         emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", List.of() );
 
-        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, INVITATION_MESSAGE_TYPE.getMessageTypeLocal() );
+        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, INVITATION_MESSAGE_TYPE.getMessageValue() );
     }
 
     @Test
@@ -403,7 +403,7 @@ class EmailServiceTest {
 
         emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers );
 
-        Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageTypeLocal() );
+        Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageValue() );
     }
 
     @Test
@@ -418,7 +418,7 @@ class EmailServiceTest {
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
         emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", List.of() );
 
-        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageTypeLocal() );
+        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageValue() );
     }
 
     @Test
@@ -466,7 +466,7 @@ class EmailServiceTest {
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
         emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetails, "Elon Musk", requestsToFetchAssociatedUsers );
 
-        Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_REJECTED_MESSAGE_TYPE.getMessageTypeLocal() );
+        Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_REJECTED_MESSAGE_TYPE.getMessageValue() );
     }
 
     @Test
@@ -480,7 +480,7 @@ class EmailServiceTest {
         final var companyDetails = new CompanyDetails().companyName( "Tesla" );
         emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetails, "Elon Musk", List.of() );
 
-        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, INVITATION_REJECTED_MESSAGE_TYPE.getMessageTypeLocal() );
+        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, INVITATION_REJECTED_MESSAGE_TYPE.getMessageValue() );
     }
 
     @Test
@@ -523,7 +523,7 @@ class EmailServiceTest {
 
         emailService.sendInviteEmail( "theId12345", companyDetails, "Krishna Patel", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk" );
 
-        Mockito.verify( emailProducer ).sendEmail( emailData, INVITE_MESSAGE_TYPE.getMessageTypeLocal() );
+        Mockito.verify( emailProducer ).sendEmail( emailData, INVITE_MESSAGE_TYPE.getMessageValue() );
     }
 
     @Test

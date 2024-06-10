@@ -787,7 +787,7 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isOk() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer, times( 3 ) ).sendEmail( argThat( invitationAcceptedEmailDataMatcher( List.of("the.joker@gotham.city", "robin@gotham.city", "harley.quinn@gotham.city" ), "Companies House: harley.quinn@gotham.city is now authorised to file online for Twitter", "harley.quinn@gotham.city", "Twitter", "the.joker@gotham.city" ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageTypeLocal() ) );
+        Mockito.verify( emailProducer, times( 3 ) ).sendEmail( argThat( invitationAcceptedEmailDataMatcher( List.of("the.joker@gotham.city", "robin@gotham.city", "harley.quinn@gotham.city" ), "Companies House: harley.quinn@gotham.city is now authorised to file online for Twitter", "harley.quinn@gotham.city", "Twitter", "the.joker@gotham.city" ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getMessageValue() ) );
     }
 
     @Test
@@ -1286,7 +1286,7 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isCreated() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( authCodeConfirmationEmailDataMatcher( "scrooge.mcduck@disney.land", "Companies House: Batman is now authorised to file online for Sainsbury's", "Batman", "Sainsbury's" ) ), eq( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getMessageTypeLocal() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( authCodeConfirmationEmailDataMatcher( "scrooge.mcduck@disney.land", "Companies House: Batman is now authorised to file online for Sainsbury's", "Batman", "Sainsbury's" ) ), eq( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getMessageValue() ) );
     }
 
     @Test
@@ -1575,7 +1575,7 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isOk() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: robin@gotham.city's authorisation removed to file online for Instram", "robin@gotham.city", "Instram", "harley.quinn@gotham.city") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageTypeLocal() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: robin@gotham.city's authorisation removed to file online for Instram", "robin@gotham.city", "Instram", "harley.quinn@gotham.city") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageValue() ) );
     }
 
     @Test
@@ -1597,7 +1597,7 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isOk() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: robin@gotham.city's authorisation removed to file online for Instram", "robin@gotham.city", "Instram", "harley.quinn@gotham.city") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageTypeLocal() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: robin@gotham.city's authorisation removed to file online for Instram", "robin@gotham.city", "Instram", "harley.quinn@gotham.city") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageValue() ) );
     }
 
     @Test
@@ -1618,7 +1618,7 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isOk() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: robin@gotham.city's authorisation removed to file online for Instram", "robin@gotham.city", "Instram", "harley.quinn@gotham.city") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageTypeLocal() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: robin@gotham.city's authorisation removed to file online for Instram", "robin@gotham.city", "Instram", "harley.quinn@gotham.city") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageValue() ) );
     }
 
     @Test
@@ -1639,7 +1639,7 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isOk() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: Robin's authorisation removed to file online for Instram", "Robin", "Instram", "Harley Quinn") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageTypeLocal() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: Robin's authorisation removed to file online for Instram", "Robin", "Instram", "Harley Quinn") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getMessageValue() ) );
     }
 
     ArgumentMatcher<InvitationAcceptedEmailData> invitationAcceptedEmailDataMatcher( List<String> to, String subject, String authorisedPerson, String companyName, String personWhoCreatedInvite ){
@@ -1848,7 +1848,7 @@ public class UserCompanyAssociationsTest {
             if ( emailData instanceof InvitationEmailData ) return invitationEmailMatches.test( (InvitationEmailData) emailData );
             if ( emailData instanceof InviteEmailData ) return inviteEmailMatches.test( (InviteEmailData) emailData );
             return false;
-        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getMessageTypeLocal(), INVITE_MESSAGE_TYPE.getMessageTypeLocal() ).contains( messageType ) ) );
+        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getMessageValue(), INVITE_MESSAGE_TYPE.getMessageValue() ).contains( messageType ) ) );
     }
 
     @Test
@@ -1902,7 +1902,7 @@ public class UserCompanyAssociationsTest {
             if ( emailData instanceof InvitationEmailData ) return invitationEmailMatches.test( (InvitationEmailData) emailData );
             if ( emailData instanceof InviteEmailData ) return inviteEmailMatches.test( (InviteEmailData) emailData );
             return false;
-        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getMessageTypeLocal(), INVITE_MESSAGE_TYPE.getMessageTypeLocal() ).contains( messageType ) ) );
+        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getMessageValue(), INVITE_MESSAGE_TYPE.getMessageValue() ).contains( messageType ) ) );
     }
 
     @Test
@@ -1982,7 +1982,7 @@ public class UserCompanyAssociationsTest {
             if ( emailData instanceof InvitationEmailData ) return invitationEmailMatches.test( (InvitationEmailData) emailData );
             if ( emailData instanceof InviteEmailData ) return inviteEmailMatches.test( (InviteEmailData) emailData );
             return false;
-        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getMessageTypeLocal(), INVITE_MESSAGE_TYPE.getMessageTypeLocal() ).contains( messageType ) ) );
+        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getMessageValue(), INVITE_MESSAGE_TYPE.getMessageValue() ).contains( messageType ) ) );
     }
 
     @Test
@@ -2055,7 +2055,7 @@ public class UserCompanyAssociationsTest {
             if ( emailData instanceof InvitationEmailData ) return invitationEmailMatches.test( (InvitationEmailData) emailData );
             if ( emailData instanceof InviteEmailData ) return inviteEmailMatches.test( (InviteEmailData) emailData );
             return false;
-        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getMessageTypeLocal(), INVITE_MESSAGE_TYPE.getMessageTypeLocal() ).contains( messageType ) ) );
+        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getMessageValue(), INVITE_MESSAGE_TYPE.getMessageValue() ).contains( messageType ) ) );
     }
 
     @Test
