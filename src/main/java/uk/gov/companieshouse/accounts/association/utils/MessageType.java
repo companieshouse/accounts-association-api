@@ -16,13 +16,13 @@ public enum MessageType {
 
     INVITE_MESSAGE_TYPE("associations_invite");
 
-    private final String messageValue;
+    private final String value;
 
     MessageType(String messageType) {
-        this.messageValue = messageType;
+        this.value = messageType;
     }
 
-    public String getMessageValue() {
-        return messageValue;
+    public String getValue() {
+        return value;
     }
 }
