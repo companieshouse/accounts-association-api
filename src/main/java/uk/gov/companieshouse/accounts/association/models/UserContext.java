@@ -4,18 +4,19 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 
 public final class UserContext {
 
-    private static ThreadLocal<User> userContext;
+    private static ThreadLocal<User> userContextThreadLocal;
 
     public static User getLoggedUser() {
-        return userContext != null ? userContext.get() : null;
+        return userContextThreadLocal != null ? userContextThreadLocal.get() : null;
     }
 
+    private UserContext(){}
     public static void setLoggedUser(final User user) {
-        userContext = new ThreadLocal<>();
-        userContext.set(user);
+        userContextThreadLocal = new ThreadLocal<>();
+        userContextThreadLocal.set(user);
     }
 
     public static void clear(){
-        userContext.remove();
+        userContextThreadLocal.remove();
     }
 }
