@@ -9,10 +9,6 @@ public class InvitationDao {
     @Field("invited_at")
     private LocalDateTime invitedAt;
 
-    //Default constructor
-    public InvitationDao() {
-    }
-
     public String getInvitedBy() {
         return invitedBy;
     }

@@ -27,7 +27,7 @@ import uk.gov.companieshouse.api.model.ApiResponse;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-public class UsersServiceTest {
+class UsersServiceTest {
 
     @Mock
     private AccountsUserEndpoint accountsUserEndpoint;
@@ -131,9 +131,12 @@ public class UsersServiceTest {
         nullList.add( null );
 
         Mockito.doThrow( new ApiErrorResponseException( new Builder( 400, "Bad input given", new HttpHeaders() ) ) ).when( accountsUserEndpoint ).searchUserDetails( any() );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of() ) );
+        final var emptyList = new ArrayList<String>();
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( emptyList ) );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( nullList ) );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "$$$" ) ) );
+
+        final var emailList = List.of( "$$$" );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( emailList) );
     }
 
     @Test

@@ -376,18 +376,18 @@ class AssociationsRepositoryTest {
 
     @Test
     void updateEtagWithNullThrowsConstraintViolationException() {
+        AssociationDao associationDao = new AssociationDao();
+        associationDao.setEtag(null);
         assertThrows(ConstraintViolationException.class, () -> {
-            AssociationDao associationDao = new AssociationDao();
-            associationDao.setEtag(null);
             associationsRepository.save(associationDao);
         });
     }
 
     @Test
     void updateApprovalRouteWithNullThrowsConstraintViolationException() {
+        AssociationDao associationDao = new AssociationDao();
+        associationDao.setApprovalRoute(null);
         assertThrows(ConstraintViolationException.class, () -> {
-            AssociationDao associationDao = new AssociationDao();
-            associationDao.setApprovalRoute(null);
             associationsRepository.save(associationDao);
         });
     }
