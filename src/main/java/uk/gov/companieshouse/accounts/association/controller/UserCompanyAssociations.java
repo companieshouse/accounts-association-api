@@ -82,7 +82,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             throw new BadRequestRuntimeException("Association already exists.");
         }
 
-        final var association = associationsService.upsertAssociation(companyNumber, ericIdentity, null, ApprovalRouteEnum.AUTH_CODE, null);
+        final var association = associationsService.upsertAssociation(companyNumber, ericIdentity, userDetails.getEmail(), ApprovalRouteEnum.AUTH_CODE, null);
         LOG.debugContext(xRequestId, String.format("Successfully created/updated association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
 
         final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
