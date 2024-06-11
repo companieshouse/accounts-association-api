@@ -1,10 +1,5 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
-
-import java.util.List;
-import java.util.Set;
-import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
@@ -13,7 +8,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.email.EmailNotification;
-import uk.gov.companieshouse.accounts.association.models.email.builders.*;
+import uk.gov.companieshouse.accounts.association.models.email.builders.AuthCodeConfirmationEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.AuthorisationRemovedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationAcceptedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationCancelledEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationRejectedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InviteEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.YourAuthorisationRemovedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
@@ -23,6 +25,12 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
+
+import java.util.List;
+import java.util.Set;
+import java.util.function.Supplier;
+
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
 
 @Service
 public class EmailService {
@@ -94,6 +102,25 @@ public class EmailService {
                             user.getEmail(),
                             companyDetails.getCompanyNumber()).toMessage(), null);
         });
+    }
+
+    @Async
+    public void sendAuthorisationRemovedEmailToRemovedUser(final String xRequestId, final CompanyDetails companyDetails, final String removedByDisplayName, final Supplier<User> userSupplier) {
+        final var user = userSupplier.get();
+
+        final var emailData = new YourAuthorisationRemovedEmailBuilder()
+                .setCompanyName( companyDetails.getCompanyName() )
+                .setRemovedByDisplayName( removedByDisplayName )
+                .setRecipientEmail( user.getEmail() )
+                .build();
+
+        emailProducer.sendEmail( emailData, MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() );
+        LOG.infoContext(xRequestId,
+                new EmailNotification(
+                        MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE,
+                        StaticPropertyUtil.APPLICATION_NAMESPACE,
+                        user.getEmail(),
+                        companyDetails.getCompanyNumber()).toMessage(), null);
     }
 
     @Async

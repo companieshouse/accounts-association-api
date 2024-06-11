@@ -34,6 +34,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
@@ -330,35 +331,31 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                 requestingAndTargetUserMatches,
                 newStatus,
                 oldStatus,
-                associationDao.getCompanyNumber()
-                , associationDao.getInvitations());
+                associationOptional.get()
+        );
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    private void sendEmailNotificationForStatusUpdate(String xRequestId, String requestingUserDisplayValue, String targetUserDisplayValue, boolean requestingAndTargetUserMatches, RequestBodyPut.StatusEnum newStatus, String oldStatus, String companyNumber, List<InvitationDao> invitations) {
+    private void sendEmailNotificationForStatusUpdate(String xRequestId, String requestingUserDisplayValue, String targetUserDisplayValue, boolean requestingAndTargetUserMatches, RequestBodyPut.StatusEnum newStatus, String oldStatus, AssociationDao associationDao) {
+        final String companyNumber = associationDao.getCompanyNumber();
+        final List<InvitationDao> invitations = associationDao.getInvitations();
+
         final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
         final var requestsToFetchAssociatedUsers = emailService.createRequestsToFetchAssociatedUsers(companyNumber);
-
 
         final var authorisedUserRemoved = oldStatus.equals(CONFIRMED.getValue()) && newStatus.equals(REMOVED);
         final var userAcceptedInvitation = requestingAndTargetUserMatches && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(CONFIRMED);
         final var userCancelledInvitation = !requestingAndTargetUserMatches && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED);
         final var userRejectedInvitation = requestingAndTargetUserMatches && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED);
 
-
         if (userRejectedInvitation) {
             emailService.sendInvitationRejectedEmailToAssociatedUsers(xRequestId, companyDetails, requestingUserDisplayValue, requestsToFetchAssociatedUsers);
-            return;
-        }
-
-        if (authorisedUserRemoved) {
+        } else if (authorisedUserRemoved) {
+            final Supplier<User> requestToGetRemovedUserEmail = usersService.createFetchUserDetailsRequest(associationDao.getUserId());
+            emailService.sendAuthorisationRemovedEmailToRemovedUser(xRequestId, companyDetails, requestingUserDisplayValue, requestToGetRemovedUserEmail);
             emailService.sendAuthorisationRemovedEmailToAssociatedUsers(xRequestId, companyDetails, requestingUserDisplayValue, targetUserDisplayValue, requestsToFetchAssociatedUsers);
-            return;
-        }
-
-        if (userAcceptedInvitation) {
-
+        } else if (userAcceptedInvitation) {
             final var invitedByDisplayName = invitations.stream()
                     .max(Comparator.comparing(InvitationDao::getInvitedAt))
                     .map(InvitationDao::getInvitedBy)
@@ -367,13 +364,9 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                     .orElseThrow(() -> new NullPointerException("Inviter does not exist."));
 
             emailService.sendInvitationAcceptedEmailToAssociatedUsers(xRequestId, companyDetails, invitedByDisplayName, requestingUserDisplayValue, requestsToFetchAssociatedUsers);
-            return;
-        }
-
-        if (userCancelledInvitation) {
+        } else if (userCancelledInvitation) {
             emailService.sendInvitationCancelledEmailToAssociatedUsers(xRequestId, companyDetails, requestingUserDisplayValue, targetUserDisplayValue, requestsToFetchAssociatedUsers);
         }
-
     }
 
 

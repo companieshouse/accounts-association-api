@@ -4,6 +4,8 @@ public enum MessageType {
 
     AUTH_CODE_CONFIRMATION_MESSAGE_TYPE("associations_authorised_person_added_themselves"),
 
+    YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE("associations_authorisation_to_file_online_removed"),
+
     AUTHORISATION_REMOVED_MESSAGE_TYPE("associations_authorised_person_removed"),
 
     INVITATION_CANCELLED_MESSAGE_TYPE("associations_invitation_cancelled"),
