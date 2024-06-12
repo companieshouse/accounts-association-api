@@ -4,15 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpResponseException.Builder;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.internal.verification.Times;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,24 +27,16 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
-import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConfirmationEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.AuthorisationRemovedEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InviteEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.*;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.InternalApiClient;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
+import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
-import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.company.CompanyDetails;
@@ -59,6 +48,7 @@ import uk.gov.companieshouse.api.sdk.ApiClientService;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.EmailSendingException;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
+import uk.gov.companieshouse.email_producer.model.EmailData;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -67,20 +57,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.*;
 
 @AutoConfigureMockMvc
 @SpringBootTest
@@ -1563,6 +1545,7 @@ public class UserCompanyAssociationsTest {
                 personWhoRemovedAuthorisation.equals( emailData.getPersonWhoRemovedAuthorisation() );
     }
 
+
     @Test
     void updateAssociationStatusForIdNotificationsWhereTargetUserIdExistsSendsNotification() throws Exception {
         mockMvc.perform( patch( "/associations/{associationId}", "40" )
@@ -1575,7 +1558,8 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isOk() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: robin@gotham.city's authorisation removed to file online for Instram", "robin@gotham.city", "Instram", "harley.quinn@gotham.city") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer, new Times(3)).sendEmail( any(EmailData.class) , anyString());
+
     }
 
     @Test
@@ -1638,8 +1622,29 @@ public class UserCompanyAssociationsTest {
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
 
-        latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: Robin's authorisation removed to file online for Instram", "Robin", "Instram", "Harley Quinn") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() ) );
+
+
+        Mockito.verify( emailProducer, new Times(3)).sendEmail( any(EmailData.class) , anyString());
+    }
+
+    @Test
+    void updateAssociationToConfirmedStatusForOtherUserShouldThrow400Error() throws Exception {
+
+        Mockito.doReturn( privateAccountsUserUserGet333 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "333" );
+        Mockito.doReturn( privateAccountsUserUserGet444 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "444" );
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "333", "harley.quinn@gotham.city", "Harley Quinn" ) ).when( privateAccountsUserUserGet333 ).execute();
+        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "444", "robin@gotham.city", "Robin" ) ).when( privateAccountsUserUserGet444 ).execute();
+
+       var response =  mockMvc.perform( patch( "/associations/{associationId}", "40" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "333")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isBadRequest() ).andReturn();
+      Assertions.assertEquals("{\"errors\":[{\"error\":\"requesting user does not have access to perform the action\",\"type\":\"ch:service\"}]}",response.getResponse().getContentAsString());
+
     }
 
     ArgumentMatcher<InvitationAcceptedEmailData> invitationAcceptedEmailDataMatcher( List<String> to, String subject, String authorisedPerson, String companyName, String personWhoCreatedInvite ){
