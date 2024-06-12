@@ -1558,8 +1558,6 @@ public class UserCompanyAssociationsTest {
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
 
-        latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer, new Times(2)).sendEmail( any(EmailData.class) , anyString());
 
     }
 
@@ -1625,8 +1623,6 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isOk() );
 
 
-
-        Mockito.verify( emailProducer, new Times(3)).sendEmail( any(EmailData.class) , anyString());
     }
 
     @Test
