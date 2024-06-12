@@ -1,7 +1,5 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -12,6 +10,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")

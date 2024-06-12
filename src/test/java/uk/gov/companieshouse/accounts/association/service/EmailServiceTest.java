@@ -1,19 +1,5 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_CANCELLED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_REJECTED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -28,13 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
-import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConfirmationEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.AuthorisationRemovedEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationCancelledEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationRejectedEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InviteEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.*;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
@@ -43,6 +23,13 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.EmailSendingException;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.function.Supplier;
+
+import static org.mockito.ArgumentMatchers.*;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.*;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")

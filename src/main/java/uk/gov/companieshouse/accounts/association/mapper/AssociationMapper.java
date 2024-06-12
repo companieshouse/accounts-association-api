@@ -1,11 +1,12 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
-import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
+
+import java.util.Objects;
 
 @Component
 public class AssociationMapper {

@@ -1,7 +1,8 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
-import java.util.Objects;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
+
+import java.util.Objects;
 
 public class InvitationEmailBuilder extends EmailBuilder<InvitationEmailBuilder, InvitationEmailData> {
     private String inviterDisplayName;

@@ -1,7 +1,5 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
-import java.time.LocalDateTime;
-import java.util.stream.Stream;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
@@ -10,6 +8,9 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
+
+import java.time.LocalDateTime;
+import java.util.stream.Stream;
 
 @Mapper( componentModel = "spring" )
 public abstract class InvitationsMapper {

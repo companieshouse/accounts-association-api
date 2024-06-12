@@ -1,7 +1,5 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import java.util.List;
-import java.util.function.Supplier;
 import org.springframework.stereotype.Service;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
@@ -14,6 +12,9 @@ import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUse
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
+
+import java.util.List;
+import java.util.function.Supplier;
 
 @Service
 public class UsersService {
