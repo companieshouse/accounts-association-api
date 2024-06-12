@@ -1,7 +1,8 @@
 package uk.gov.companieshouse.accounts.association.models;
 
-import java.time.LocalDateTime;
 import org.springframework.data.mongodb.core.mapping.Field;
+
+import java.time.LocalDateTime;
 
 public class InvitationDao {
     @Field("invited_by")

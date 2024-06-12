@@ -16,14 +16,8 @@ import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
+import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.InvitationRequestBodyPost;
-import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPost;
-import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
-import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
@@ -82,7 +76,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             throw new BadRequestRuntimeException("Association already exists.");
         }
 
-        final var association = associationsService.upsertAssociation(companyNumber, ericIdentity, null, ApprovalRouteEnum.AUTH_CODE, null);
+        final var association = associationsService.upsertAssociation(companyNumber, ericIdentity, userDetails.getEmail(), ApprovalRouteEnum.AUTH_CODE, null);
         LOG.debugContext(xRequestId, String.format("Successfully created/updated association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
 
         final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
@@ -188,7 +182,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         }
 
         final var inviterUserDetails= Objects.requireNonNull(UserContext.getLoggedUser());
-        CompanyDetails companyDetails = null;
+        CompanyDetails companyDetails;
         try {
             LOG.debugContext( xRequestId, String.format( "Attempting to fetch %s from company-profile-api.", companyNumber ), null );
             companyDetails= companyService.fetchCompanyProfile( companyNumber );
@@ -284,7 +278,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
 
         boolean requestingAndTargetUserMatches;
-        String targetUserDisplayValue = "";
+        String targetUserDisplayValue;
         Optional<User> targetUserOptional;
         if (Objects.isNull(associationDao.getUserId())) {
             var targetUserEmail = associationDao.getUserEmail();
@@ -292,7 +286,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             targetUserOptional =
                     Optional.ofNullable(usersService.searchUserDetails(List.of(targetUserEmail)))
                             .flatMap(list -> list.stream().findFirst());
-
+            // do not allow user to accept invitation until one login account is created.
             if (newStatus.equals(CONFIRMED) && targetUserOptional.isEmpty()) {
                 LOG.error(String.format("%s: Could not find user %s, via the accounts-user-api", xRequestId, targetUserEmail));
                 throw new BadRequestRuntimeException(String.format("Could not find data for user %s", targetUserEmail));
@@ -311,10 +305,12 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             if (requestingAndTargetUserMatches) {
                 targetUserDisplayValue=requestingUserDisplayValue;
             } else {
-                if (!associationsService.confirmedAssociationExists(associationDao.getCompanyNumber(), requestingUserId)) {
+                //if requesting user and target user is different, requesting user is only allowed to remove and should have active association with the company.
+                if (newStatus.equals(CONFIRMED) || !associationsService.confirmedAssociationExists(associationDao.getCompanyNumber(), requestingUserId)) {
                     LOG.error(String.format("%s: requesting %s  user does not have access to perform the action", xRequestId, requestingUserId));
                     throw new BadRequestRuntimeException("requesting user does not have access to perform the action");
                 }
+
                 var tempUser = usersService.fetchUserDetails(associationDao.getUserId());
                 targetUserDisplayValue=Optional.ofNullable(tempUser.getDisplayName()).orElse(tempUser.getEmail());
             }

@@ -1,7 +1,8 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
-import java.util.Objects;
 import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConfirmationEmailData;
+
+import java.util.Objects;
 
 public class AuthCodeConfirmationEmailBuilder extends EmailBuilder<AuthCodeConfirmationEmailBuilder, AuthCodeConfirmationEmailData> {
 
