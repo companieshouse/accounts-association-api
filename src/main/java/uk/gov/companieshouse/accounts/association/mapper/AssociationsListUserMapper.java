@@ -1,7 +1,6 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
 import jakarta.validation.constraints.NotNull;
-import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -9,6 +8,8 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
+
+import java.util.Optional;
 
 @Component
 public class AssociationsListUserMapper {

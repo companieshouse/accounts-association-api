@@ -27,15 +27,9 @@ import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
+import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
-import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.Links;
-import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.company.CompanyDetails;
@@ -47,17 +41,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserCompanyAssociations.class)
@@ -742,7 +729,7 @@ class UserCompanyAssociationsTest {
     void addAssociationCreatesNewAssociationCorrectlyAndReturnsAssociationIdWithCreatedHttpStatus() throws Exception {
         final var associationDao = new AssociationDao();
         associationDao.setId("99");
-        Mockito.doReturn(associationDao).when(associationsService).upsertAssociation("000000", "000", null, ApprovalRouteEnum.AUTH_CODE, null);
+        Mockito.doReturn(associationDao).when(associationsService).upsertAssociation("000000", "000", "light.yagami@death.note", ApprovalRouteEnum.AUTH_CODE, null);
         Mockito.doReturn(false).when(associationsService).confirmedAssociationExists("000000", "000");
 
         final var responseJson =
@@ -794,7 +781,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( new CompanyDetails().companyNumber( "444444" ).companyName( "Sainsbury's" ) ).when( companyService ).fetchCompanyProfile( anyString() );
         Mockito.doReturn(false).when(associationsService).confirmedAssociationExists("444444", "666");
         Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "444444" );
-        Mockito.doReturn(associationDao).when(associationsService).upsertAssociation("444444", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
+        Mockito.doReturn(associationDao).when(associationsService).upsertAssociation("444444", "666", "homer.simpson@springfield.com", ApprovalRouteEnum.AUTH_CODE, null);
 
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
@@ -819,7 +806,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( new CompanyDetails().companyNumber( "444444" ).companyName( "Sainsbury's" ) ).when( companyService ).fetchCompanyProfile( anyString() );
         Mockito.doReturn(false).when(associationsService).confirmedAssociationExists("444444", "666");
         Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "444444" );
-        Mockito.doReturn(associationDao).when(associationsService).upsertAssociation("444444", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
+        Mockito.doReturn(associationDao).when(associationsService).upsertAssociation("444444", "666", "homer.simpson@springfield.com", ApprovalRouteEnum.AUTH_CODE, null);
 
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")

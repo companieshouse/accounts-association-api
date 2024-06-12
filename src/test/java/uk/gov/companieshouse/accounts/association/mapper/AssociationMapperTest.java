@@ -1,9 +1,5 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
-import static org.mockito.ArgumentMatchers.any;
-
-import java.time.LocalDateTime;
-import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -24,6 +20,11 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusE
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
