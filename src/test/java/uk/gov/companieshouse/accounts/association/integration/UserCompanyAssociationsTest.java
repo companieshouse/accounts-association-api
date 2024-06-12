@@ -1547,6 +1547,7 @@ public class UserCompanyAssociationsTest {
 
 
     @Test
+    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD )
     void updateAssociationStatusForIdNotificationsWhereTargetUserIdExistsSendsNotification() throws Exception {
         mockMvc.perform( patch( "/associations/{associationId}", "40" )
                         .header("X-Request-Id", "theId123")
@@ -1606,6 +1607,7 @@ public class UserCompanyAssociationsTest {
     }
 
     @Test
+    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD )
     void updateAssociationStatusForIdNotificationsUsesDisplayNamesWhenAvailable() throws Exception {
 
         Mockito.doReturn( privateAccountsUserUserGet333 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "333" );
