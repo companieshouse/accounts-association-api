@@ -64,17 +64,22 @@ public class AssociationsService {
             @NotNull final User user, List<String> status, final Integer pageIndex, final Integer itemsPerPage,
             final String companyNumber) {
 
+        var results = fetchAssociationsDaoForUserStatusAndCompany(user,status,pageIndex,itemsPerPage,companyNumber);
+
+        return associationsListUserMapper.daoToDto(results, user);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AssociationDao> fetchAssociationsDaoForUserStatusAndCompany(@NotNull final User user, List<String> status, final Integer pageIndex, final Integer itemsPerPage,
+                                                                            final String companyNumber){
         if (Objects.isNull(status) || status.isEmpty()) {
             status = Collections.singletonList(Association.StatusEnum.CONFIRMED.getValue());
 
         }
 
-        Page<AssociationDao> results = associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike(
-                user.getUserId(),user.getEmail(), status, Optional.ofNullable(companyNumber).orElse(""), PageRequest.of(pageIndex, itemsPerPage))
-                ;
+        return associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike(
+                user.getUserId(),user.getEmail(), status, Optional.ofNullable(companyNumber).orElse(""), PageRequest.of(pageIndex, itemsPerPage));
 
-
-        return associationsListUserMapper.daoToDto(results, user);
     }
 
     @Transactional(readOnly = true)
@@ -128,7 +133,12 @@ public class AssociationsService {
     }
 
     @Transactional
-    public AssociationDao upsertAssociation(final String companyNumber,
+    public AssociationDao upsertAssociation(AssociationDao associationDao){
+        return  associationsRepository.save(associationDao);
+    }
+
+    @Transactional
+    public AssociationDao createAssociation(final String companyNumber,
                                             final String userId,
                                             final String userEmail,
                                             final ApprovalRouteEnum approvalRoute,
@@ -141,14 +151,7 @@ public class AssociationsService {
             throw new NullPointerException("UserId or UserEmail should be provided");
         }
 
-        Optional<AssociationDao> existingAssociation;
-        if (userId != null) {
-            existingAssociation = associationsRepository.fetchAssociationForCompanyNumberAndUserId(companyNumber, userId);
-        } else {
-            existingAssociation = associationsRepository.fetchAssociationForCompanyNumberAndUserEmail(companyNumber, userEmail);
-        }
-
-        final var association = existingAssociation.orElseGet(AssociationDao::new);
+        final var association = new AssociationDao();
         association.setCompanyNumber(companyNumber);
         association.setUserId(userId);
         association.setUserEmail(userEmail);
