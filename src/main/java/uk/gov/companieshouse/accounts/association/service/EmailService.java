@@ -111,7 +111,7 @@ public class EmailService {
         LOG.infoContext(xRequestId,
                 new EmailNotification(
                         MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE,
-                        StaticPropertyUtil.APPLICATION_NAMESPACE,
+                        removedByDisplayName,
                         user.getEmail(),
                         companyDetails.getCompanyNumber()).toMessage(), null);
     }
