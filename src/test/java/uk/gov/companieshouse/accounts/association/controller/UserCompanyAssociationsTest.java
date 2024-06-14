@@ -13,6 +13,10 @@ import org.mockito.internal.verification.Times;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -22,6 +26,7 @@ import uk.gov.companieshouse.accounts.association.exceptions.InternalServerError
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
+import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
@@ -36,6 +41,7 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -46,6 +52,9 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
+import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
+import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.REMOVED;
 
 @WebMvcTest(UserCompanyAssociations.class)
 @Tag("unit-test")
@@ -62,6 +71,8 @@ class UserCompanyAssociationsTest {
     private CompanyService companyService;
     @MockBean
     private AssociationsService associationsService;
+    @MockBean
+    private AssociationsRepository associationsRepository;
     @MockBean
     private EmailService emailService;
     private Association associationOne;
@@ -699,7 +710,9 @@ class UserCompanyAssociationsTest {
 
     @Test
     void addAssociationWithExistingAssociationReturnsBadRequest() throws Exception {
-        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists("333333", "9999");
+        associationDaoOne.setStatus(StatusEnum.CONFIRMED.getValue());
+        Page<AssociationDao> page = new PageImpl<>(List.of(associationDaoOne), PageRequest.of(1,15),15);
+        Mockito.doReturn(page).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(scrooge,List.of(AWAITING_APPROVAL.getValue(), CONFIRMED.getValue(), REMOVED.getValue()),0,15,"333333");
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "9999")
@@ -729,8 +742,9 @@ class UserCompanyAssociationsTest {
     void addAssociationCreatesNewAssociationCorrectlyAndReturnsAssociationIdWithCreatedHttpStatus() throws Exception {
         final var associationDao = new AssociationDao();
         associationDao.setId("99");
-        Mockito.doReturn(associationDao).when(associationsService).upsertAssociation("000000", "000", "light.yagami@death.note", ApprovalRouteEnum.AUTH_CODE, null);
-        Mockito.doReturn(false).when(associationsService).confirmedAssociationExists("000000", "000");
+        Mockito.doReturn(associationDao).when(associationsService).createAssociation("000000", "000", null, ApprovalRouteEnum.AUTH_CODE, null);
+
+        Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(any(),any(), any(),any(),anyString());
 
         final var responseJson =
                 mockMvc.perform(post("/associations")
@@ -779,9 +793,13 @@ class UserCompanyAssociationsTest {
 
         Mockito.doReturn( new User().email( "homer.simpson@springfield.com" ) ).when( usersService ).fetchUserDetails( anyString() );
         Mockito.doReturn( new CompanyDetails().companyNumber( "444444" ).companyName( "Sainsbury's" ) ).when( companyService ).fetchCompanyProfile( anyString() );
-        Mockito.doReturn(false).when(associationsService).confirmedAssociationExists("444444", "666");
+
+
+        Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(any(),any(), any(),any(),anyString());
+
+
         Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "444444" );
-        Mockito.doReturn(associationDao).when(associationsService).upsertAssociation("444444", "666", "homer.simpson@springfield.com", ApprovalRouteEnum.AUTH_CODE, null);
+        Mockito.doReturn(associationDao).when(associationsService).createAssociation("444444", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
 
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
@@ -796,6 +814,46 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
+    void existingAssociationWithStatusAwaitingApprovalWhenPostedShouldUpdateAssociationWithStatusConfirmed() throws Exception {
+        associationDaoOne.setStatus(AWAITING_APPROVAL.getValue());
+        Mockito.doReturn(new CompanyDetails("active","Sainsbury's","333333")).when(companyService).fetchCompanyProfile("333333");
+
+        Page<AssociationDao> page = new PageImpl<>(List.of(associationDaoOne), PageRequest.of(1,15),15);
+        Mockito.doReturn(page).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(scrooge,List.of(AWAITING_APPROVAL.getValue(), CONFIRMED.getValue(), REMOVED.getValue()),0,15,"333333");
+        Mockito.doReturn(associationDaoOne).when(associationsService).upsertAssociation(any(AssociationDao.class));
+        mockMvc.perform(post("/associations")
+                        .header("Eric-identity", "9999")
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"company_number\":\"333333\"}"))
+                .andExpect(status().isCreated());
+
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUsers( eq( "theId123" ), argThat( companyDetailsMatcher( "333333", "Sainsbury's" ) ), eq( "Scrooge McDuck" ), argThat(List::isEmpty) );
+    }
+
+    @Test
+    void existingAssociationWithStatusRemovedWhenPostedShouldUpdateAssociationWithStatusConfirmed() throws Exception {
+        associationDaoOne.setStatus(REMOVED.getValue());
+        Mockito.doReturn(new CompanyDetails("active","Sainsbury's","333333")).when(companyService).fetchCompanyProfile("333333");
+
+        Page<AssociationDao> page = new PageImpl<>(List.of(associationDaoOne), PageRequest.of(1,15),15);
+        Mockito.doReturn(page).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(scrooge,List.of(AWAITING_APPROVAL.getValue(), CONFIRMED.getValue(), REMOVED.getValue()),0,15,"333333");
+        Mockito.doReturn(associationDaoOne).when(associationsService).upsertAssociation(any(AssociationDao.class));
+        mockMvc.perform(post("/associations")
+                        .header("Eric-identity", "9999")
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"company_number\":\"333333\"}"))
+                .andExpect(status().isCreated());
+
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUsers( eq( "theId123" ), argThat( companyDetailsMatcher( "333333", "Sainsbury's" ) ), eq( "Scrooge McDuck" ), argThat(List::isEmpty) );
+    }
+
+    @Test
     void addAssociationWithUserThatHasDisplayNameUsesDisplayName() throws Exception {
         Supplier<User> userSupplier = () -> new User().userId("9999");
 
@@ -804,9 +862,9 @@ class UserCompanyAssociationsTest {
 
         Mockito.doReturn( new User().email( "homer.simpson@springfield.com" ).displayName( "Homer Simpson" ) ).when( usersService ).fetchUserDetails( anyString() );
         Mockito.doReturn( new CompanyDetails().companyNumber( "444444" ).companyName( "Sainsbury's" ) ).when( companyService ).fetchCompanyProfile( anyString() );
-        Mockito.doReturn(false).when(associationsService).confirmedAssociationExists("444444", "666");
+        Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(any(),any(), any(),any(),anyString());
         Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "444444" );
-        Mockito.doReturn(associationDao).when(associationsService).upsertAssociation("444444", "666", "homer.simpson@springfield.com", ApprovalRouteEnum.AUTH_CODE, null);
+        Mockito.doReturn(associationDao).when(associationsService).createAssociation("444444", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
 
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
@@ -1580,7 +1638,7 @@ class UserCompanyAssociationsTest {
         final var association = new AssociationDao();
         association.setId("99");
         association.setApprovalExpiryAt( now );
-        Mockito.doReturn(association).when(associationsService).upsertAssociation("444444", "111", null, ApprovalRouteEnum.INVITATION, "9999");
+        Mockito.doReturn(association).when(associationsService).createAssociation("444444", "111", null, ApprovalRouteEnum.INVITATION, "9999");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -1613,7 +1671,7 @@ class UserCompanyAssociationsTest {
         final var association = new AssociationDao();
         association.setId("99");
         association.setApprovalExpiryAt( now );
-        Mockito.doReturn(association).when(associationsService).upsertAssociation("333333", null, "madonna@singer.com", ApprovalRouteEnum.INVITATION, "9999");
+        Mockito.doReturn(association).when(associationsService).createAssociation("333333", null, "madonna@singer.com", ApprovalRouteEnum.INVITATION, "9999");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
