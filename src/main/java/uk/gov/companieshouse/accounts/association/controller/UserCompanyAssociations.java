@@ -267,6 +267,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
     @Override
     public ResponseEntity<Void> updateAssociationStatusForId(final String xRequestId, final String associationId, final String requestingUserId, final RequestBodyPut requestBody) {
+
         final var newStatus = requestBody.getStatus();
 
         LOG.infoContext(xRequestId, String.format("Attempting to update association status for association %s to %s.", associationId, newStatus.getValue()), null);
@@ -282,20 +283,36 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         }
 
         final AssociationDao associationDao = associationOptional.get();
+
+
         final var oldStatus = associationDao.getStatus();
+
+
         final var timestampKey = newStatus.equals(CONFIRMED) ? "approved_at" : "removed_at";
         var update = new Update()
                 .set("status", newStatus.getValue())
                 .set(timestampKey, LocalDateTime.now().toString());
 
+        final boolean requestingAndTargetUserEmailMatches = Objects.nonNull(associationDao.getUserEmail()) && associationDao.getUserEmail().equals(requestingUserDetails.getEmail());
+        final boolean requestingAndTargetUserIdMatches = Objects.nonNull(associationDao.getUserId()) && associationDao.getUserId().equals(requestingUserId);
+        final boolean requestingAndTargetUserMatches = requestingAndTargetUserIdMatches || requestingAndTargetUserEmailMatches;
+        final boolean associationWithUserEmailExists = Objects.nonNull(associationDao.getUserEmail());
 
-        boolean requestingAndTargetUserMatches;
-        String targetUserDisplayValue;
-        Optional<User> targetUserOptional;
-        if (Objects.isNull(associationDao.getUserId())) {
+
+        String targetUserDisplayValue = requestingUserDisplayValue;
+
+        if( !requestingAndTargetUserMatches ){
+            //if requesting user and target user is different, requesting user is only allowed to remove and should have active association with the company.
+            if (newStatus.equals(CONFIRMED) || !associationsService.confirmedAssociationExists(associationDao.getCompanyNumber(), requestingUserId)) {
+                LOG.error(String.format("%s: requesting %s  user does not have access to perform the action", xRequestId, requestingUserId));
+                throw new BadRequestRuntimeException("requesting user does not have access to perform the action");
+            }
+        }
+
+        if (associationWithUserEmailExists) {
             var targetUserEmail = associationDao.getUserEmail();
-            requestingAndTargetUserMatches = requestingUserDetails.getEmail().equals(targetUserEmail);
-            targetUserOptional =
+
+            Optional<User> targetUserOptional =
                     Optional.ofNullable(usersService.searchUserDetails(List.of(targetUserEmail)))
                             .flatMap(list -> list.stream().findFirst());
             // do not allow user to accept invitation until one login account is created.
@@ -312,20 +329,9 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             } else {
                 targetUserDisplayValue = targetUserEmail;
             }
-        } else {
-            requestingAndTargetUserMatches = requestingUserDetails.getUserId().equals(associationDao.getUserId());
-            if (requestingAndTargetUserMatches) {
-                targetUserDisplayValue=requestingUserDisplayValue;
-            } else {
-                //if requesting user and target user is different, requesting user is only allowed to remove and should have active association with the company.
-                if (newStatus.equals(CONFIRMED) || !associationsService.confirmedAssociationExists(associationDao.getCompanyNumber(), requestingUserId)) {
-                    LOG.error(String.format("%s: requesting %s  user does not have access to perform the action", xRequestId, requestingUserId));
-                    throw new BadRequestRuntimeException("requesting user does not have access to perform the action");
-                }
-
+        } else if(!requestingAndTargetUserMatches){
                 var tempUser = usersService.fetchUserDetails(associationDao.getUserId());
                 targetUserDisplayValue=Optional.ofNullable(tempUser.getDisplayName()).orElse(tempUser.getEmail());
-            }
         }
 
 
