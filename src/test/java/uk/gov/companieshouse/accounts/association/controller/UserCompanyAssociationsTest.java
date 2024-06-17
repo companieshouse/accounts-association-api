@@ -1176,7 +1176,9 @@ class UserCompanyAssociationsTest {
                 .userId("444")
                 .email("robin@gotham.city")
                 .displayName("Robin");
-        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( "444" );
+        UsersList list = new UsersList();
+        list.add(targetUser);
+        Mockito.doReturn( list ).when( usersService ).searchUserDetails( List.of("robin@gotham.city"));
 
         List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "the.joker@gotham.city" ) );
         Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x999999" );
@@ -1190,7 +1192,9 @@ class UserCompanyAssociationsTest {
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
 
-        Mockito.verify( emailService ).sendAuthorisationRemovedEmailToAssociatedUsers( eq( "theId123" ), eq( companyDetails ), eq( "Harley Quinn" ), eq( "Robin" ), any() );
+        Mockito.verify( emailService ).sendAuthorisationRemovedEmailToRemovedUser( eq( "theId123" ), eq( companyDetails ), eq( "Harley Quinn" ), any() );
+
+        Mockito.verify( emailService ).sendAuthorisationRemovedEmailToAssociatedUsers( eq( "theId123" ), eq( companyDetails ), eq( "Harley Quinn" ),eq("Robin") ,any() );
     }
 
     @Test
@@ -1207,7 +1211,7 @@ class UserCompanyAssociationsTest {
         final var associationFortyTwo = new AssociationDao();
         associationFortyTwo.setCompanyNumber("x888888");
         associationFortyTwo.setUserId("333");
-        associationFortyTwo.setUserEmail("harley.quinn@gotham.city");
+
         associationFortyTwo.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
         associationFortyTwo.setId("42");
         associationFortyTwo.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
@@ -1244,6 +1248,84 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
+    void confirmUserStatusForExistingAssociationWithoutOneLoginUserShouldThrow400BadRequest() throws Exception {
+        final var invitationFourtyTwoA = new InvitationDao();
+        invitationFourtyTwoA.setInvitedBy("222");
+        invitationFourtyTwoA.setInvitedAt( now.plusDays(16) );
+
+        final var invitationFourtyTwoB = new InvitationDao();
+        invitationFourtyTwoB.setInvitedBy("444");
+        invitationFourtyTwoB.setInvitedAt( now.plusDays(14) );
+
+        final var associationFourtyTwo = new AssociationDao();
+        associationFourtyTwo.setCompanyNumber("x888888");
+        associationFourtyTwo.setUserEmail("harley.quinn@gotham.city");
+        associationFourtyTwo.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationFourtyTwo.setId("42");
+        associationFourtyTwo.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationFourtyTwo.setInvitations( List.of( invitationFourtyTwoA, invitationFourtyTwoB ) );
+
+        Mockito.doReturn(Optional.of(associationFourtyTwo)).when(associationsService).findAssociationDaoById("42");
+
+
+        final var companyDetails = new CompanyDetails().companyName( "Twitter" );
+        Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( "x888888" );
+
+       var result =  mockMvc.perform( patch( "/associations/{associationId}", "42" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "333")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isBadRequest() )
+                .andReturn();
+       Assertions.assertEquals("{\"errors\":[{\"error\":\"Could not find data for user harley.quinn@gotham.city\",\"type\":\"ch:service\"}]}", result.getResponse().getContentAsString());
+
+    }
+
+    @Test
+    void confirmUserStatusRequestForExistingAssociationWithoutOneLoginUserAndDifferentRequestingUserShouldThrow400BadRequest() throws Exception {
+        final var invitationFourtyTwoA = new InvitationDao();
+        invitationFourtyTwoA.setInvitedBy("222");
+        invitationFourtyTwoA.setInvitedAt( now.plusDays(16) );
+
+        final var invitationFourtyTwoB = new InvitationDao();
+        invitationFourtyTwoB.setInvitedBy("444");
+        invitationFourtyTwoB.setInvitedAt( now.plusDays(14) );
+
+        final var associationFourtyTwo = new AssociationDao();
+        associationFourtyTwo.setCompanyNumber("x888888");
+        associationFourtyTwo.setUserEmail("harley.quinn@gotham.city");
+        associationFourtyTwo.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
+        associationFourtyTwo.setId("42");
+        associationFourtyTwo.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
+        associationFourtyTwo.setInvitations( List.of( invitationFourtyTwoA, invitationFourtyTwoB ) );
+
+        Mockito.doReturn(Optional.of(associationFourtyTwo)).when(associationsService).findAssociationDaoById("42");
+
+        final var invitedByUser = new User()
+                .userId("222")
+                .email("the.joker@gotham.city");
+        Mockito.doReturn( invitedByUser ).when( usersService ).fetchUserDetails( "222" );
+
+        final var companyDetails = new CompanyDetails().companyName( "Twitter" );
+        Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( "x888888" );
+
+        var result =  mockMvc.perform( patch( "/associations/{associationId}", "42" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "222")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isBadRequest() )
+                .andReturn();
+        Assertions.assertEquals("{\"errors\":[{\"error\":\"requesting user does not have access to perform the action\",\"type\":\"ch:service\"}]}", result.getResponse().getContentAsString());
+
+    }
+
+    @Test
     void updateAssociationStatusForIdUserAcceptedInvitationNotificationsUsesDisplayNamesWhenAvailable() throws Exception {
         final var invitationFourtyTwoA = new InvitationDao();
         invitationFourtyTwoA.setInvitedBy("222");
@@ -1256,7 +1338,7 @@ class UserCompanyAssociationsTest {
         final var associationFourtyTwo = new AssociationDao();
         associationFourtyTwo.setCompanyNumber("x888888");
         associationFourtyTwo.setUserId("333");
-        associationFourtyTwo.setUserEmail("harley.quinn@gotham.city");
+
         associationFourtyTwo.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
         associationFourtyTwo.setId("42");
         associationFourtyTwo.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
