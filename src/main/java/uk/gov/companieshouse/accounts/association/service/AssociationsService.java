@@ -219,8 +219,8 @@ public class AssociationsService {
     }
 
     @Transactional(readOnly = true)
-    public InvitationsList fetchActiveInvitations(final String userId, final int pageIndex, final int itemsPerPage) {
-        List<Invitation> allInvitations = associationsRepository.fetchAssociationsWithActiveInvitations(userId, LocalDateTime.now())
+    public InvitationsList fetchActiveInvitations(final User user, final int pageIndex, final int itemsPerPage) {
+        List<Invitation> allInvitations = associationsRepository.fetchAssociationsWithActiveInvitations(user.getUserId(), user.getEmail(), LocalDateTime.now())
                 .map(this::filterForMostRecentInvitation)
                 .sorted(Comparator.comparing(AssociationDao::getApprovalExpiryAt).reversed())
                 .flatMap(invitationMapper::daoToDto)

@@ -111,7 +111,9 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
 
-        final var invitations = associationsService.fetchActiveInvitations( ericIdentity, pageIndex, itemsPerPage );
+        final var user = UserContext.getLoggedUser();
+
+        final var invitations = associationsService.fetchActiveInvitations( user, pageIndex, itemsPerPage );
         LOG.debugContext( xRequestId, String.format( "Successfully retrieved active invitations for user %s", ericIdentity ), null );
 
        return new ResponseEntity<>( invitations, HttpStatus.OK );
