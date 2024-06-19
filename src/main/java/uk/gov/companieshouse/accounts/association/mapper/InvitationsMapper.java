@@ -27,10 +27,14 @@ public abstract class InvitationsMapper {
 
     public Stream<Invitation> daoToDto( AssociationDao association ){
         return association.getInvitations()
-                          .stream()
-                          .map( this::daoToDto )
-                          .map( invitation -> invitation.associationId( association.getId() ) )
-                          .map( invitation -> invitation.isActive( association.getApprovalExpiryAt().isAfter( LocalDateTime.now() ) ) );
+                .stream()
+                .map(invitationDao -> {
+                    boolean isActive = LocalDateTime.now().isBefore(invitationDao.getExpiredAt());
+                    Invitation invitation = daoToDto(invitationDao);
+                    invitation.setAssociationId(association.getId());
+                    invitation.setIsActive(isActive);
+                    return invitation;
+                });
     }
 
 }

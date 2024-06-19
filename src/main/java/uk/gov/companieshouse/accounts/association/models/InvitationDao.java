@@ -4,6 +4,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 
+import static uk.gov.companieshouse.accounts.association.service.AssociationsService.DAYS_SINCE_INVITE_TILL_EXPIRES;
+
 public class InvitationDao {
     @Field("invited_by")
     private String invitedBy;
@@ -24,6 +26,10 @@ public class InvitationDao {
 
     public void setInvitedAt(LocalDateTime invitedAt) {
         this.invitedAt = invitedAt;
+    }
+
+    public LocalDateTime getExpiredAt() {
+        return invitedAt.plusDays(DAYS_SINCE_INVITE_TILL_EXPIRES);
     }
 
     @Override
