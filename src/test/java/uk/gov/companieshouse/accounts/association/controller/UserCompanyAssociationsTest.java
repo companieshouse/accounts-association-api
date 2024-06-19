@@ -1947,7 +1947,9 @@ class UserCompanyAssociationsTest {
 
     @Test
     void fetchActiveInvitationsForUserRetrievesActiveInvitationsInCorrectOrderAndPaginatesCorrectly() throws Exception {
-            mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+        when(usersService.fetchUserDetails("99999")).thenReturn(new User().userId("99999"));
+
+        mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
                             .header("X-Request-Id", "theId123")
                             .header("Eric-identity", "99999")
                             .header("ERIC-Identity-Type", "oauth2")
@@ -1956,11 +1958,13 @@ class UserCompanyAssociationsTest {
                     .andReturn()
                     .getResponse();
 
-        Mockito.verify( associationsService ).fetchActiveInvitations( eq( "99999" ), eq( 1 ), eq( 1 ) );
+        Mockito.verify( associationsService ).fetchActiveInvitations( argThat( user -> user.getUserId().equals("99999") ), eq( 1 ), eq( 1 ) );
     }
 
     @Test
     void fetchActiveInvitationsForUserWithoutPageIndexAndItemsPerPageUsesDefaults() throws Exception {
+        when(usersService.fetchUserDetails("99999")).thenReturn(new User().userId("99999"));
+
         mockMvc.perform( get( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "99999")
@@ -1970,11 +1974,13 @@ class UserCompanyAssociationsTest {
                 .andReturn()
                 .getResponse();
 
-        Mockito.verify( associationsService ).fetchActiveInvitations( eq( "99999" ), eq( 0 ), eq( 15 ) );
+        Mockito.verify( associationsService ).fetchActiveInvitations( argThat( user -> user.getUserId().equals("99999") ), eq( 0 ), eq( 15 ) );
     }
 
     @Test
     void fetchActiveInvitationsForUserWithPaginationAndVerifyResponse() throws Exception {
+        when(usersService.fetchUserDetails("99999")).thenReturn(new User().userId("99999"));
+
         Invitation invitation1 = new Invitation();
         invitation1.setInvitedBy("user1@example.com");
         invitation1.setInvitedAt(LocalDateTime.now().toString());
@@ -1996,7 +2002,7 @@ class UserCompanyAssociationsTest {
         mockLinks.setNext("/associations/invitations?page_index=2&items_per_page=1");
         mockInvitationsList.setLinks(mockLinks);
 
-        when(associationsService.fetchActiveInvitations(eq("99999"), eq(1), eq(1)))
+        when(associationsService.fetchActiveInvitations(argThat( user -> user.getUserId().equals("99999") ), eq(1), eq(1)))
                 .thenReturn(mockInvitationsList);
 
         MvcResult result = mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
@@ -2020,7 +2026,7 @@ class UserCompanyAssociationsTest {
         assertEquals("/associations/invitations?page_index=1&items_per_page=1", invitationsList.getLinks().getSelf());
         assertEquals("/associations/invitations?page_index=2&items_per_page=1", invitationsList.getLinks().getNext());
 
-        Mockito.verify(associationsService).fetchActiveInvitations(eq("99999"), eq(1), eq(1));
+        Mockito.verify(associationsService).fetchActiveInvitations(argThat( user -> user.getUserId().equals("99999") ), eq(1), eq(1));
     }
 
     @Test

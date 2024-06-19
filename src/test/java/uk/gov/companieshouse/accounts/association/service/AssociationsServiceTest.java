@@ -1145,7 +1145,7 @@ class AssociationsServiceTest {
     @ParameterizedTest
     @MethodSource("userIdsProvider")
     void fetchActiveInvitationsWithNullOrMalformedOrNonexistentUserIdReturnsEmptyList(String userId) {
-        InvitationsList invitations = associationsService.fetchActiveInvitations(userId, 0, 1);
+        InvitationsList invitations = associationsService.fetchActiveInvitations(new User().userId(userId), 0, 1);
 
         assertTrue(invitations.getItems().isEmpty());
         assertEquals(1, invitations.getItemsPerPage());

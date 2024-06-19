@@ -43,7 +43,7 @@ public interface AssociationsRepository extends MongoRepository<AssociationDao, 
     @Query( " { '_id': ?0 } " )
     int updateAssociation( String associationId, Update update );
 
-    @Query( "{ 'user_id': ?0, 'status': 'awaiting-approval', 'approval_expiry_at': { $gt: ?1 } }" )
-    Stream<AssociationDao> fetchAssociationsWithActiveInvitations( final String userId, final LocalDateTime now );
+    @Query( "{ '$or': [ { 'user_id': { '$ne': null, '$eq': ?0 } }, { 'user_email': { '$ne': null, '$eq': ?1 } } ], 'status': 'awaiting-approval', 'approval_expiry_at': { $gt: ?2 } }" )
+    Stream<AssociationDao> fetchAssociationsWithActiveInvitations( final String userId, final String userEmail, final LocalDateTime now );
 
 }
