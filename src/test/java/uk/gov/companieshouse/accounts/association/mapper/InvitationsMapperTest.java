@@ -44,35 +44,58 @@ public class InvitationsMapperTest {
     }
 
     @Test
-    void daoToDtoWithActiveInvitationMapsAssociationDaoToInvitations(){
-        final var invitationDao = new InvitationDao();
-        invitationDao.setInvitedAt( now );
-        invitationDao.setInvitedBy( "111" );
+    void daoToDtoWithActiveAndInactiveInvitationsMapsAssociationDaoToInvitations() {
+        final var activeInvitationDao = new InvitationDao();
+        activeInvitationDao.setInvitedAt(now);
+        activeInvitationDao.setInvitedBy("111");
+
+        final var inactiveInvitationDao = new InvitationDao();
+        inactiveInvitationDao.setInvitedAt(now.minusDays(7));
+        inactiveInvitationDao.setInvitedBy("222");
 
         final var associationDao = new AssociationDao();
-        associationDao.setId( "1" );
-        associationDao.setApprovalExpiryAt( now.plusDays( 7 ) );
-        associationDao.setInvitations( List.of( invitationDao ) );
+        associationDao.setId("1");
+        associationDao.setApprovalExpiryAt(now.plusDays(7));
+        associationDao.setInvitations(List.of(activeInvitationDao, inactiveInvitationDao));
 
-        final var invitations = invitationsMapper.daoToDto( associationDao ).toList();
-        final var invitation = invitations.getFirst();
+        final var invitations = invitationsMapper.daoToDto(associationDao).toList();
 
-        Assertions.assertEquals( 1, invitations.size() );
-        Assertions.assertEquals( "111", invitation.getInvitedBy() );
-        Assertions.assertEquals( reduceTimestampResolution( now.toString() ), reduceTimestampResolution( invitation.getInvitedAt() ) );
-        Assertions.assertEquals( "1", invitation.getAssociationId() );
-        Assertions.assertTrue( invitation.getIsActive() );
+        Assertions.assertEquals(2, invitations.size());
+
+        final var activeInvitation = invitations.stream()
+                .filter(inv -> "111".equals(inv.getInvitedBy()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Active invitation not found"));
+
+        final var inactiveInvitation = invitations.stream()
+                .filter(inv -> "222".equals(inv.getInvitedBy()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Inactive invitation not found"));
+
+        // Active invitation assertions
+        Assertions.assertEquals("111", activeInvitation.getInvitedBy());
+        Assertions.assertEquals(reduceTimestampResolution(now.toString()), reduceTimestampResolution(activeInvitation.getInvitedAt()));
+        Assertions.assertEquals("1", activeInvitation.getAssociationId());
+        Assertions.assertTrue(activeInvitation.getIsActive());
+
+        // Inactive invitation assertions
+        Assertions.assertEquals("222", inactiveInvitation.getInvitedBy());
+        Assertions.assertEquals(reduceTimestampResolution(now.minusDays(7).toString()), reduceTimestampResolution(inactiveInvitation.getInvitedAt()));
+        Assertions.assertEquals("1", inactiveInvitation.getAssociationId());
+        Assertions.assertFalse(inactiveInvitation.getIsActive());
     }
 
     @Test
     void daoToDtoWithInactiveInvitationMapsAssociationDaoToInvitations(){
+        final var sevenDaysAgo = now.minusDays(7);
+
         final var invitationDao = new InvitationDao();
-        invitationDao.setInvitedAt( now );
+        invitationDao.setInvitedAt( sevenDaysAgo );
         invitationDao.setInvitedBy( "111" );
 
         final var associationDao = new AssociationDao();
         associationDao.setId( "1" );
-        associationDao.setApprovalExpiryAt( now.minusDays( 7 ) );
+        associationDao.setApprovalExpiryAt( now );
         associationDao.setInvitations( List.of( invitationDao ) );
 
         final var invitations = invitationsMapper.daoToDto( associationDao ).toList();
@@ -80,7 +103,7 @@ public class InvitationsMapperTest {
 
         Assertions.assertEquals( 1, invitations.size() );
         Assertions.assertEquals( "111", invitation.getInvitedBy() );
-        Assertions.assertEquals( reduceTimestampResolution( now.toString() ), reduceTimestampResolution( invitation.getInvitedAt() ) );
+        Assertions.assertEquals( reduceTimestampResolution( sevenDaysAgo.toString() ), reduceTimestampResolution( invitation.getInvitedAt() ) );
         Assertions.assertEquals( "1", invitation.getAssociationId() );
         Assertions.assertFalse( invitation.getIsActive() );
     }
