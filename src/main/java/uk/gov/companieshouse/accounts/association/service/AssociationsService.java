@@ -17,23 +17,32 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
-import uk.gov.companieshouse.api.accounts.associations.model.*;
+import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
+import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.Links;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 
 @Service
 public class AssociationsService {
-
 
     private final AssociationsRepository associationsRepository;
     private final AssociationsListUserMapper associationsListUserMapper;
@@ -45,6 +54,9 @@ public class AssociationsService {
     private final InvitationsMapper invitationMapper;
 
     private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
+
+    public static final int DAYS_SINCE_INVITE_TILL_EXPIRES = 7;
+
 
     @Autowired
     public AssociationsService(AssociationsRepository associationsRepository,
@@ -176,7 +188,7 @@ public class AssociationsService {
         invitationDao.setInvitedAt(LocalDateTime.now());
         invitationDao.setInvitedBy(invitedByUserId);
         association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
-        association.setApprovalExpiryAt(LocalDateTime.now().plusDays(7));
+        association.setApprovalExpiryAt(LocalDateTime.now().plusDays(DAYS_SINCE_INVITE_TILL_EXPIRES));
         association.getInvitations().add(invitationDao);
     }
 
