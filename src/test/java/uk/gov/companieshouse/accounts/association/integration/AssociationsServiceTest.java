@@ -1027,9 +1027,9 @@ public class AssociationsServiceTest {
 
     @Test
     void fetchActiveInvitationsWithNullOrMalformedOrNonexistentUserIdReturnsEmptyList(){
-        Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( null, 0, 1 ).getItems() );
-        Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( "$$$", 0, 1 ).getItems() );
-        Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( "9191", 0, 1 ).getItems() );
+        Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( new User(), 0, 1 ).getItems() );
+        Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( new User().userId("$$$"), 0, 1 ).getItems() );
+        Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( new User().userId("9191"), 0, 1 ).getItems() );
     }
 
     ArgumentMatcher<AssociationDao> associationIdMatches( String associationId ){
@@ -1078,7 +1078,7 @@ public class AssociationsServiceTest {
         Mockito.doReturn( Stream.of( invitationThirtyFive ) ).when( invitationsMapper ).daoToDto( argThat( associationIdMatches( "34" ) ) );
         Mockito.doReturn( Stream.of( invitationThirtyFive ) ).when( invitationsMapper ).daoToDto( argThat( associationIdMatches( "35" ) ) );
 
-        associationsService.fetchActiveInvitations( "99999", 1, 1 );
+        associationsService.fetchActiveInvitations( new User().userId("99999"), 1, 1 );
 
         Mockito.verify(invitationsMapper).daoToDto(argThat(associationDaoMatches("35", now.plusDays(8), "444", now.minusDays(1))));
     }
