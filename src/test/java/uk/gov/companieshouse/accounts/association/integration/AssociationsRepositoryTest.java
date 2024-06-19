@@ -909,16 +909,29 @@ class AssociationsRepositoryTest {
     }
 
     @Test
-    void fetchAssociationsWithActiveInvitationsWithNullOrMalformedOrNonExistentUserIdOrNullTimestampReturnsEmptyStream(){
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, LocalDateTime.now() ).toList().isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "$$$", LocalDateTime.now() ).toList().isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "9191", LocalDateTime.now() ).toList().isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "99999", null ).toList().isEmpty() );
+    void fetchAssociationsWithActiveInvitationsWithNullOrMalformedOrNonExistentUserIdOrEmailOrNullTimestampReturnsEmptyStream(){
+        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, null, LocalDateTime.now() ).toList().isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "$$$", null,LocalDateTime.now() ).toList().isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "9191", null,LocalDateTime.now() ).toList().isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "99999", null,null ).toList().isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "$$$",LocalDateTime.now() ).toList().isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "ronald@mcdonalds.com",LocalDateTime.now() ).toList().isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "ronald@mcdonalds.com",null ).toList().isEmpty() );
     }
 
     @Test
-    void fetchAssociationsWithActiveInvitationsAppliesFiltersCorrectly(){
-        final var associationIds = associationsRepository.fetchAssociationsWithActiveInvitations( "99999", LocalDateTime.now() )
+    void fetchAssociationsWithActiveInvitationsBasedOnUserIdAppliesFiltersCorrectly(){
+        final var associationIds = associationsRepository.fetchAssociationsWithActiveInvitations( "99999", null, LocalDateTime.now() )
+                .map( AssociationDao::getId )
+                .toList();
+
+        Assertions.assertEquals( 2, associationIds.size() );
+        Assertions.assertTrue( associationIds.containsAll( List.of( "18", "19" ) ) );
+    }
+    
+    @Test
+    void fetchAssociationsWithActiveInvitationsBasedOnUserEmailAppliesFiltersCorrectly(){
+        final var associationIds = associationsRepository.fetchAssociationsWithActiveInvitations( null, "scrooge.mcduck1@disney.land", LocalDateTime.now() )
                 .map( AssociationDao::getId )
                 .toList();
 
