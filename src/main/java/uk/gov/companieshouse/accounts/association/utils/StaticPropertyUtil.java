@@ -7,9 +7,13 @@ import org.springframework.stereotype.Component;
 public class StaticPropertyUtil {
 
     public static String APPLICATION_NAMESPACE;
+    public static int DAYS_SINCE_INVITE_TILL_EXPIRES = 7;
 
-    public StaticPropertyUtil(@Value("${spring.application.name}") String applicationNameSpace ) {
+    public StaticPropertyUtil(
+            @Value("${spring.application.name}") String applicationNameSpace,
+            @Value("${invite.expiry.days:7}") int daysSinceInviteTillExpires
+    ) {
         StaticPropertyUtil.APPLICATION_NAMESPACE = applicationNameSpace;
+        StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES = daysSinceInviteTillExpires;
     }
-
 }

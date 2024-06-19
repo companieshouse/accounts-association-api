@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
+import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
 
 @Service
 public class AssociationsService {
@@ -54,9 +55,6 @@ public class AssociationsService {
     private final InvitationsMapper invitationMapper;
 
     private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
-
-    public static final int DAYS_SINCE_INVITE_TILL_EXPIRES = 7;
-
 
     @Autowired
     public AssociationsService(AssociationsRepository associationsRepository,
