@@ -4,7 +4,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 
-import static uk.gov.companieshouse.accounts.association.service.AssociationsService.DAYS_SINCE_INVITE_TILL_EXPIRES;
+import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
 
 public class InvitationDao {
     @Field("invited_by")
