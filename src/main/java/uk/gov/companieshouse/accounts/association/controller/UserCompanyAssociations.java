@@ -82,6 +82,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             }
             association.setStatus(Association.StatusEnum.CONFIRMED.getValue());
             association.setUserId(userDetails.getUserId());
+            association.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
             association.setUserEmail(null);
             association = associationsService.upsertAssociation(association);
 
