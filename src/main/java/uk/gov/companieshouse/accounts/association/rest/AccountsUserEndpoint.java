@@ -32,7 +32,7 @@ public class AccountsUserEndpoint {
 
     public ApiResponse<UsersList> searchUserDetails(final List<String> emails) throws ApiErrorResponseException, URIValidationException {
 
-        LOG.info("internal api url : "+internalApiUrl);
+        LOG.infoContext("internal api url : "+internalApiUrl, "", null);
         final var searchUserDetailsUrl = "/users/search";
         return apiClientUtil.getInternalApiClient(internalApiUrl)
                 .privateAccountsUserResourceHandler()
@@ -41,6 +41,7 @@ public class AccountsUserEndpoint {
     }
 
     public PrivateAccountsUserUserGet createGetUserDetailsRequest(final String userId) {
+        LOG.infoContext("internal api url : "+internalApiUrl, "", null);
         final var getUserDetailsUrl = String.format("/users/%s", userId);
         return apiClientUtil.getInternalApiClient(internalApiUrl)
                             .privateAccountsUserResourceHandler()
