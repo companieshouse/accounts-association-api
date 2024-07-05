@@ -90,7 +90,7 @@ import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVIT
 @Tag("integration-test")
 public class UserCompanyAssociationsTest {
 
-    @Value("${internal.api.url}")
+    @Value("${account.api.url}")
     private String internalApiUrl;
 
     @Container
