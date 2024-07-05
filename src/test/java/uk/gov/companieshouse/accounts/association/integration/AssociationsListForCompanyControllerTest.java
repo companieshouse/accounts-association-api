@@ -58,7 +58,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Tag("integration-test")
 class AssociationsListForCompanyControllerTest {
 
-    @Value("${internal.api.url}")
+    @Value("${account.api.url}")
     private String internalApiUrl;
 
     @Container
