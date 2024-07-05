@@ -4,12 +4,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import uk.gov.companieshouse.accounts.association.utils.ApiClientUtil;
+import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
 import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserUserGet;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.api.model.ApiResponse;
+import uk.gov.companieshouse.logging.Logger;
+import uk.gov.companieshouse.logging.LoggerFactory;
 
 import java.util.List;
 
@@ -20,6 +23,7 @@ public class AccountsUserEndpoint {
     private String internalApiUrl;
 
     private final ApiClientUtil apiClientUtil;
+    protected static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
 
     @Autowired
     public AccountsUserEndpoint(ApiClientUtil apiClientUtil) {
@@ -27,6 +31,8 @@ public class AccountsUserEndpoint {
     }
 
     public ApiResponse<UsersList> searchUserDetails(final List<String> emails) throws ApiErrorResponseException, URIValidationException {
+
+        LOG.info("internal api url : "+internalApiUrl);
         final var searchUserDetailsUrl = "/users/search";
         return apiClientUtil.getInternalApiClient(internalApiUrl)
                 .privateAccountsUserResourceHandler()
