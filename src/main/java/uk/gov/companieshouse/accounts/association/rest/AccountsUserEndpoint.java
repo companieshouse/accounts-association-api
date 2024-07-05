@@ -19,8 +19,8 @@ import java.util.List;
 @Service
 public class AccountsUserEndpoint {
 
-    @Value("${internal.api.url}")
-    private String internalApiUrl;
+    @Value("${account.api.url}")
+    private String accountApiUrl;
 
     private final ApiClientUtil apiClientUtil;
     protected static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
@@ -32,18 +32,18 @@ public class AccountsUserEndpoint {
 
     public ApiResponse<UsersList> searchUserDetails(final List<String> emails) throws ApiErrorResponseException, URIValidationException {
 
-        LOG.infoContext("internal api url : "+internalApiUrl, "", null);
+        LOG.infoContext("internal api url : "+ accountApiUrl, "", null);
         final var searchUserDetailsUrl = "/users/search";
-        return apiClientUtil.getInternalApiClient(internalApiUrl)
+        return apiClientUtil.getInternalApiClient(accountApiUrl)
                 .privateAccountsUserResourceHandler()
                 .searchUserDetails(searchUserDetailsUrl, emails)
                 .execute();
     }
 
     public PrivateAccountsUserUserGet createGetUserDetailsRequest(final String userId) {
-        LOG.infoContext("internal api url : "+internalApiUrl, "", null);
+        LOG.infoContext("internal api url : "+ accountApiUrl, "", null);
         final var getUserDetailsUrl = String.format("/users/%s", userId);
-        return apiClientUtil.getInternalApiClient(internalApiUrl)
+        return apiClientUtil.getInternalApiClient(accountApiUrl)
                             .privateAccountsUserResourceHandler()
                             .getUserDetails(getUserDetailsUrl);
     }
