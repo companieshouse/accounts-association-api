@@ -39,6 +39,7 @@ import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepos
 import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
+import uk.gov.companieshouse.accounts.association.utils.ApiClientUtil;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.InternalApiClient;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
@@ -106,7 +107,7 @@ public class UserCompanyAssociationsTest {
     ApiClientService apiClientService;
 
     @MockBean
-    InternalApiClient internalApiClient;
+    ApiClientUtil internalApiClient;
 
     @MockBean
     CompanyProfileEndpoint companyProfileEndpoint;
