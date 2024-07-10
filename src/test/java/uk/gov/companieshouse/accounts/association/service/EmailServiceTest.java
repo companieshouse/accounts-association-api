@@ -530,4 +530,32 @@ class EmailServiceTest {
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Krishna Patel", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk" ) );
     }
 
+    @Test
+    void sendInviteCancelledEmailWithoutCompanyDetailsOrCompanyNameOrCancelledByDisplayNameOrInviteeUserSupplierOrEmailThrowsNullPointerException(){
+        final var userDetails = new User().email( "kpatel@companieshouse.gov.uk" );
+        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
+
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", null, "Elon Musk", () -> userDetails ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", new CompanyDetails(), "Elon Musk", () -> userDetails ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", companyDetails, null, () -> userDetails ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", companyDetails, "Elon Musk", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", companyDetails, "Elon Musk", () -> new User() ) );
+    }
+
+    @Test
+    void sendInviteCancelledEmailSendsEmail(){
+        final var expectedEmailData = new InviteCancelledEmailData();
+        expectedEmailData.setTo( "kpatel@companieshouse.gov.uk" );
+        expectedEmailData.setSubject( "Companies House: authorisation to file online for Tesla cancelled" );
+        expectedEmailData.setCompanyName( "Tesla" );
+        expectedEmailData.setCancelledBy( "Elon Musk" );
+
+        final var userDetails = new User().email( "kpatel@companieshouse.gov.uk" );
+        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
+
+        emailService.sendInviteCancelledEmail( "theId12345", companyDetails, "Elon Musk", () -> userDetails );
+
+        Mockito.verify( emailProducer ).sendEmail( expectedEmailData, INVITE_CANCELLED_MESSAGE_TYPE.getValue() );
+    }
+
 }
