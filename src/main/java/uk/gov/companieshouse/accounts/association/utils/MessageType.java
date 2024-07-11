@@ -16,7 +16,9 @@ public enum MessageType {
 
     INVITATION_REJECTED_MESSAGE_TYPE("associations_invitee_declined"),
 
-    INVITE_MESSAGE_TYPE("associations_invite");
+    INVITE_MESSAGE_TYPE("associations_invite"),
+
+    INVITE_CANCELLED_MESSAGE_TYPE("associations_invite_cancelled");
 
     private final String value;
 
