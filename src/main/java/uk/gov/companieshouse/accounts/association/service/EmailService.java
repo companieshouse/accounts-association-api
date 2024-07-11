@@ -228,4 +228,25 @@ public class EmailService {
                         .toMessage(), null );
     }
 
+    @Async
+    public void sendInviteCancelledEmail( final String xRequestId, final CompanyDetails companyDetails, final String cancelledByDisplayName, final Supplier<User> inviteeUserSupplier ){
+        final var inviteeEmail = inviteeUserSupplier.get().getEmail();
+
+        final var emailData = new InviteCancelledEmailBuilder()
+                .setRecipientEmail( inviteeEmail )
+                .setCompanyName( companyDetails.getCompanyName() )
+                .setCancelledBy( cancelledByDisplayName )
+                .build();
+
+        emailProducer.sendEmail( emailData, MessageType.INVITE_CANCELLED_MESSAGE_TYPE.getValue() );
+
+        LOG.infoContext( xRequestId,
+                new EmailNotification(
+                        MessageType.INVITE_CANCELLED_MESSAGE_TYPE,
+                        StaticPropertyUtil.APPLICATION_NAMESPACE,
+                        inviteeEmail,
+                        companyDetails.getCompanyNumber() )
+                        .toMessage(), null );
+    }
+
 }

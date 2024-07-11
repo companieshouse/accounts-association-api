@@ -382,6 +382,8 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
             emailService.sendInvitationAcceptedEmailToAssociatedUsers(xRequestId, companyDetails, invitedByDisplayName, requestingUserDisplayValue, requestsToFetchAssociatedUsers);
         } else if (userCancelledInvitation) {
+            final Supplier<User> requestToGetCancelledUserEmail = Objects.isNull( associationDao.getUserEmail() ) ? usersService.createFetchUserDetailsRequest(associationDao.getUserId()) : () -> new User().email( associationDao.getUserEmail() );
+            emailService.sendInviteCancelledEmail(xRequestId, companyDetails, requestingUserDisplayValue, requestToGetCancelledUserEmail );
             emailService.sendInvitationCancelledEmailToAssociatedUsers(xRequestId, companyDetails, requestingUserDisplayValue, targetUserDisplayValue, requestsToFetchAssociatedUsers);
         }
     }
