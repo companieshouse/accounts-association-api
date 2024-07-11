@@ -5,7 +5,7 @@
     <parent>
         <groupId>uk.gov.companieshouse</groupId>
         <artifactId>companies-house-parent</artifactId>
-        <version>2.1.4</version> <!-- lookup parent from repository -->
+        <version>2.1.6</version> <!-- lookup parent from repository -->
     </parent>
     <artifactId>accounts-association-api</artifactId>
     <version>unversioned</version>
@@ -19,9 +19,6 @@
         <maven-surefire-plugin.version>3.2.2</maven-surefire-plugin.version>
         <structured-logging.version>3.0.8</structured-logging.version>
         <common-web-java.version>3.0.0</common-web-java.version>
-        <dependency-check-plugin.version>8.4.3</dependency-check-plugin.version>
-        <sonar-maven-plugin.version>3.11.0.3922</sonar-maven-plugin.version>
-        <jacoco-maven-plugin.version>0.8.10</jacoco-maven-plugin.version>
         <encryption-java-library.version>2.0.3</encryption-java-library.version>
         <rest-service-common-library-version>2.0.2</rest-service-common-library-version>
         <private-api-sdk-java.version>4.0.163</private-api-sdk-java.version>
@@ -221,12 +218,15 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${jacoco-maven-plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
                 <version>${dependency-check-maven-plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
