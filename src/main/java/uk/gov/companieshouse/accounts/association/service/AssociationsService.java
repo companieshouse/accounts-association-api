@@ -105,7 +105,7 @@ public class AssociationsService {
             statuses.add(StatusEnum.REMOVED.getValue());
         }
 
-        final Page<AssociationDao> associations = associationsRepository.fetchAssociatedUsers(companyNumber, statuses, pageable);
+        final Page<AssociationDao> associations = associationsRepository.fetchAssociatedUsers(companyNumber, statuses, LocalDateTime.now(), pageable);
 
 
         return associationsListCompanyMapper.daoToDto(associations, companyDetails);

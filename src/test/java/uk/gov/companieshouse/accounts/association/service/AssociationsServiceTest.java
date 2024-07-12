@@ -727,7 +727,7 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(0, 20);
         final var page = new PageImpl<>(content, pageRequest, content.size());
 
-        Mockito.doReturn(page).when(associationsRepository).fetchAssociatedUsers(any(), any(), any());
+        Mockito.doReturn(page).when(associationsRepository).fetchAssociatedUsers(any(), any(), any(), any());
 
         final var companyDetails =
                 new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
@@ -744,7 +744,7 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(0, 20);
         final var page = new PageImpl<>(content, pageRequest, content.size());
 
-        Mockito.doReturn(page).when(associationsRepository).fetchAssociatedUsers(any(), any(), any());
+        Mockito.doReturn(page).when(associationsRepository).fetchAssociatedUsers(any(), any(), any(), any());
 
 
         final var companyDetails =
@@ -761,7 +761,7 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(1, 15);
         final var page = new PageImpl<>(content, pageRequest, 16);
 
-        Mockito.doReturn(page).when(associationsRepository).fetchAssociatedUsers(any(), any(), any());
+        Mockito.doReturn(page).when(associationsRepository).fetchAssociatedUsers(any(), any(), any(), any());
 
         final var companyDetails =
                 new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
