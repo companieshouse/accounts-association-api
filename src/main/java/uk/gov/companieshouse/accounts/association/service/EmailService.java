@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
@@ -47,7 +48,7 @@ public class EmailService {
 
     @Transactional(readOnly = true)
     public List<Supplier<User>> createRequestsToFetchAssociatedUsers( final String companyNumber ) {
-        return associationsRepository.fetchAssociatedUsers(companyNumber, Set.of(StatusEnum.CONFIRMED.getValue()), Pageable.unpaged())
+        return associationsRepository.fetchAssociatedUsers(companyNumber, Set.of(StatusEnum.CONFIRMED.getValue()), LocalDateTime.now(), Pageable.unpaged())
                 .map(AssociationDao::getUserId)
                 .map(usersService::createFetchUserDetailsRequest)
                 .toList();

@@ -168,6 +168,7 @@ class AssociationsRepositoryTest {
         associationTen.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
         associationTen.setEtag("x");
         associationTen.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE.getValue() );
+        associationTen.setApprovalExpiryAt( LocalDateTime.now().plusDays(5) );
 
         final var associationEleven = new AssociationDao();
         associationEleven.setCompanyNumber("333333");
@@ -175,6 +176,7 @@ class AssociationsRepositoryTest {
         associationEleven.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
         associationEleven.setEtag("x");
         associationEleven.setApprovalRoute( ApprovalRouteEnum.AUTH_CODE.getValue() );
+        associationEleven.setApprovalExpiryAt( LocalDateTime.now().minusDays(5) );
 
         final var invitationThirtyOne = new InvitationDao();
         invitationThirtyOne.setInvitedBy("111");
@@ -531,27 +533,27 @@ class AssociationsRepositoryTest {
 
     @Test
     void fetchAssociatedUsersWithNullOrMalformedOrNonexistentCompanyNumberReturnsEmptyPage(){
-        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( null, Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 3 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( "$", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 3 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( "999999", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 3 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( null, Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 3 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( "$", Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 3 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( "999999", Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 3 ) ).isEmpty() );
     }
 
     @Test
     void fetchAssociatedUsersWithNullStatusesThrowsUncategorizedMongoDbException(){
-        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchAssociatedUsers( "111111", null, PageRequest.of( 0, 3 ) ) );
+        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchAssociatedUsers( "111111", null, LocalDateTime.now(), PageRequest.of( 0, 3 ) ) );
     }
 
     @Test
     void fetchAssociatedUsersWithNullPageableReturnsAllAssociatedUsers(){
-        Assertions.assertEquals( 2, associationsRepository.fetchAssociatedUsers( "111111", Set.of( StatusEnum.CONFIRMED.getValue() ), null ).getNumberOfElements() );
+        Assertions.assertEquals( 2, associationsRepository.fetchAssociatedUsers( "111111", Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), null ).getNumberOfElements() );
     }
 
     @Test
-    void fetchAssociatedUsersFiltersBasedOnSpecifiedStatuses(){
-        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( "333333", Set.of(),  PageRequest.of( 0, 15 ) ).isEmpty() );
+    void fetchAssociatedUsersFiltersBasedOnSpecifiedStatusesAndExpiryTime(){
+        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( "333333", Set.of(), LocalDateTime.now(), PageRequest.of( 0, 15 ) ).isEmpty() );
 
         final var queryWithConfirmedFilter =
-                associationsRepository.fetchAssociatedUsers( "333333", Set.of( StatusEnum.CONFIRMED.getValue() ),  PageRequest.of( 0, 15 ) )
+                associationsRepository.fetchAssociatedUsers( "333333", Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 15 ) )
                         .getContent()
                         .stream()
                         .map( AssociationDao::getUserId )
@@ -560,26 +562,26 @@ class AssociationsRepositoryTest {
         Assertions.assertTrue( queryWithConfirmedFilter.containsAll( List.of( "444", "333" ) ) );
 
         final var queryWithConfirmedAndAwaitingFilter =
-                associationsRepository.fetchAssociatedUsers( "333333", Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue() ),  PageRequest.of( 0, 15 ) )
+                associationsRepository.fetchAssociatedUsers( "333333", Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 15 ) )
                         .getContent()
                         .stream()
                         .map( AssociationDao::getUserId )
                         .toList();
-        Assertions.assertEquals( 4, queryWithConfirmedAndAwaitingFilter.size() );
-        Assertions.assertTrue( queryWithConfirmedAndAwaitingFilter.containsAll( List.of( "444", "333", "101010", "111111" ) ) );
+        Assertions.assertEquals( 3, queryWithConfirmedAndAwaitingFilter.size() );
+        Assertions.assertTrue( queryWithConfirmedAndAwaitingFilter.containsAll( List.of( "444", "333", "101010" ) ) );
     }
 
     @Test
     void fetchAssociatedUsersPaginatesCorrectly(){
-        final var secondPage = associationsRepository.fetchAssociatedUsers( "333333", Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() ), PageRequest.of( 1, 2 ) );
+        final var secondPage = associationsRepository.fetchAssociatedUsers( "333333", Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() ), LocalDateTime.now(), PageRequest.of( 1, 2 ) );
         final var secondPageContent =
                 secondPage.getContent()
                         .stream()
                         .map( AssociationDao::getUserId )
                         .toList();
 
-        Assertions.assertEquals( 5, secondPage.getTotalElements() );
-        Assertions.assertEquals( 3, secondPage.getTotalPages() );
+        Assertions.assertEquals( 4, secondPage.getTotalElements() );
+        Assertions.assertEquals( 2, secondPage.getTotalPages() );
         Assertions.assertEquals( 2, secondPageContent.size() );
         Assertions.assertTrue( secondPageContent.containsAll( List.of( "888", "101010" ) ) );
     }
