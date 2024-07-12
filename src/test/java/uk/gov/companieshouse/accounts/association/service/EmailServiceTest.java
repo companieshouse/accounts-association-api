@@ -88,7 +88,7 @@ class EmailServiceTest {
 
         Supplier<User> userSupplier = () -> new User().userId( "111" );
 
-        Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( eq( "111111" ), any(), any() );
+        Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( eq( "111111" ), any(), any(), any() );
         Mockito.doReturn( userSupplier ).when( usersService ).createFetchUserDetailsRequest( anyString() );
 
         Assertions.assertEquals( "111", emailService.createRequestsToFetchAssociatedUsers( "111111" ).get( 0 ).get().getUserId() );
