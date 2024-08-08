@@ -664,7 +664,7 @@ class AssociationsServiceTest {
 
     @Test
     void fetchAssociationsForUSerReturnEmptyItemsWhenNoAssociationFound() throws ApiErrorResponseException, URIValidationException {
-        User user = new User("abc","kk", "kk@kk.com");
+        User user = new User().forename("abc").surname("kk").email("kk@kk.com");
         user.setUserId("5555");
         List<String> status = Collections.singletonList("confirmed");
         Page<AssociationDao> page = Page.empty();
@@ -682,7 +682,7 @@ class AssociationsServiceTest {
 
     @Test
     void fetchAssociationsForUserUsesStatusConfirmedAsDefaultWhenStatusNotProvided() throws ApiErrorResponseException, URIValidationException {
-        User user = new User("abc","kk", "kk@kk.com");
+        User user = new User().forename("abc").surname("kk").email("kk@kk.com");
         user.setUserId("5555");
         Page<AssociationDao> page = Page.empty();
 
