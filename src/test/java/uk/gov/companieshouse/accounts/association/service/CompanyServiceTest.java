@@ -3,6 +3,7 @@ package uk.gov.companieshouse.accounts.association.service;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpResponseException.Builder;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,21 +11,19 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.companieshouse.accounts.association.common.Mockers;
+import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
-import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
-import uk.gov.companieshouse.api.model.ApiResponse;
-
-import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-public class CompanyServiceTest {
+class CompanyServiceTest {
 
     @Mock
     private CompanyProfileEndpoint companyProfileEndpoint;
@@ -32,13 +31,19 @@ public class CompanyServiceTest {
     @InjectMocks
     private CompanyService companyService;
 
+    private Mockers mockers;
+
+    @BeforeEach
+    void setup(){
+        mockers = new Mockers( null, companyProfileEndpoint, null, null, null );
+    }
+
     @Test
     void fetchCompanyProfileWithNullOrNonExistentCompanyNumberReturnsNotFound() throws ApiErrorResponseException, URIValidationException {
-        Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not found", new HttpHeaders() ) ) ).when( companyProfileEndpoint ).fetchCompanyProfile( any() );
-
+        mockers.mockFetchCompanyProfileNotFound( null, "", "111111" );
         Assertions.assertThrows( NotFoundRuntimeException.class, () -> companyService.fetchCompanyProfile( null ) );
         Assertions.assertThrows( NotFoundRuntimeException.class, () -> companyService.fetchCompanyProfile( "" ) );
-        Assertions.assertThrows( NotFoundRuntimeException.class, () -> companyService.fetchCompanyProfile( "abc" ) );
+        Assertions.assertThrows( NotFoundRuntimeException.class, () -> companyService.fetchCompanyProfile( "111111" ) );
     }
 
     @Test
@@ -55,14 +60,8 @@ public class CompanyServiceTest {
 
     @Test
     void fetchCompanyProfileSuccessfullyFetchesCompanyData() throws ApiErrorResponseException, URIValidationException {
-        final var company = new CompanyDetails();
-        company.setCompanyNumber( "111111" );
-
-        final var intendedResponse = new ApiResponse<>( 200, Map.of(), company );
-        Mockito.doReturn( intendedResponse ).when( companyProfileEndpoint ).fetchCompanyProfile( any() );
-        final var response = companyService.fetchCompanyProfile( "111111" );
-
-        Assertions.assertEquals( "111111", response.getCompanyNumber() );
+        mockers.mockFetchCompanyProfile( "111111" );
+        Assertions.assertEquals( "111111", companyService.fetchCompanyProfile( "111111" ).getCompanyNumber() );
     }
 
     @Test

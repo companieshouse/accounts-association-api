@@ -1,6 +1,5 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -12,22 +11,15 @@ import uk.gov.companieshouse.accounts.association.models.email.data.InviteCancel
 @Tag("unit-test")
 class InviteCancelledEmailBuilderTest {
 
-    private @NotNull InviteCancelledEmailData getInviteCancelledEmailData() {
+    @Test
+    void buildInstantiatesEmailData(){
         final var expectedEmailData = new InviteCancelledEmailData();
         expectedEmailData.setTo( "kpatel@companieshouse.gov.uk" );
         expectedEmailData.setSubject( "Companies House: authorisation to file online for Tesla cancelled" );
         expectedEmailData.setCompanyName( "Tesla" );
         expectedEmailData.setCancelledBy( "Elon Musk" );
-        return expectedEmailData;
-    }
 
-    @Test
-    void buildInstantiatesEmailData(){
-        final var expectedEmailData = getInviteCancelledEmailData();
-
-        final var inviteCancelledEmailBuilder = new InviteCancelledEmailBuilder();
-
-        final var actualEmailData = inviteCancelledEmailBuilder
+        final var actualEmailData = new InviteCancelledEmailBuilder()
                 .setRecipientEmail( "kpatel@companieshouse.gov.uk" )
                 .setCompanyName( "Tesla" )
                 .setCancelledBy( "Elon Musk" )

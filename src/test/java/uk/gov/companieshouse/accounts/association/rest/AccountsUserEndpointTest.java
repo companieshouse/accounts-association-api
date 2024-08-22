@@ -29,25 +29,25 @@ import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
- class AccountsUserEndpointTest {
+class AccountsUserEndpointTest {
 
     @Mock
-    ApiClientUtil apiClientService;
+    private ApiClientUtil apiClientService;
 
     @Mock
-    InternalApiClient internalApiClient;
+    private InternalApiClient internalApiClient;
 
     @Mock
-    PrivateAccountsUserResourceHandler privateAccountsUserResourceHandler;
+    private PrivateAccountsUserResourceHandler privateAccountsUserResourceHandler;
 
     @Mock
-    PrivateAccountsUserFindUserBasedOnEmailGet privateAccountsUserFindUserBasedOnEmailGet;
+    private PrivateAccountsUserFindUserBasedOnEmailGet privateAccountsUserFindUserBasedOnEmailGet;
 
     @Mock
-    PrivateAccountsUserUserGet privateAccountsUserUserGet;
+    private PrivateAccountsUserUserGet privateAccountsUserUserGet;
 
     @InjectMocks
-    AccountsUserEndpoint accountsUserEndpoint;
+    private AccountsUserEndpoint accountsUserEndpoint;
 
     @Test
     void searchUserDetailsWithNullInputThrowsNullPointerException() {
@@ -56,7 +56,7 @@ import static org.mockito.ArgumentMatchers.any;
 
     @Test
     void searchUserDetailsWithEmptyListOrNullElementOrMalformedEmailReturnsBadRequest() throws Exception {
-        final var listWithNull = new ArrayList<String>( );
+        final var listWithNull = new ArrayList<String>();
         listWithNull.add( null );
 
         Mockito.doReturn( internalApiClient ).when( apiClientService ).getInternalApiClient(any());
@@ -71,12 +71,13 @@ import static org.mockito.ArgumentMatchers.any;
 
     @Test
     void searchUserDetailsFetchesSpecifiedUsers() throws ApiErrorResponseException, URIValidationException {
+        final var usersList = new UsersList();
+        usersList.add( new User().userId("111") );
+
         Mockito.doReturn( internalApiClient ).when( apiClientService ).getInternalApiClient(any());
         Mockito.doReturn( privateAccountsUserResourceHandler ).when( internalApiClient ).privateAccountsUserResourceHandler();
         Mockito.doReturn( privateAccountsUserFindUserBasedOnEmailGet ).when( privateAccountsUserResourceHandler ).searchUserDetails( any(), any() );
 
-        final var usersList = new UsersList();
-        usersList.add( new User().userId("111") );
         final var intendedResponse = new ApiResponse<>( 200, Map.of(), usersList );
         Mockito.doReturn( intendedResponse ).when( privateAccountsUserFindUserBasedOnEmailGet ).execute();
         final var response = accountsUserEndpoint.searchUserDetails( List.of( "111" ) );

@@ -1,13 +1,10 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +13,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import uk.gov.companieshouse.accounts.association.common.Mockers;
+import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfig;
-import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -25,166 +23,119 @@ import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.api.company.CompanyDetails;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
 
 @AutoConfigureMockMvc
 @WebMvcTest(AssociationsListForCompanyController.class)
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
- class AssociationsListForCompanyControllerTest {
+class AssociationsListForCompanyControllerTest {
 
     @Value("${internal.api.url}")
     private String internalApiUrl;
 
     @Autowired
-    public MockMvc mockMvc;
+    private MockMvc mockMvc;
 
     @MockBean
-    AssociationsService associationsService;
+    private AssociationsService associationsService;
 
     @MockBean
-    CompanyService companyService;
+    private CompanyService companyService;
 
     @MockBean
-    UsersService usersService;
-
-    @InjectMocks
-    AssociationsListForCompanyController associationsListForCompanyController;
+    private UsersService usersService;
 
     @MockBean
-    InterceptorConfig interceptorConfig;
+    private InterceptorConfig interceptorConfig;
 
     @MockBean
-    StaticPropertyUtil staticPropertyUtil;
+    private StaticPropertyUtil staticPropertyUtil;
 
     private static final String DEFAULT_KIND = "association";
-    private static final String DEFAULT_DISPLAY_NAME = "Not provided";
+    private static final String DEFAULT_DISPLAY_NAME = "Not Provided";
+
+    private static final TestDataManager testDataManager = TestDataManager.getInstance();
+    private Mockers mockers;
 
     private final LocalDateTime now = LocalDateTime.now();
 
-    private Association associationOne;
-    private Association associationTwo;
-
-
     @BeforeEach
     public void setup() {
-
-        final var invitationOne =
-                new Invitation().invitedBy( "666" )
-                        .invitedAt( now.plusDays(4).toString() );
-
-        associationOne =
-                new Association().etag("a")
-                        .id("1")
-                        .userId("111")
-                        .userEmail("bruce.wayne@gotham.city")
-                        .displayName("Batman")
-                        .companyNumber("111111")
-                        .companyName("Wayne Enterprises")
-                        .status(StatusEnum.CONFIRMED)
-                        .createdAt( LocalDateTime.now().atOffset( ZoneOffset.UTC ) )
-                        .approvedAt( now.plusDays(1).atOffset( ZoneOffset.UTC ) )
-                        .removedAt( now.plusDays(2).atOffset( ZoneOffset.UTC ) )
-                        .kind( DEFAULT_KIND )
-                        .approvalRoute(ApprovalRouteEnum.AUTH_CODE)
-                        .approvalExpiryAt( now.plusDays(3).toString() )
-                        .links( new AssociationLinks().self( "/1" ) );
-
-        final var invitationTwo =
-                new Invitation().invitedBy( "666" )
-                        .invitedAt( now.plusDays(8).toString() );
-
-        associationTwo =
-                new Association().etag("b")
-                        .id("2")
-                        .userId("222")
-                        .userEmail("the.joker@gotham.city")
-                        .displayName(DEFAULT_DISPLAY_NAME)
-                        .companyNumber("111111")
-                        .companyName("Wayne Enterprises")
-                        .status(StatusEnum.REMOVED)
-                        .createdAt( LocalDateTime.now().atOffset( ZoneOffset.UTC ) )
-                        .approvedAt( now.plusDays(5).atOffset( ZoneOffset.UTC ) )
-                        .removedAt( now.plusDays(6).atOffset( ZoneOffset.UTC ) )
-                        .kind( DEFAULT_KIND )
-                        .approvalRoute(ApprovalRouteEnum.AUTH_CODE)
-                        .approvalExpiryAt( now.plusDays(7).toString() )
-                        .links( new AssociationLinks().self( "/2" ) );
-
+        this.mockers = new Mockers( null, null, null, companyService, usersService );
         Mockito.doNothing().when(interceptorConfig).addInterceptors( any() );
     }
 
     @Test
     void getAssociationsForCompanyWithMalformedCompanyNumberReturnsBadRequest() throws Exception {
-        mockMvc.perform( get( "/associations/companies/{company_number}", "$$$$$$" ).header("X-Request-Id", "theId123") )
+        mockMvc.perform( get( "/associations/companies/$$$$$$" )
+                        .header("X-Request-Id", "theId123") )
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void getAssociationsForCompanyWithNonexistentCompanyReturnsNotFound() throws Exception {
-        Mockito.doThrow( new NotFoundRuntimeException( "accounts-association-api", "Not found" ) ).when( companyService ).fetchCompanyProfile( any() );
+        mockers.mockCompanyServiceFetchCompanyProfileNotFound( "919191" );
 
-        mockMvc.perform( get( "/associations/companies/{company_number}", "919191" ).header("X-Request-Id", "theId123") )
-                .andExpect(status().isNotFound())
-                .andReturn()
-                .getResponse();
+        mockMvc.perform( get( "/associations/companies/919191" )
+                        .header("X-Request-Id", "theId123") )
+                .andExpect(status().isNotFound());
     }
 
     @Test
     void getAssociationsForCompanyWithoutXRequestIdReturnsBadRequest() throws Exception {
-        mockMvc.perform( get( "/associations/companies/{company_number}", "111111" ) )
+        mockMvc.perform( get( "/associations/companies/111111" ) )
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void getAssociationsForCompanyWithoutQueryParamsUsesDefaults() throws Exception {
-        final var expectedAssociationsList = new AssociationsList();
-        expectedAssociationsList.setTotalResults( 1 );
-        expectedAssociationsList.setTotalPages( 1 );
-        expectedAssociationsList.setPageNumber( 0 );
-        expectedAssociationsList.setItemsPerPage( 15 );
-        expectedAssociationsList.setLinks( new Links().self(String.format("%s/associations", internalApiUrl)).next("") );
-        expectedAssociationsList.setItems(List.of( associationOne ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
+        final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var batmanAssociation = testDataManager.fetchAssociationDto( "1", batmanUser );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
 
-        final var companyDetails =
-                new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
-        Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( any() );
+        final var associationsList = new AssociationsList()
+            .totalResults( 1 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
+            .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
+            .items(List.of( batmanAssociation ));
 
-        mockMvc.perform( get( "/associations/companies/{company_number}", "111111" ).header("X-Request-Id", "theId123") )
+        Mockito.doReturn(associationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
+
+        mockMvc.perform( get( "/associations/companies/111111" )
+                        .header("X-Request-Id", "theId123") )
                 .andExpect(status().isOk());
-
 
         Mockito.verify( associationsService ).fetchAssociatedUsers(  "111111" ,  companyDetails ,  false ,  15 , 0 );
     }
 
     @Test
     void getAssociationsForCompanyWithIncludeRemovedFalseAppliesFilter() throws Exception {
-        final var expectedAssociationsList = new AssociationsList();
-        expectedAssociationsList.setTotalResults( 1 );
-        expectedAssociationsList.setTotalPages( 1 );
-        expectedAssociationsList.setPageNumber( 0 );
-        expectedAssociationsList.setItemsPerPage( 15 );
-        expectedAssociationsList.setLinks( new Links().self(String.format("%s/associations", internalApiUrl)).next("") );
-        expectedAssociationsList.setItems(List.of( associationOne ));
+        final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var batmanAssociation = testDataManager.fetchAssociationDto( "1", batmanUser );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+
+        final var expectedAssociationsList = new AssociationsList()
+            .totalResults( 1 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
+            .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
+            .items(List.of( batmanAssociation ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
 
-        final var companyDetails =
-                new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
-
-        Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( any() );
-
-        mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=false", "111111" ).header("X-Request-Id", "theId123") )
+        mockMvc.perform( get( "/associations/companies/111111?include_removed=false" )
+                        .header("X-Request-Id", "theId123") )
                 .andExpect(status().isOk());
 
         Mockito.verify( associationsService ).fetchAssociatedUsers(  "111111" , companyDetails , false , 15 , 0 );
@@ -192,21 +143,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
     @Test
     void getAssociationsForCompanyWithIncludeRemovedTrueDoesNotApplyFilter() throws Exception {
-        final var expectedAssociationsList = new AssociationsList();
-        expectedAssociationsList.setTotalResults( 2 );
-        expectedAssociationsList.setTotalPages( 1 );
-        expectedAssociationsList.setPageNumber( 0 );
-        expectedAssociationsList.setItemsPerPage( 15 );
-        expectedAssociationsList.setLinks( new Links().self(String.format("%s/associations", internalApiUrl)).next("") );
-        expectedAssociationsList.setItems(List.of( associationOne, associationTwo ));
+        final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var batmanAssociation = testDataManager.fetchAssociationDto( "1", batmanUser );
+        final var jokerUser = testDataManager.fetchUserDtos( "222" ).getFirst();
+        final var jokerAssociation = testDataManager.fetchAssociationDto( "2", jokerUser );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+
+        final var expectedAssociationsList = new AssociationsList()
+            .totalResults( 2 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
+            .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
+            .items(List.of( batmanAssociation, jokerAssociation ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 15 ), eq( 0 ) );
 
-        final var companyDetails =
-                new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
-
-        Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( any() );
-
-        mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=true", "111111" ).header("X-Request-Id", "theId123") )
+        mockMvc.perform( get( "/associations/companies/111111?include_removed=true" )
+                        .header("X-Request-Id", "theId123") )
                 .andExpect(status().isOk());
 
         Mockito.verify( associationsService ).fetchAssociatedUsers( "111111" ,  companyDetails, true , 15 , 0 );
@@ -214,29 +166,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
     @Test
     void getAssociationsForCompanyPaginatesCorrectly() throws Exception {
-        final var expectedAssociationsList = new AssociationsList();
-        expectedAssociationsList.setTotalResults( 2 );
-        expectedAssociationsList.setTotalPages( 2 );
-        expectedAssociationsList.setPageNumber( 1 );
-        expectedAssociationsList.setItemsPerPage( 1 );
-        expectedAssociationsList.setLinks( new Links().self(String.format("%s/associations", internalApiUrl)).next("") );
-        expectedAssociationsList.setItems(List.of( associationTwo ));
+        final var jokerUser = testDataManager.fetchUserDtos( "222" ).getFirst();
+        final var jokerAssociation = testDataManager.fetchAssociationDto( "2", jokerUser );
+
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+
+        final var expectedAssociationsList = new AssociationsList()
+                .totalResults( 2 ).totalPages( 2 ).pageNumber( 1 ).itemsPerPage( 1 )
+                .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
+                .items(List.of( jokerAssociation ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 1 ), eq( 1 ) );
 
-        final var companyDetails =
-                new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
-
-        Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( any() );
-
         final var response =
-                mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=true&items_per_page=1&page_index=1", "111111" ).header("X-Request-Id", "theId123") )
-                        .andExpect(status().isOk())
-                        .andReturn()
-                        .getResponse();
+                mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=1&page_index=1" )
+                                .header("X-Request-Id", "theId123") )
+                        .andExpect(status().isOk());
 
-        final var objectMapper = new ObjectMapper();
-        objectMapper.registerModule( new JavaTimeModule() );
-        final AssociationsList associationsList = objectMapper.readValue( response.getContentAsByteArray(), AssociationsList.class );
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
         final var links = associationsList.getLinks();
 
         final var items =
@@ -247,115 +193,85 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
         Assertions.assertTrue( items.contains( "2" ) );
         Assertions.assertEquals( String.format("%s/associations", internalApiUrl), links.getSelf() );
-        Assertions.assertEquals( String.format( "" ), links.getNext() );
+        Assertions.assertEquals( "", links.getNext() );
         Assertions.assertEquals( 1, associationsList.getPageNumber() );
         Assertions.assertEquals( 1, associationsList.getItemsPerPage() );
         Assertions.assertEquals( 2, associationsList.getTotalResults() );
         Assertions.assertEquals( 2, associationsList.getTotalPages() );
     }
 
-
-
-
-
-
-
-
-
-
-    private String reduceTimestampResolution( String timestamp ){
-        return timestamp.substring( 0, timestamp.indexOf( ":" ) );
-    }
-
-    private String localDateTimeToNormalisedString( LocalDateTime localDateTime ){
-        final var timestamp = localDateTime.toString();
-        return reduceTimestampResolution( timestamp );
-    }
-
     @Test
     void getAssociationsForCompanyDoesMappingCorrectly() throws Exception {
+        final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var batmanAssociation = testDataManager.fetchAssociationDto( "1", batmanUser );
+        final var jokerUser = testDataManager.fetchUserDtos( "222" ).getFirst();
+        final var jokerAssociation = testDataManager.fetchAssociationDto( "2", jokerUser );
 
-        final var expectedAssociationsList = new AssociationsList();
-        expectedAssociationsList.setTotalResults( 2 );
-        expectedAssociationsList.setTotalPages( 1 );
-        expectedAssociationsList.setPageNumber( 0 );
-        expectedAssociationsList.setItemsPerPage( 2 );
-        expectedAssociationsList.setLinks( new Links().self(String.format("%s/associations", internalApiUrl)).next("") );
-        expectedAssociationsList.setItems(List.of( associationOne, associationTwo ));
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+
+        final var expectedAssociationsList = new AssociationsList()
+                .totalResults( 2 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 2 )
+                .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
+                .items(List.of( batmanAssociation, jokerAssociation ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 2 ), eq( 0 ) );
 
-        final var companyDetails =
-                new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
-
-        Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( any() );
-
         final var response =
-                mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=true&items_per_page=2&page_index=0", "111111" ).header("X-Request-Id", "theId123") )
-                        .andExpect(status().isOk())
-                        .andReturn()
-                        .getResponse();
-
-        final var objectMapper = new ObjectMapper();
-        objectMapper.registerModule( new JavaTimeModule() );
-        final AssociationsList associationsList = objectMapper.readValue( response.getContentAsByteArray(), AssociationsList.class );
+                mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=2&page_index=0" ).header("X-Request-Id", "theId123") )
+                        .andExpect(status().isOk());
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
 
         final var associations = associationsList.getItems();
-        final var associationOne = associations.getFirst();
+        final var firstAssociation = associations.getFirst();
 
-        Assertions.assertEquals( "a", associationOne.getEtag() );
-        Assertions.assertEquals( "1", associationOne.getId() );
-        Assertions.assertEquals( "111", associationOne.getUserId() );
-        Assertions.assertEquals( "bruce.wayne@gotham.city", associationOne.getUserEmail() );
-        Assertions.assertEquals( "Batman", associationOne.getDisplayName() );
-        Assertions.assertEquals( "111111", associationOne.getCompanyNumber() );
-        Assertions.assertEquals( "Wayne Enterprises", associationOne.getCompanyName() );
-        Assertions.assertEquals( StatusEnum.CONFIRMED, associationOne.getStatus() );
-        Assertions.assertNotNull( associationOne.getCreatedAt() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(1) ), localDateTimeToNormalisedString( associationOne.getApprovedAt().toLocalDateTime() ) );
-        Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(2) ), localDateTimeToNormalisedString( associationOne.getRemovedAt().toLocalDateTime() ) );
-        Assertions.assertEquals( DEFAULT_KIND, associationOne.getKind() );
-        Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE, associationOne.getApprovalRoute() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(3) ), reduceTimestampResolution( associationOne.getApprovalExpiryAt() ) );
-        Assertions.assertEquals( "/1", associationOne.getLinks().getSelf() );
+        Assertions.assertEquals( "a", firstAssociation.getEtag() );
+        Assertions.assertEquals( "1", firstAssociation.getId() );
+        Assertions.assertEquals( "111", firstAssociation.getUserId() );
+        Assertions.assertEquals( "bruce.wayne@gotham.city", firstAssociation.getUserEmail() );
+        Assertions.assertEquals( "Batman", firstAssociation.getDisplayName() );
+        Assertions.assertEquals( "111111", firstAssociation.getCompanyNumber() );
+        Assertions.assertEquals( "Wayne Enterprises", firstAssociation.getCompanyName() );
+        Assertions.assertEquals( StatusEnum.CONFIRMED, firstAssociation.getStatus() );
+        Assertions.assertNull( firstAssociation.getCreatedAt() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(1) ), localDateTimeToNormalisedString( firstAssociation.getApprovedAt().toLocalDateTime() ) );
+        Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(2) ), localDateTimeToNormalisedString( firstAssociation.getRemovedAt().toLocalDateTime() ) );
+        Assertions.assertEquals( DEFAULT_KIND, firstAssociation.getKind() );
+        Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE, firstAssociation.getApprovalRoute() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(3) ), reduceTimestampResolution( firstAssociation.getApprovalExpiryAt() ) );
+        Assertions.assertEquals( "/1", firstAssociation.getLinks().getSelf() );
 
-        final var associationTwo = associations.get( 1 );
-        Assertions.assertEquals( "222", associationTwo.getUserId() );
-        Assertions.assertEquals( DEFAULT_DISPLAY_NAME, associationTwo.getDisplayName() );
-        Assertions.assertEquals( "Wayne Enterprises", associationTwo.getCompanyName() );
+        final var secondAssociation = associations.get( 1 );
+        Assertions.assertEquals( "222", secondAssociation.getUserId() );
+        Assertions.assertEquals( DEFAULT_DISPLAY_NAME, secondAssociation.getDisplayName() );
+        Assertions.assertEquals( "Wayne Enterprises", secondAssociation.getCompanyName() );
     }
 
     @Test
     void getAssociationsForCompanyWithUnacceptablePaginationParametersShouldReturnBadRequest() throws Exception {
-        mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=true&items_per_page=1&page_index=-1", "111111" ).header("X-Request-Id", "theId123") )
+        mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=1&page_index=-1" )
+                        .header("X-Request-Id", "theId123") )
                 .andExpect(status().isBadRequest());
 
-        mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=true&items_per_page=0&page_index=0", "111111" ).header("X-Request-Id", "theId123") )
+        mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=0&page_index=0" )
+                        .header("X-Request-Id", "theId123") )
                 .andExpect(status().isBadRequest());
     }
 
-
     @Test
     void getAssociationsForCompanyFetchesAssociation() throws Exception {
-        final var companyDetails =
-                new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
+        final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var associationOne = testDataManager.fetchAssociationDto( "1", batmanUser );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
 
-        Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( any() );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
-        final var expectedAssociationsList = new AssociationsList();
-        expectedAssociationsList.setTotalResults( 1 );
-        expectedAssociationsList.setItems(List.of( associationOne ));
+        final var expectedAssociationsList = new AssociationsList().totalResults( 1 ).items(List.of( associationOne ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( eq( "111111" ), eq( companyDetails ), eq( false ), eq( 15 ), eq( 0 ));
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/{company_number}?user_email=bruce.wayne@gotham.city", "111111" ).header("X-Request-Id", "theId123") )
-                        .andExpect(status().isOk())
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsByteArray();
+                        .andExpect(status().isOk());
 
-        final var objectMapper = new ObjectMapper();
-        objectMapper.registerModule( new JavaTimeModule() );
-        final var associationsList = objectMapper.readValue( response, AssociationsList.class );
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
 
         Assertions.assertEquals( 1, associationsList.getTotalResults() );
         Assertions.assertEquals( "1", associationsList.getItems().getFirst().getId() );
@@ -363,26 +279,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
     @Test
     void getAssociationsForCompanyWithNonexistentUserEmailFetchesEmptyList() throws Exception {
-        final var companyDetails =
-                new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises");
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
 
-        Mockito.doReturn( companyDetails ).when( companyService ).fetchCompanyProfile( any() );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
-        final var expectedAssociationsList = new AssociationsList();
-        expectedAssociationsList.setTotalResults( 0 );
-        expectedAssociationsList.setItems(List.of());
+        final var expectedAssociationsList = new AssociationsList().totalResults( 0 ).items(List.of());
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( eq( "111111" ), eq( companyDetails ), eq( false ), eq( 15 ), eq( 0 ) );
 
         final var response =
-                mockMvc.perform( get( "/associations/companies/{company_number}?user_email=the.void@space.com", "111111" ).header("X-Request-Id", "theId123") )
-                        .andExpect(status().isOk())
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsByteArray();
+                mockMvc.perform( get( "/associations/companies/111111?user_email=the.void@space.com" ).header("X-Request-Id", "theId123") )
+                        .andExpect(status().isOk());
 
-        final var objectMapper = new ObjectMapper();
-        objectMapper.registerModule( new JavaTimeModule() );
-        final var associationsList = objectMapper.readValue( response, AssociationsList.class );
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
 
         Assertions.assertEquals( 0, associationsList.getTotalResults() );
     }
