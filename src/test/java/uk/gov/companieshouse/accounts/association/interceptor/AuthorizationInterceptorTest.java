@@ -1,6 +1,5 @@
 package uk.gov.companieshouse.accounts.association.interceptor;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -23,13 +22,11 @@ import static org.mockito.ArgumentMatchers.anyString;
 @Tag("unit-test")
 class AuthorizationInterceptorTest {
 
-    AuthorizationInterceptor interceptor;
-
     @Mock
-    UsersService usersService;
+    private UsersService usersService;
 
     @InjectMocks
-    AuthorizationInterceptor authorizationInterceptor;
+    private AuthorizationInterceptor interceptor;
 
     @BeforeEach
     void setup(){
@@ -38,52 +35,52 @@ class AuthorizationInterceptorTest {
 
     @Test
     void preHandleWithoutHeadersReturns401() {
+        final var request = new MockHttpServletRequest();
+        final var response = new MockHttpServletResponse();
 
-        HttpServletRequest request = new MockHttpServletRequest();
-
-        HttpServletResponse response = new MockHttpServletResponse();
         assertFalse(interceptor.preHandle(request, response, null));
         assertEquals(401, response.getStatus());
     }
 
     @Test
     void preHandleWithoutEricIdentityReturns401() {
-        MockHttpServletRequest request = new MockHttpServletRequest();
+        final var request = new MockHttpServletRequest();
         request.addHeader("Eric-Identity-Type", "oauth2");
+        final var response = new MockHttpServletResponse();
 
-        HttpServletResponse response = new MockHttpServletResponse();
         assertFalse(interceptor.preHandle(request, response, null));
         assertEquals(401, response.getStatus());
     }
 
+
+
     @Test
     void preHandleWithoutEricIdentityTypeReturns401() {
-        MockHttpServletRequest request = new MockHttpServletRequest();
+        final var request = new MockHttpServletRequest();
         request.addHeader("Eric-Identity", "abcd123456");
+        final var response = new MockHttpServletResponse();
 
-        HttpServletResponse response = new MockHttpServletResponse();
         assertFalse(interceptor.preHandle(request, response, null));
         assertEquals(401, response.getStatus());
     }
 
     @Test
     void preHandleWithIncorrectEricIdentityTypeReturns401() {
-        MockHttpServletRequest request = new MockHttpServletRequest();
+        final var request = new MockHttpServletRequest();
         request.addHeader("Eric-Identity", "abcd123456");
         request.addHeader("Eric-Identity-Type", "key");
 
-        HttpServletResponse response = new MockHttpServletResponse();
+        final var response = new MockHttpServletResponse();
         assertFalse(interceptor.preHandle(request, response, null));
         assertEquals(401, response.getStatus());
     }
 
     @Test
     void preHandleWithMalformedOrNonexistentEricIdentityReturn403() {
-        MockHttpServletRequest request = new MockHttpServletRequest();
+        final var request = new MockHttpServletRequest();
         request.addHeader("Eric-Identity", "$$$");
         request.addHeader( "ERIC-Identity-Type", "oauth2" );
-
-        HttpServletResponse response = new MockHttpServletResponse();
+        final var response = new MockHttpServletResponse();
 
         Mockito.doThrow( new NotFoundRuntimeException( "accounts-association-api", "Not found" ) ).when( usersService ).fetchUserDetails( anyString() );
 
@@ -93,16 +90,11 @@ class AuthorizationInterceptorTest {
 
     @Test
     void preHandleShouldReturnTrueWhenAuthHeaderAndAuthHeaderTypeOauthAreProvided() {
-        MockHttpServletRequest request = new MockHttpServletRequest();
+        final var request = new MockHttpServletRequest();
         request.addHeader("Eric-identity", "111");
         request.addHeader("Eric-identity-type", "oauth2");
 
-        final var bruce = new User()
-                .userId( "111" )
-                .email( "bruce.wayne@gotham.city" )
-                .displayName( "Batman" );
-
-        Mockito.doReturn( bruce ).when( usersService ).fetchUserDetails( "111" );
+        Mockito.doReturn( new User().userId( "111" ) ).when( usersService ).fetchUserDetails( "111" );
 
         HttpServletResponse response = new MockHttpServletResponse();
         assertTrue(interceptor.preHandle(request, response, null));

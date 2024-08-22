@@ -1,17 +1,12 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.api.client.http.HttpHeaders;
-import com.google.api.client.http.HttpResponseException.Builder;
+import java.io.IOException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentMatcher;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,22 +16,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.MethodMode;
 import org.springframework.test.web.servlet.MockMvc;
+import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
+import uk.gov.companieshouse.accounts.association.common.Mockers;
+import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.models.InvitationDao;
-import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConfirmationEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.AuthorisationRemovedEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InviteEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationAcceptedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
-import uk.gov.companieshouse.accounts.association.service.EmailService;
-import uk.gov.companieshouse.accounts.association.utils.ApiClientUtil;
-import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
@@ -44,24 +32,14 @@ import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
 import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
-import uk.gov.companieshouse.api.accounts.user.model.User;
-import uk.gov.companieshouse.api.accounts.user.model.UsersList;
-import uk.gov.companieshouse.api.company.CompanyDetails;
-import uk.gov.companieshouse.api.error.ApiErrorResponseException;
-import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserUserGet;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
-import uk.gov.companieshouse.api.model.ApiResponse;
-import uk.gov.companieshouse.api.sdk.ApiClientService;
 import uk.gov.companieshouse.email_producer.EmailProducer;
-import uk.gov.companieshouse.email_producer.EmailSendingException;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -72,6 +50,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE;
@@ -82,707 +63,61 @@ import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVIT
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
 @Tag("integration-test")
-public class UserCompanyAssociationsTest {
-
-    @Value("${account.api.url}")
-    private String internalApiUrl;
+class UserCompanyAssociationsTest {
 
     @Autowired
-    MongoTemplate mongoTemplate;
+    private MongoTemplate mongoTemplate;
 
     @Autowired
-    public MockMvc mockMvc;
+    private  MockMvc mockMvc;
 
     @MockBean
-    ApiClientService apiClientService;
+    private CompanyProfileEndpoint companyProfileEndpoint;
 
     @MockBean
-    ApiClientUtil internalApiClient;
+    private AccountsUserEndpoint accountsUserEndpoint;
 
     @MockBean
-    CompanyProfileEndpoint companyProfileEndpoint;
+    private EmailProducer emailProducer;
 
     @MockBean
-    AccountsUserEndpoint accountsUserEndpoint;
-
-    @MockBean
-    EmailProducer emailProducer;
+    private KafkaProducerFactory kafkaProducerFactory;
 
     @Autowired
-    EmailService emailService;
+    private AssociationsRepository associationsRepository;
 
-    @MockBean
-    KafkaProducerFactory kafkaProducerFactory;
-
-    @Autowired
-    AssociationsRepository associationsRepository;
-
-    @MockBean
-    StaticPropertyUtil staticPropertyUtil;
-
-    @Mock
-    PrivateAccountsUserUserGet privateAccountsUserUserGet9999;
-
-    @Mock
-    PrivateAccountsUserUserGet privateAccountsUserUserGet111;
-
-    @Mock
-    PrivateAccountsUserUserGet privateAccountsUserUserGet666;
-
-    @Mock
-    PrivateAccountsUserUserGet privateAccountsUserUserGet5555;
-
-    @Mock
-    PrivateAccountsUserUserGet privateAccountsUserUserGet9191;
-
-    @Mock
-    PrivateAccountsUserUserGet privateAccountsUserUserGet$$$$;
-
-    @Mock
-    PrivateAccountsUserUserGet privateAccountsUserUserGet8888;
-
-    @Mock
-    PrivateAccountsUserUserGet privateAccountsUserUserGet000;
-
-    @Mock
-    PrivateAccountsUserUserGet privateAccountsUserUserGet222;
-
-    @Mock
-    PrivateAccountsUserUserGet privateAccountsUserUserGet333;
-
-    @Mock
-    PrivateAccountsUserUserGet privateAccountsUserUserGet444;
-
-    @Mock
-    PrivateAccountsUserUserGet privateAccountsUserUserGet99999;
+    private TestDataManager testDataManager = TestDataManager.getInstance();
 
     private static final String DEFAULT_KIND = "association";
 
     @Value( "${invitation.url}")
     private String COMPANY_INVITATIONS_URL;
 
-
     private final LocalDateTime now = LocalDateTime.now();
 
-    private ApiResponse<CompanyDetails> toCompanyDetailsApiResponse( final String companyNumber, final String companyName ){
-        final var companyDetails = new CompanyDetails();
-        companyDetails.setCompanyNumber( companyNumber );
-        companyDetails.setCompanyName( companyName );
-        return new ApiResponse<>( 200, Map.of(), companyDetails );
-    }
+    private CountDownLatch latch;
 
-    private ApiResponse<User> toGetUserDetailsApiResponse( final String userId, final String email, final String displayName ){
-        final var user = new User().userId(userId).email( email ).displayName( displayName );
-        return new ApiResponse<>( 200, Map.of(), user );
-    }
+    private Mockers mockers;
 
-    private ApiResponse<UsersList> toSearchUserDetailsApiResponse( final String email, final String userId ){
-        final var usersList = new UsersList();
-        usersList.add( new User().email( email ).userId( userId ) );
-        return new ApiResponse<>( 200, Map.of(), usersList );
-    }
+    private ComparisonUtils comparisonUtils = new ComparisonUtils();
 
-    CountDownLatch latch;
+    private void setEmailProducerCountDownLatch( int countdown ){
+        latch = new CountDownLatch( countdown );
+        doAnswer( invocation -> {
+            latch.countDown();
+            return null;
+        } ).when( emailProducer ).sendEmail( any(), any() );
+    }
 
     @BeforeEach
-    public void setup() throws ApiErrorResponseException, URIValidationException {
-
-        final var invitationEighteen = new InvitationDao();
-        invitationEighteen.setInvitedBy("666");
-        invitationEighteen.setInvitedAt(now.plusDays(4));
-
-        final var associationEighteen = new AssociationDao();
-        associationEighteen.setCompanyNumber("333333");
-        associationEighteen.setUserId("9999");
-        //associationEighteen.setUserEmail("scrooge.mcduck@disney.land");
-        associationEighteen.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationEighteen.setId("18");
-        associationEighteen.setApprovedAt(now.plusDays(1));
-        associationEighteen.setRemovedAt(now.plusDays(2));
-        associationEighteen.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationEighteen.setApprovalExpiryAt(now.plusDays(3));
-        associationEighteen.setInvitations( List.of( invitationEighteen ) );
-        associationEighteen.setEtag( "aa" );
-
-        final var invitationNineteen = new InvitationDao();
-        invitationNineteen.setInvitedBy("666");
-        invitationNineteen.setInvitedAt( now.plusDays(8) );
-
-        final var associationNineteen = new AssociationDao();
-        associationNineteen.setCompanyNumber("444444");
-        associationNineteen.setUserId("9999");
-        associationNineteen.setUserEmail("scrooge.mcduck@disney.land");
-        associationNineteen.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationNineteen.setId("19");
-        associationNineteen.setApprovedAt( now.plusDays(5) );
-        associationNineteen.setRemovedAt( now.plusDays(6) );
-        associationNineteen.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationNineteen.setApprovalExpiryAt( now.plusDays(7) );
-        associationNineteen.setInvitations( List.of( invitationNineteen ) );
-        associationNineteen.setEtag("bb");
-
-        final var invitationTwenty = new InvitationDao();
-        invitationTwenty.setInvitedBy("666");
-        invitationTwenty.setInvitedAt( now.plusDays(12) );
-
-        final var associationTwenty = new AssociationDao();
-        associationTwenty.setCompanyNumber("555555");
-        associationTwenty.setUserId("9999");
-        associationTwenty.setUserEmail("scrooge.mcduck@disney.land");
-        associationTwenty.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationTwenty.setId("20");
-        associationTwenty.setApprovedAt( now.plusDays(9) );
-        associationTwenty.setRemovedAt( now.plusDays(10) );
-        associationTwenty.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationTwenty.setApprovalExpiryAt( now.plusDays(11) );
-        associationTwenty.setInvitations( List.of( invitationTwenty ) );
-        associationTwenty.setEtag("cc");
-
-        final var invitationTwentyOne = new InvitationDao();
-        invitationTwentyOne.setInvitedBy("666");
-        invitationTwentyOne.setInvitedAt( now.plusDays(16) );
-
-        final var associationTwentyOne = new AssociationDao();
-        associationTwentyOne.setCompanyNumber("666666");
-        associationTwentyOne.setUserId("9999");
-        associationTwentyOne.setUserEmail("scrooge.mcduck@disney.land");
-        associationTwentyOne.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationTwentyOne.setId("21");
-        associationTwentyOne.setApprovedAt( now.plusDays(13) );
-        associationTwentyOne.setRemovedAt( now.plusDays(14) );
-        associationTwentyOne.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationTwentyOne.setApprovalExpiryAt( now.plusDays(15) );
-        associationTwentyOne.setInvitations( List.of( invitationTwentyOne ) );
-        associationTwentyOne.setEtag("dd");
-
-        final var invitationTwentyTwo = new InvitationDao();
-        invitationTwentyTwo.setInvitedBy("666");
-        invitationTwentyTwo.setInvitedAt( now.plusDays(20) );
-
-        final var associationTwentyTwo = new AssociationDao();
-        associationTwentyTwo.setCompanyNumber("777777");
-        associationTwentyTwo.setUserId("9999");
-        associationTwentyTwo.setUserEmail("scrooge.mcduck@disney.land");
-        associationTwentyTwo.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationTwentyTwo.setId("22");
-        associationTwentyTwo.setApprovedAt( now.plusDays(17) );
-        associationTwentyTwo.setRemovedAt( now.plusDays(18) );
-        associationTwentyTwo.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationTwentyTwo.setApprovalExpiryAt( now.plusDays(19) );
-        associationTwentyTwo.setInvitations( List.of( invitationTwentyTwo ) );
-        associationTwentyTwo.setEtag("ee");
-
-        final var invitationTwentyThree = new InvitationDao();
-        invitationTwentyThree.setInvitedBy("5555");
-        invitationTwentyThree.setInvitedAt( now.plusDays(24) );
-
-        final var associationTwentyThree = new AssociationDao();
-        associationTwentyThree.setCompanyNumber("888888");
-        associationTwentyThree.setUserId("9999");
-        associationTwentyThree.setUserEmail("scrooge.mcduck@disney.land");
-        associationTwentyThree.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
-        associationTwentyThree.setId("23");
-        associationTwentyThree.setApprovedAt( now.plusDays(21) );
-        associationTwentyThree.setRemovedAt( now.plusDays(22) );
-        associationTwentyThree.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationTwentyThree.setApprovalExpiryAt( now.plusDays(23) );
-        associationTwentyThree.setInvitations( List.of( invitationTwentyThree ) );
-        associationTwentyThree.setEtag("ff");
-
-        final var invitationTwentyFour = new InvitationDao();
-        invitationTwentyFour.setInvitedBy("5555");
-        invitationTwentyFour.setInvitedAt( now.plusDays(28) );
-
-        final var associationTwentyFour = new AssociationDao();
-        associationTwentyFour.setCompanyNumber("999999");
-        associationTwentyFour.setUserId("9999");
-        associationTwentyFour.setUserEmail("scrooge.mcduck@disney.land");
-        associationTwentyFour.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
-        associationTwentyFour.setId("24");
-        associationTwentyFour.setApprovedAt( now.plusDays(25) );
-        associationTwentyFour.setRemovedAt( now.plusDays(26) );
-        associationTwentyFour.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationTwentyFour.setApprovalExpiryAt( now.plusDays(27) );
-        associationTwentyFour.setInvitations( List.of( invitationTwentyFour ) );
-        associationTwentyFour.setEtag("gg");
-
-        final var invitationTwentyFive = new InvitationDao();
-        invitationTwentyFive.setInvitedBy("5555");
-        invitationTwentyFive.setInvitedAt( now.plusDays(32) );
-
-        final var associationTwentyFive = new AssociationDao();
-        associationTwentyFive.setCompanyNumber("x111111");
-        associationTwentyFive.setUserId("9999");
-        associationTwentyFive.setUserEmail("scrooge.mcduck@disney.land");
-        associationTwentyFive.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
-        associationTwentyFive.setId("25");
-        associationTwentyFive.setApprovedAt( now.plusDays(29) );
-        associationTwentyFive.setRemovedAt( now.plusDays(30) );
-        associationTwentyFive.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationTwentyFive.setApprovalExpiryAt( now.plusDays(31) );
-        associationTwentyFive.setInvitations( List.of( invitationTwentyFive ) );
-        associationTwentyFive.setEtag("hh");
-
-        final var invitationTwentySix = new InvitationDao();
-        invitationTwentySix.setInvitedBy("5555");
-        invitationTwentySix.setInvitedAt( now.plusDays(36) );
-
-        final var associationTwentySix = new AssociationDao();
-        associationTwentySix.setCompanyNumber("x222222");
-        associationTwentySix.setUserId("9999");
-        associationTwentySix.setUserEmail("scrooge.mcduck@disney.land");
-        associationTwentySix.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
-        associationTwentySix.setId("26");
-        associationTwentySix.setApprovedAt( now.plusDays(33) );
-        associationTwentySix.setRemovedAt( now.plusDays(34) );
-        associationTwentySix.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationTwentySix.setApprovalExpiryAt( now.plusDays(35) );
-        associationTwentySix.setInvitations( List.of( invitationTwentySix ) );
-        associationTwentySix.setEtag("ii");
-
-        final var invitationTwentySeven = new InvitationDao();
-        invitationTwentySeven.setInvitedBy("5555");
-        invitationTwentySeven.setInvitedAt( now.plusDays(40) );
-
-        final var associationTwentySeven = new AssociationDao();
-        associationTwentySeven.setCompanyNumber("x333333");
-        associationTwentySeven.setUserId("9999");
-        associationTwentySeven.setUserEmail("scrooge.mcduck@disney.land");
-        associationTwentySeven.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
-        associationTwentySeven.setId("27");
-        associationTwentySeven.setApprovedAt( now.plusDays(37) );
-        associationTwentySeven.setRemovedAt( now.plusDays(38) );
-        associationTwentySeven.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationTwentySeven.setApprovalExpiryAt( now.plusDays(39) );
-        associationTwentySeven.setInvitations( List.of( invitationTwentySeven ) );
-        associationTwentySeven.setEtag("jj");
-
-        final var invitationTwentyEight = new InvitationDao();
-        invitationTwentyEight.setInvitedBy("5555");
-        invitationTwentyEight.setInvitedAt( now.plusDays(44) );
-
-        final var associationTwentyEight = new AssociationDao();
-        associationTwentyEight.setCompanyNumber("x444444");
-        associationTwentyEight.setUserId("9999");
-        associationTwentyEight.setUserEmail("scrooge.mcduck@disney.land");
-        associationTwentyEight.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
-        associationTwentyEight.setId("28");
-        associationTwentyEight.setApprovedAt( now.plusDays(41) );
-        associationTwentyEight.setRemovedAt( now.plusDays(42) );
-        associationTwentyEight.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationTwentyEight.setApprovalExpiryAt( now.plusDays(43) );
-        associationTwentyEight.setInvitations( List.of( invitationTwentyEight ) );
-        associationTwentyEight.setEtag("kk");
-
-        final var invitationTwentyNine = new InvitationDao();
-        invitationTwentyNine.setInvitedBy("5555");
-        invitationTwentyNine.setInvitedAt( now.plusDays(48) );
-
-        final var associationTwentyNine = new AssociationDao();
-        associationTwentyNine.setCompanyNumber("x555555");
-        associationTwentyNine.setUserId("9999");
-        associationTwentyNine.setUserEmail("scrooge.mcduck@disney.land");
-        associationTwentyNine.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
-        associationTwentyNine.setId("29");
-        associationTwentyNine.setApprovedAt( now.plusDays(45) );
-        associationTwentyNine.setRemovedAt( now.plusDays(46) );
-        associationTwentyNine.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationTwentyNine.setApprovalExpiryAt( now.plusDays(47) );
-        associationTwentyNine.setInvitations( List.of( invitationTwentyNine ) );
-        associationTwentyNine.setEtag("ll");
-
-        final var invitationThirty = new InvitationDao();
-        invitationThirty.setInvitedBy("5555");
-        invitationThirty.setInvitedAt( now.plusDays(52) );
-
-        final var associationThirty = new AssociationDao();
-        associationThirty.setCompanyNumber("x666666");
-        associationThirty.setUserId("9999");
-        associationThirty.setUserEmail("scrooge.mcduck@disney.land");
-        associationThirty.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
-        associationThirty.setId("30");
-        associationThirty.setApprovedAt( now.plusDays(49) );
-        associationThirty.setRemovedAt( now.plusDays(50) );
-        associationThirty.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationThirty.setApprovalExpiryAt( now.plusDays(51) );
-        associationThirty.setInvitations( List.of( invitationThirty ) );
-        associationThirty.setEtag("mm");
-
-        final var invitationThirtyOne = new InvitationDao();
-        invitationThirtyOne.setInvitedBy("111");
-        invitationThirtyOne.setInvitedAt( now.plusDays(56) );
-
-        final var associationThirtyOne = new AssociationDao();
-        associationThirtyOne.setCompanyNumber("x777777");
-        associationThirtyOne.setUserId("9999");
-        associationThirtyOne.setUserEmail("scrooge.mcduck@disney.land");
-        associationThirtyOne.setStatus(StatusEnum.REMOVED.getValue());
-        associationThirtyOne.setId("31");
-        associationThirtyOne.setApprovedAt( now.plusDays(53) );
-        associationThirtyOne.setRemovedAt( now.plusDays(54) );
-        associationThirtyOne.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationThirtyOne.setApprovalExpiryAt( now.plusDays(55) );
-        associationThirtyOne.setInvitations( List.of( invitationThirtyOne ) );
-        associationThirtyOne.setEtag("nn");
-
-        final var invitationThirtyTwo = new InvitationDao();
-        invitationThirtyTwo.setInvitedBy("111");
-        invitationThirtyTwo.setInvitedAt( now.plusDays(60) );
-
-        final var associationThirtyTwo = new AssociationDao();
-        associationThirtyTwo.setCompanyNumber("x888888");
-        associationThirtyTwo.setUserId("9999");
-        associationThirtyTwo.setUserEmail("scrooge.mcduck@disney.land");
-        associationThirtyTwo.setStatus(StatusEnum.REMOVED.getValue());
-        associationThirtyTwo.setId("32");
-        associationThirtyTwo.setApprovedAt( now.plusDays(57) );
-        associationThirtyTwo.setRemovedAt( now.plusDays(58) );
-        associationThirtyTwo.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationThirtyTwo.setApprovalExpiryAt( now.plusDays(59) );
-        associationThirtyTwo.setInvitations( List.of( invitationThirtyTwo ) );
-        associationThirtyTwo.setEtag("oo");
-
-        final var invitationThirtyThree = new InvitationDao();
-        invitationThirtyThree.setInvitedBy("111");
-        invitationThirtyThree.setInvitedAt( now.plusDays(64) );
-
-        final var associationThirtyThree = new AssociationDao();
-        associationThirtyThree.setCompanyNumber("x999999");
-        associationThirtyThree.setUserId("9999");
-        associationThirtyThree.setUserEmail("scrooge.mcduck@disney.land");
-        associationThirtyThree.setStatus(StatusEnum.REMOVED.getValue());
-        associationThirtyThree.setId("33");
-        associationThirtyThree.setApprovedAt( now.plusDays(61) );
-        associationThirtyThree.setRemovedAt( now.plusDays(62) );
-        associationThirtyThree.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationThirtyThree.setApprovalExpiryAt( now.plusDays(63) );
-        associationThirtyThree.setInvitations( List.of( invitationThirtyThree ) );
-        associationThirtyThree.setEtag("pp");
-
-        final var invitationSeventeen = new InvitationDao();
-        invitationSeventeen.setInvitedBy("111");
-        invitationSeventeen.setInvitedAt( now.plusDays(68) );
-
-        final var associationSeventeen = new AssociationDao();
-        associationSeventeen.setCompanyNumber("222222");
-        associationSeventeen.setUserId("8888");
-        associationSeventeen.setUserEmail("mr.blobby@nightmare.com");
-        associationSeventeen.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationSeventeen.setId("17");
-        associationSeventeen.setApprovedAt( now.plusDays(65) );
-        associationSeventeen.setRemovedAt( now.plusDays(66) );
-        associationSeventeen.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationSeventeen.setApprovalExpiryAt( now.plusDays(67) );
-        associationSeventeen.setInvitations( List.of( invitationSeventeen ) );
-        associationSeventeen.setEtag("q");
-
-        final var associationThirtyFour = new AssociationDao();
-        associationThirtyFour.setCompanyNumber("333333");
-        associationThirtyFour.setUserEmail("russell.howard@comedy.com");
-        associationThirtyFour.setId("34");
-        associationThirtyFour.setStatus(StatusEnum.REMOVED.getValue());
-        associationThirtyFour.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationThirtyFour.setEtag("qq");
-
-        final var associationThirtyFive = new AssociationDao();
-        associationThirtyFive.setCompanyNumber("333333");
-        associationThirtyFive.setUserId("111");
-        associationThirtyFive.setId("35");
-        associationThirtyFive.setStatus(StatusEnum.REMOVED.getValue());
-        associationThirtyFive.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationThirtyFive.setEtag("rr");
-
-        final var associationThirtySix = new AssociationDao();
-        associationThirtySix.setCompanyNumber("111111");
-        associationThirtySix.setUserId("111");
-        associationThirtySix.setId("36");
-        associationThirtySix.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationThirtySix.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationThirtySix.setEtag("rs");
-
-        final var invitationTwo = new InvitationDao();
-        invitationTwo.setInvitedBy("666");
-        invitationTwo.setInvitedAt( now.plusDays(8) );
-
-        final var associationTwo = new AssociationDao();
-        associationTwo.setCompanyNumber("x999999");
-        associationTwo.setUserId("222");
-        associationTwo.setUserEmail("the.joker@gotham.city");
-        associationTwo.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationTwo.setId("38");
-        associationTwo.setApprovedAt( now.plusDays(5) );
-        associationTwo.setRemovedAt( now.plusDays(6) );
-        associationTwo.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationTwo.setApprovalExpiryAt( now.plusDays(7) );
-        associationTwo.setInvitations( List.of( invitationTwo ) );
-        associationTwo.setEtag("b");
-
-        final var invitationThree = new InvitationDao();
-        invitationThree.setInvitedBy("666");
-        invitationThree.setInvitedAt( now.plusDays(12) );
-
-        final var associationThree = new AssociationDao();
-        associationThree.setCompanyNumber("x999999");
-        associationThree.setUserId("333");
-        associationThree.setUserEmail("harley.quinn@gotham.city");
-        associationThree.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationThree.setId("39");
-        associationThree.setApprovedAt( now.plusDays(9) );
-        associationThree.setRemovedAt( now.plusDays(10) );
-        associationThree.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationThree.setApprovalExpiryAt( now.plusDays(11) );
-        associationThree.setInvitations( List.of( invitationThree ) );
-        associationThree.setEtag("c");
-
-        final var invitationFour = new InvitationDao();
-        invitationFour.setInvitedBy("666");
-        invitationFour.setInvitedAt( now.plusDays(16) );
-
-        final var associationFour = new AssociationDao();
-        associationFour.setCompanyNumber("x999999");
-        associationFour.setUserId("444");
-        associationFour.setUserEmail("robin@gotham.city");
-        associationFour.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationFour.setId("40");
-        associationFour.setApprovedAt( now.plusDays(13) );
-        associationFour.setRemovedAt( now.plusDays(14) );
-        associationFour.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationFour.setApprovalExpiryAt( now.plusDays(15) );
-        associationFour.setInvitations( List.of( invitationFour ) );
-        associationFour.setEtag("d");
-
-        final var associationFortyOne = new AssociationDao();
-        associationFortyOne.setCompanyNumber("x888888");
-        associationFortyOne.setUserId("222");
-        associationFortyOne.setUserEmail("the.joker@gotham.city");
-        associationFortyOne.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationFortyOne.setId("41");
-        associationFortyOne.setApprovedAt( now.plusDays(5) );
-        associationFortyOne.setRemovedAt( now.plusDays(6) );
-        associationFortyOne.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationFortyOne.setApprovalExpiryAt( now.plusDays(7) );
-        associationFortyOne.setInvitations( List.of() );
-        associationFortyOne.setEtag("b");
-
-        final var invitationFortyTwoA = new InvitationDao();
-        invitationFortyTwoA.setInvitedBy("222");
-        invitationFortyTwoA.setInvitedAt( now.plusDays(16) );
-
-        final var invitationFortyTwoB = new InvitationDao();
-        invitationFortyTwoB.setInvitedBy("444");
-        invitationFortyTwoB.setInvitedAt( now.plusDays(14) );
-
-        final var associationFortyTwo = new AssociationDao();
-        associationFortyTwo.setCompanyNumber("x888888");
-        associationFortyTwo.setUserId("333");
-        associationFortyTwo.setUserEmail("harley.quinn@gotham.city");
-        associationFortyTwo.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
-        associationFortyTwo.setId("42");
-        associationFortyTwo.setApprovedAt( now.plusDays(9) );
-        associationFortyTwo.setRemovedAt( now.plusDays(10) );
-        associationFortyTwo.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationFortyTwo.setApprovalExpiryAt( now.plusDays(11) );
-        associationFortyTwo.setInvitations( List.of( invitationFortyTwoA, invitationFortyTwoB ) );
-        associationFortyTwo.setEtag("c");
-
-        final var associationFortyThree = new AssociationDao();
-        associationFortyThree.setCompanyNumber("x888888");
-        associationFortyThree.setUserId("444");
-        associationFortyThree.setUserEmail("robin@gotham.city");
-        associationFortyThree.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationFortyThree.setId("43");
-        associationFortyThree.setApprovedAt( now.plusDays(13) );
-        associationFortyThree.setRemovedAt( now.plusDays(14) );
-        associationFortyThree.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationFortyThree.setApprovalExpiryAt( now.plusDays(15) );
-        associationFortyThree.setInvitations( List.of() );
-        associationFortyThree.setEtag("d");
-
-        final var associationFortyFour = new AssociationDao();
-        associationFortyFour.setCompanyNumber("x777777");
-        associationFortyFour.setUserId("777");
-        associationFortyFour.setUserEmail("homer.simpson@springfield.com");
-        associationFortyFour.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationFortyFour.setId("44");
-        associationFortyFour.setApprovedAt( now.plusDays(5) );
-        associationFortyFour.setRemovedAt( now.plusDays(6) );
-        associationFortyFour.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationFortyFour.setApprovalExpiryAt( now.plusDays(7) );
-        associationFortyFour.setInvitations( List.of() );
-        associationFortyFour.setEtag("b");
-
-        final var invitationFortyFiveA = new InvitationDao();
-        invitationFortyFiveA.setInvitedBy("777");
-        invitationFortyFiveA.setInvitedAt( now.plusDays(16) );
-
-        final var invitationFortyFiveB = new InvitationDao();
-        invitationFortyFiveB.setInvitedBy("999");
-        invitationFortyFiveB.setInvitedAt( now.plusDays(14) );
-
-        final var associationFortyFive = new AssociationDao();
-        associationFortyFive.setCompanyNumber("x777777");
-        associationFortyFive.setUserId("888");
-        associationFortyFive.setUserEmail("marge.simpson@springfield.com");
-        associationFortyFive.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
-        associationFortyFive.setId("45");
-        associationFortyFive.setApprovedAt( now.plusDays(9) );
-        associationFortyFive.setRemovedAt( now.plusDays(10) );
-        associationFortyFive.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationFortyFive.setApprovalExpiryAt( now.plusDays(11) );
-        associationFortyFive.setInvitations( List.of( invitationFortyFiveA, invitationFortyFiveB ) );
-        associationFortyFive.setEtag("c");
-
-        final var associationFortySix = new AssociationDao();
-        associationFortySix.setCompanyNumber("x777777");
-        associationFortySix.setUserId("999");
-        associationFortySix.setUserEmail("bart.simpson@springfield.com");
-        associationFortySix.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationFortySix.setId("46");
-        associationFortySix.setApprovedAt( now.plusDays(13) );
-        associationFortySix.setRemovedAt( now.plusDays(14) );
-        associationFortySix.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationFortySix.setApprovalExpiryAt( now.plusDays(15) );
-        associationFortySix.setInvitations( List.of() );
-        associationFortySix.setEtag("d");
-
-
-
-        final var invitationFortySevenOldest = new InvitationDao();
-        invitationFortySevenOldest.setInvitedBy("666");
-        invitationFortySevenOldest.setInvitedAt(now.minusDays(9));
-
-        final var invitationFortySevenMedian = new InvitationDao();
-        invitationFortySevenMedian.setInvitedBy("333");
-        invitationFortySevenMedian.setInvitedAt(now.minusDays(6));
-
-        final var invitationFortySevenNewest = new InvitationDao();
-        invitationFortySevenNewest.setInvitedBy("444");
-        invitationFortySevenNewest.setInvitedAt(now.minusDays(4));
-
-        final var associationFortySeven = new AssociationDao();
-        associationFortySeven.setCompanyNumber("333333P");
-        associationFortySeven.setUserId("99999");
-        associationFortySeven.setUserEmail("scrooge.mcduck1@disney.land");
-        associationFortySeven.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
-        associationFortySeven.setId("47");
-        associationFortySeven.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationFortySeven.setApprovalExpiryAt(now.plusDays(11));
-        associationFortySeven.setInvitations( List.of( invitationFortySevenMedian, invitationFortySevenOldest, invitationFortySevenNewest ) );
-        associationFortySeven.setEtag( "aa" );
-
-        final var invitationFortyEightOldest = new InvitationDao();
-        invitationFortyEightOldest.setInvitedBy("111");
-        invitationFortyEightOldest.setInvitedAt( now.minusDays(3) );
-
-        final var invitationFortyEightMedian = new InvitationDao();
-        invitationFortyEightMedian.setInvitedBy("222");
-        invitationFortyEightMedian.setInvitedAt( now.minusDays(2) );
-
-        final var invitationFortyEightNewest = new InvitationDao();
-        invitationFortyEightNewest.setInvitedBy("444");
-        invitationFortyEightNewest.setInvitedAt( now.plusDays(8) );
-
-        final var associationFortyEight = new AssociationDao();
-        associationFortyEight.setCompanyNumber("444444P");
-        associationFortyEight.setUserId("99999");
-        associationFortyEight.setUserEmail("scrooge.mcduck1@disney.land");
-        associationFortyEight.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
-        associationFortyEight.setId("48");
-        associationFortyEight.setApprovalRoute(ApprovalRouteEnum.INVITATION.getValue());
-        associationFortyEight.setApprovalExpiryAt( now.plusDays(8) );
-        associationFortyEight.setInvitations( List.of( invitationFortyEightOldest, invitationFortyEightMedian, invitationFortyEightNewest ) );
-        associationFortyEight.setEtag("bb");
-
-        associationsRepository.insert( List.of( associationEighteen, associationNineteen, associationTwenty, associationTwentyOne,
-                associationTwentyTwo, associationTwentyThree, associationTwentyFour, associationTwentyFive, associationTwentySix,
-                associationTwentySeven, associationTwentyEight, associationTwentyNine, associationThirty, associationThirtyOne,
-                associationThirtyTwo, associationThirtyThree, associationSeventeen, associationThirtyFour, associationThirtyFive, associationThirtySix,
-                associationTwo, associationThree, associationFour, associationFortyOne, associationFortyTwo, associationFortyThree,
-                associationFortyFour, associationFortyFive, associationFortySix, associationFortySeven, associationFortyEight ) );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "111111", "Sainsbury's" ) ).when( companyProfileEndpoint ).fetchCompanyProfile(  "111111" );
-
-        Mockito.doReturn( toCompanyDetailsApiResponse( "333333", "Tesco" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "333333" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "444444", "Sainsbury's" ) ).when( companyProfileEndpoint ).fetchCompanyProfile(  "444444" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "555555", "Morrison" ) ).when( companyProfileEndpoint ).fetchCompanyProfile(  "555555" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "666666", "Aldi" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "666666" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "777777", "Lidl" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "777777" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "888888", "McDonald's" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "888888" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "999999", "Burger King" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "999999" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "x111111", "Pizza Hut" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "x111111" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "x222222", "Dominos" ) ).when( companyProfileEndpoint ).fetchCompanyProfile(  "x222222" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "x333333", "Pizza Express" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "x333333" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "x444444", "Nandos" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "x444444" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "x555555", "Subway" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "x555555" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "x666666", "Greggs" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "x666666" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "x777777", "Facebook" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "x777777" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "x888888", "Twitter" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "x888888" );
-        Mockito.doReturn( toCompanyDetailsApiResponse( "x999999", "Instram" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "x999999" );
-        Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "919191" );
-
-        Mockito.doReturn( privateAccountsUserUserGet9999 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "9999" );
-        Mockito.doReturn( privateAccountsUserUserGet111 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "111" );
-        Mockito.doReturn( privateAccountsUserUserGet666 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "666" );
-        Mockito.doReturn( privateAccountsUserUserGet5555 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "5555" );
-        Mockito.doReturn( privateAccountsUserUserGet9191 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "9191" );
-        Mockito.doReturn( privateAccountsUserUserGet$$$$ ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "$$$$" );
-        Mockito.doReturn( privateAccountsUserUserGet000 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "000" );
-        Mockito.doReturn( privateAccountsUserUserGet222 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "222" );
-        Mockito.doReturn( privateAccountsUserUserGet333 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "333" );
-        Mockito.doReturn( privateAccountsUserUserGet444 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "444" );
-        Mockito.doReturn( privateAccountsUserUserGet99999 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "99999" );
-
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "9999", "scrooge.mcduck@disney.land", "Scrooge McDuck" ) ).when( privateAccountsUserUserGet9999 ).execute();
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "111", "bruce.wayne@gotham.city", "Batman" ) ).when( privateAccountsUserUserGet111 ).execute();
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "666", "homer.simpson@springfield.com", null ) ).when( privateAccountsUserUserGet666 ).execute();
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "5555", "ross@friends.com", null ) ).when( privateAccountsUserUserGet5555 ).execute();
-        Mockito.lenient().doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet9191 ).execute();
-        Mockito.lenient().doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet$$$$ ).execute();
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "000", "zero@coke.com", null ) ).when( privateAccountsUserUserGet000 ).execute();
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "222", "the.joker@gotham.city", null ) ).when( privateAccountsUserUserGet222 ).execute();
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "333", "harley.quinn@gotham.city", null ) ).when( privateAccountsUserUserGet333 ).execute();
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "444", "robin@gotham.city", null ) ).when( privateAccountsUserUserGet444 ).execute();
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "99999", "scrooge.mcduck1@disney.land", null ) ).when( privateAccountsUserUserGet99999 ).execute();
-
-        Mockito.doReturn( toCompanyDetailsApiResponse( "000000", "Boston Dynamics" ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "000000" );
-        Mockito.doReturn( toSearchUserDetailsApiResponse( "bruce.wayne@gotham.city", "111" ) ).when( accountsUserEndpoint ).searchUserDetails( eq( List.of( "bruce.wayne@gotham.city" ) ) );
-
-        Mockito.doReturn( toSearchUserDetailsApiResponse( "robin@gotham.city", "444" ) ).when( accountsUserEndpoint ).searchUserDetails( eq( List.of( "robin@gotham.city" ) ) );
-
-        latch = new CountDownLatch(1);
-        doAnswer( invocation -> {
-            latch.countDown();
-            return null;
-        } ).when(emailProducer).sendEmail(any(), any());
-
-    }
-
-    @Test
-    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD )
-    void updateAssociationStatusForIdUserAcceptedInvitationNotificationsSendsNotification() throws Exception {
-        Mockito.lenient().doReturn( toSearchUserDetailsApiResponse(  "harley.quinn@gotham.city", "333" ) ).when( accountsUserEndpoint ).searchUserDetails( eq( List.of( "harley.quinn@gotham.city" ) ) );
-
-
-        latch = new CountDownLatch(3);
-        doAnswer( invocation -> {
-            latch.countDown();
-            return null;
-        } ).when(emailProducer).sendEmail(any(), any());
-
-        mockMvc.perform( patch( "/associations/{associationId}", "42" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "333")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
-                        .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"status\":\"confirmed\"}" ) )
-                .andExpect( status().isOk() );
-
-        latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer, times( 3 ) ).sendEmail( argThat( invitationAcceptedEmailDataMatcher( List.of("the.joker@gotham.city", "robin@gotham.city", "harley.quinn@gotham.city" ), "Companies House: harley.quinn@gotham.city is now authorised to file online for Twitter", "harley.quinn@gotham.city", "Twitter", "the.joker@gotham.city" ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() ) );
+    public void setup() throws IOException, URIValidationException {
+        mockers = new Mockers( accountsUserEndpoint, companyProfileEndpoint, emailProducer, null, null );
     }
 
     @Test
     void fetchAssociationsByWithoutXRequestIdReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform( get( "/associations" )
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -801,6 +136,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByWithInvalidPageIndexReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform( get( "/associations?page_index=-1" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
@@ -811,6 +148,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByWithInvalidItemsPerPageReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform( get( "/associations?items_per_page=0" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
@@ -821,6 +160,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByWithMalformedCompanyNumberReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform( get( "/associations?company_number=$$$$$$" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
@@ -831,6 +172,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByWithNonExistentUserReturnsForbidden() throws Exception {
+        mockers.mockGetUserDetailsNotFound( "9191" );
+
         mockMvc.perform( get( "/associations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9191")
@@ -841,9 +184,9 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByWithNonexistentCompanyReturnsNotFound() throws Exception {
-        Mockito.doReturn( privateAccountsUserUserGet8888 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "8888" );
-        Mockito.doReturn( toGetUserDetailsApiResponse( "8888", "mr.blobby@nightmare.com", "Mr Blobby" ) ).when( privateAccountsUserUserGet8888 ).execute();
-        Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( companyProfileEndpoint ).fetchCompanyProfile( "222222" );
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "17" ) );
+        mockers.mockGetUserDetails( "8888" );
+        mockers.mockFetchCompanyProfileNotFound( "222222" );
 
         mockMvc.perform( get( "/associations" )
                         .header("X-Request-Id", "theId123")
@@ -855,38 +198,36 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByWithInvalidStatusReturnsZeroResults() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         final var response =
                 mockMvc.perform( get( "/associations?status=$$$$" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
                                 .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
-                        .andExpect( status().isOk() )
-                        .andReturn()
-                        .getResponse();
+                        .andExpect( status().isOk() );
 
-        final var objectMapper = new ObjectMapper();
-        objectMapper.registerModule( new JavaTimeModule() );
-        final AssociationsList associationsList = objectMapper.readValue( response.getContentAsByteArray(), AssociationsList.class );
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
 
         Assertions.assertEquals( 0, associationsList.getTotalResults() );
     }
 
     @Test
     void fetchAssociationsByUsesDefaultsIfValuesAreNotProvided() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockFetchCompanyProfile( "333333", "444444", "555555", "666666", "777777" );
+
         final var response =
                 mockMvc.perform( get( "/associations" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
                                 .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
-                        .andExpect( status().isOk() )
-                        .andReturn()
-                        .getResponse();
+                        .andExpect( status().isOk() );
 
-        final var objectMapper = new ObjectMapper();
-        objectMapper.registerModule( new JavaTimeModule() );
-        final AssociationsList associationsList = objectMapper.readValue( response.getContentAsByteArray(), AssociationsList.class );
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
         final var links = associationsList.getLinks();
 
         final var items =
@@ -906,19 +247,19 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByWithOneStatusAppliesStatusFilterCorrectly() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockFetchCompanyProfile( "x777777", "x888888", "x999999" );
+
         final var response =
                 mockMvc.perform( get( "/associations?status=removed" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
                                 .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
-                        .andExpect( status().isOk() )
-                        .andReturn()
-                        .getResponse();
+                        .andExpect( status().isOk() );
 
-        final var objectMapper = new ObjectMapper();
-        objectMapper.registerModule( new JavaTimeModule() );
-        final AssociationsList associationsList = objectMapper.readValue( response.getContentAsByteArray(), AssociationsList.class );
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
         final var links = associationsList.getLinks();
 
         final var items =
@@ -938,19 +279,19 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByWithMultipleStatusesAppliesStatusFilterCorrectly() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockFetchCompanyProfile( "333333", "444444", "555555", "666666", "777777", "x777777", "x888888", "x999999" );
+
         final var response =
                 mockMvc.perform( get( "/associations?status=confirmed&status=removed" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
                                 .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
-                        .andExpect( status().isOk() )
-                        .andReturn()
-                        .getResponse();
+                        .andExpect( status().isOk() );
 
-        final var objectMapper = new ObjectMapper();
-        objectMapper.registerModule( new JavaTimeModule() );
-        final AssociationsList associationsList = objectMapper.readValue( response.getContentAsByteArray(), AssociationsList.class );
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
         final var links = associationsList.getLinks();
 
         final var items =
@@ -970,19 +311,19 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByImplementsPaginationCorrectly() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockFetchCompanyProfile( "999999", "x111111", "x222222" );
+
         final var response =
                 mockMvc.perform( get( "/associations?status=confirmed&status=awaiting-approval&status=removed&page_index=2&items_per_page=3" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
                                 .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
-                        .andExpect( status().isOk() )
-                        .andReturn()
-                        .getResponse();
+                        .andExpect( status().isOk() );
 
-        final var objectMapper = new ObjectMapper();
-        objectMapper.registerModule( new JavaTimeModule() );
-        final AssociationsList associationsList = objectMapper.readValue( response.getContentAsByteArray(), AssociationsList.class );
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
         final var links = associationsList.getLinks();
 
         final var items =
@@ -1002,19 +343,19 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByFiltersBasedOnCompanyNumberCorrectly() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockFetchCompanyProfile( "333333" );
+
         final var response =
                 mockMvc.perform( get( "/associations?company_number=333333" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
                                 .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
-                        .andExpect( status().isOk() )
-                        .andReturn()
-                        .getResponse();
+                        .andExpect( status().isOk() );
 
-        final var objectMapper = new ObjectMapper();
-        objectMapper.registerModule( new JavaTimeModule() );
-        final AssociationsList associationsList = objectMapper.readValue( response.getContentAsByteArray(), AssociationsList.class );
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
         final var links = associationsList.getLinks();
 
         final var items =
@@ -1032,17 +373,11 @@ public class UserCompanyAssociationsTest {
         Assertions.assertEquals( 1, associationsList.getTotalPages() );
     }
 
-    private String reduceTimestampResolution( String timestamp ){
-        return timestamp.substring( 0, timestamp.indexOf( ":" ) );
-    }
-
-    private String localDateTimeToNormalisedString( LocalDateTime localDateTime ){
-        final var timestamp = localDateTime.toString();
-        return reduceTimestampResolution( timestamp );
-    }
-
     @Test
     void fetchAssociationsByDoesMappingCorrectly() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "18" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockFetchCompanyProfile( "333333" );
 
         final var response =
                 mockMvc.perform( get( "/associations?company_number=333333" )
@@ -1050,14 +385,10 @@ public class UserCompanyAssociationsTest {
                                 .header("Eric-identity", "9999")
                                 .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
-                        .andExpect( status().isOk() )
-                        .andReturn()
-                        .getResponse();
+                        .andExpect( status().isOk() );
 
-        final var objectMapper = new ObjectMapper();
-        objectMapper.registerModule( new JavaTimeModule() );
-        final AssociationsList associationsList = objectMapper.readValue( response.getContentAsByteArray(), AssociationsList.class );
 
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
         final var associations = associationsList.getItems();
         final var associationOne = associations.getFirst();
 
@@ -1080,6 +411,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void getAssociationDetailsWithoutPathVariableReturnsNotFound() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform( get( "/associations/" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
@@ -1087,17 +420,23 @@ public class UserCompanyAssociationsTest {
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isNotFound() );
     }
+
     @Test
     void getAssociationsDetailsWithoutXRequestIdReturnsBadRequest() throws Exception {
-        mockMvc.perform( get( "/associations/{id}", "1" )
+        mockers.mockGetUserDetails( "9999" );
+
+        mockMvc.perform( get( "/associations/1" )
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect(status().isBadRequest());
     }
+
     @Test
     void getAssociationDetailsWithMalformedInputReturnsBadRequest() throws Exception {
-        mockMvc.perform( get( "/associations/{id}", "$" )
+        mockers.mockGetUserDetails( "9999" );
+
+        mockMvc.perform( get( "/associations/$" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -1107,7 +446,9 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void getAssociationUserDetailsWithNonexistentIdReturnsNotFound() throws Exception {
-        mockMvc.perform( get( "/associations/{id}", "1" )
+        mockers.mockGetUserDetails( "9999" );
+
+        mockMvc.perform( get( "/associations/1" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -1115,34 +456,36 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isNotFound() );
     }
 
+
     @Test
     void getAssociationDetailsFetchesAssociationDetails() throws Exception {
-        final var responseBody =
-                mockMvc.perform( get( "/associations/{id}", "18" )
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "18" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockFetchCompanyProfile( "333333" );
+
+        final var response =
+                mockMvc.perform( get( "/associations/18" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "9999")
                                 .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
-                        .andExpect( status().isOk() )
-                        .andReturn()
-                        .getResponse().getContentAsByteArray();
+                        .andExpect( status().isOk() );
 
-        final var objectMapper = new ObjectMapper();
-        objectMapper.registerModule( new JavaTimeModule() );
-        final var association = objectMapper.readValue(responseBody, Association.class );
+        final var association = parseResponseTo( response, Association.class );
 
         Assertions.assertEquals( "9999", association.getUserId());
-
     }
 
     @Test
     void addAssociationWithoutXRequestIdReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform(post( "/associations" )
-                        .header("Eric-identity", "000")
+                        .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"company_number\":\"000000\"}" ) )
+                        .content( "{\"company_number\":\"111111\"}" ) )
                 .andExpect( status().isBadRequest() );
     }
 
@@ -1153,14 +496,16 @@ public class UserCompanyAssociationsTest {
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"company_number\":\"000000\"}" ) )
+                        .content( "{\"company_number\":\"111111\"}" ) )
                 .andExpect( status().isUnauthorized() );
     }
 
     @Test
     void addAssociationWithoutRequestBodyReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform(post( "/associations" )
-                        .header("Eric-identity", "000")
+                        .header("Eric-identity", "9999")
                         .header("X-Request-Id", "theId123")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
@@ -1170,8 +515,10 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void addAssociationWithoutCompanyNumberReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform(post( "/associations" )
-                        .header("Eric-identity", "000")
+                        .header("Eric-identity", "9999")
                         .header("X-Request-Id", "theId123")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
@@ -1182,8 +529,10 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void addAssociationWithMalformedCompanyNumberReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform(post( "/associations" )
-                        .header("Eric-identity", "000")
+                        .header("Eric-identity", "9999")
                         .header("X-Request-Id", "theId123")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
@@ -1194,6 +543,10 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void addAssociationWithExistingAssociationReturnsBadRequest() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "18" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockFetchCompanyProfile( "333333" );
+
         mockMvc.perform(post( "/associations" )
                         .header("Eric-identity", "9999")
                         .header("X-Request-Id", "theId123")
@@ -1206,8 +559,12 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void addAssociationWithNonexistentCompanyNumberReturnsNotFound() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "18" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockFetchCompanyProfileNotFound( "919191" );
+
         mockMvc.perform(post( "/associations" )
-                        .header("Eric-identity", "000")
+                        .header("Eric-identity", "9999")
                         .header("X-Request-Id", "theId123")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
@@ -1218,28 +575,28 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void addAssociationCreatesNewAssociationCorrectlyAndReturnsAssociationIdWithCreatedHttpStatus() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "18" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockFetchCompanyProfile( "111111" );
+
         final var responseJson =
                 mockMvc.perform(post( "/associations" )
                                 .header("X-Request-Id", "theId123")
-                                .header("Eric-identity", "000")
+                                .header("Eric-identity", "9999")
                                 .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*")
                                 .contentType( MediaType.APPLICATION_JSON )
-                                .content( "{\"company_number\":\"000000\"}" ) )
-                        .andExpect( status().isCreated() )
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
+                                .content( "{\"company_number\":\"111111\"}" ) )
+                        .andExpect( status().isCreated() );
 
-        final var objectMapper = new ObjectMapper();
-        final var response = objectMapper.readValue( responseJson, ResponseBodyPost.class );
+        final var response = parseResponseTo( responseJson, ResponseBodyPost.class );
 
         final var associationOptional = associationsRepository.findById( response.getAssociationId() );
         Assertions.assertTrue( associationOptional.isPresent() );
 
         final var association = associationOptional.get();
-        Assertions.assertEquals( "000000", association.getCompanyNumber() );
-        Assertions.assertEquals( "000", association.getUserId() );
+        Assertions.assertEquals( "111111", association.getCompanyNumber() );
+        Assertions.assertEquals( "9999", association.getUserId() );
         Assertions.assertEquals( StatusEnum.CONFIRMED.getValue(), association.getStatus() );
         Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE.getValue(), association.getApprovalRoute() );
         Assertions.assertNotNull( association.getEtag() );
@@ -1247,26 +604,26 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void addAssociationWithNonExistentUserReturnsForbidden() throws Exception {
+        mockers.mockGetUserDetailsNotFound( "9191" );
+
         mockMvc.perform( post( "/associations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9191")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"company_number\":\"000000\"}" ) )
+                        .content( "{\"company_number\":\"111111\"}" ) )
                 .andExpect( status().isForbidden() );
-    }
-
-    ArgumentMatcher<AuthCodeConfirmationEmailData> authCodeConfirmationEmailDataMatcher( String to, String subject, String authorisedPerson, String companyName ){
-        return emailData ->
-                to.equals( emailData.getTo() ) &&
-                        subject.equals( emailData.getSubject() ) &&
-                        authorisedPerson.equals( emailData.getAuthorisedPerson() ) &&
-                        companyName.equals( emailData.getCompanyName() );
     }
 
     @Test
     void addAssociationWithUserThatHasDisplayNameUsesDisplayName() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "19" ) );
+        mockers.mockGetUserDetails( "111", "9999" );
+        mockers.mockFetchCompanyProfile( "444444" );
+
+        setEmailProducerCountDownLatch( 1 );
+
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "111")
@@ -1277,12 +634,15 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isCreated() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( authCodeConfirmationEmailDataMatcher( "scrooge.mcduck@disney.land", "Companies House: Batman is now authorised to file online for Sainsbury's", "Batman", "Sainsbury's" ) ), eq( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.authCodeConfirmationEmailMatcher( "scrooge.mcduck@disney.land", "Sainsbury's", "Batman" ) ), eq( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void addAssociationReturnsCreatedWhenEmailIsNotSentOut() throws Exception {
-        Mockito.doThrow( new EmailSendingException("Failed to send email", new Exception()) ).when( emailProducer ).sendEmail( any(), any() );
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "19" ) );
+        mockers.mockGetUserDetails( "111", "9999" );
+        mockers.mockFetchCompanyProfile( "444444" );
+        mockers.mockEmailSendingFailure( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() );
 
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
@@ -1296,7 +656,9 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void updateAssociationStatusForIdWithoutXRequestIdReturnsBadRequest() throws Exception {
-        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+        mockers.mockGetUserDetails(  "9999" );
+
+        mockMvc.perform( patch( "/associations/18" )
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
@@ -1307,7 +669,9 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void updateAssociationStatusForIdWithMalformedAssociationIdReturnsBadRequest() throws Exception {
-        mockMvc.perform( patch( "/associations/{associationId}", "$$$" )
+        mockers.mockGetUserDetails(  "9999" );
+
+        mockMvc.perform( patch( "/associations/$$$" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -1319,7 +683,9 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void updateAssociationStatusForIdWithoutRequestBodyReturnsBadRequest() throws Exception {
-        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+        mockers.mockGetUserDetails(  "9999" );
+
+        mockMvc.perform( patch( "/associations/18" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -1330,7 +696,9 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void updateAssociationStatusForIdWithoutStatusReturnsBadRequest() throws Exception {
-        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+        mockers.mockGetUserDetails(  "9999" );
+
+        mockMvc.perform( patch( "/associations/18" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -1342,7 +710,9 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void updateAssociationStatusForIdWithMalformedStatusReturnsBadRequest() throws Exception {
-        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+        mockers.mockGetUserDetails(  "9999" );
+
+        mockMvc.perform( patch( "/associations/18")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -1354,7 +724,9 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void updateAssociationStatusForIdWithNonexistentAssociationIdReturnsNotFound() throws Exception {
-        mockMvc.perform( patch( "/associations/{associationId}", "9191" )
+        mockers.mockGetUserDetails(  "9999" );
+
+        mockMvc.perform( patch( "/associations/9191" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -1366,9 +738,13 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void updateAssociationStatusForIdWithRemovedUpdatesAssociationStatus() throws Exception {
-        final var oldAssociationData = associationsRepository.findById("18").get();
+        final var oldAssociationData = testDataManager.fetchAssociationDaos( "18" ).getFirst();
 
-        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+        associationsRepository.insert( oldAssociationData );
+        mockers.mockGetUserDetails(  "9999" );
+        mockers.mockFetchCompanyProfile( "333333" );
+
+        mockMvc.perform( patch( "/associations/18" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -1388,9 +764,13 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void updateAssociationStatusForIdWithConfirmedUpdatesAssociationStatus() throws Exception {
-        final var oldAssociationData = associationsRepository.findById("18").get();
+        final var oldAssociationData = testDataManager.fetchAssociationDaos( "18" ).getFirst();
 
-        mockMvc.perform( patch( "/associations/{associationId}", "18" )
+        associationsRepository.insert( oldAssociationData );
+        mockers.mockGetUserDetails(  "9999" );
+        mockers.mockFetchCompanyProfile( "333333" );
+
+        mockMvc.perform( patch( "/associations/18" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -1408,28 +788,15 @@ public class UserCompanyAssociationsTest {
         Assertions.assertEquals( oldAssociationData.getUserId(), newAssociationData.getUserId() );
     }
 
-
     @Test
     void updateAssociationStatusForIdWithNullUserIdAndNonexistentUserAndConfirmedReturnsBadRequest() throws Exception {
-        Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new UsersList() ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( "light.yagami@death.note" ) );
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "17" ) );
+        mockers.mockSearchUserDetailsNotFound( "mr.blobby@nightmare.com" );
+        mockers.mockGetUserDetails( "222" );
 
-        final var associationZero = new AssociationDao();
-        associationZero.setCompanyNumber("000000");
-        associationZero.setUserEmail("light.yagami@death.note");
-        associationZero.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationZero.setId("0");
-        associationZero.setApprovedAt(now.plusDays(1));
-        associationZero.setRemovedAt(now.plusDays(2));
-        associationZero.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationZero.setApprovalExpiryAt(now.plusDays(3));
-        associationZero.setInvitations( List.of() );
-        associationZero.setEtag( "aa" );
-
-        associationsRepository.insert( associationZero );
-
-        mockMvc.perform( patch( "/associations/{associationId}", "0" )
+        mockMvc.perform( patch( "/associations/17" )
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "000")
+                        .header("Eric-identity", "222")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
@@ -1439,127 +806,88 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void updateAssociationStatusForIdWithNullUserIdAndExistingUserAndRemovedUpdatesAssociationStatus() throws Exception {
-        Mockito.doReturn( toSearchUserDetailsApiResponse( "light.yagami@death.note", "000" ) ).when( accountsUserEndpoint ).searchUserDetails( any() );
+        final var associationDaos = testDataManager.fetchAssociationDaos( "1", "34" );
+        final var oldAssociationData = associationDaos.getLast();
 
-        final var association1 = new AssociationDao();
-        association1.setCompanyNumber("000000");
-        association1.setUserId("000");
-        association1.setStatus(StatusEnum.CONFIRMED.getValue());
-        association1.setId("0");
-        association1.setApprovedAt(now.plusDays(1));
-        association1.setRemovedAt(now.plusDays(2));
-        association1.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        association1.setApprovalExpiryAt(now.plusDays(3));
-        association1.setInvitations( List.of() );
-        association1.setEtag( "aa" );
+        associationsRepository.insert(associationDaos);
+        mockers.mockSearchUserDetails( "000" );
+        mockers.mockGetUserDetails( "111" );
+        mockers.mockFetchCompanyProfile( "111111" );
 
-        final var associationZero = new AssociationDao();
-        associationZero.setCompanyNumber("000000");
-        associationZero.setUserEmail("light.yagami@death.note");
-        associationZero.setStatus(StatusEnum.CONFIRMED.getValue());
-
-        associationZero.setApprovedAt(now.plusDays(1));
-        associationZero.setRemovedAt(now.plusDays(2));
-        associationZero.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationZero.setApprovalExpiryAt(now.plusDays(3));
-        associationZero.setInvitations( List.of() );
-        associationZero.setEtag( "aa" );
-
-        associationsRepository.insert( associationZero );
-        associationsRepository.insert( association1 );
-
-        mockMvc.perform( patch( "/associations/{associationId}", "0" )
+        mockMvc.perform( patch( "/associations/34" )
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "000")
+                        .header("Eric-identity", "111")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
 
-        final var newAssociationData = associationsRepository.findById("0").get();
+        final var newAssociationData = associationsRepository.findById("34").get();
         Assertions.assertEquals( RequestBodyPut.StatusEnum.REMOVED.getValue(), newAssociationData.getStatus() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( associationZero.getApprovedAt() ), localDateTimeToNormalisedString( newAssociationData.getApprovedAt() ) );
-        Assertions.assertNotEquals( localDateTimeToNormalisedString( associationZero.getRemovedAt() ), localDateTimeToNormalisedString( newAssociationData.getRemovedAt() ) );
-        Assertions.assertNotEquals( associationZero.getEtag(), newAssociationData.getEtag() );
-        Assertions.assertNotEquals( associationZero.getUserEmail(), newAssociationData.getUserEmail() );
-        Assertions.assertNotEquals( associationZero.getUserId(), newAssociationData.getUserId() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( oldAssociationData.getApprovedAt() ), localDateTimeToNormalisedString( newAssociationData.getApprovedAt() ) );
+        Assertions.assertNotEquals( localDateTimeToNormalisedString( oldAssociationData.getRemovedAt() ), localDateTimeToNormalisedString( newAssociationData.getRemovedAt() ) );
+        Assertions.assertNotEquals( oldAssociationData.getEtag(), newAssociationData.getEtag() );
+        Assertions.assertNotEquals( oldAssociationData.getUserEmail(), newAssociationData.getUserEmail() );
+        Assertions.assertNotEquals( oldAssociationData.getUserId(), newAssociationData.getUserId() );
     }
 
     @Test
     void updateAssociationStatusForIdWithNullUserIdAndNonexistentUserAndRemovedUpdatesAssociationStatus() throws Exception {
-        Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new UsersList() ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( "light.yagami@death.note" ) );
+        final var associationDaos = testDataManager.fetchAssociationDaos( "1", "34" );
+        final var oldAssociationData = associationDaos.getLast();
 
-        final var associationZero = new AssociationDao();
-        associationZero.setCompanyNumber("000000");
-        associationZero.setUserEmail("light.yagami@death.note");
-        associationZero.setUserId("000");
-        associationZero.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationZero.setId("0");
-        associationZero.setApprovedAt(now.plusDays(1));
-        associationZero.setRemovedAt(now.plusDays(2));
-        associationZero.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationZero.setApprovalExpiryAt(now.plusDays(3));
-        associationZero.setInvitations( List.of() );
-        associationZero.setEtag( "aa" );
+        associationsRepository.insert(associationDaos);
+        mockers.mockSearchUserDetailsNotFound( "light.yagami@death.note" );
+        mockers.mockGetUserDetails( "111" );
+        mockers.mockFetchCompanyProfile( "111111" );
 
-        associationsRepository.insert( associationZero );
-
-        mockMvc.perform( patch( "/associations/{associationId}", "0" )
+        mockMvc.perform( patch( "/associations/34" )
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "000")
+                        .header("Eric-identity", "111")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
 
-        final var newAssociationData = associationsRepository.findById("0").get();
+        final var newAssociationData = associationsRepository.findById("34").get();
         Assertions.assertEquals( RequestBodyPut.StatusEnum.REMOVED.getValue(), newAssociationData.getStatus() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( associationZero.getApprovedAt() ), localDateTimeToNormalisedString( newAssociationData.getApprovedAt() ) );
-        Assertions.assertNotEquals( localDateTimeToNormalisedString( associationZero.getRemovedAt() ), localDateTimeToNormalisedString( newAssociationData.getRemovedAt() ) );
-        Assertions.assertNotEquals( associationZero.getEtag(), newAssociationData.getEtag() );
-        Assertions.assertEquals( associationZero.getUserEmail(), newAssociationData.getUserEmail() );
-        Assertions.assertEquals( associationZero.getUserId(), newAssociationData.getUserId() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( oldAssociationData.getApprovedAt() ), localDateTimeToNormalisedString( newAssociationData.getApprovedAt() ) );
+        Assertions.assertNotEquals( localDateTimeToNormalisedString( oldAssociationData.getRemovedAt() ), localDateTimeToNormalisedString( newAssociationData.getRemovedAt() ) );
+        Assertions.assertNotEquals( oldAssociationData.getEtag(), newAssociationData.getEtag() );
+        Assertions.assertEquals( oldAssociationData.getUserEmail(), newAssociationData.getUserEmail() );
+        Assertions.assertEquals( oldAssociationData.getUserId(), newAssociationData.getUserId() );
     }
-
-    ArgumentMatcher<AuthorisationRemovedEmailData> authorisationRemovedEmailDataMatcher( final String to, final String subject, final String personWhoWasRemoved, final String companyName, final String personWhoRemovedAuthorisation ){
-        return emailData ->
-                to.equals( emailData.getTo() ) &&
-                subject.equals( emailData.getSubject() ) &&
-                personWhoWasRemoved.equals( emailData.getPersonWhoWasRemoved() ) &&
-                companyName.equals( emailData.getCompanyName() ) &&
-                personWhoRemovedAuthorisation.equals( emailData.getPersonWhoRemovedAuthorisation() );
-    }
-
 
     @Test
-    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD )
     void updateAssociationStatusForIdNotificationsWhereTargetUserIdExistsSendsNotification() throws Exception {
-        mockMvc.perform( patch( "/associations/{associationId}", "40" )
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "35" ) );
+        mockers.mockGetUserDetails( "9999", "000" );
+        mockers.mockFetchCompanyProfile( "333333" );
+
+        mockMvc.perform( patch( "/associations/35" )
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "333")
+                        .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
-
-
     }
 
     @Test
-    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD )
     void updateAssociationStatusForIdNotificationsWhereTargetUserIdDoesNotExistSendsNotification() throws Exception {
-        Mockito.doReturn( toSearchUserDetailsApiResponse( "robin@gotham.city", "444" ) ).when( accountsUserEndpoint ).searchUserDetails( eq( List.of( "robin@gotham.city" ) ) );
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "34" ) );
+        mockers.mockGetUserDetails( "111" );
+        mockers.mockSearchUserDetails( "000" );
+        mockers.mockFetchCompanyProfile( "111111" );
 
-        final var association = associationsRepository.findById( "40" ).get();
-        association.setUserId( null );
-        associationsRepository.save( association );
+        setEmailProducerCountDownLatch( 1 );
 
-        mockMvc.perform( patch( "/associations/{associationId}", "40" )
+        mockMvc.perform( patch( "/associations/34" )
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "333")
+                        .header("Eric-identity", "111")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
@@ -1567,20 +895,24 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isOk() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: robin@gotham.city's authorisation removed to file online for Instram", "robin@gotham.city", "Instram", "harley.quinn@gotham.city") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() ) );
+
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.authorisationRemovedEmailMatcher( "Batman", "light.yagami@death.note", "Wayne Enterprises", "bruce.wayne@gotham.city" ) ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void updateAssociationStatusForIdNotificationsWhereUserCannotBeFoundSendsNotification() throws Exception {
-        final var association = associationsRepository.findById( "40" ).get();
-        association.setUserId( null );
-        associationsRepository.save( association );
+        final var associationDaos = testDataManager.fetchAssociationDaos( "1", "34" );
 
-        Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new UsersList() ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( "robin@gotham.city" ) );
+        associationsRepository.insert(associationDaos);
+        mockers.mockSearchUserDetailsNotFound( "light.yagami@death.note" );
+        mockers.mockGetUserDetails( "111" );
+        mockers.mockFetchCompanyProfile( "111111" );
 
-        mockMvc.perform( patch( "/associations/{associationId}", "40" )
+        setEmailProducerCountDownLatch( 1 );
+
+        mockMvc.perform( patch( "/associations/34" )
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "333")
+                        .header("Eric-identity", "111")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
@@ -1588,19 +920,17 @@ public class UserCompanyAssociationsTest {
                 .andExpect( status().isOk() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( authorisationRemovedEmailDataMatcher("the.joker@gotham.city", "Companies House: robin@gotham.city's authorisation removed to file online for Instram", "robin@gotham.city", "Instram", "harley.quinn@gotham.city") ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.authorisationRemovedEmailMatcher( "Batman", "light.yagami@death.note", "Wayne Enterprises", "bruce.wayne@gotham.city" ) ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
-    @DirtiesContext( methodMode = MethodMode.BEFORE_METHOD )
     void updateAssociationStatusForIdNotificationsUsesDisplayNamesWhenAvailable() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "3", "4" ) );
+        mockers.mockGetUserDetails( "333" );
+        mockers.mockSearchUserDetails( "444" );
+        mockers.mockFetchCompanyProfile( "111111" );
 
-        Mockito.doReturn( privateAccountsUserUserGet333 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "333" );
-        Mockito.doReturn( privateAccountsUserUserGet444 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "444" );
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "333", "harley.quinn@gotham.city", "Harley Quinn" ) ).when( privateAccountsUserUserGet333 ).execute();
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "444", "robin@gotham.city", "Robin" ) ).when( privateAccountsUserUserGet444 ).execute();
-
-        mockMvc.perform( patch( "/associations/{associationId}", "40" )
+        mockMvc.perform( patch( "/associations/4" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "333")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -1608,40 +938,57 @@ public class UserCompanyAssociationsTest {
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
-
-
     }
 
     @Test
     void updateAssociationToConfirmedStatusForOtherUserShouldThrow400Error() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "3", "4" ) );
+        mockers.mockGetUserDetails( "333" );
+        mockers.mockSearchUserDetails( "444" );
+        mockers.mockFetchCompanyProfile( "111111" );
 
-        Mockito.doReturn( privateAccountsUserUserGet333 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "333" );
-        Mockito.doReturn( privateAccountsUserUserGet444 ).when( accountsUserEndpoint ).createGetUserDetailsRequest( "444" );
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "333", "harley.quinn@gotham.city", "Harley Quinn" ) ).when( privateAccountsUserUserGet333 ).execute();
-        Mockito.lenient().doReturn( toGetUserDetailsApiResponse( "444", "robin@gotham.city", "Robin" ) ).when( privateAccountsUserUserGet444 ).execute();
-
-       var response =  mockMvc.perform( patch( "/associations/{associationId}", "40" )
+        mockMvc.perform( patch( "/associations/4" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "333")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"status\":\"confirmed\"}" ) )
-                .andExpect( status().isBadRequest() ).andReturn();
-      Assertions.assertEquals("{\"errors\":[{\"error\":\"requesting user does not have access to perform the action\",\"type\":\"ch:service\"}]}",response.getResponse().getContentAsString());
-
+                .andExpect( status().isBadRequest() );
     }
 
-    ArgumentMatcher<InvitationAcceptedEmailData> invitationAcceptedEmailDataMatcher( List<String> to, String subject, String authorisedPerson, String companyName, String personWhoCreatedInvite ){
-        return emailData -> to.contains( emailData.getTo() ) &&
-                            subject.equals( emailData.getSubject() ) &&
-                            authorisedPerson.equals( emailData.getAuthorisedPerson() ) &&
-                            companyName.equals( emailData.getCompanyName() ) &&
-                            personWhoCreatedInvite.equals( emailData.getPersonWhoCreatedInvite() );
+    @Test
+    void updateAssociationStatusForIdUserAcceptedInvitationNotificationsSendsNotification() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "2", "4", "6" ) );
+        mockers.mockFetchCompanyProfile( "111111" );
+        mockers.mockSearchUserDetails( "666" );
+        mockers.mockGetUserDetails( "222", "444", "666" );
+
+        setEmailProducerCountDownLatch( 3 );
+
+        mockMvc.perform( patch( "/associations/6"  )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "666")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        latch.await( 10, TimeUnit.SECONDS );
+
+        final var expectedBaseEmail = new InvitationAcceptedEmailBuilder()
+                        .setInviterDisplayName( "the.joker@gotham.city" )
+                        .setInviteeDisplayName( "homer.simpson@springfield.com" )
+                        .setCompanyName( "Wayne Enterprises" );
+
+        Mockito.verify( emailProducer, times( 3 ) ).sendEmail( argThat( comparisonUtils.invitationAcceptedEmailDataMatcher( List.of( "the.joker@gotham.city", "robin@gotham.city", "homer.simpson@springfield.com" ), expectedBaseEmail ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void inviteUserWithoutXRequestIdReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform( post( "/associations/invitations" )
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -1664,6 +1011,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
+        mockers.mockGetUserDetailsNotFound( "$$$$" );
+
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "$$$$")
@@ -1676,6 +1025,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
+        mockers.mockGetUserDetailsNotFound( "9191" );
+
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9191")
@@ -1688,6 +1039,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWithoutRequestBodyReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
@@ -1699,6 +1052,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWithoutCompanyNumberReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
@@ -1711,6 +1066,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWithMalformedCompanyNumberReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
@@ -1723,6 +1080,9 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWithNonexistentCompanyNumberReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockFetchCompanyProfileNotFound( "919191" );
+
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
@@ -1735,6 +1095,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWithoutInviteeEmailIdReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
@@ -1747,6 +1109,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWithMalformedInviteeEmailIdReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
@@ -1759,7 +1123,10 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWhereAssociationBetweenInviteeEmailAndCompanyNumberExistsAndInviteeUserIsFoundPerformsSwapAndUpdateOperations() throws Exception {
-        Mockito.doReturn( toSearchUserDetailsApiResponse( "russell.howard@comedy.com", "8888" ) ).when( accountsUserEndpoint ).searchUserDetails( eq( List.of( "russell.howard@comedy.com" ) ) );
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "19", "36" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockSearchUserDetails( "000" );
+        mockers.mockFetchCompanyProfile( "444444" );
 
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
@@ -1767,15 +1134,15 @@ public class UserCompanyAssociationsTest {
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"company_number\":\"333333\",\"invitee_email_id\":\"russell.howard@comedy.com\"}" ) )
+                        .content( "{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}" ) )
                 .andExpect( status().isCreated() );
 
-        final var association = associationsRepository.findById( "34" ).get();
+        final var association = associationsRepository.findById( "36" ).get();
         final var invitation = association.getInvitations().getFirst();
 
         Assertions.assertNull( association.getUserEmail() );
-        Assertions.assertEquals( "8888", association.getUserId() );
-        Assertions.assertEquals( "333333", association.getCompanyNumber() );
+        Assertions.assertEquals( "000", association.getUserId() );
+        Assertions.assertEquals( "444444", association.getCompanyNumber() );
         Assertions.assertEquals( StatusEnum.AWAITING_APPROVAL.getValue(), association.getStatus() );
         Assertions.assertEquals( ApprovalRouteEnum.INVITATION.getValue(), association.getApprovalRoute() );
         Assertions.assertNotNull( association.getApprovalExpiryAt() );
@@ -1787,13 +1154,12 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWhereAssociationBetweenInviteeEmailAndCompanyNumberExistsAndInviteeUserIsNotFoundDoesNotPerformSwapButDoesPerformUpdateOperation() throws Exception {
-        Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new UsersList() ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( "russell.howard@comedy.com" ) );
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "19", "36" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockSearchUserDetailsNotFound( "light.yagami@death.note" );
+        mockers.mockFetchCompanyProfile( "444444" );
 
-        latch = new CountDownLatch(2);
-        doAnswer( invocation -> {
-            latch.countDown();
-            return null;
-        } ).when(emailProducer).sendEmail(any(), any());
+        setEmailProducerCountDownLatch( 2 );
 
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
@@ -1801,15 +1167,15 @@ public class UserCompanyAssociationsTest {
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"company_number\":\"333333\",\"invitee_email_id\":\"russell.howard@comedy.com\"}" ) )
+                        .content( "{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}" ) )
                 .andExpect( status().isCreated() );
 
-        final var association = associationsRepository.findById( "34" ).get();
+        final var association = associationsRepository.findById( "36" ).get();
         final var invitation = association.getInvitations().getFirst();
 
-        Assertions.assertEquals( "russell.howard@comedy.com", association.getUserEmail() );
+        Assertions.assertEquals( "light.yagami@death.note", association.getUserEmail() );
         Assertions.assertNull( association.getUserId() );
-        Assertions.assertEquals( "333333", association.getCompanyNumber() );
+        Assertions.assertEquals( "444444", association.getCompanyNumber() );
         Assertions.assertEquals( StatusEnum.AWAITING_APPROVAL.getValue(), association.getStatus() );
         Assertions.assertEquals( ApprovalRouteEnum.INVITATION.getValue(), association.getApprovalRoute() );
         Assertions.assertNotNull( association.getApprovalExpiryAt() );
@@ -1818,36 +1184,18 @@ public class UserCompanyAssociationsTest {
         Assertions.assertNotNull( invitation.getInvitedAt() );
         Assertions.assertEquals( "9999", invitation.getInvitedBy() );
 
-        final var invitationEmailMatches =
-                InvitationEmailDataMatcher(
-                        "scrooge.mcduck@disney.land",
-                        "Companies House: russell.howard@comedy.com invited to be authorised to file online for Tesco",
-                        "Scrooge McDuck",
-                        "russell.howard@comedy.com",
-                        "Tesco" );
-
-        final var inviteEmailMatches =
-                InviteEmailDataMatcher( "russell.howard@comedy.com",
-                        "Companies House: invitation to be authorised to file online for Tesco",
-                        "Scrooge McDuck",
-                        "Tesco",
-                        COMPANY_INVITATIONS_URL );
-
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
-            if ( emailData instanceof InvitationEmailData ) return invitationEmailMatches.test( (InvitationEmailData) emailData );
-            if ( emailData instanceof InviteEmailData ) return inviteEmailMatches.test( (InviteEmailData) emailData );
-            return false;
-        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue() ).contains( messageType ) ) );
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( comparisonUtils.invitationAndInviteEmailDataMatcher( "scrooge.mcduck@disney.land", "Scrooge McDuck", "light.yagami@death.note", "light.yagami@death.note", "Sainsbury's", COMPANY_INVITATIONS_URL ) ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue() ).contains( messageType ) ) );
     }
 
     @Test
     void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberExistsDoesNotPerformSwapButDoesPerformUpdateOperation() throws Exception {
-        latch = new CountDownLatch(2);
-        doAnswer( invocation -> {
-            latch.countDown();
-            return null;
-        } ).when(emailProducer).sendEmail(any(), any());
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "19", "36" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockSearchUserDetails( "000" );
+        mockers.mockFetchCompanyProfile( "444444" );
+
+        setEmailProducerCountDownLatch( 2 );
 
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
@@ -1855,15 +1203,15 @@ public class UserCompanyAssociationsTest {
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
+                        .content( "{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}" ) )
                 .andExpect( status().isCreated() );
 
-        final var association = associationsRepository.findById( "35" ).get();
+        final var association = associationsRepository.findById( "36" ).get();
         final var invitation = association.getInvitations().getFirst();
 
         Assertions.assertNull( association.getUserEmail() );
-        Assertions.assertEquals( "111", association.getUserId() );
-        Assertions.assertEquals( "333333", association.getCompanyNumber() );
+        Assertions.assertEquals( "000", association.getUserId() );
+        Assertions.assertEquals( "444444", association.getCompanyNumber() );
         Assertions.assertEquals( StatusEnum.AWAITING_APPROVAL.getValue(), association.getStatus() );
         Assertions.assertEquals( ApprovalRouteEnum.INVITATION.getValue(), association.getApprovalRoute() );
         Assertions.assertNotNull( association.getApprovalExpiryAt() );
@@ -1872,45 +1220,31 @@ public class UserCompanyAssociationsTest {
         Assertions.assertNotNull( invitation.getInvitedAt() );
         Assertions.assertEquals( "9999", invitation.getInvitedBy() );
 
-        final var invitationEmailMatches =
-                InvitationEmailDataMatcher(
-                        "scrooge.mcduck@disney.land",
-                        "Companies House: bruce.wayne@gotham.city invited to be authorised to file online for Tesco",
-                        "Scrooge McDuck",
-                        "bruce.wayne@gotham.city",
-                        "Tesco" );
-
-        final var inviteEmailMatches =
-                InviteEmailDataMatcher( "bruce.wayne@gotham.city",
-                        "Companies House: invitation to be authorised to file online for Tesco",
-                        "Scrooge McDuck",
-                        "Tesco",
-                        COMPANY_INVITATIONS_URL );
-
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
-            if ( emailData instanceof InvitationEmailData ) return invitationEmailMatches.test( (InvitationEmailData) emailData );
-            if ( emailData instanceof InviteEmailData ) return inviteEmailMatches.test( (InviteEmailData) emailData );
-            return false;
-        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue() ).contains( messageType ) ) );
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( comparisonUtils.invitationAndInviteEmailDataMatcher( "scrooge.mcduck@disney.land", "Scrooge McDuck", "light.yagami@death.note", "light.yagami@death.note", "Sainsbury's", COMPANY_INVITATIONS_URL ) ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue() ).contains( messageType ) ) );
     }
 
     @Test
     void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberDoesNotExistCreatesNewAssociation() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "19" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockSearchUserDetails( "000" );
+        mockers.mockFetchCompanyProfile( "444444" );
+
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"company_number\":\"444444\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
+                        .content( "{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}" ) )
                 .andExpect( status().isCreated() );
 
-        final var association = associationsRepository.fetchAssociationForCompanyNumberAndUserId("444444", "111").get();
+        final var association = associationsRepository.fetchAssociationForCompanyNumberAndUserId("444444", "000").get();
         final var invitation = association.getInvitations().getFirst();
 
         Assertions.assertNull( association.getUserEmail() );
-        Assertions.assertEquals( "111", association.getUserId() );
+        Assertions.assertEquals( "000", association.getUserId() );
         Assertions.assertEquals( "444444", association.getCompanyNumber() );
         Assertions.assertEquals( ApprovalRouteEnum.INVITATION.getValue(), association.getApprovalRoute() );
         Assertions.assertNotNull( association.getEtag() );
@@ -1922,13 +1256,12 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void inviteUserWhereAssociationBetweenInviteeUserEmailAndCompanyNumberDoesNotExistAndInviteeUserIsNotFoundCreatesNewAssociation() throws Exception {
-        Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new UsersList() ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( "madonna@singer.com" ) );
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "19" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockSearchUserDetailsNotFound( "light.yagami@death.note" );
+        mockers.mockFetchCompanyProfile( "444444" );
 
-        latch = new CountDownLatch(2);
-        doAnswer( invocation -> {
-            latch.countDown();
-            return null;
-        } ).when(emailProducer).sendEmail(any(), any());
+        setEmailProducerCountDownLatch( 2 );
 
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
@@ -1936,15 +1269,15 @@ public class UserCompanyAssociationsTest {
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"company_number\":\"333333\",\"invitee_email_id\":\"madonna@singer.com\"}" ) )
+                        .content( "{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}" ) )
                 .andExpect( status().isCreated() );
 
-        final var association = associationsRepository.fetchAssociationForCompanyNumberAndUserEmail("333333", "madonna@singer.com").get();
+        final var association = associationsRepository.fetchAssociationForCompanyNumberAndUserEmail("444444", "light.yagami@death.note").get();
         final var invitation = association.getInvitations().getFirst();
 
-        Assertions.assertEquals( "madonna@singer.com", association.getUserEmail() );
+        Assertions.assertEquals( "light.yagami@death.note", association.getUserEmail() );
         Assertions.assertNull( association.getUserId() );
-        Assertions.assertEquals( "333333", association.getCompanyNumber() );
+        Assertions.assertEquals( "444444", association.getCompanyNumber() );
         Assertions.assertEquals( ApprovalRouteEnum.INVITATION.getValue(), association.getApprovalRoute() );
         Assertions.assertNotNull( association.getEtag() );
         Assertions.assertEquals( StatusEnum.AWAITING_APPROVAL.getValue(), association.getStatus() );
@@ -1952,31 +1285,16 @@ public class UserCompanyAssociationsTest {
         Assertions.assertNotNull( invitation.getInvitedAt() );
         Assertions.assertEquals( "9999", invitation.getInvitedBy() );
 
-        final var invitationEmailMatches =
-                InvitationEmailDataMatcher(
-                        "scrooge.mcduck@disney.land",
-                        "Companies House: madonna@singer.com invited to be authorised to file online for Tesco",
-                        "Scrooge McDuck",
-                        "madonna@singer.com",
-                        "Tesco" );
-
-        final var inviteEmailMatches =
-                InviteEmailDataMatcher( "madonna@singer.com",
-                        "Companies House: invitation to be authorised to file online for Tesco",
-                        "Scrooge McDuck",
-                        "Tesco",
-                        COMPANY_INVITATIONS_URL );
-
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
-            if ( emailData instanceof InvitationEmailData ) return invitationEmailMatches.test( (InvitationEmailData) emailData );
-            if ( emailData instanceof InviteEmailData ) return inviteEmailMatches.test( (InviteEmailData) emailData );
-            return false;
-        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue() ).contains( messageType ) ) );
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( comparisonUtils.invitationAndInviteEmailDataMatcher( "scrooge.mcduck@disney.land", "Scrooge McDuck", "light.yagami@death.note", "light.yagami@death.note", "Sainsbury's", COMPANY_INVITATIONS_URL ) ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue() ).contains( messageType ) ) );
     }
 
     @Test
     void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberExistsDoesNotPerformSwapButThrowsBadRequest() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "35" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockSearchUserDetails( "000" );
+        mockers.mockFetchCompanyProfile( "333333" );
 
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
@@ -1984,37 +1302,19 @@ public class UserCompanyAssociationsTest {
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"company_number\":\"111111\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
+                        .content( "{\"company_number\":\"333333\",\"invitee_email_id\":\"light.yagami@death.note\"}" ) )
                 .andExpect( status().isBadRequest() ).andReturn();
-
-    }
-
-    Predicate<InvitationEmailData> InvitationEmailDataMatcher( String to, String subject, String personWhoCreatedInvite, String invitee, String companyName ){
-        return emailData ->
-                to.equals( emailData.getTo() ) &&
-                        subject.equals( emailData.getSubject() ) &&
-                        personWhoCreatedInvite.equals( emailData.getPersonWhoCreatedInvite() ) &&
-                        invitee.equals(emailData.getInvitee()) &&
-                        companyName.equals( emailData.getCompanyName() );
-    }
-
-    Predicate<InviteEmailData> InviteEmailDataMatcher( String to, String subject, String inviterDisplayName, String companyName, String invitationLink ){
-        return emailData ->
-                to.equals(emailData.getTo()) &&
-                subject.equals(emailData.getSubject()) &&
-                inviterDisplayName.equals(emailData.getInviterDisplayName()) &&
-                companyName.equals(emailData.getCompanyName()) &&
-                invitationLink.equals(emailData.getInvitationLink())
-                ;
     }
 
     @Test
     void inviteUserWithUserThatHasDisplayNameUsesDisplayName()  throws Exception {
-        latch = new CountDownLatch(2);
-        doAnswer( invocation -> {
-            latch.countDown();
-            return null;
-        } ).when(emailProducer).sendEmail(any(), any());
+
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "19" ) );
+        mockers.mockGetUserDetails( "9999" );
+        mockers.mockSearchUserDetails( "111" );
+        mockers.mockFetchCompanyProfile( "444444" );
+
+        setEmailProducerCountDownLatch( 2 );
 
         mockMvc.perform(post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
@@ -2025,33 +1325,16 @@ public class UserCompanyAssociationsTest {
                         .content( "{\"company_number\":\"444444\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
                 .andExpect( status().isCreated() );
 
-        final var invitationEmailMatches =
-        InvitationEmailDataMatcher(
-                "scrooge.mcduck@disney.land",
-                "Companies House: bruce.wayne@gotham.city invited to be authorised to file online for Sainsbury's",
-                "Scrooge McDuck",
-                "bruce.wayne@gotham.city",
-                "Sainsbury's" );
-
-        final var inviteEmailMatches =
-        InviteEmailDataMatcher( "bruce.wayne@gotham.city",
-                "Companies House: invitation to be authorised to file online for Sainsbury's",
-                "Scrooge McDuck",
-                "Sainsbury's",
-                COMPANY_INVITATIONS_URL );
-
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( emailData -> {
-            if ( emailData instanceof InvitationEmailData ) return invitationEmailMatches.test( (InvitationEmailData) emailData );
-            if ( emailData instanceof InviteEmailData ) return inviteEmailMatches.test( (InviteEmailData) emailData );
-            return false;
-        } ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue() ).contains( messageType ) ) );
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( comparisonUtils.invitationAndInviteEmailDataMatcher( "scrooge.mcduck@disney.land", "Scrooge McDuck", "bruce.wayne@gotham.city", "Batman", "Sainsbury's", COMPANY_INVITATIONS_URL ) ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue() ).contains( messageType ) ) );
     }
 
     @Test
     void fetchActiveInvitationsForUserWithoutXRequestIdReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
-                        .header("Eric-identity", "99999")
+                        .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isBadRequest() );
@@ -2068,6 +1351,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchActiveInvitationsForUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
+        mockers.mockGetUserDetailsNotFound( "$$$$" );
+
         mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "$$$$")
@@ -2078,6 +1363,8 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchActiveInvitationsForUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
+        mockers.mockGetUserDetailsNotFound( "9191" );
+
         mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9191")
@@ -2088,9 +1375,11 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchActiveInvitationsForUserWithUnacceptablePageIndexReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform( get( "/associations/invitations?page_index=-1&items_per_page=1" )
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "99999")
+                        .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isBadRequest() );
@@ -2098,9 +1387,11 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchActiveInvitationsForUserWithUnacceptableItemsPerPageReturnsBadRequest() throws Exception {
+        mockers.mockGetUserDetails( "9999" );
+
         mockMvc.perform( get( "/associations/invitations?page_index=0&items_per_page=-1" )
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "99999")
+                        .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isBadRequest() );
@@ -2108,41 +1399,40 @@ public class UserCompanyAssociationsTest {
 
     @Test
     void fetchActiveInvitationsForUserRetrievesActiveInvitationsInCorrectOrderAndPaginatesCorrectly() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "37", "38" ) );
+        mockers.mockGetUserDetails(  "000", "444" );
+
         final var response =
-                mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+                mockMvc.perform( get( "/associations/invitations?page_index=0&items_per_page=1" )
                                 .header("X-Request-Id", "theId123")
-                                .header("Eric-identity", "99999")
+                                .header("Eric-identity", "000")
                                 .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
-                        .andExpect( status().isOk() )
-                        .andReturn()
-                        .getResponse();
+                        .andExpect( status().isOk() );
 
-        final var objectMapper = new ObjectMapper();
-        final var invitations = objectMapper.readValue( response.getContentAsByteArray(), InvitationsList.class ).getItems();
+        final var invitations = parseResponseTo( response, InvitationsList.class ).getItems();
         final var invitation = invitations.getFirst();
 
         Assertions.assertEquals( 1, invitations.size() );
         Assertions.assertEquals( "robin@gotham.city", invitation.getInvitedBy() );
         Assertions.assertNotNull( invitation.getInvitedAt() );
-        Assertions.assertEquals( "48", invitation.getAssociationId() );
+        Assertions.assertEquals( "37", invitation.getAssociationId() );
         Assertions.assertTrue( invitation.getIsActive() );
     }
 
     @Test
     void fetchActiveInvitationsForUserWithoutActiveInvitationsReturnsEmptyList() throws Exception {
+        mockers.mockGetUserDetails(  "111" );
+
         final var response =
                 mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
                                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "111")
                                 .header("ERIC-Identity-Type", "oauth2")
                                 .header("ERIC-Authorised-Key-Roles", "*") )
-                        .andExpect( status().isOk() )
-                        .andReturn()
-                        .getResponse();
+                        .andExpect( status().isOk() );
 
-        final var objectMapper = new ObjectMapper();
-        final var invitations = objectMapper.readValue( response.getContentAsByteArray(), InvitationsList.class );
+        final var invitations = parseResponseTo( response, InvitationsList.class );
         Assertions.assertTrue( invitations.getItems().isEmpty() );
     }
 
