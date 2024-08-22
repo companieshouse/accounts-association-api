@@ -28,28 +28,29 @@ class ControllerAdviceTest {
 
     @Autowired
     private MockMvc mockMvc;
+
     @MockBean
     private AssociationsService associationsService;
+
     @MockBean
     private UsersService usersService;
-    @MockBean
-    InterceptorConfig interceptorConfig;
 
     @MockBean
-    EmailService emailService;
+    private InterceptorConfig interceptorConfig;
 
     @MockBean
-    StaticPropertyUtil staticPropertyUtil;
+    private EmailService emailService;
 
     @MockBean
-    CompanyService companyService;
+    private StaticPropertyUtil staticPropertyUtil;
 
+    @MockBean
+    private CompanyService companyService;
 
     @BeforeEach
     void setup() {
         Mockito.doNothing().when(interceptorConfig).addInterceptors(any());
     }
-
 
     @Test
     void testNotFoundRuntimeError() throws Exception {
@@ -57,14 +58,13 @@ class ControllerAdviceTest {
                 .when(associationsService).fetchAssociationsForUserStatusAndCompany(any(),anyList(),any(),any(),any());
 
         mockMvc.perform(get("/associations")
-                        .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity", "111"))
                 .andExpect(status().isNotFound());
-
     }
 
     @Test
     void testBadRequestRuntimeError() throws Exception {
-
         mockMvc.perform(get( "/associations" )
                         .header("X-Request-Id", "theId123"))
                 .andExpect(status().isBadRequest());
@@ -72,29 +72,33 @@ class ControllerAdviceTest {
 
     @Test
     void testConstraintViolationError() throws Exception {
-
         mockMvc.perform(get( "/associations?company_number=&&" )
-                        .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity", "111"))
                 .andExpect(status().isBadRequest());
     }
+
     @Test
     void testOnInternalServerError() throws Exception {
         Mockito.doThrow(new NullPointerException("Couldn't find association"))
                 .when(associationsService).fetchAssociationsForUserStatusAndCompany(any(),anyList(),any(),any(),any());
 
         mockMvc.perform(get("/associations?company_number=123445")
-                        .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity", "111"))
                 .andExpect(status().isInternalServerError());
     }
+
     @Test
     void testOnInternalServerErrorRuntimeException() throws Exception {
         Mockito.doThrow(new InternalServerErrorRuntimeException("Couldn't find association"))
                 .when(associationsService).fetchAssociationsForUserStatusAndCompany(any(),anyList(),any(),any(),any());
 
-
         mockMvc.perform(get("/associations")
-                        .header("X-Request-Id", "theId123").header("ERIC-Identity", "111"))
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity", "111"))
                 .andExpect(status().isInternalServerError());
     }
+
 }
 

@@ -9,7 +9,7 @@ import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEm
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-public class InvitationEmailBuilderTest {
+class InvitationEmailBuilderTest {
 
     @Test
     void buildInstantiatesEmailData() {
