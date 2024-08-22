@@ -12,19 +12,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.models.InvitationDao;
-import uk.gov.companieshouse.accounts.association.models.email.data.*;
+import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
+import uk.gov.companieshouse.accounts.association.common.Mockers;
+import uk.gov.companieshouse.accounts.association.common.TestDataManager;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationAcceptedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.EmailSendingException;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -36,57 +34,37 @@ import static uk.gov.companieshouse.accounts.association.utils.MessageType.*;
 class EmailServiceTest {
 
     @Mock
-    EmailProducer emailProducer;
+    private EmailProducer emailProducer;
 
     @Mock
-    AssociationsRepository associationsRepository;
+    private AssociationsRepository associationsRepository;
 
     @Mock
-    UsersService usersService;
+    private UsersService usersService;
 
     @InjectMocks
-    EmailService emailService;
-
-    private AssociationDao associationOne;
+    private EmailService emailService;
 
     private final String COMPANY_INVITATIONS_URL = "http://chs.local/your-companies/company-invitations?mtm_campaign=associations_invite";
 
-    private final CompanyDetails companyDetailsDefault = new CompanyDetails();
+    private static final TestDataManager testDataManager = TestDataManager.getInstance();
+
+    private Mockers mockers;
+
+    private static final ComparisonUtils comparisonUtils = new ComparisonUtils();
 
     @BeforeEach
     void setup(){
+        mockers = new Mockers( null, null, emailProducer, null, usersService );
         ReflectionTestUtils.setField(emailService, "invitationLink", COMPANY_INVITATIONS_URL);
-
-
-        final var now = LocalDateTime.now();
-
-        final var invitationOne = new InvitationDao();
-        invitationOne.setInvitedBy("666");
-        invitationOne.setInvitedAt(now.plusDays(4));
-
-        associationOne = new AssociationDao();
-        associationOne.setCompanyNumber("111111");
-        associationOne.setUserId("111");
-        associationOne.setUserEmail("bruce.wayne@gotham.city");
-        associationOne.setStatus(StatusEnum.CONFIRMED.getValue());
-        associationOne.setId("1");
-        associationOne.setApprovedAt(now.plusDays(1));
-        associationOne.setRemovedAt(now.plusDays(2));
-        associationOne.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-        associationOne.setApprovalExpiryAt(now.plusDays(3));
-        associationOne.setInvitations(List.of(invitationOne));
-        associationOne.setEtag("a");
     }
-
-
 
     @Test
     void createRequestsToFetchAssociatedUsersCorrectlyFormsUpRequests(){
-        final var content = List.of(associationOne);
+        final var content = testDataManager.fetchAssociationDaos( "1" );
         final var pageRequest = PageRequest.of(0, 20);
         final var page = new PageImpl<>(content, pageRequest, content.size());
-
-        Supplier<User> userSupplier = () -> new User().userId( "111" );
+        final Supplier<User> userSupplier = () -> new User().userId( "111" );
 
         Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( eq( "111111" ), any(), any(), any() );
         Mockito.doReturn( userSupplier ).when( usersService ).createFetchUserDetailsRequest( anyString() );
@@ -96,466 +74,267 @@ class EmailServiceTest {
 
     @Test
     void sendAuthCodeConfirmationEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNameOrNullRequestsThrowsNullPointerException(){
-        final var emailData = new AuthCodeConfirmationEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Krishna Patel is now authorised to file online for Tesla" );
-        emailData.setAuthorisedPerson( "Krishna Patel" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", requestsToFetchAssociatedUsers ) );
-
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", companyDetailsDefault, "Krishna Patel", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Krishna Patel", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", companyDetails, null, requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", null ) );
     }
 
     @Test
     void sendAuthCodeConfirmationEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
-        final var emailData = new AuthCodeConfirmationEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Krishna Patel is now authorised to file online for Tesla" );
-        emailData.setAuthorisedPerson( "Krishna Patel" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
         emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", requestsToFetchAssociatedUsers );
-
-        Mockito.verify( emailProducer ).sendEmail( emailData, MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.authCodeConfirmationEmailMatcher( "kpatel@companieshouse.gov.uk", "Wayne Enterprises", "Krishna Patel" ) ), eq( MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendAuthCodeConfirmationEmailToAssociatedUsersDoesNotThrowEmailOnKafkaQueue(){
-        final var emailData = new AuthCodeConfirmationEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Krishna Patel is now authorised to file online for Tesla" );
-        emailData.setAuthorisedPerson( "Krishna Patel" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
         emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", List.of() );
-
-        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() );
+        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( argThat( comparisonUtils.authCodeConfirmationEmailMatcher( "kpatel@companieshouse.gov.uk", "Wayne Enterprises", "Krishna Patel" ) ), eq( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendAuthCodeConfirmationEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
-        final var emailData = new AuthCodeConfirmationEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Krishna Patel is now authorised to file online for Tesla" );
-        emailData.setAuthorisedPerson( "Krishna Patel" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-
-        Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
+        mockers.mockEmailSendingFailure( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() );
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", requestsToFetchAssociatedUsers ) );
     }
 
     @Test
     void sendAuthorisationRemovedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
-        final var emailData = new AuthorisationRemovedEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk's authorisation removed to file online for Tesla" );
-        emailData.setPersonWhoRemovedAuthorisation( "Krishna Patel" );
-        emailData.setPersonWhoWasRemoved( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetailsDefault, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, null, "Elon Musk", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, null, "Batman", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", null, requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", null ) );
     }
 
     @Test
     void sendAuthorisationRemovedEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
-        final var emailData = new AuthorisationRemovedEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk's authorisation removed to file online for Tesla" );
-        emailData.setPersonWhoRemovedAuthorisation( "Krishna Patel" );
-        emailData.setPersonWhoWasRemoved( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-
-        emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers );
-
-        Mockito.verify( emailProducer ).sendEmail( emailData, AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
+        emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.authorisationRemovedEmailMatcher( "Krishna Patel", "Batman", "Wayne Enterprises", "kpatel@companieshouse.gov.uk" ) ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendAuthorisationRemovedEmailToAssociatedUsersDoesNotThrowEmailOnKafkaQueue(){
-        final var emailData = new AuthorisationRemovedEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk's authorisation removed to file online for Tesla" );
-        emailData.setPersonWhoRemovedAuthorisation( "Krishna Patel" );
-        emailData.setPersonWhoWasRemoved( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", List.of() );
-
-        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", List.of() );
+        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( argThat( comparisonUtils.authorisationRemovedEmailMatcher( "Krishna Patel", "Batman", "Wayne Enterprises", "kpatel@companieshouse.gov.uk" ) ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendAuthorisationRemovedEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
-        final var emailData = new AuthorisationRemovedEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk's authorisation removed to file online for Tesla" );
-        emailData.setPersonWhoRemovedAuthorisation( "Krishna Patel" );
-        emailData.setPersonWhoWasRemoved( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-
-        Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
+        mockers.mockEmailSendingFailure( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() );
+        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
     }
 
     @Test
     void sendInvitationCancelledEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
-        final var emailData = new InvitationCancelledEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Invitation cancelled for Elon Musk to be authorised to file online for Tesla" );
-        emailData.setPersonWhoCancelledInvite( "Krishna Patel" );
-        emailData.setPersonWhoWasCancelled( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetailsDefault, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, null, "Elon Musk", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, null, "Batman", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", null, requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", null ) );
     }
 
     @Test
     void sendInvitationCancelledEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
-        final var emailData = new InvitationCancelledEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Invitation cancelled for Elon Musk to be authorised to file online for Tesla" );
-        emailData.setPersonWhoCancelledInvite( "Krishna Patel" );
-        emailData.setPersonWhoWasCancelled( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-
-        emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers );
-
-        Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_CANCELLED_MESSAGE_TYPE.getValue() );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
+        emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledEmailMatcher( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Batman", "Wayne Enterprises" ) ), eq( INVITATION_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendInvitationCancelledEmailToAssociatedUsersDoesNotThrowEmailOnKafkaQueue(){
-        final var emailData = new InvitationCancelledEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Invitation cancelled for Elon Musk to be authorised to file online for Tesla" );
-        emailData.setPersonWhoCancelledInvite( "Krishna Patel" );
-        emailData.setPersonWhoWasCancelled( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", List.of() );
-
-        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, INVITATION_CANCELLED_MESSAGE_TYPE.getValue() );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", List.of() );
+        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( argThat( comparisonUtils.invitationCancelledEmailMatcher( "kpatel@companieshouse.gov.uk", "Krishna Patel", "Batman", "Wayne Enterprises" ) ), eq( INVITATION_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendInvitationCancelledEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
-        final var emailData = new InvitationCancelledEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Invitation cancelled for Elon Musk to be authorised to file online for Tesla" );
-        emailData.setPersonWhoCancelledInvite( "Krishna Patel" );
-        emailData.setPersonWhoWasCancelled( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-
-        Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
+        mockers.mockEmailSendingFailure( INVITATION_CANCELLED_MESSAGE_TYPE.getValue() );
+        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
     }
 
     @Test
     void sendInvitationEmailToAssociatedUsersNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
-        final var emailData = new InvitationEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk invited to be authorised to file online for Tesla" );
-        emailData.setPersonWhoCreatedInvite( "Krishna Patel" );
-        emailData.setInvitee( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetailsDefault, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, null, "Elon Musk", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, null, "Batman", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", null, requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", null ) );
     }
 
     @Test
     void sendInvitationEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
-        final var emailData = new InvitationEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk invited to be authorised to file online for Tesla" );
-        emailData.setPersonWhoCreatedInvite( "Krishna Patel" );
-        emailData.setInvitee( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-
-        emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers );
-
-        Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_MESSAGE_TYPE.getValue() );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
+        emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationAndInviteEmailDataMatcher( "kpatel@companieshouse.gov.uk", "Krishna Patel", "bruce.wayne@gotham.city", "Batman", "Wayne Enterprises", COMPANY_INVITATIONS_URL ) ), eq( INVITATION_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendInvitationEmailToAssociatedUsersDoesNotThrowEmailOnKafkaQueue(){
-        final var emailData = new InvitationEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk invited to be authorised to file online for Tesla" );
-        emailData.setPersonWhoCreatedInvite( "Krishna Patel" );
-        emailData.setInvitee( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", List.of() );
-
-        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, INVITATION_MESSAGE_TYPE.getValue() );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", List.of() );
+        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( argThat( comparisonUtils.invitationAndInviteEmailDataMatcher( "kpatel@companieshouse.gov.uk", "Krishna Patel", "bruce.wayne@gotham.city", "Batman", "Wayne Enterprises", COMPANY_INVITATIONS_URL ) ), eq( INVITATION_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendInvitationEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
-        final var emailData = new InvitationEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk invited to be authorised to file online for Tesla" );
-        emailData.setPersonWhoCreatedInvite( "Krishna Patel" );
-        emailData.setInvitee( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-
-        Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
+        mockers.mockEmailSendingFailure( INVITATION_MESSAGE_TYPE.getValue() );
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
     }
 
     @Test
     void sendInvitationAcceptedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
-        final var emailData = new InvitationAcceptedEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk is now authorised to file online for Tesla" );
-        emailData.setPersonWhoCreatedInvite( "Krishna Patel" );
-        emailData.setAuthorisedPerson( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetailsDefault, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, null, "Elon Musk", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, null, "Batman", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", null, requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", null ) );
     }
 
     @Test
     void sendInvitationAcceptedEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
-        final var emailData = new InvitationAcceptedEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk is now authorised to file online for Tesla" );
-        emailData.setPersonWhoCreatedInvite( "Krishna Patel" );
-        emailData.setAuthorisedPerson( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
+        final var expectedBaseEmail = new InvitationAcceptedEmailBuilder()
+                .setInviterDisplayName( "Krishna Patel" )
+                .setInviteeDisplayName( "Batman" )
+                .setCompanyName( "Wayne Enterprises" );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
+        emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers );
 
-        emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers );
-
-        Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationAcceptedEmailDataMatcher( List.of( "kpatel@companieshouse.gov.uk" ), expectedBaseEmail ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendInvitationAcceptedEmailToAssociatedUsersDoesNotThrowEmailOnKafkaQueue(){
-        final var emailData = new InvitationAcceptedEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk is now authorised to file online for Tesla" );
-        emailData.setPersonWhoCreatedInvite( "Krishna Patel" );
-        emailData.setAuthorisedPerson( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
+        final var expectedBaseEmail = new InvitationAcceptedEmailBuilder()
+                .setInviterDisplayName( "Krishna Patel" )
+                .setInviteeDisplayName( "Batman" )
+                .setCompanyName( "Wayne Enterprises" );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
 
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", List.of() );
+        emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", List.of() );
 
-        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() );
+        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( argThat( comparisonUtils.invitationAcceptedEmailDataMatcher( List.of( "kpatel@companieshouse.gov.uk" ), expectedBaseEmail ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendInvitationAcceptedEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
-        final var emailData = new InvitationAcceptedEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk is now authorised to file online for Tesla" );
-        emailData.setPersonWhoCreatedInvite( "Krishna Patel" );
-        emailData.setAuthorisedPerson( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-
-        Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Elon Musk", requestsToFetchAssociatedUsers ) );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
+        mockers.mockEmailSendingFailure( INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() );
+        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
     }
 
     @Test
     void sendInvitationRejectedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNameOrNullRequestsThrowsNullPointerException(){
-        final var emailData = new InvitationRejectedEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk has declined to be digitally authorised to file online for Tesla" );
-        emailData.setPersonWhoDeclined( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", null, "Elon Musk", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetailsDefault, "Elon Musk", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", null, "Batman", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Batman", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetails, null, requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetails, "Elon Musk", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetails, "Batman", null ) );
     }
 
     @Test
     void sendInvitationRejectedEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
-        final var emailData = new InvitationRejectedEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk has declined to be digitally authorised to file online for Tesla" );
-        emailData.setPersonWhoDeclined( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-        emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetails, "Elon Musk", requestsToFetchAssociatedUsers );
-
-        Mockito.verify( emailProducer ).sendEmail( emailData, INVITATION_REJECTED_MESSAGE_TYPE.getValue() );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
+        emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetails, "Batman", requestsToFetchAssociatedUsers );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationRejectedEmailMatcher( "kpatel@companieshouse.gov.uk", "Batman", "Wayne Enterprises" ) ), eq( INVITATION_REJECTED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendInvitationRejectedEmailToAssociatedUsersDoesNotThrowEmailOnKafkaQueue(){
-        final var emailData = new InvitationRejectedEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk has declined to be digitally authorised to file online for Tesla" );
-        emailData.setPersonWhoDeclined( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetails, "Elon Musk", List.of() );
-
-        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( emailData, INVITATION_REJECTED_MESSAGE_TYPE.getValue() );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetails, "Batman", List.of() );
+        Mockito.verify( emailProducer, Mockito.never() ).sendEmail( argThat( comparisonUtils.invitationRejectedEmailMatcher( "kpatel@companieshouse.gov.uk", "Batman", "Wayne Enterprises" ) ), eq( INVITATION_REJECTED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendInvitationRejectedEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
-        final var emailData = new InvitationRejectedEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: Elon Musk has declined to be digitally authorised to file online for Tesla" );
-        emailData.setPersonWhoDeclined( "Elon Musk" );
-        emailData.setCompanyName( "Tesla" );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-        List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
-
-        Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetails, "Elon Musk", requestsToFetchAssociatedUsers ) );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
+        mockers.mockEmailSendingFailure( INVITATION_REJECTED_MESSAGE_TYPE.getValue() );
+        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetails, "Batman", requestsToFetchAssociatedUsers ) );
     }
 
     @Test
     void sendInviteEmailWithNullCompanyDetailsOrNullCompanyNameOrNullInviterDisplayNameOrNullInvitationExpiryTimestampOrNullInvitationLinkOrNullInviteeEmailThrowsNullPointerException(){
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
 
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", null, "Elon Musk", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetailsDefault, "Elon Musk", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", null, "Batman", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", new CompanyDetails(), "Batman", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk" ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, null, "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Elon Musk", null, "kpatel@companieshouse.gov.uk" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Elon Musk", "1992-05-01T10:30:00.000000", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Batman", null, "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Batman", "1992-05-01T10:30:00.000000", null ) );
     }
 
     @Test
     void sendInviteEmailThrowsEmailOnKafkaQueue(){
-        final var emailData = new InviteEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: invitation to be authorised to file online for Tesla" );
-        emailData.setInviterDisplayName( "Krishna Patel" );
-        emailData.setCompanyName( "Tesla" );
-        emailData.setInvitationExpiryTimestamp( "1992-05-01T10:30:00.000000" );
-        emailData.setInvitationLink( COMPANY_INVITATIONS_URL );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-
-        emailService.sendInviteEmail( "theId12345", companyDetails, "Krishna Patel", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk" );
-
-        Mockito.verify( emailProducer ).sendEmail( emailData, INVITE_MESSAGE_TYPE.getValue() );
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        emailService.sendInviteEmail( "theId12345", companyDetails, "Batman", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk" );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationAndInviteEmailDataMatcher( "bruce.wayne@gotham.city", "Batman", "kpatel@companieshouse.gov.uk", "Krishna Patel", "Wayne Enterprises", COMPANY_INVITATIONS_URL ) ), eq( INVITE_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendInviteEmailWithUnexpectedIssueThrowsEmailSendingException(){
-        final var emailData = new InviteEmailData();
-        emailData.setTo( "kpatel@companieshouse.gov.uk" );
-        emailData.setSubject( "Companies House: invitation to be authorised to file online for Tesla" );
-        emailData.setInviterDisplayName( "Krishna Patel" );
-        emailData.setCompanyName( "Tesla" );
-        emailData.setInvitationExpiryTimestamp( "1992-05-01T10:30:00.000000" );
-        emailData.setInvitationLink( COMPANY_INVITATIONS_URL );
-
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-
-        Mockito.doThrow( new EmailSendingException( "Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), any() );
-
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        mockers.mockEmailSendingFailure( INVITE_MESSAGE_TYPE.getValue() );
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Krishna Patel", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk" ) );
     }
 
     @Test
     void sendInviteCancelledEmailWithoutCompanyDetailsOrCompanyNameOrCancelledByDisplayNameOrInviteeUserSupplierOrEmailThrowsNullPointerException(){
-        final var userDetails = new User().email( "kpatel@companieshouse.gov.uk" );
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
+        final var userDetails = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
 
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", null, "Elon Musk", () -> userDetails ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", new CompanyDetails(), "Elon Musk", () -> userDetails ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", null, "Batman", () -> userDetails ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", new CompanyDetails(), "Batman", () -> userDetails ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", companyDetails, null, () -> userDetails ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", companyDetails, "Elon Musk", null ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", companyDetails, "Elon Musk", () -> new User() ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", companyDetails, "Batman", null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", companyDetails, "Batman", () -> new User() ) );
     }
 
     @Test
     void sendInviteCancelledEmailSendsEmail(){
-        final var expectedEmailData = new InviteCancelledEmailData();
-        expectedEmailData.setTo( "kpatel@companieshouse.gov.uk" );
-        expectedEmailData.setSubject( "Companies House: authorisation to file online for Tesla cancelled" );
-        expectedEmailData.setCompanyName( "Tesla" );
-        expectedEmailData.setCancelledBy( "Elon Musk" );
-
-        final var userDetails = new User().email( "kpatel@companieshouse.gov.uk" );
-        final var companyDetails = new CompanyDetails().companyName( "Tesla" );
-
-        emailService.sendInviteCancelledEmail( "theId12345", companyDetails, "Elon Musk", () -> userDetails );
-
-        Mockito.verify( emailProducer ).sendEmail( expectedEmailData, INVITE_CANCELLED_MESSAGE_TYPE.getValue() );
+        final var userDetails = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        emailService.sendInviteCancelledEmail( "theId12345", companyDetails, "Batman", () -> userDetails );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.inviteCancelledEmailMatcher( "bruce.wayne@gotham.city", "Wayne Enterprises", "Batman" ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
 }

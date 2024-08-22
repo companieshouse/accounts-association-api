@@ -9,7 +9,7 @@ import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAc
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-public class InvitationAcceptedEmailBuilderTest {
+class InvitationAcceptedEmailBuilderTest {
 
     @Test
     void buildInstantiatesEmailData() {
@@ -35,6 +35,5 @@ public class InvitationAcceptedEmailBuilderTest {
     void buildWithNullsThrowsNullPointerException(){
         Assertions.assertThrows( NullPointerException.class, () -> new InvitationAcceptedEmailBuilder().build() );
     }
-
 
 }

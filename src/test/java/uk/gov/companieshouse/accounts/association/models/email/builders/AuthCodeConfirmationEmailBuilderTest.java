@@ -9,7 +9,7 @@ import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConf
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-public class AuthCodeConfirmationEmailBuilderTest {
+class AuthCodeConfirmationEmailBuilderTest {
 
     @Test
     void buildInstantiatesEmailData(){
