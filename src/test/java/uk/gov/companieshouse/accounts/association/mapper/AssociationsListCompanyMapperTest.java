@@ -16,6 +16,7 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.CompanyStatusEnum;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
 import java.util.ArrayList;
@@ -70,6 +71,7 @@ class AssociationsListCompanyMapperTest {
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getUserId).toList().containsAll(List.of("111","222")));
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getUserEmail).toList().containsAll(List.of("bruce.wayne@gotham.city", "the.joker@gotham.city")));
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getCompanyName).allMatch(companyName -> companyName.equals("Wayne Enterprises")));
+        Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getCompanyStatus).allMatch(companyStatus ->  companyStatus.equals( CompanyStatusEnum.ACTIVE )));
         Assertions.assertEquals("/associations/companies/111111?page_index=0&items_per_page=2", links.getSelf());
         Assertions.assertEquals(String.format("/associations/companies/111111?page_index=%d&items_per_page=%d", 1, 2), links.getNext());
         Assertions.assertEquals(0, associationsList.getPageNumber());

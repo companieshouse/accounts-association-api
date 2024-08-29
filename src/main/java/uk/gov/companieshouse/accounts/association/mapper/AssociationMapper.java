@@ -25,7 +25,7 @@ public class AssociationMapper {
 
     protected void enrichAssociation(Association association) {
         mapperUtil.enrichAssociationWithUserDetails(association);
-        mapperUtil.enrichAssociationWithCompanyName(association);
+        mapperUtil.enrichAssociationWithCompanyDetails(association);
     }
 
 

@@ -18,6 +18,7 @@ import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.CompanyStatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
 
@@ -67,6 +68,8 @@ class AssociationMapperTest {
 
         Assertions.assertEquals("the.joker@gotham.city", association.getUserEmail());
         Assertions.assertEquals(DEFAULT_DISPLAY_NAME, association.getDisplayName());
+        Assertions.assertEquals( "Wayne Enterprises", association.getCompanyName() );
+        Assertions.assertEquals( CompanyStatusEnum.ACTIVE, association.getCompanyStatus() );
     }
 
     @Test
@@ -82,6 +85,8 @@ class AssociationMapperTest {
 
         Assertions.assertEquals("bruce.wayne@gotham.city", association.getUserEmail());
         Assertions.assertEquals("Batman", association.getDisplayName());
+        Assertions.assertEquals( "Wayne Enterprises", association.getCompanyName() );
+        Assertions.assertEquals( CompanyStatusEnum.ACTIVE, association.getCompanyStatus() );
     }
 
     @Test
@@ -110,6 +115,8 @@ class AssociationMapperTest {
         Assertions.assertEquals("bruce.wayne@gotham.city", dto.getUserEmail());
         Assertions.assertEquals("Batman", dto.getDisplayName());
         Assertions.assertEquals("/associations/1", links.getSelf());
+        Assertions.assertEquals( "Wayne Enterprises", dto.getCompanyName() );
+        Assertions.assertEquals( CompanyStatusEnum.ACTIVE, dto.getCompanyStatus() );
         Assertions.assertEquals(DEFAULT_KIND, dto.getKind());
     }
 
@@ -125,6 +132,6 @@ class AssociationMapperTest {
 
         final var associationDto = associationUserDaoToDtoMapper.daoToDto(associationDao);
 
-        Assertions.assertTrue( comparisonUtils.compare( expectedAssociationDto, List.of( "etag", "id", "userId", "userEmail", "displayName", "companyNumber", "companyName", "status", "createdAt", "approvedAt", "removedAt", "kind", "approvalRoute", "approvalExpiryAt", "links" ), List.of(), Map.of( "createdAt", new ReduceTimeStampResolutionPreprocessor(),"approvedAt", new ReduceTimeStampResolutionPreprocessor(), "removedAt", new ReduceTimeStampResolutionPreprocessor(), "approvalExpiryAt", new ReduceTimeStampResolutionPreprocessor() ) ).matches( associationDto ) );
+        Assertions.assertTrue( comparisonUtils.compare( expectedAssociationDto, List.of( "etag", "id", "userId", "userEmail", "displayName", "companyNumber", "companyName", "companyStatus", "status", "createdAt", "approvedAt", "removedAt", "kind", "approvalRoute", "approvalExpiryAt", "links" ), List.of(), Map.of( "createdAt", new ReduceTimeStampResolutionPreprocessor(),"approvedAt", new ReduceTimeStampResolutionPreprocessor(), "removedAt", new ReduceTimeStampResolutionPreprocessor(), "approvalExpiryAt", new ReduceTimeStampResolutionPreprocessor() ) ).matches( associationDto ) );
     }
 }
