@@ -32,7 +32,7 @@ public class AssociationsListUserMapper {
 
     public AssociationsList daoToDto(final Page<AssociationDao> associationsList, @NotNull final User user) {
         var associationList = associationsList.map(baseMapper::daoToDto)
-                .map(mapperUtil::enrichAssociationWithCompanyName)
+                .map(mapperUtil::enrichAssociationWithCompanyDetails)
                 .map(association -> {
                     association.setUserEmail(user.getEmail());
                     association.setDisplayName(

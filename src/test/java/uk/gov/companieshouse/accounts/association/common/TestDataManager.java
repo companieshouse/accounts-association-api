@@ -898,23 +898,23 @@ public class TestDataManager {
     }
 
     private void instantiateCompanyDtoSuppliers(){
-        companyDetailsDtoSuppliers.put( "111111", () -> new CompanyDetails().companyNumber( "111111" ).companyName( "Wayne Enterprises" ) );
-        companyDetailsDtoSuppliers.put( "333333", () -> new CompanyDetails().companyNumber( "333333" ).companyName( "Tesco" ) );
-        companyDetailsDtoSuppliers.put( "444444", () -> new CompanyDetails().companyNumber( "444444" ).companyName( "Sainsbury's" ) );
-        companyDetailsDtoSuppliers.put( "555555", () -> new CompanyDetails().companyNumber( "555555" ).companyName( "Morrison" ) );
-        companyDetailsDtoSuppliers.put( "666666", () -> new CompanyDetails().companyNumber( "666666" ).companyName( "Aldi" ) );
-        companyDetailsDtoSuppliers.put( "777777", () -> new CompanyDetails().companyNumber( "777777" ).companyName( "Lidl" ) );
-        companyDetailsDtoSuppliers.put( "888888", () -> new CompanyDetails().companyNumber( "888888" ).companyName( "McDonald's" ) );
-        companyDetailsDtoSuppliers.put( "999999", () -> new CompanyDetails().companyNumber( "999999" ).companyName( "Burger King" ) );
-        companyDetailsDtoSuppliers.put( "x111111", () -> new CompanyDetails().companyNumber( "x111111" ).companyName( "Pizza Hut" ) );
-        companyDetailsDtoSuppliers.put( "x222222", () -> new CompanyDetails().companyNumber( "x222222" ).companyName( "Dominos" ) );
-        companyDetailsDtoSuppliers.put( "x333333", () -> new CompanyDetails().companyNumber( "x333333" ).companyName( "Pizza Express" ) );
-        companyDetailsDtoSuppliers.put( "x444444", () -> new CompanyDetails().companyNumber( "x444444" ).companyName( "Nandos" ) );
-        companyDetailsDtoSuppliers.put( "x555555", () -> new CompanyDetails().companyNumber( "x555555" ).companyName( "Subway" ) );
-        companyDetailsDtoSuppliers.put( "x666666", () -> new CompanyDetails().companyNumber( "x666666" ).companyName( "Greggs" ) );
-        companyDetailsDtoSuppliers.put( "x777777", () -> new CompanyDetails().companyNumber( "x777777" ).companyName( "Facebook" ) );
-        companyDetailsDtoSuppliers.put( "x888888", () -> new CompanyDetails().companyNumber( "x888888" ).companyName( "Twitter" ) );
-        companyDetailsDtoSuppliers.put( "x999999", () -> new CompanyDetails().companyNumber( "x999999" ).companyName( "Instram" ) );
+        companyDetailsDtoSuppliers.put( "111111", () -> new CompanyDetails().companyNumber( "111111" ).companyName( "Wayne Enterprises" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "333333", () -> new CompanyDetails().companyNumber( "333333" ).companyName( "Tesco" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "444444", () -> new CompanyDetails().companyNumber( "444444" ).companyName( "Sainsbury's" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "555555", () -> new CompanyDetails().companyNumber( "555555" ).companyName( "Morrison" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "666666", () -> new CompanyDetails().companyNumber( "666666" ).companyName( "Aldi" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "777777", () -> new CompanyDetails().companyNumber( "777777" ).companyName( "Lidl" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "888888", () -> new CompanyDetails().companyNumber( "888888" ).companyName( "McDonald's" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "999999", () -> new CompanyDetails().companyNumber( "999999" ).companyName( "Burger King" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "x111111", () -> new CompanyDetails().companyNumber( "x111111" ).companyName( "Pizza Hut" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "x222222", () -> new CompanyDetails().companyNumber( "x222222" ).companyName( "Dominos" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "x333333", () -> new CompanyDetails().companyNumber( "x333333" ).companyName( "Pizza Express" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "x444444", () -> new CompanyDetails().companyNumber( "x444444" ).companyName( "Nandos" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "x555555", () -> new CompanyDetails().companyNumber( "x555555" ).companyName( "Subway" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "x666666", () -> new CompanyDetails().companyNumber( "x666666" ).companyName( "Greggs" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "x777777", () -> new CompanyDetails().companyNumber( "x777777" ).companyName( "Facebook" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "x888888", () -> new CompanyDetails().companyNumber( "x888888" ).companyName( "Twitter" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "x999999", () -> new CompanyDetails().companyNumber( "x999999" ).companyName( "Instram" ).companyStatus( "active" ) );
     }
 
     private TestDataManager(){
