@@ -17,6 +17,7 @@ import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
 
 import java.util.Arrays;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.CompanyStatusEnum;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
@@ -58,6 +59,7 @@ class AssociationsListUserMapperTest {
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getUserId).toList().contains("111"));
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getUserEmail).toList().contains("bruce.wayne@gotham.city"));
         Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getCompanyName).toList().containsAll(Arrays.asList("Wayne Enterprises", "Tesco")));
+        Assertions.assertTrue(items.stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getCompanyStatus).allMatch(companyStatus ->  companyStatus.equals( CompanyStatusEnum.ACTIVE )));
         Assertions.assertEquals("/associations?page_index=0&items_per_page=2", links.getSelf());
         Assertions.assertEquals(String.format("/associations?page_index=%d&items_per_page=%d", 1, 2), links.getNext());
         Assertions.assertEquals(0, dto.getPageNumber());

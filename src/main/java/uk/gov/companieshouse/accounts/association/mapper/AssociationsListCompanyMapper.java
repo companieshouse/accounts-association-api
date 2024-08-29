@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.utils.MapperUtil;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.CompanyStatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
@@ -29,6 +30,7 @@ public class AssociationsListCompanyMapper {
                 .map(mapperUtil::enrichAssociationWithUserDetails)
                 .map(association -> {
                     association.setCompanyName(companyDetails.getCompanyName());
+                    association.setCompanyStatus( CompanyStatusEnum.fromValue( companyDetails.getCompanyStatus() ) );
                     return association;
                 });
         return mapperUtil.enrichWithMetadata(associationList, END_POINT_URL.concat(companyDetails.getCompanyNumber()));
