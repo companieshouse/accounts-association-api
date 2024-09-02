@@ -953,7 +953,7 @@ public class TestDataManager {
         associationDto.setId( associationDao.getId() );
         associationDto.setUserId( user.getUserId() );
         associationDto.setUserEmail( user.getEmail() );
-        associationDto.setDisplayName( Optional.ofNullable( user.getDisplayName() ).orElse( "Not Provided" )  );
+        associationDto.setDisplayName( Optional.ofNullable( user.getDisplayName() ).orElse( "Not provided" )  );
         associationDto.setCompanyNumber( associationDao.getCompanyNumber() );
         associationDto.setCompanyName( companyDetails.getCompanyName() );
         associationDto.setCompanyStatus( CompanyStatusEnum.fromValue( companyDetails.getCompanyStatus() ) );
