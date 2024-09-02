@@ -14,8 +14,7 @@ import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
 import uk.gov.companieshouse.accounts.association.common.Preprocessors.ReduceTimeStampResolutionPreprocessor;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
-import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
-import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
+import uk.gov.companieshouse.accounts.association.mapper.AssociationsListMappers;
 import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
@@ -34,6 +33,7 @@ import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
 
@@ -55,10 +55,7 @@ class AssociationsServiceTest {
     private KafkaProducerFactory kafkaProducerFactory;
 
     @MockBean
-    private AssociationsListCompanyMapper associationsListCompanyMapper;
-
-    @MockBean
-    private AssociationsListUserMapper associationsListUserMapper;
+    private AssociationsListMappers associationsListMappers;
 
     @MockBean
     private InvitationsMapper invitationsMapper;
@@ -83,7 +80,7 @@ class AssociationsServiceTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" ) );
         associationsService.fetchAssociatedUsers( "111111", companyDetails, true, 20, 0 );
         final var expectedAssociationIds = List.of( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" );
-        Mockito.verify( associationsListCompanyMapper ).daoToDto( argThat( comparisonUtils.associationsPageMatches(16, 1, 16, expectedAssociationIds ) ), eq( companyDetails ) );
+        Mockito.verify( associationsListMappers ).daoToDto( argThat( comparisonUtils.associationsPageMatches(16, 1, 16, expectedAssociationIds ) ), isNull(), eq( companyDetails ) );
     }
 
     @Test
@@ -92,7 +89,7 @@ class AssociationsServiceTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" ) );
         associationsService.fetchAssociatedUsers( "111111", companyDetails, false, 20, 0 );
         final var expectedAssociationIds = List.of( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13" );
-        Mockito.verify( associationsListCompanyMapper ).daoToDto( argThat( comparisonUtils.associationsPageMatches(13, 1, 13, expectedAssociationIds ) ), eq( companyDetails ) );
+        Mockito.verify( associationsListMappers ).daoToDto( argThat( comparisonUtils.associationsPageMatches(13, 1, 13, expectedAssociationIds ) ), isNull(), eq( companyDetails ) );
     }
 
     @Test
@@ -100,7 +97,7 @@ class AssociationsServiceTest {
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" ) );
         associationsService.fetchAssociatedUsers("111111", companyDetails, true, 15, 1);
-        Mockito.verify(associationsListCompanyMapper).daoToDto(argThat(comparisonUtils.associationsPageMatches(16, 2, 1, List.of("16"))), eq(companyDetails));
+        Mockito.verify( associationsListMappers ).daoToDto(argThat(comparisonUtils.associationsPageMatches(16, 2, 1, List.of("16"))), isNull(), eq(companyDetails));
     }
 
     @Test
@@ -126,7 +123,7 @@ class AssociationsServiceTest {
         final var status = List.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() );
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33" ) );
         associationsService.fetchAssociationsForUserStatusAndCompany( user, status, 1, 15, null );
-        Mockito.verify(associationsListUserMapper).daoToDto(argThat(comparisonUtils.associationsPageMatches(16, 2, 1, List.of("33"))), eq(user));
+        Mockito.verify( associationsListMappers ).daoToDto(argThat(comparisonUtils.associationsPageMatches(16, 2, 1, List.of("33"))), eq(user), isNull() );
     }
 
     @Test
@@ -135,7 +132,7 @@ class AssociationsServiceTest {
         final var status = List.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() );
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33" ) );
         associationsService.fetchAssociationsForUserStatusAndCompany( user, status, 0, 15, "333333" );
-        Mockito.verify(associationsListUserMapper).daoToDto(argThat(comparisonUtils.associationsPageMatches(2, 1, 2, List.of("18", "27"))), eq(user));
+        Mockito.verify( associationsListMappers ).daoToDto(argThat(comparisonUtils.associationsPageMatches(2, 1, 2, List.of("18", "27"))), eq(user), isNull());
     }
 
     @Test
@@ -144,7 +141,7 @@ class AssociationsServiceTest {
         final var status = List.of( StatusEnum.REMOVED.getValue() );
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33" ) );
         associationsService.fetchAssociationsForUserStatusAndCompany( user, status, 0, 15, null );
-        Mockito.verify(associationsListUserMapper).daoToDto(argThat(comparisonUtils.associationsPageMatches(3, 1, 3, List.of("31", "32", "33"))), eq(user));
+        Mockito.verify( associationsListMappers ).daoToDto(argThat(comparisonUtils.associationsPageMatches(3, 1, 3, List.of("31", "32", "33"))), eq(user), isNull());
     }
 
     @Test
@@ -152,7 +149,7 @@ class AssociationsServiceTest {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33" ) );
         associationsService.fetchAssociationsForUserStatusAndCompany( user, null, 0, 15, null );
-        Mockito.verify(associationsListUserMapper).daoToDto(argThat(comparisonUtils.associationsPageMatches(5, 1, 5, List.of("18", "19", "20", "21", "22"))), eq(user));
+        Mockito.verify( associationsListMappers ).daoToDto(argThat(comparisonUtils.associationsPageMatches(5, 1, 5, List.of("18", "19", "20", "21", "22"))), eq(user), isNull());
     }
 
     @Test
@@ -160,35 +157,35 @@ class AssociationsServiceTest {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33" ) );
         associationsService.fetchAssociationsForUserStatusAndCompany( user, Collections.emptyList(), 0, 15, null );
-        Mockito.verify(associationsListUserMapper).daoToDto(argThat(comparisonUtils.associationsPageMatches(5, 1, 5, List.of("18", "19", "20", "21", "22"))), eq(user));
+        Mockito.verify( associationsListMappers ).daoToDto(argThat(comparisonUtils.associationsPageMatches(5, 1, 5, List.of("18", "19", "20", "21", "22"))), eq(user), isNull());
     }
 
     @Test
     void fetchAssociationsForUserStatusAndCompanyWithInvalidStatusReturnsEmptyPage() {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         associationsService.fetchAssociationsForUserStatusAndCompany( user, List.of( "complicated" ), 0, 15, null );
-        Mockito.verify(associationsListUserMapper).daoToDto(argThat(comparisonUtils.associationsPageMatches(0, 0, 0, Collections.emptyList())), eq(user));
+        Mockito.verify( associationsListMappers ).daoToDto(argThat(comparisonUtils.associationsPageMatches(0, 0, 0, Collections.emptyList())), eq(user), isNull());
     }
 
     @Test
     void fetchAssociationsForUserStatusAndCompanyWithNonexistentOrInvalidCompanyNumberReturnsEmptyPage() {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         associationsService.fetchAssociationsForUserStatusAndCompany( user, Collections.emptyList(), 0, 15, "$$1234" );
-        Mockito.verify(associationsListUserMapper).daoToDto(argThat(comparisonUtils.associationsPageMatches(0, 0, 0, Collections.emptyList())), eq(user));
+        Mockito.verify( associationsListMappers ).daoToDto(argThat(comparisonUtils.associationsPageMatches(0, 0, 0, Collections.emptyList())), eq(user), isNull());
     }
 
     @Test
     void fetchAssociationsForUserStatusAndCompanyWithNonexistentUserIdReturnsEmptyPage() {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         associationsService.fetchAssociationsForUserStatusAndCompany( user, Collections.emptyList(), 0, 15, "1234" );
-        Mockito.verify(associationsListUserMapper).daoToDto(argThat(comparisonUtils.associationsPageMatches(0, 0, 0, Collections.emptyList())), eq(user));
+        Mockito.verify( associationsListMappers ).daoToDto(argThat(comparisonUtils.associationsPageMatches(0, 0, 0, Collections.emptyList())), eq(user), isNull());
     }
 
     @Test
     void fetchAssociationsForUserStatusAndCompanyWithNonexistentUserEmailReturnsEmptyPage() {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         associationsService.fetchAssociationsForUserStatusAndCompany( user, Collections.emptyList(), 0, 15, "1234" );
-        Mockito.verify(associationsListUserMapper).daoToDto(argThat(comparisonUtils.associationsPageMatches(0, 0, 0, Collections.emptyList())), eq(user));
+        Mockito.verify( associationsListMappers ).daoToDto(argThat(comparisonUtils.associationsPageMatches(0, 0, 0, Collections.emptyList())), eq(user), isNull());
     }
 
     @Test

@@ -15,8 +15,10 @@ import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
+import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
 import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserUserGet;
+import uk.gov.companieshouse.api.handler.company.request.PrivateCompanyDetailsGet;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.api.model.ApiResponse;
 import uk.gov.companieshouse.email_producer.EmailProducer;
@@ -61,17 +63,25 @@ public class Mockers {
             Mockito.lenient().doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( request ).execute();
         }
     }
+
+    public void mockFetchCompanyProfile( final CompanyDetails companyData ) throws ApiErrorResponseException, URIValidationException {
+        final var request = Mockito.mock( PrivateCompanyDetailsGet.class );
+        Mockito.doReturn( request ).when( companyProfileEndpoint ).createFetchCompanyProfileRequest( companyData.getCompanyNumber() );
+        Mockito.lenient().doReturn( new ApiResponse<>( 200, Map.of(), companyData ) ).when( request ).execute();
+    }
+
     public void mockFetchCompanyProfile( final String... companyNumbers ) throws ApiErrorResponseException, URIValidationException {
         for ( final String companyNumber: companyNumbers ){
-            final var companyDetails = testDataManager.fetchCompanyDetailsDtos( companyNumber ).getFirst();
-            final var response = new ApiResponse<>( 200, Map.of(), companyDetails );
-            Mockito.doReturn( response ).when( companyProfileEndpoint ).fetchCompanyProfile( eq( companyNumber ) );
+            final var companyData = testDataManager.fetchCompanyDetailsDtos( companyNumber ).getFirst();
+            mockFetchCompanyProfile( companyData );
         }
     }
 
     public void mockFetchCompanyProfileNotFound( final String... companyNumbers ) throws ApiErrorResponseException, URIValidationException {
         for ( final String companyNumber: companyNumbers ){
-            Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( companyProfileEndpoint ).fetchCompanyProfile( eq( companyNumber ) );
+            final var request = Mockito.mock( PrivateCompanyDetailsGet.class );
+            Mockito.doReturn( request ).when( companyProfileEndpoint ).createFetchCompanyProfileRequest( companyNumber );
+            Mockito.lenient().doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( request ).execute();
         }
     }
 

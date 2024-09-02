@@ -1,9 +1,14 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
+import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.company.CompanyDetails;
@@ -25,28 +30,43 @@ public class CompanyService {
         this.companyProfileEndpoint = companyProfileEndpoint;
     }
 
-    public CompanyDetails fetchCompanyProfile(final String companyNumber) {
-
-        try {
-            LOG.debug(String.format("Attempting to fetch company profile for company %s", companyNumber));
-            return companyProfileEndpoint.fetchCompanyProfile(companyNumber)
-                    .getData();
-        } catch (ApiErrorResponseException exception) {
-            if (exception.getStatusCode() == 404) {
-                LOG.error(String.format("Could not find company profile for company %s", companyNumber));
-                throw new NotFoundRuntimeException("accounts-association-api", "Failed to find company");
-            } else {
-                LOG.error(String.format("Failed to retrieve company profile for company %s", companyNumber));
-                throw new InternalServerErrorRuntimeException("Failed to retrieve company profile");
+    public Supplier<CompanyDetails> createFetchCompanyProfileRequest( final String companyNumber ) {
+        final var request = companyProfileEndpoint.createFetchCompanyProfileRequest( companyNumber );
+        return () -> {
+            try {
+                LOG.debug( String.format( "Attempting to fetch company profile for company %s" , companyNumber ) );
+                return request.execute().getData();
+            } catch ( ApiErrorResponseException exception ) {
+                if ( exception.getStatusCode() == 404 ) {
+                    LOG.error( String.format( "Could not find company profile for company %s", companyNumber ) );
+                    throw new NotFoundRuntimeException( "accounts-association-api", "Failed to find company" );
+                } else {
+                    LOG.error( String.format( "Failed to retrieve company profile for company %s", companyNumber ) );
+                    throw new InternalServerErrorRuntimeException( "Failed to retrieve company profile" );
+                }
+            } catch ( URIValidationException exception ) {
+                LOG.error( String.format( "Failed to fetch company profile for company %s, because uri was incorrectly formatted", companyNumber ) );
+                throw new InternalServerErrorRuntimeException( "Invalid uri for company-profile-api service" );
+            } catch ( Exception exception ) {
+                LOG.error( String.format("Failed to retrieve company profile for company %s", companyNumber) );
+                throw new InternalServerErrorRuntimeException( "Failed to retrieve company profile" );
             }
-        } catch (URIValidationException exception) {
-            LOG.error(String.format("Failed to fetch company profile for company %s, because uri was incorrectly formatted", companyNumber));
-            throw new InternalServerErrorRuntimeException("Invalid uri for company-profile-api service");
-        } catch (Exception exception) {
-            LOG.error(String.format("Failed to retrieve company profile for company %s", companyNumber));
-            throw new InternalServerErrorRuntimeException("Failed to retrieve company profile");
-        }
+        };
+    }
 
+    public CompanyDetails fetchCompanyProfile( final String companyNumber ) {
+        return createFetchCompanyProfileRequest( companyNumber ).get();
+    }
+
+    public Map<String, CompanyDetails> fetchCompanyProfiles( final Stream<AssociationDao> associationDaos ){
+        final Map<String, CompanyDetails> companies = new ConcurrentHashMap<>();
+        associationDaos.map( AssociationDao::getCompanyNumber )
+                .distinct()
+                .map( this::createFetchCompanyProfileRequest )
+                .parallel()
+                .map( Supplier::get )
+                .forEach( company -> companies.put( company.getCompanyNumber(), company ) );
+        return companies;
     }
 
 }

@@ -62,7 +62,7 @@ class AssociationsListForCompanyControllerTest {
     private InterceptorConfig interceptorConfig;
 
     private static final String DEFAULT_KIND = "association";
-    private static final String DEFAULT_DISPLAY_NAME = "Not provided";
+    private static final String DEFAULT_DISPLAY_NAME = "Not Provided";
 
     private final LocalDateTime now = LocalDateTime.now();
 
