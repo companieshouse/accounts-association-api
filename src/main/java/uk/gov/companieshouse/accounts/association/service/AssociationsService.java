@@ -4,14 +4,11 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
-import uk.gov.companieshouse.accounts.association.mapper.AssociationMapper;
-import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
-import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
+import uk.gov.companieshouse.accounts.association.mapper.AssociationsListMappers;
 import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
@@ -46,37 +43,24 @@ import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUti
 public class AssociationsService {
 
     private final AssociationsRepository associationsRepository;
-    private final AssociationsListUserMapper associationsListUserMapper;
 
-    private final AssociationsListCompanyMapper associationsListCompanyMapper;
-
-    private final AssociationMapper associationMapper;
+    private final AssociationsListMappers associationsListMappers;
 
     private final InvitationsMapper invitationMapper;
 
     private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
 
     @Autowired
-    public AssociationsService(AssociationsRepository associationsRepository,
-                               AssociationsListUserMapper associationsListUserMapper,
-                               AssociationsListCompanyMapper associationsListCompanyMapper,
-                               AssociationMapper associationMapper,
-                               InvitationsMapper invitationMapper) {
+    public AssociationsService( final AssociationsRepository associationsRepository, final InvitationsMapper invitationMapper, final AssociationsListMappers associationsListMappers ) {
         this.associationsRepository = associationsRepository;
-        this.associationsListUserMapper = associationsListUserMapper;
-        this.associationsListCompanyMapper = associationsListCompanyMapper;
-        this.associationMapper = associationMapper;
+        this.associationsListMappers = associationsListMappers;
         this.invitationMapper = invitationMapper;
     }
 
-    @Transactional(readOnly = true)
-    public AssociationsList fetchAssociationsForUserStatusAndCompany(
-            @NotNull final User user, List<String> status, final Integer pageIndex, final Integer itemsPerPage,
-            final String companyNumber) {
-
-        var results = fetchAssociationsDaoForUserStatusAndCompany(user,status,pageIndex,itemsPerPage,companyNumber);
-
-        return associationsListUserMapper.daoToDto(results, user);
+    @Transactional( readOnly = true )
+    public AssociationsList fetchAssociationsForUserStatusAndCompany( @NotNull final User user, List<String> status, final Integer pageIndex, final Integer itemsPerPage, final String companyNumber ) {
+        final var results = fetchAssociationsDaoForUserStatusAndCompany( user, status, pageIndex, itemsPerPage, companyNumber );
+        return associationsListMappers.daoToDto( results, user, null );
     }
 
     @Transactional(readOnly = true)
@@ -92,29 +76,19 @@ public class AssociationsService {
 
     }
 
-    @Transactional(readOnly = true)
-    public AssociationsList fetchAssociatedUsers(final String companyNumber,
-                                                 final CompanyDetails companyDetails,
-                                                 final boolean includeRemoved,
-                                                 final int itemsPerPage,
-                                                 final int pageIndex) {
-        final Pageable pageable = PageRequest.of(pageIndex, itemsPerPage);
-
-        final var statuses = new HashSet<>(Set.of(StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue()));
-        if (includeRemoved) {
-            statuses.add(StatusEnum.REMOVED.getValue());
+    @Transactional( readOnly = true )
+    public AssociationsList fetchAssociatedUsers( final String companyNumber, final CompanyDetails companyDetails, final boolean includeRemoved, final int itemsPerPage, final int pageIndex ) {
+        final var statuses = new HashSet<>( Set.of(StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue() ) );
+        if ( includeRemoved ) {
+            statuses.add( StatusEnum.REMOVED.getValue() );
         }
-
-        final Page<AssociationDao> associations = associationsRepository.fetchAssociatedUsers(companyNumber, statuses, LocalDateTime.now(), pageable);
-
-
-        return associationsListCompanyMapper.daoToDto(associations, companyDetails);
+        final Page<AssociationDao> associations = associationsRepository.fetchAssociatedUsers( companyNumber, statuses, LocalDateTime.now(), PageRequest.of( pageIndex, itemsPerPage ) );
+        return associationsListMappers.daoToDto( associations, null, companyDetails );
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Association> findAssociationById(final String id) {
-
-        return associationsRepository.findById(id).map(associationMapper::daoToDto);
+    @Transactional( readOnly = true )
+    public Optional<Association> findAssociationById( final String associationId ) {
+        return associationsRepository.findById( associationId ).map( associationDao -> associationsListMappers.daoToDto( associationDao, null, null )  );
     }
 
     @Transactional(readOnly = true)

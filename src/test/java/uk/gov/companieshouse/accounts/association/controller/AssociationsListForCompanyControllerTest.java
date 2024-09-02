@@ -63,7 +63,7 @@ class AssociationsListForCompanyControllerTest {
     private StaticPropertyUtil staticPropertyUtil;
 
     private static final String DEFAULT_KIND = "association";
-    private static final String DEFAULT_DISPLAY_NAME = "Not Provided";
+    private static final String DEFAULT_DISPLAY_NAME = "Not provided";
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
     private Mockers mockers;
@@ -237,7 +237,7 @@ class AssociationsListForCompanyControllerTest {
         Assertions.assertEquals( DEFAULT_KIND, firstAssociation.getKind() );
         Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE, firstAssociation.getApprovalRoute() );
         Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(3) ), reduceTimestampResolution( firstAssociation.getApprovalExpiryAt() ) );
-        Assertions.assertEquals( "/1", firstAssociation.getLinks().getSelf() );
+        Assertions.assertEquals( "/associations/1", firstAssociation.getLinks().getSelf() );
 
         final var secondAssociation = associations.get( 1 );
         Assertions.assertEquals( "222", secondAssociation.getUserId() );

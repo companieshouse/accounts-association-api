@@ -17,6 +17,7 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.CompanyStatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
@@ -952,9 +953,10 @@ public class TestDataManager {
         associationDto.setId( associationDao.getId() );
         associationDto.setUserId( user.getUserId() );
         associationDto.setUserEmail( user.getEmail() );
-        associationDto.setDisplayName( Optional.ofNullable( user.getDisplayName() ).orElse( "Not Provided" )  );
+        associationDto.setDisplayName( Optional.ofNullable( user.getDisplayName() ).orElse( "Not provided" )  );
         associationDto.setCompanyNumber( associationDao.getCompanyNumber() );
         associationDto.setCompanyName( companyDetails.getCompanyName() );
+        associationDto.setCompanyStatus( CompanyStatusEnum.fromValue( companyDetails.getCompanyStatus() ) );
         associationDto.setStatus( StatusEnum.fromValue( associationDao.getStatus() ) );
         associationDto.setApprovalRoute( ApprovalRouteEnum.fromValue( associationDao.getApprovalRoute() ) );
         associationDto.setCreatedAt( localDateTimeToOffsetDateTime( associationDao.getCreatedAt() ) );
@@ -963,7 +965,7 @@ public class TestDataManager {
         associationDto.setApprovalExpiryAt( associationDao.getApprovalExpiryAt().toString() );
         associationDto.setEtag( associationDao.getEtag() );
         associationDto.setKind( "association" );
-        associationDto.setLinks( new AssociationLinks().self( String.format( "/%s", associationDao.getId() ) ) );
+        associationDto.setLinks( new AssociationLinks().self( String.format( "/associations/%s", associationDao.getId() ) ) );
 
         return associationDto;
     }
