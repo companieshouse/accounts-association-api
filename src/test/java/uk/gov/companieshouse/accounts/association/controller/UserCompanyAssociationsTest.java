@@ -425,7 +425,7 @@ class UserCompanyAssociationsTest {
         Assertions.assertEquals(DEFAULT_KIND, firstAssociation.getKind());
         Assertions.assertEquals(ApprovalRouteEnum.AUTH_CODE, firstAssociation.getApprovalRoute());
         Assertions.assertEquals(localDateTimeToNormalisedString(now.plusDays(3)), reduceTimestampResolution(firstAssociation.getApprovalExpiryAt()));
-        Assertions.assertEquals("/18", firstAssociation.getLinks().getSelf());
+        Assertions.assertEquals("/associations/18", firstAssociation.getLinks().getSelf());
     }
 
     @Test
