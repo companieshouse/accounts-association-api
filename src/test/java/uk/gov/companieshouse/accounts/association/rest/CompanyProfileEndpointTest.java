@@ -1,5 +1,7 @@
 package uk.gov.companieshouse.accounts.association.rest;
 
+import com.google.api.client.http.HttpHeaders;
+import com.google.api.client.http.HttpResponseException.Builder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -34,7 +36,7 @@ class CompanyProfileEndpointTest {
 
     @Test
     void fetchCompanyProfileWithMalformedCompanyNumberThrowsApiErrorResponseException() throws ApiErrorResponseException, URIValidationException {
-        mockers.mockFetchCompanyProfileNotFound( null, "", "abc" );
+        Mockito.doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( companyProfileEndpoint ).fetchCompanyProfile( any() );
         Assertions.assertThrows( ApiErrorResponseException.class, () -> companyProfileEndpoint.fetchCompanyProfile( null ) );
         Assertions.assertThrows( ApiErrorResponseException.class, () -> companyProfileEndpoint.fetchCompanyProfile( "" ) );
         Assertions.assertThrows( ApiErrorResponseException.class, () -> companyProfileEndpoint.fetchCompanyProfile( "abc" ) );
