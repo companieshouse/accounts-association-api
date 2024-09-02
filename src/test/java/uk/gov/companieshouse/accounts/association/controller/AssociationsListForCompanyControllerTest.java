@@ -63,7 +63,7 @@ class AssociationsListForCompanyControllerTest {
     private StaticPropertyUtil staticPropertyUtil;
 
     private static final String DEFAULT_KIND = "association";
-    private static final String DEFAULT_DISPLAY_NAME = "Not Provided";
+    private static final String DEFAULT_DISPLAY_NAME = "Not provided";
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
     private Mockers mockers;

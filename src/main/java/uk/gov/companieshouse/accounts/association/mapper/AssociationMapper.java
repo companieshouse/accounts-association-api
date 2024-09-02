@@ -32,7 +32,7 @@ public abstract class AssociationMapper {
 
     private static final String DEFAULT_KIND = "association";
 
-    private static final String DEFAULT_DISPLAY_NAME = "Not Provided";
+    private static final String DEFAULT_DISPLAY_NAME = "Not provided";
 
     protected OffsetDateTime localDateTimeToOffsetDateTime( final LocalDateTime localDateTime ) {
         return Objects.isNull( localDateTime ) ? null : OffsetDateTime.of( localDateTime, ZoneOffset.UTC );
