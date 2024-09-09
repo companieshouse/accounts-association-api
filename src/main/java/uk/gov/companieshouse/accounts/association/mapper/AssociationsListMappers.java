@@ -43,7 +43,11 @@ public abstract class AssociationsListMappers extends AssociationMapper {
         final var endpointUrl = computeEndpointUrl( companyDetails );
         final var users = Objects.isNull( userDetails ) ? usersService.fetchUserDetails( associationsList.stream() ) : Map.of( userDetails.getUserId(), userDetails );
         final var companies = Objects.isNull( companyDetails ) ? companyService.fetchCompanyProfiles( associationsList.stream() ) : Map.of( companyDetails.getCompanyNumber(), companyDetails );
-        final var associations = associationsList.map( associationDao -> daoToDto( associationDao, users.getOrDefault( associationDao.getUserId(), null ), companies.get( associationDao.getCompanyNumber() ) ) );
+        final var associations = associationsList.map( associationDao -> {
+            final var user = Objects.isNull( associationDao.getUserId() ) ? null : users.getOrDefault( associationDao.getUserId(), null );
+            final var company = companies.get( associationDao.getCompanyNumber() );
+            return daoToDto( associationDao, user, company );
+        } );
         return enrichWithMetadata( associations, endpointUrl );
     }
 
