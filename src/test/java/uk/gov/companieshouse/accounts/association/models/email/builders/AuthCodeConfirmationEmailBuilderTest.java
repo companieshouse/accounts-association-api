@@ -30,7 +30,8 @@ class AuthCodeConfirmationEmailBuilderTest {
 
     @Test
     void buildWithNullsThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> new AuthCodeConfirmationEmailBuilder().build() );
+        final var builder = new AuthCodeConfirmationEmailBuilder();
+        Assertions.assertThrows( NullPointerException.class, builder::build );
     }
 
 }

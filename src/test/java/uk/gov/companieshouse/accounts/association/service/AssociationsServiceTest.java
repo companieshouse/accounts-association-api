@@ -174,7 +174,7 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(1, 15);
         final var page = new PageImpl<>(content, pageRequest, 16 );
 
-        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( eq( "9999" ), eq ("scrooge.mcduck@disney.land"), eq( status ), eq(""), eq(pageRequest) );
+        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( "9999", "scrooge.mcduck@disney.land", status,"", pageRequest );
 
         associationsService.fetchAssociationsForUserStatusAndCompany( user, status, 1, 15, null );
 
@@ -189,7 +189,7 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, content.size() );
 
-        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( eq( "9999" ), eq("scrooge.mcduck@disney.land"), eq( status ), eq("333333"), eq(pageRequest) );
+        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( "9999","scrooge.mcduck@disney.land", status, "333333", pageRequest );
 
         associationsService.fetchAssociationsForUserStatusAndCompany( user, status, 0, 15, "333333" );
 
@@ -204,7 +204,7 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, content.size() );
 
-        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( eq( "9999" ), eq ("scrooge.mcduck@disney.land"),  eq( status ), eq(""), eq(pageRequest) );
+        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( "9999", "scrooge.mcduck@disney.land",  status, "", pageRequest );
 
         associationsService.fetchAssociationsForUserStatusAndCompany( user, status, 0, 15, null );
 
@@ -219,7 +219,7 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, content.size() );
 
-        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( eq( "9999" ), eq ("scrooge.mcduck@disney.land"), eq( status ), eq(""), eq(pageRequest) );
+        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( "9999", "scrooge.mcduck@disney.land", status, "", pageRequest );
 
         associationsService.fetchAssociationsForUserStatusAndCompany( user, status, 0, 15, null );
 
@@ -233,7 +233,7 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, content.size() );
 
-        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( eq( "9999" ), eq("scrooge.mcduck@disney.land"), eq( List.of( StatusEnum.CONFIRMED.getValue() ) ), eq(""), eq(pageRequest) );
+        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( "9999","scrooge.mcduck@disney.land", List.of( StatusEnum.CONFIRMED.getValue() ), "", pageRequest );
 
         associationsService.fetchAssociationsForUserStatusAndCompany( user, null, 0, 15, null );
 
@@ -247,7 +247,7 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, content.size() );
 
-        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( eq( "9999" ),  eq ("scrooge.mcduck@disney.land"),eq( List.of( StatusEnum.CONFIRMED.getValue() ) ), eq(""), eq(pageRequest) );
+        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( "9999", "scrooge.mcduck@disney.land", List.of( StatusEnum.CONFIRMED.getValue() ),"", pageRequest);
 
         associationsService.fetchAssociationsForUserStatusAndCompany( user, Collections.emptyList(), 0, 15, null );
 
@@ -261,7 +261,7 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, content.size() );
 
-        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( eq( "9999" ),  eq ("scrooge.mcduck@disney.land"),eq( List.of( "complicated" ) ), eq(""), eq(pageRequest) );
+        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( "9999", "scrooge.mcduck@disney.land", List.of( "complicated" ),"", pageRequest );
 
         associationsService.fetchAssociationsForUserStatusAndCompany( user, List.of( "complicated" ), 0, 15, null );
 
@@ -275,7 +275,7 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, content.size() );
 
-        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( eq( "9999" ),  eq ("scrooge.mcduck@disney.land"), eq( List.of( StatusEnum.CONFIRMED.getValue()) ), eq("$$$$$$"), eq(pageRequest) );
+        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( "9999",  "scrooge.mcduck@disney.land", List.of( StatusEnum.CONFIRMED.getValue()),"$$$$$$",pageRequest );
 
         associationsService.fetchAssociationsForUserStatusAndCompany( user, Collections.emptyList(), 0, 15, "$$$$$$" );
 
@@ -289,23 +289,9 @@ class AssociationsServiceTest {
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, content.size() );
 
-        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( eq( "9999" ),  eq ("scrooge.mcduck@disney.land"), eq( List.of( StatusEnum.CONFIRMED.getValue()) ), eq(""), eq(pageRequest) );
+        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( "9999" , "scrooge.mcduck@disney.land", List.of( StatusEnum.CONFIRMED.getValue() ),"",pageRequest);
 
         associationsService.fetchAssociationsForUserStatusAndCompany( user, Collections.emptyList(), 0, 15, null );
-        Mockito.verify( associationsListMappers ).daoToDto(eq(page), eq(user), isNull());
-    }
-
-    @Test
-    void fetchAssociationsForUserStatusAndCompanyWithNonexistentUserEmailReturnsEmptyPage() {
-        final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
-        final var content = new ArrayList<AssociationDao>();
-        final var pageRequest = PageRequest.of(0, 15);
-        final var page = new PageImpl<>(content, pageRequest, content.size() );
-
-        Mockito.doReturn( page ).when( associationsRepository ).findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike( eq( "9999" ),  eq ("scrooge.mcduck@disney.land"), eq( List.of( StatusEnum.CONFIRMED.getValue()) ), eq(""), eq(pageRequest) );
-
-        associationsService.fetchAssociationsForUserStatusAndCompany( user, Collections.emptyList(), 0, 15, null );
-
         Mockito.verify( associationsListMappers ).daoToDto(eq(page), eq(user), isNull());
     }
 
@@ -415,9 +401,10 @@ class AssociationsServiceTest {
 
     @Test
     void updateAssociationStatusWithMalformedOrNonexistentAssociationIdThrowsInternalServerError(){
+        final var update = new Update();
         Mockito.doReturn( 0 ).when( associationsRepository ).updateAssociation( any(), any() );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "$$$", new Update()) );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "9191", new Update()) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "$$$", update) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "9191", update) );
     }
 
     @Test

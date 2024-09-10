@@ -265,7 +265,7 @@ class AssociationsListForCompanyControllerTest {
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
         final var expectedAssociationsList = new AssociationsList().totalResults( 1 ).items(List.of( associationOne ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( eq( "111111" ), eq( companyDetails ), eq( false ), eq( 15 ), eq( 0 ));
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( "111111", companyDetails, false, 15, 0 );
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/{company_number}?user_email=bruce.wayne@gotham.city", "111111" ).header("X-Request-Id", "theId123") )
@@ -284,7 +284,7 @@ class AssociationsListForCompanyControllerTest {
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
         final var expectedAssociationsList = new AssociationsList().totalResults( 0 ).items(List.of());
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( eq( "111111" ), eq( companyDetails ), eq( false ), eq( 15 ), eq( 0 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( "111111", companyDetails, false, 15, 0 );
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111?user_email=the.void@space.com" ).header("X-Request-Id", "theId123") )

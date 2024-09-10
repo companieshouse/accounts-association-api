@@ -26,104 +26,104 @@ import java.util.Optional;
 @org.springframework.web.bind.annotation.ControllerAdvice
 public class ControllerAdvice extends ResponseEntityExceptionHandler {
 
-
-    private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
-    public static final String X_REQUEST_ID = "X-Request-Id";
-    public static final String ACCOUNTS_ASSOCIATION_API = "accounts_association_api";
+    private static final Logger LOG = LoggerFactory.getLogger( StaticPropertyUtil.APPLICATION_NAMESPACE );
+    private static final String X_REQUEST_ID = "X-Request-Id";
+    private static final String ACCOUNTS_ASSOCIATION_API = "accounts_association_api";
     private static final String QUERY_PARAMETERS = "query-parameters";
 
-    private String getJsonStringFromErrors(String requestId, Errors errors) {
+    private String getJsonStringFromErrors( final String xRequestId, final Errors errors ) {
+        final var objectMapper = new ObjectMapper();
 
-        ObjectMapper objectMapper = new ObjectMapper();
         try {
-            return objectMapper.writeValueAsString(errors);
-        } catch (IOException e) {
-            LOG.errorContext(requestId, String.format("Fail to parse Errors object to JSON %s", e.getMessage()), e, null);
+            return objectMapper.writeValueAsString( errors );
+        } catch ( IOException exception ) {
+            LOG.errorContext( xRequestId, String.format( "Fail to parse Errors object to JSON %s", exception.getMessage() ), exception, null );
             return "";
         }
     }
 
-    @ExceptionHandler(NotFoundRuntimeException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler( NotFoundRuntimeException.class )
+    @ResponseStatus( HttpStatus.NOT_FOUND )
     @ResponseBody
-    public Errors onNotFoundRuntimeException(NotFoundRuntimeException e, HttpServletRequest r) {
-        String requestId = r.getHeader(X_REQUEST_ID);
+    public Errors onNotFoundRuntimeException( final NotFoundRuntimeException exception, final HttpServletRequest request ) {
+        final var xRequestId = request.getHeader( X_REQUEST_ID );
 
         Map<String, Object> contextMap = new HashMap<>();
-        contextMap.put("url", r.getRequestURL().toString());
-        contextMap.put(QUERY_PARAMETERS, r.getQueryString() != null ? "?" + r.getQueryString() : "");
+        contextMap.put( "url", request.getRequestURL().toString() );
+        contextMap.put( QUERY_PARAMETERS, request.getQueryString() != null ? "?" + request.getQueryString() : "" );
 
-        LOG.errorContext(requestId, e.getMessage(), null, contextMap);
+        LOG.errorContext( xRequestId, exception.getMessage(), null, contextMap );
 
-        Errors errors = new Errors();
-        errors.addError(Err.serviceErrBuilder().withError(e.getMessage()).build());
+        final var errors = new Errors();
+        errors.addError( Err.serviceErrBuilder().withError( exception.getMessage() ).build() );
         return errors;
     }
 
-    @ExceptionHandler(BadRequestRuntimeException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler( BadRequestRuntimeException.class )
+    @ResponseStatus( HttpStatus.BAD_REQUEST )
     @ResponseBody
-    public Errors onBadRequestRuntimeException(BadRequestRuntimeException exception, HttpServletRequest request) {
-        String requestId = request.getHeader(X_REQUEST_ID);
+    public Errors onBadRequestRuntimeException( final BadRequestRuntimeException exception, final HttpServletRequest request ) {
+        final var xRequestId = request.getHeader( X_REQUEST_ID );
 
         Map<String, Object> contextMap = new HashMap<>();
-        contextMap.put("url", request.getRequestURL().toString());
-        contextMap.put(QUERY_PARAMETERS, request.getQueryString() != null ? "?" + request.getQueryString() : "");
+        contextMap.put( "url", request.getRequestURL().toString() );
+        contextMap.put( QUERY_PARAMETERS, request.getQueryString() != null ? "?" + request.getQueryString() : "" );
 
-        LOG.errorContext(requestId, exception.getMessage(), null, contextMap);
+        LOG.errorContext( xRequestId, exception.getMessage(), null, contextMap );
 
-        Errors errors = new Errors();
-        errors.addError(Err.serviceErrBuilder().withError(exception.getMessage()).build());
+        final var errors = new Errors();
+        errors.addError( Err.serviceErrBuilder().withError( exception.getMessage() ).build() );
         return errors;
     }
 
-    @ExceptionHandler(InternalServerErrorRuntimeException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler( InternalServerErrorRuntimeException.class )
+    @ResponseStatus( HttpStatus.INTERNAL_SERVER_ERROR )
     @ResponseBody
-    public Errors onInternalServerErrorRuntimeException(InternalServerErrorRuntimeException e, HttpServletRequest request) {
-        String requestId = request.getHeader(X_REQUEST_ID);
+    public Errors onInternalServerErrorRuntimeException( final InternalServerErrorRuntimeException exception, final HttpServletRequest request ) {
+        final var xRequestId = request.getHeader( X_REQUEST_ID );
 
         Map<String, Object> contextMap = new HashMap<>();
-        contextMap.put("url", request.getRequestURL().toString());
-        contextMap.put(QUERY_PARAMETERS, request.getQueryString() != null ? "?" + request.getQueryString() : "");
+        contextMap.put( "url", request.getRequestURL().toString() );
+        contextMap.put( QUERY_PARAMETERS, request.getQueryString() != null ? "?" + request.getQueryString() : "" );
 
-        LOG.errorContext(requestId, e.getMessage(), null, contextMap);
+        LOG.errorContext( xRequestId, exception.getMessage(), null, contextMap );
 
-        Errors errors = new Errors();
-        errors.addError(Err.invalidBodyBuilderWithLocation(ACCOUNTS_ASSOCIATION_API).withError(e.getMessage()).build());
+        final var errors = new Errors();
+        errors.addError( Err.invalidBodyBuilderWithLocation( ACCOUNTS_ASSOCIATION_API ).withError( exception.getMessage() ).build() );
         return errors;
     }
 
-    @ExceptionHandler(ConstraintViolationException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler( ConstraintViolationException.class )
+    @ResponseStatus( HttpStatus.BAD_REQUEST )
     @ResponseBody
-    public Errors onConstraintViolationException(ConstraintViolationException exception, HttpServletRequest request) {
+    public Errors onConstraintViolationException( final ConstraintViolationException exception, final HttpServletRequest request ) {
 
-        Errors errorsToBeLogged = new Errors();
-        for (ConstraintViolation<?> constraintViolation : exception.getConstraintViolations()) {
-            errorsToBeLogged.addError(Err.invalidBodyBuilderWithLocation(ACCOUNTS_ASSOCIATION_API)
-                    .withError(String.format("%s %s", Optional.of(constraintViolation.getInvalidValue()).orElse(" "),constraintViolation.getMessage())).build());
+        final var errorsToBeLogged = new Errors();
+        for ( final ConstraintViolation<?> constraintViolation : exception.getConstraintViolations() ) {
+            errorsToBeLogged.addError( Err.invalidBodyBuilderWithLocation( ACCOUNTS_ASSOCIATION_API )
+                    .withError( String.format( "%s %s", Optional.of( constraintViolation.getInvalidValue() ).orElse( " " ), constraintViolation.getMessage() ) ).build() );
         }
 
-        String requestId = request.getHeader(X_REQUEST_ID);
-        String errorsJsonString = getJsonStringFromErrors(requestId, errorsToBeLogged);
-        LOG.errorContext(requestId, String.format("Validation Failed with [%s]", errorsJsonString), null, null);
+        final var xRequestId = request.getHeader( X_REQUEST_ID );
+        final var errorsJsonString = getJsonStringFromErrors( xRequestId, errorsToBeLogged );
+        LOG.errorContext( xRequestId, String.format( "Validation Failed with [%s]", errorsJsonString ), null, null );
 
         return errorsToBeLogged;
     }
 
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler( Exception.class )
+    @ResponseStatus( HttpStatus.INTERNAL_SERVER_ERROR )
     @ResponseBody
-    public Errors onException(Exception e, HttpServletRequest r) {
+    public Errors onException( final Exception exception, final HttpServletRequest request ) {
 
-        Errors errors = new Errors();
-        String requestId = r.getHeader(X_REQUEST_ID);
-        String msg = r.getRequestURL() + (r.getQueryString() != null ? "?" + r.getQueryString() : "") + ". " + e.getMessage();
-        LOG.errorContext(requestId, msg, e, null);
+        final var errors = new Errors();
+        final var xRequestId = request.getHeader( X_REQUEST_ID );
+        final var msg = request.getRequestURL() + ( request.getQueryString() != null ? "?" + request.getQueryString() : "" ) + ". " + exception.getMessage();
+        LOG.errorContext( xRequestId, msg, exception, null );
 
-        errors.addError(Err.invalidBodyBuilderWithLocation(ACCOUNTS_ASSOCIATION_API).withError(e.getMessage()).build());
+        errors.addError( Err.invalidBodyBuilderWithLocation( ACCOUNTS_ASSOCIATION_API ).withError( exception.getMessage() ).build() );
 
         return errors;
     }
+
 }

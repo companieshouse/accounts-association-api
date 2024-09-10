@@ -1,12 +1,16 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
 import java.io.IOException;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -114,11 +118,20 @@ class UserCompanyAssociationsTest {
         mockers = new Mockers( accountsUserEndpoint, companyProfileEndpoint, emailProducer, null, null );
     }
 
-    @Test
-    void fetchAssociationsByWithoutXRequestIdReturnsBadRequest() throws Exception {
+    static Stream<Arguments> withoutXRequestIdTestData(){
+        return Stream.of(
+                Arguments.of( "/associations" ),
+                Arguments.of( "/associations/1" ),
+                Arguments.of( "/associations/invitations?page_index=1&items_per_page=1" )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource( "withoutXRequestIdTestData" )
+    void callingEndpointsWithoutXRequestIdReturnsBadRequest( final String url ) throws Exception {
         mockers.mockGetUserDetails( "9999" );
 
-        mockMvc.perform( get( "/associations" )
+        mockMvc.perform( get( url )
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
@@ -134,35 +147,23 @@ class UserCompanyAssociationsTest {
                 .andExpect( status().isUnauthorized() );
     }
 
-    @Test
-    void fetchAssociationsByWithInvalidPageIndexReturnsBadRequest() throws Exception {
-        mockers.mockGetUserDetails( "9999" );
-
-        mockMvc.perform( get( "/associations?page_index=-1" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isBadRequest() );
+    static Stream<Arguments> malformedQueryParametersTestData(){
+        return Stream.of(
+                Arguments.of( "/associations?page_index=-1" ),
+                Arguments.of( "/associations?items_per_page=0" ),
+                Arguments.of( "/associations?company_number=$$$$$$" ),
+                Arguments.of( "/associations/$" ),
+                Arguments.of( "/associations/invitations?page_index=-1&items_per_page=1" ),
+                Arguments.of( "/associations/invitations?page_index=0&items_per_page=-1" )
+        );
     }
 
-    @Test
-    void fetchAssociationsByWithInvalidItemsPerPageReturnsBadRequest() throws Exception {
+    @ParameterizedTest
+    @MethodSource( "malformedQueryParametersTestData" )
+    void endpointsWithMalformedQueryParametersReturnBadRequest( final String uri ) throws Exception {
         mockers.mockGetUserDetails( "9999" );
 
-        mockMvc.perform( get( "/associations?items_per_page=0" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isBadRequest() );
-    }
-
-    @Test
-    void fetchAssociationsByWithMalformedCompanyNumberReturnsBadRequest() throws Exception {
-        mockers.mockGetUserDetails( "9999" );
-
-        mockMvc.perform( get( "/associations?company_number=$$$$$$" )
+        mockMvc.perform( get( uri )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -419,29 +420,6 @@ class UserCompanyAssociationsTest {
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isNotFound() );
-    }
-
-    @Test
-    void getAssociationsDetailsWithoutXRequestIdReturnsBadRequest() throws Exception {
-        mockers.mockGetUserDetails( "9999" );
-
-        mockMvc.perform( get( "/associations/1" )
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void getAssociationDetailsWithMalformedInputReturnsBadRequest() throws Exception {
-        mockers.mockGetUserDetails( "9999" );
-
-        mockMvc.perform( get( "/associations/$" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isBadRequest() );
     }
 
     @Test
@@ -1330,17 +1308,6 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchActiveInvitationsForUserWithoutXRequestIdReturnsBadRequest() throws Exception {
-        mockers.mockGetUserDetails( "9999" );
-
-        mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isBadRequest() );
-    }
-
-    @Test
     void fetchActiveInvitationsForUserWithoutEricIdentityReturnsUnauthorised() throws Exception {
         mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
                         .header("X-Request-Id", "theId123")
@@ -1371,30 +1338,6 @@ class UserCompanyAssociationsTest {
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isForbidden() );
-    }
-
-    @Test
-    void fetchActiveInvitationsForUserWithUnacceptablePageIndexReturnsBadRequest() throws Exception {
-        mockers.mockGetUserDetails( "9999" );
-
-        mockMvc.perform( get( "/associations/invitations?page_index=-1&items_per_page=1" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isBadRequest() );
-    }
-
-    @Test
-    void fetchActiveInvitationsForUserWithUnacceptableItemsPerPageReturnsBadRequest() throws Exception {
-        mockers.mockGetUserDetails( "9999" );
-
-        mockMvc.perform( get( "/associations/invitations?page_index=0&items_per_page=-1" )
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isBadRequest() );
     }
 
     @Test

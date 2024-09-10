@@ -74,11 +74,12 @@ class EmailServiceTest {
 
     @Test
     void sendAuthCodeConfirmationEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNameOrNullRequestsThrowsNullPointerException(){
+        final var emptyCompanyDetails = new CompanyDetails();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
         final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Krishna Patel", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", emptyCompanyDetails, "Krishna Patel", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", companyDetails, null, requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", null ) );
     }
@@ -108,11 +109,12 @@ class EmailServiceTest {
 
     @Test
     void sendAuthorisationRemovedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
+        final var emptyCompanyDetails = new CompanyDetails();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
         final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", emptyCompanyDetails, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, null, "Batman", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", null, requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", null ) );
@@ -143,11 +145,12 @@ class EmailServiceTest {
 
     @Test
     void sendInvitationCancelledEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
+        final var emptyCompanyDetails = new CompanyDetails();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
         final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", emptyCompanyDetails, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, null, "Batman", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", null, requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", null ) );
@@ -178,11 +181,12 @@ class EmailServiceTest {
 
     @Test
     void sendInvitationEmailToAssociatedUsersNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
+        final var emptyCompanyDetails = new CompanyDetails();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
         final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", emptyCompanyDetails, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, null, "Batman", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", null, requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", null ) );
@@ -213,11 +217,12 @@ class EmailServiceTest {
 
     @Test
     void sendInvitationAcceptedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
+        final var emptyCompanyDetails = new CompanyDetails();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
         final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", null, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", emptyCompanyDetails, "Krishna Patel", "Batman", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, null, "Batman", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", null, requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUsers( "theId12345", companyDetails, "Krishna Patel", "Batman", null ) );
@@ -260,11 +265,12 @@ class EmailServiceTest {
 
     @Test
     void sendInvitationRejectedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNameOrNullRequestsThrowsNullPointerException(){
+        final var emptyCompanyDetails = new CompanyDetails();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
         final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> new User().email( "kpatel@companieshouse.gov.uk" ) );
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", null, "Batman", requestsToFetchAssociatedUsers ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", new CompanyDetails(), "Batman", requestsToFetchAssociatedUsers ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", emptyCompanyDetails, "Batman", requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetails, null, requestsToFetchAssociatedUsers ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUsers( "theId12345", companyDetails, "Batman", null ) );
     }
@@ -294,10 +300,11 @@ class EmailServiceTest {
 
     @Test
     void sendInviteEmailWithNullCompanyDetailsOrNullCompanyNameOrNullInviterDisplayNameOrNullInvitationExpiryTimestampOrNullInvitationLinkOrNullInviteeEmailThrowsNullPointerException(){
+        final var emptyCompanyDetails = new CompanyDetails();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", null, "Batman", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk" ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", new CompanyDetails(), "Batman", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", emptyCompanyDetails, "Batman", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk" ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, null, "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk" ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Batman", null, "kpatel@companieshouse.gov.uk" ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteEmail( "theId12345", companyDetails, "Batman", "1992-05-01T10:30:00.000000", null ) );
@@ -319,11 +326,12 @@ class EmailServiceTest {
 
     @Test
     void sendInviteCancelledEmailWithoutCompanyDetailsOrCompanyNameOrCancelledByDisplayNameOrInviteeUserSupplierOrEmailThrowsNullPointerException(){
+        final var emptyCompanyDetails = new CompanyDetails();
         final var userDetails = testDataManager.fetchUserDtos( "111" ).getFirst();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", null, "Batman", () -> userDetails ) );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", new CompanyDetails(), "Batman", () -> userDetails ) );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", emptyCompanyDetails, "Batman", () -> userDetails ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", companyDetails, null, () -> userDetails ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", companyDetails, "Batman", null ) );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInviteCancelledEmail( "theId12345", companyDetails, "Batman", () -> new User() ) );

@@ -182,13 +182,6 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserStatusAndCompanyWithNonexistentUserEmailReturnsEmptyPage() {
-        final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
-        associationsService.fetchAssociationsForUserStatusAndCompany( user, Collections.emptyList(), 0, 15, "1234" );
-        Mockito.verify( associationsListMappers ).daoToDto(argThat(comparisonUtils.associationsPageMatches(0, 0, 0, Collections.emptyList())), eq(user), isNull());
-    }
-
-    @Test
     void confirmedAssociationExistsWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse(){
         Assertions.assertFalse( associationsService.confirmedAssociationExists( null, "111" ) );
         Assertions.assertFalse( associationsService.confirmedAssociationExists( "$$$$$$", "111" ) );
@@ -318,8 +311,9 @@ class AssociationsServiceTest {
 
     @Test
     void updateAssociationStatusWithMalformedOrNonexistentAssociationIdThrowsInternalServerError(){
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "$$$", new Update()) );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "9191", new Update()) );
+        final var update = new Update();
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "$$$", update) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> associationsService.updateAssociation( "9191", update) );
     }
 
     @Test
