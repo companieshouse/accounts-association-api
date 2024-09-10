@@ -170,7 +170,7 @@ class AssociationMapperTest {
         }
 
         final var association = associationMapper.daoToDto( associationDao, userDto, companyDto );
-        comparisonUtils.compare( expectedAssociation, List.of( "createdAt", "approvedAt", "removedAt", "etag", "id", "userId", "userEmail", "displayName", "companyNumber", "companyName", "status", "companyStatus", "kind", "approvalRoute", "approvalExpiryAt", "links" ), List.of(), Map.of() ).matches( association );
+        Assertions.assertTrue( comparisonUtils.compare( expectedAssociation, List.of( "createdAt", "approvedAt", "removedAt", "etag", "id", "userId", "userEmail", "displayName", "companyNumber", "companyName", "status", "companyStatus", "kind", "approvalRoute", "approvalExpiryAt", "links" ), List.of(), Map.of() ).matches( association ) );
     }
 
 }

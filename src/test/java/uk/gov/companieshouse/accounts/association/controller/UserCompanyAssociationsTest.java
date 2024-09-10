@@ -1574,7 +1574,7 @@ class UserCompanyAssociationsTest {
                 .itemsPerPage(1).pageNumber(1).totalResults(2).totalPages(2);
 
         mockers.mockUsersServiceFetchUserDetails( "000" );
-        when(associationsService.fetchActiveInvitations(eq( user ), eq(1), eq(1))).thenReturn(mockInvitationsList);
+        when(associationsService.fetchActiveInvitations(user, 1,1)).thenReturn(mockInvitationsList);
 
         final var response = mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
                         .header("X-Request-Id", "theId123")
@@ -1583,7 +1583,7 @@ class UserCompanyAssociationsTest {
                         .header("ERIC-Authorised-Key-Roles", "*"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(associationsService).fetchActiveInvitations( eq( user ), eq(1), eq(1));
+        Mockito.verify(associationsService).fetchActiveInvitations( user,1,1);
 
         final var invitationsList = parseResponseTo( response, InvitationsList.class );
 
@@ -1611,8 +1611,8 @@ class UserCompanyAssociationsTest {
                 .items(invitations).links(mockLinks)
                 .itemsPerPage(1).pageNumber(1).totalResults(2).totalPages(2);
 
-        when(associationsService.findAssociationDaoById(eq("37"))).thenReturn(Optional.of(association));
-        when(associationsService.fetchInvitations(eq(association), eq(1), eq(1))).thenReturn(mockInvitationsList);
+        when(associationsService.findAssociationDaoById("37")).thenReturn(Optional.of(association));
+        when(associationsService.fetchInvitations(association, 1, 1)).thenReturn(mockInvitationsList);
 
         final var response = mockMvc.perform(get("/associations/37/invitations?page_index=1&items_per_page=1")
                         .header("X-Request-Id", "theId123")
@@ -1622,8 +1622,8 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isOk());
         final var invitationsList = parseResponseTo( response, InvitationsList.class );
 
-        Mockito.verify(associationsService).findAssociationDaoById(eq("37"));
-        Mockito.verify(associationsService).fetchInvitations(eq(association), eq(1), eq(1));
+        Mockito.verify(associationsService).findAssociationDaoById("37");
+        Mockito.verify(associationsService).fetchInvitations(association, 1, 1);
 
         assertNotNull(invitationsList);
         assertEquals(1, invitationsList.getItemsPerPage().intValue());
