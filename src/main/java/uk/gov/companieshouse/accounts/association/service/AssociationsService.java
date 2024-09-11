@@ -156,7 +156,7 @@ public class AssociationsService {
             throw new NullPointerException( "invitedByUserId cannot be null." );
         }
 
-        InvitationDao invitationDao = new InvitationDao();
+        final var invitationDao = new InvitationDao();
         invitationDao.setInvitedAt(LocalDateTime.now());
         invitationDao.setInvitedBy(invitedByUserId);
         association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
@@ -219,33 +219,32 @@ public class AssociationsService {
         return createInvitationsList(allInvitations, pageIndex, itemsPerPage, basePath);
     }
 
-    private InvitationsList createInvitationsList(List<Invitation> allInvitations, int pageIndex, int itemsPerPage, String basePath) {
-        final InvitationsList invitationsList = new InvitationsList();
-        int totalResults = allInvitations.size();
-        int totalPages = (int) Math.ceil((double) totalResults / itemsPerPage);
+    private InvitationsList createInvitationsList( final List<Invitation> allInvitations, final int pageIndex, final int itemsPerPage, final String basePath ) {
+        final var invitationsList = new InvitationsList();
+        final int totalResults = allInvitations.size();
+        final int totalPages = (int) Math.ceil( (double) totalResults / itemsPerPage );
 
-        List<Invitation> invitations = allInvitations.stream()
-                .skip((long) pageIndex * itemsPerPage)
-                .limit(itemsPerPage)
-                .collect(Collectors.toList());
+        final var invitations = allInvitations.stream()
+                .skip((long) pageIndex * itemsPerPage )
+                .limit( itemsPerPage )
+                .collect( Collectors.toList() );
 
-        invitationsList.items(invitations);
-        invitationsList.setItemsPerPage(itemsPerPage);
-        invitationsList.setPageNumber(pageIndex);
-        invitationsList.setTotalResults(totalResults);
-        invitationsList.setTotalPages(totalPages);
+        invitationsList.items( invitations );
+        invitationsList.setItemsPerPage( itemsPerPage );
+        invitationsList.setPageNumber( pageIndex );
+        invitationsList.setTotalResults( totalResults );
+        invitationsList.setTotalPages( totalPages );
 
-        Links links = new Links();
-        links.setSelf(basePath + "?page_index=" + pageIndex + "&items_per_page=" + itemsPerPage);
-        if (pageIndex + 1 < totalPages) {
+        final var links = new Links();
+        links.setSelf( basePath + "?page_index=" + pageIndex + "&items_per_page=" + itemsPerPage );
+        if ( pageIndex + 1 < totalPages ) {
             links.setNext(basePath + "?page_index=" + (pageIndex + 1) + "&items_per_page=" + itemsPerPage);
         } else {
             links.setNext("");
         }
 
-        invitationsList.setLinks(links);
+        invitationsList.setLinks( links );
         return invitationsList;
     }
-
 
 }

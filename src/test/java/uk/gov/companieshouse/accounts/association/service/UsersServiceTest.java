@@ -90,27 +90,31 @@ class UsersServiceTest {
     void createFetchUserDetailsRequestWithNullInputReturnsInternalServerError() throws ApiErrorResponseException, URIValidationException {
         Mockito.doReturn( privateAccountsUserUserGet ).when( accountsUserEndpoint ).createGetUserDetailsRequest( any() );
         Mockito.doThrow( NullPointerException.class ).when( privateAccountsUserUserGet ).execute();
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.createFetchUserDetailsRequest( null ).get() );
+        final var fetchUserDetailsRequest = usersService.createFetchUserDetailsRequest( null );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, fetchUserDetailsRequest::get );
     }
 
     @Test
     void createFetchUserDetailsRequestWithMalformedInputReturnsInternalServerError() throws ApiErrorResponseException, URIValidationException {
         Mockito.doReturn( privateAccountsUserUserGet ).when( accountsUserEndpoint ).createGetUserDetailsRequest( any() );
         Mockito.doThrow( new URIValidationException( "Uri incorrectly formatted" ) ).when( privateAccountsUserUserGet ).execute();
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.createFetchUserDetailsRequest( "$" ).get() );
+        final var fetchUserDetailsRequest = usersService.createFetchUserDetailsRequest( "$" );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, fetchUserDetailsRequest::get );
     }
 
     @Test
     void createFetchUserDetailsRequestWithNonexistentUserReturnsNotFound() throws ApiErrorResponseException, URIValidationException {
         mockers.mockGetUserDetailsNotFound( "666" );
-        Assertions.assertThrows( NotFoundRuntimeException.class, () -> usersService.createFetchUserDetailsRequest( "666" ).get() );
+        final var fetchUserDetailsRequest = usersService.createFetchUserDetailsRequest( "666" );
+        Assertions.assertThrows( NotFoundRuntimeException.class, fetchUserDetailsRequest::get );
     }
 
     @Test
     void createFetchUserDetailsRequestReturnsInternalServerErrorWhenItReceivesApiErrorResponseWithNon404StatusCode() throws ApiErrorResponseException, URIValidationException {
         Mockito.doReturn( privateAccountsUserUserGet ).when( accountsUserEndpoint ).createGetUserDetailsRequest( any() );
         Mockito.doThrow( new ApiErrorResponseException( new Builder( 500, "Something unexpected happened", new HttpHeaders() ) ) ).when( privateAccountsUserUserGet ).execute();
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.createFetchUserDetailsRequest( "111" ).get() );
+        final var fetchUserDetailsRequest = usersService.createFetchUserDetailsRequest( "111" );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, fetchUserDetailsRequest::get );
     }
 
     @Test
@@ -126,14 +130,16 @@ class UsersServiceTest {
 
     @Test
     void searchUserDetailsWithEmptyListOrListContainingNullOrMalformedEmailReturnInternalServerError() throws ApiErrorResponseException, URIValidationException {
+        final var emptyList = new ArrayList<String>();
+        final var malformedList = List.of( "$$$" );
         final var nullList = new ArrayList<String>();
         nullList.add( null );
 
         Mockito.doThrow( new ApiErrorResponseException( new Builder( 400, "Bad input given", new HttpHeaders() ) ) ).when( accountsUserEndpoint ).searchUserDetails( any() );
 
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( new ArrayList<>() ) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( emptyList ) );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( nullList ) );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "$$$" ) ) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( malformedList ) );
     }
 
     @Test
@@ -164,8 +170,9 @@ class UsersServiceTest {
 
     @Test
     void searchUserDetailsWithIncorrectlyFormattedUriThrowsInternalServerError() throws ApiErrorResponseException, URIValidationException {
+        final var malformedList = List.of( "" );
         Mockito.doThrow( new URIValidationException( "Uri incorrectly formatted" ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( "" ) );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "" ) ) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( malformedList ) );
     }
 
     @Test

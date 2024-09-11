@@ -173,7 +173,9 @@ class AssociationsRepositoryTest {
 
     @Test
     void findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLikeWithNullCompanyNumberThrowsUncategorizedMongoDbException(){
-        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("5555","abcd@abc.com", List.of(StatusEnum.CONFIRMED.getValue() ),null ,PageRequest.of(0, 15) ) );
+        final var statuses = List.of(StatusEnum.CONFIRMED.getValue());
+        final var pageRequest = PageRequest.of(0, 15);
+        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("5555","abcd@abc.com", statuses ,null ,pageRequest ) );
     }
 
     @Test
@@ -203,7 +205,9 @@ class AssociationsRepositoryTest {
 
     @Test
     void fetchAssociatedUsersWithNullStatusesThrowsUncategorizedMongoDbException(){
-        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchAssociatedUsers( "111111", null, LocalDateTime.now(), PageRequest.of( 0, 3 ) ) );
+        final var now = LocalDateTime.now();
+        final var pageRequest = PageRequest.of( 0, 3 );
+        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchAssociatedUsers( "111111", null, now, pageRequest ) );
     }
 
     @Test
@@ -290,7 +294,8 @@ class AssociationsRepositoryTest {
 
     @Test
     void fetchAssociationForCompanyNumberUserEmailAndStatusWithNullStatusThrowsException(){
-        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "abc@abc.com", null, PageRequest.of( 0, 15 ) ) );
+        final var pageRequest = PageRequest.of( 0, 15 );
+        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "abc@abc.com", null, pageRequest ) );
     }
 
     @Test
