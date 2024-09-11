@@ -92,7 +92,7 @@ public class Mockers {
             final var usersList = new UsersList();
             usersList.add( userDetails );
             final var response = new ApiResponse<>( 200, Map.of(), usersList );
-            Mockito.doReturn( response ).when( accountsUserEndpoint ).searchUserDetails( eq( userEmails ) );
+            Mockito.doReturn( response ).when( accountsUserEndpoint ).searchUserDetails( userEmails );
         }
     }
 
@@ -122,7 +122,7 @@ public class Mockers {
     public void mockUsersServiceFetchUserDetails( final String... userIds ){
         for ( final String userId: userIds ){
             final var userDetails = testDataManager.fetchUserDtos( userId ).getFirst();
-            Mockito.doReturn( userDetails ).when( usersService ).fetchUserDetails( eq( userId ) );
+            Mockito.doReturn( userDetails ).when( usersService ).fetchUserDetails( userId );
         }
     }
 
@@ -132,7 +132,7 @@ public class Mockers {
             final var userEmails = List.of( userDetails.getEmail() );
             final var usersList = new UsersList();
             usersList.add( userDetails );
-            Mockito.doReturn( usersList ).when( usersService ).searchUserDetails( eq( userEmails ) );
+            Mockito.doReturn( usersList ).when( usersService ).searchUserDetails( userEmails );
         }
     }
 

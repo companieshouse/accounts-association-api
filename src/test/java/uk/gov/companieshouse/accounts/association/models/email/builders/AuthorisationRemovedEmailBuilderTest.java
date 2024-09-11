@@ -32,7 +32,8 @@ class AuthorisationRemovedEmailBuilderTest {
 
     @Test
     void buildWithNullsThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> new AuthorisationRemovedEmailBuilder().build() );
+        final var builder = new AuthorisationRemovedEmailBuilder();
+        Assertions.assertThrows( NullPointerException.class, builder::build );
     }
 
 }

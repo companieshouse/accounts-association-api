@@ -121,32 +121,23 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<AssociationsList> fetchAssociationsBy(
-            final String xRequestId,
-            final String ericIdentity,
-            final List<String> status,
-            final Integer pageIndex,
-            final Integer itemsPerPage,
-            final String companyNumber) {
+    public ResponseEntity<AssociationsList> fetchAssociationsBy( final String xRequestId, final String ericIdentity, final List<String> status, final Integer pageIndex, final Integer itemsPerPage, final String companyNumber ) {
+        LOG.debugContext( xRequestId, "Trying to fetch associations data for user in session :".concat( ericIdentity ), null );
 
-        LOG.debugContext(xRequestId, "Trying to fetch associations data for user in session :".concat(ericIdentity), null);
-
-        if (pageIndex < 0) {
-            LOG.error(PAGE_INDEX_WAS_LESS_THEN_0);
-            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
+        if ( pageIndex < 0 ) {
+            LOG.error( PAGE_INDEX_WAS_LESS_THEN_0 );
+            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN );
         }
 
-        if (itemsPerPage <= 0) {
-            LOG.error(ITEMS_PER_PAGE_WAS_LESS_THEN_0);
-            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
+        if ( itemsPerPage <= 0 ) {
+            LOG.error( ITEMS_PER_PAGE_WAS_LESS_THEN_0 );
+            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN );
         }
 
         final var user = UserContext.getLoggedUser();
-        final AssociationsList associationsList = associationsService
-                .fetchAssociationsForUserStatusAndCompany(
-                        user, status, pageIndex, itemsPerPage, companyNumber);
+        final var associationsList = associationsService.fetchAssociationsForUserStatusAndCompany( user, status, pageIndex, itemsPerPage, companyNumber );
 
-        return new ResponseEntity<>(associationsList, HttpStatus.OK);
+        return new ResponseEntity<>( associationsList, HttpStatus.OK );
     }
 
     @Override
@@ -162,27 +153,27 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     }
 
     @Override
-    public ResponseEntity<InvitationsList> getInvitationsForAssociation(final String xRequestId, final String associationId, final Integer pageIndex, final Integer itemsPerPage) {
-        if (pageIndex < 0) {
-            LOG.error(PAGE_INDEX_WAS_LESS_THEN_0);
-            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
+    public ResponseEntity<InvitationsList> getInvitationsForAssociation( final String xRequestId, final String associationId, final Integer pageIndex, final Integer itemsPerPage ) {
+        if ( pageIndex < 0 ) {
+            LOG.error( PAGE_INDEX_WAS_LESS_THEN_0 );
+            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN );
         }
 
-        if (itemsPerPage <= 0) {
-            LOG.error(ITEMS_PER_PAGE_WAS_LESS_THEN_0);
-            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
+        if ( itemsPerPage <= 0 ) {
+            LOG.error( ITEMS_PER_PAGE_WAS_LESS_THEN_0 );
+            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN );
         }
 
-        final Optional<AssociationDao> associationDaoOptional = associationsService.findAssociationDaoById(associationId);
-        if (associationDaoOptional.isEmpty()) {
-            LOG.error(String.format("%s: Could not find association %s in user_company_associations.", xRequestId, associationId));
-            throw new NotFoundRuntimeException("accounts-association-api", String.format("Association %s was not found.", associationId));
+        final var associationDaoOptional = associationsService.findAssociationDaoById( associationId );
+        if ( associationDaoOptional.isEmpty() ) {
+            LOG.error( String.format( "%s: Could not find association %s in user_company_associations.", xRequestId, associationId ) );
+            throw new NotFoundRuntimeException( "accounts-association-api", String.format( "Association %s was not found.", associationId ) );
         }
 
-        final AssociationDao associationDao = associationDaoOptional.get();
-        final InvitationsList invitations = associationsService.fetchInvitations(associationDao, pageIndex, itemsPerPage);
+        final var associationDao = associationDaoOptional.get();
+        final var invitations = associationsService.fetchInvitations( associationDao, pageIndex, itemsPerPage );
 
-        return new ResponseEntity<>(invitations, HttpStatus.OK);
+        return new ResponseEntity<>( invitations, HttpStatus.OK );
     }
 
     @Override
@@ -267,91 +258,87 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
     }
 
+    private void throwBadRequestWhenUserIsNotPermittedToPerformAction( final String xRequestId, final String requestingUserId, final AssociationDao associationDao, final RequestBodyPut.StatusEnum newStatus, final boolean requestingAndTargetUserMatches ){
+        if ( !requestingAndTargetUserMatches && ( newStatus.equals( CONFIRMED ) || !associationsService.confirmedAssociationExists( associationDao.getCompanyNumber(), requestingUserId ) ) ) {
+            LOG.error(String.format( "%s: requesting %s  user does not have access to perform the action", xRequestId, requestingUserId) );
+            throw new BadRequestRuntimeException( "requesting user does not have access to perform the action" );
+        }
+    }
+
+    private String updateAssociationWithUserEmail( final String xRequestId, final RequestBodyPut.StatusEnum newStatus, final AssociationDao associationDao ){
+        final var targetUserEmail = associationDao.getUserEmail();
+        final var timestampKey = newStatus.equals( CONFIRMED ) ? "approved_at" : "removed_at";
+        final var update = new Update().set( "status", newStatus.getValue() ).set( timestampKey, LocalDateTime.now().toString() );
+
+        final var targetUserDisplayValue =
+                Optional.ofNullable( usersService.searchUserDetails( List.of( targetUserEmail ) ) )
+                        .flatMap( list -> list.stream().findFirst() )
+                        .map( user -> {
+                            LOG.debugContext( xRequestId, "Successfully fetched data from accounts-user-api for user.", null );
+                            update.set( "user_email", null ).set( "user_id", user.getUserId() );
+                            return Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() );
+                        } )
+                        .orElseGet( () -> {
+                            if ( newStatus.equals( CONFIRMED ) ) {
+                                LOG.error( String.format( "%s: Could not find user %s, via the accounts-user-api", xRequestId, targetUserEmail ) );
+                                throw new BadRequestRuntimeException( String.format( "Could not find data for user %s", targetUserEmail ) );
+                            }
+                            return targetUserEmail;
+                        } );
+
+        associationsService.updateAssociation( associationDao.getId(), update );
+
+        return targetUserDisplayValue;
+    }
+
+    private String updateAssociationWithUserId( final RequestBodyPut.StatusEnum newStatus, final AssociationDao associationDao, final String requestingUserDisplayValue, final boolean requestingAndTargetUserMatches ){
+        final var timestampKey = newStatus.equals( CONFIRMED ) ? "approved_at" : "removed_at";
+        final var update = new Update().set( "status", newStatus.getValue() ).set( timestampKey, LocalDateTime.now().toString() );
+
+        var targetUserDisplayValue = requestingUserDisplayValue;
+        if( !requestingAndTargetUserMatches ){
+            final var tempUser = usersService.fetchUserDetails( associationDao.getUserId() );
+            targetUserDisplayValue = Optional.ofNullable( tempUser.getDisplayName() ).orElse( tempUser.getEmail() );
+        }
+
+        associationsService.updateAssociation(associationDao.getId(), update);
+
+        return targetUserDisplayValue;
+    }
 
     @Override
-    public ResponseEntity<Void> updateAssociationStatusForId(final String xRequestId, final String associationId, final String requestingUserId, final RequestBodyPut requestBody) {
-
+    public ResponseEntity<Void> updateAssociationStatusForId( final String xRequestId, final String associationId, final String requestingUserId, final RequestBodyPut requestBody ) {
         final var newStatus = requestBody.getStatus();
 
-        LOG.infoContext(xRequestId, String.format("Attempting to update association status for association %s to %s.", associationId, newStatus.getValue()), null);
+        LOG.infoContext( xRequestId, String.format( "Attempting to update association status for association %s to %s.", associationId, newStatus.getValue() ), null );
 
-        final var requestingUserDetails = Objects.requireNonNull(UserContext.getLoggedUser());
-        final var requestingUserDisplayValue = Optional.ofNullable(requestingUserDetails.getDisplayName()).orElse(requestingUserDetails.getEmail());
+        final var requestingUserDetails = Objects.requireNonNull( UserContext.getLoggedUser() );
+        final var requestingUserDisplayValue = Optional.ofNullable( requestingUserDetails.getDisplayName() ).orElse( requestingUserDetails.getEmail() );
 
-
-        final var associationOptional = associationsService.findAssociationDaoById(associationId);
-        if (associationOptional.isEmpty()) {
-            LOG.error(String.format("%s: Could not find association %s in user_company_associations.", xRequestId, associationId));
-            throw new NotFoundRuntimeException("accounts-association-api", String.format("Association %s was not found.", associationId));
-        }
-
-        final AssociationDao associationDao = associationOptional.get();
-
-
-        final var oldStatus = associationDao.getStatus();
-
-
-        final var timestampKey = newStatus.equals(CONFIRMED) ? "approved_at" : "removed_at";
-        var update = new Update()
-                .set("status", newStatus.getValue())
-                .set(timestampKey, LocalDateTime.now().toString());
-
-        final boolean requestingAndTargetUserEmailMatches = Objects.nonNull(associationDao.getUserEmail()) && associationDao.getUserEmail().equals(requestingUserDetails.getEmail());
-        final boolean requestingAndTargetUserIdMatches = Objects.nonNull(associationDao.getUserId()) && associationDao.getUserId().equals(requestingUserId);
+        final var associationDao =
+        associationsService.findAssociationDaoById( associationId )
+                .orElseThrow( () -> {
+                    LOG.error( String.format( "%s: Could not find association %s in user_company_associations.", xRequestId, associationId ) );
+                    return new NotFoundRuntimeException( "accounts-association-api", String.format( "Association %s was not found.", associationId ) );
+                } );
+        
+        final boolean requestingAndTargetUserEmailMatches = Objects.nonNull( associationDao.getUserEmail() ) && associationDao.getUserEmail().equals( requestingUserDetails.getEmail() );
+        final boolean requestingAndTargetUserIdMatches = Objects.nonNull( associationDao.getUserId() ) && associationDao.getUserId().equals( requestingUserId );
         final boolean requestingAndTargetUserMatches = requestingAndTargetUserIdMatches || requestingAndTargetUserEmailMatches;
-        final boolean associationWithUserEmailExists = Objects.nonNull(associationDao.getUserEmail());
+        final boolean associationWithUserEmailExists = Objects.nonNull( associationDao.getUserEmail() );
 
+        throwBadRequestWhenUserIsNotPermittedToPerformAction( xRequestId, requestingUserId, associationDao, newStatus, requestingAndTargetUserMatches );
 
-        String targetUserDisplayValue = requestingUserDisplayValue;
-
-        if( !requestingAndTargetUserMatches ){
-            //if requesting user and target user is different, requesting user is only allowed to remove and should have active association with the company.
-            if (newStatus.equals(CONFIRMED) || !associationsService.confirmedAssociationExists(associationDao.getCompanyNumber(), requestingUserId)) {
-                LOG.error(String.format("%s: requesting %s  user does not have access to perform the action", xRequestId, requestingUserId));
-                throw new BadRequestRuntimeException("requesting user does not have access to perform the action");
-            }
+        var targetUserDisplayValue = requestingUserDisplayValue;
+        if ( associationWithUserEmailExists ) {
+            targetUserDisplayValue = updateAssociationWithUserEmail( xRequestId, newStatus, associationDao );
+        } else {
+            targetUserDisplayValue = updateAssociationWithUserId( newStatus, associationDao, requestingUserDisplayValue, requestingAndTargetUserMatches );
         }
 
-        if (associationWithUserEmailExists) {
-            var targetUserEmail = associationDao.getUserEmail();
+        sendEmailNotificationForStatusUpdate( xRequestId, requestingUserDisplayValue, targetUserDisplayValue, requestingAndTargetUserMatches, newStatus, associationDao.getStatus(), associationDao );
 
-            Optional<User> targetUserOptional =
-                    Optional.ofNullable(usersService.searchUserDetails(List.of(targetUserEmail)))
-                            .flatMap(list -> list.stream().findFirst());
-            // do not allow user to accept invitation until one login account is created.
-            if (newStatus.equals(CONFIRMED) && targetUserOptional.isEmpty()) {
-                LOG.error(String.format("%s: Could not find user %s, via the accounts-user-api", xRequestId, targetUserEmail));
-                throw new BadRequestRuntimeException(String.format("Could not find data for user %s", targetUserEmail));
-            }
-
-            //if user found, swap out the temporary email id with the user id.
-            if (targetUserOptional.isPresent()) {
-                targetUserDisplayValue = Optional.ofNullable(targetUserOptional.get().getDisplayName()).orElse(targetUserOptional.get().getEmail());
-                LOG.debugContext(xRequestId, "Successfully fetched data from accounts-user-api for user.", null);
-                update.set("user_email", null).set("user_id", targetUserOptional.get().getUserId());
-            } else {
-                targetUserDisplayValue = targetUserEmail;
-            }
-        } else if(!requestingAndTargetUserMatches){
-                var tempUser = usersService.fetchUserDetails(associationDao.getUserId());
-                targetUserDisplayValue=Optional.ofNullable(tempUser.getDisplayName()).orElse(tempUser.getEmail());
-        }
-
-
-
-        associationsService.updateAssociation(associationId, update);
-
-
-        sendEmailNotificationForStatusUpdate(xRequestId,
-                requestingUserDisplayValue,
-                targetUserDisplayValue,
-                requestingAndTargetUserMatches,
-                newStatus,
-                oldStatus,
-                associationOptional.get()
-        );
-
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>( HttpStatus.OK );
     }
 
     private void sendEmailNotificationForStatusUpdate(String xRequestId, String requestingUserDisplayValue, String targetUserDisplayValue, boolean requestingAndTargetUserMatches, RequestBodyPut.StatusEnum newStatus, String oldStatus, AssociationDao associationDao) {

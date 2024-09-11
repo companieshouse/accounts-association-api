@@ -33,7 +33,8 @@ class InvitationAcceptedEmailBuilderTest {
 
     @Test
     void buildWithNullsThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> new InvitationAcceptedEmailBuilder().build() );
+        final var builder = new InvitationAcceptedEmailBuilder();
+        Assertions.assertThrows( NullPointerException.class, builder::build );
     }
 
 }
