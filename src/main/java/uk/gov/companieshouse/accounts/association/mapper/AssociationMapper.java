@@ -11,7 +11,6 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.CompanyStatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
 
 import java.time.LocalDateTime;
@@ -55,7 +54,7 @@ public abstract class AssociationMapper {
             companyDetails = companyService.fetchCompanyProfile( association.getCompanyNumber() );
         }
         association.setCompanyName( companyDetails.getCompanyName() );
-        association.setCompanyStatus( CompanyStatusEnum.fromValue( companyDetails.getCompanyStatus() ) );
+        association.setCompanyStatus( companyDetails.getCompanyStatus() );
     }
 
     @AfterMapping
