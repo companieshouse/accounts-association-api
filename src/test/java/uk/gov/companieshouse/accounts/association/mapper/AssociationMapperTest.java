@@ -24,7 +24,6 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.CompanyStatusEnum;
 
 import java.util.List;
 import uk.gov.companieshouse.api.accounts.user.model.User;
@@ -116,7 +115,7 @@ class AssociationMapperTest {
         associationMapper.enrichWithCompanyDetails( associationPreprocessed, company );
 
         Assertions.assertEquals( "Wayne Enterprises", associationPreprocessed.getCompanyName() );
-        Assertions.assertEquals( CompanyStatusEnum.ACTIVE, associationPreprocessed.getCompanyStatus() );
+        Assertions.assertEquals( "active", associationPreprocessed.getCompanyStatus() );
     }
 
     @Test
@@ -129,7 +128,7 @@ class AssociationMapperTest {
         associationMapper.enrichWithCompanyDetails( associationPreprocessed, null );
 
         Assertions.assertEquals( "Wayne Enterprises", associationPreprocessed.getCompanyName() );
-        Assertions.assertEquals( CompanyStatusEnum.ACTIVE, associationPreprocessed.getCompanyStatus() );
+        Assertions.assertEquals( "active", associationPreprocessed.getCompanyStatus() );
     }
 
     @Test
