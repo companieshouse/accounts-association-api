@@ -21,7 +21,7 @@
         <common-web-java.version>3.0.0</common-web-java.version>
         <encryption-java-library.version>2.0.3</encryption-java-library.version>
         <rest-service-common-library-version>2.0.2</rest-service-common-library-version>
-        <private-api-sdk-java.version>4.0.190</private-api-sdk-java.version>
+        <private-api-sdk-java.version>4.0.199</private-api-sdk-java.version>
         <api-sdk-manager-java-library.version>3.0.5</api-sdk-manager-java-library.version>
         <api-security-java-version>2.0.6</api-security-java-version>
         <org.mapstruct.version>1.6.0.RC1</org.mapstruct.version>

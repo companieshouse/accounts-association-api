@@ -17,7 +17,6 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.CompanyStatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
@@ -956,7 +955,7 @@ public class TestDataManager {
         associationDto.setDisplayName( Optional.ofNullable( user.getDisplayName() ).orElse( "Not provided" )  );
         associationDto.setCompanyNumber( associationDao.getCompanyNumber() );
         associationDto.setCompanyName( companyDetails.getCompanyName() );
-        associationDto.setCompanyStatus( CompanyStatusEnum.fromValue( companyDetails.getCompanyStatus() ) );
+        associationDto.setCompanyStatus( companyDetails.getCompanyStatus() );
         associationDto.setStatus( StatusEnum.fromValue( associationDao.getStatus() ) );
         associationDto.setApprovalRoute( ApprovalRouteEnum.fromValue( associationDao.getApprovalRoute() ) );
         associationDto.setCreatedAt( localDateTimeToOffsetDateTime( associationDao.getCreatedAt() ) );
