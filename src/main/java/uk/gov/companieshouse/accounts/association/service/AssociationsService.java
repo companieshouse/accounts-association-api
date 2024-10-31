@@ -247,4 +247,12 @@ public class AssociationsService {
         return invitationsList;
     }
 
+    public Page<AssociationDao> fetchUnprocessedMigratedAssociations( final int pageNumber, final int itemsPerPage ){
+        return associationsRepository.fetchUnprocessedMigratedAssociations( PageRequest.of( pageNumber, itemsPerPage ) );
+    }
+
+    public long fetchNumberOfUnprocessedMigratedAssociations(){
+        return associationsRepository.fetchNumberOfUnprocessedMigratedAssociations();
+    }
+
 }
