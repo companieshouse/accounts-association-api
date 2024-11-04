@@ -7,6 +7,7 @@ import uk.gov.companieshouse.accounts.association.utils.ApiClientUtil;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
+import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserFindUserBasedOnEmailGet;
 import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserUserGet;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.api.model.ApiResponse;
@@ -26,13 +27,15 @@ public class AccountsUserEndpoint {
         this.apiClientUtil = apiClientUtil;
     }
 
-    public ApiResponse<UsersList> searchUserDetails(final List<String> emails) throws ApiErrorResponseException, URIValidationException {
-
+    public PrivateAccountsUserFindUserBasedOnEmailGet createSearchUserDetailsRequest( final List<String> emails ){
         final var searchUserDetailsUrl = "/users/search";
-        return apiClientUtil.getInternalApiClient(accountApiUrl)
+        return apiClientUtil.getInternalApiClient( accountApiUrl )
                 .privateAccountsUserResourceHandler()
-                .searchUserDetails(searchUserDetailsUrl, emails)
-                .execute();
+                .searchUserDetails( searchUserDetailsUrl, emails );
+    }
+
+    public ApiResponse<UsersList> searchUserDetails( final List<String> emails ) throws ApiErrorResponseException, URIValidationException {
+        return createSearchUserDetailsRequest( emails ).execute();
     }
 
     public PrivateAccountsUserUserGet createGetUserDetailsRequest(final String userId) {

@@ -47,10 +47,10 @@ public interface AssociationsRepository extends MongoRepository<AssociationDao, 
     @Query( "{ '$or': [ { 'user_id': { '$ne': null, '$eq': ?0 } }, { 'user_email': { '$ne': null, '$eq': ?1 } } ], 'status': 'awaiting-approval', 'approval_expiry_at': { $gt: ?2 } }" )
     Stream<AssociationDao> fetchAssociationsWithActiveInvitations( final String userId, final String userEmail, final LocalDateTime now );
 
-    @Query( "{ 'status': 'migrated', '$or': [ { 'user_id': null }, { 'user_id': { '$exists': false } } ] }" )
+    @Query( "{ 'status': 'migrated', '$and': [ { 'user_email': { '$ne' : null } }, { 'user_email': { '$exists': true } } ] }" )
     Page<AssociationDao> fetchUnprocessedMigratedAssociations( final Pageable pageable );
 
-    @Query( value = "{ 'status': 'migrated', '$or': [ { 'user_id': null }, { 'user_id': { '$exists': false } } ] }", count = true )
+    @Query( value = "{ 'status': 'migrated', '$and': [ { 'user_email': { '$ne' : null } }, { 'user_email': { '$exists': true } } ] }", count = true )
     long fetchNumberOfUnprocessedMigratedAssociations();
 
 }
