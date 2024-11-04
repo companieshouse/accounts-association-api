@@ -125,7 +125,7 @@ class UsersServiceTest {
 
     @Test
     void searchUserDetailsWithNullInputThrowsNullPointerException() {
-        Assertions.assertThrows( NullPointerException.class, () -> usersService.searchUserDetails( null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> usersService.searchUserDetails( (List<String>) null ) );
     }
 
     @Test

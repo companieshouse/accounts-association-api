@@ -61,20 +61,24 @@ public class UsersService {
         return createFetchUserDetailsRequest(userId).get();
     }
 
+    public Supplier<UsersList> createSearchUserDetailsRequest( final List<String> emails ){
+        final var request = accountsUserEndpoint.createSearchUserDetailsRequest( emails );
+        return () -> {
+            try {
+                LOG.debug( String.format( "Attempting to search for user details for: %s", String.join(", ", emails) ) );
+                return request.execute().getData();
+            } catch( URIValidationException exception ){
+                LOG.error( String.format( "Search failed to fetch user details for users (%s), because uri was incorrectly formatted", String.join(", ", emails) ) );
+                throw new InternalServerErrorRuntimeException( "Invalid uri for accounts-user-api service" );
+            } catch ( Exception exception ){
+                LOG.error( String.format( "Search failed to retrieve user details for: %s", String.join(", ", emails) ) );
+                throw new InternalServerErrorRuntimeException("Search failed to retrieve user details");
+            }
+        };
+    }
+
     public UsersList searchUserDetails( final List<String> emails ){
-
-        try {
-            LOG.debug( String.format( "Attempting to search for user details for: %s", String.join(", ", emails) ) );
-            return accountsUserEndpoint.searchUserDetails(emails)
-                    .getData();
-        } catch( URIValidationException exception ){
-            LOG.error( String.format( "Search failed to fetch user details for users (%s), because uri was incorrectly formatted", String.join(", ", emails) ) );
-            throw new InternalServerErrorRuntimeException( "Invalid uri for accounts-user-api service" );
-        } catch ( Exception exception ){
-            LOG.error( String.format( "Search failed to retrieve user details for: %s", String.join(", ", emails) ) );
-            throw new InternalServerErrorRuntimeException("Search failed to retrieve user details");
-        }
-
+        return createSearchUserDetailsRequest( emails ).get();
     }
 
     public Map<String, User> fetchUserDetails( final Stream<AssociationDao> associationDaos ){
@@ -86,6 +90,22 @@ public class UsersService {
                 .parallel()
                 .map( Supplier::get )
                 .forEach( user -> users.put( user.getUserId(), user ) );
+        return users;
+    }
+
+    public Map<String, User> searchUserDetails( final Stream<AssociationDao> associationDaos ){
+        final Map<String, User> users = new ConcurrentHashMap<>();
+        associationDaos.map( AssociationDao::getUserEmail )
+                .distinct()
+                .filter( Objects::nonNull )
+                .map( List::of )
+                .map( this::createSearchUserDetailsRequest )
+                .parallel()
+                .map( Supplier::get )
+                .filter( Objects::nonNull )
+                .filter( list -> !list.isEmpty() )
+                .map( UsersList::getFirst )
+                .forEach( user -> users.put( user.getEmail(), user ) );
         return users;
     }
 
