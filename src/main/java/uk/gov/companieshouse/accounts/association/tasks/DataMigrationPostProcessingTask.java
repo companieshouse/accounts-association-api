@@ -25,7 +25,7 @@ public class DataMigrationPostProcessingTask {
     private static final String DATA_MIGRATION_USER_ID_UPDATE_TASK = "data-migration-user-id-update-task";
 
     @Value( "${scheduler.data-migration.user-id-update-task.items-per-page}" )
-    private static int ITEMS_PER_PAGE;
+    private int ITEMS_PER_PAGE;
 
     public DataMigrationPostProcessingTask( final AssociationsService associationsService, final UsersService usersService ) {
         this.associationsService = associationsService;
@@ -51,9 +51,9 @@ public class DataMigrationPostProcessingTask {
             final var page = associationsService.fetchUnprocessedMigratedAssociations( currentPage, ITEMS_PER_PAGE );
 
             final var users = usersService.searchUserDetails( page.stream() );
-            totalSearched += page.getSize();
+            totalSearched += page.getNumberOfElements();
             totalFound += users.size();
-            totalNotFound += totalSearched - totalFound;
+            totalNotFound += page.getNumberOfElements() - users.size();
 
             page.stream()
                     .filter( associationDao -> users.containsKey( associationDao.getUserEmail() ) )
