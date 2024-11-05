@@ -1,6 +1,8 @@
 package uk.gov.companieshouse.accounts.association.tasks;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -22,16 +24,15 @@ public class DataMigrationPostProcessingTask {
 
     private static final String DATA_MIGRATION_USER_ID_UPDATE_TASK = "data-migration-user-id-update-task";
 
-    // TODO: choose different value e.g. 15
-    private static final int ITEMS_PER_PAGE = 2;
+    @Value( "${scheduler.data-migration.user-id-update-task.items-per-page}" )
+    private static int ITEMS_PER_PAGE;
 
     public DataMigrationPostProcessingTask( final AssociationsService associationsService, final UsersService usersService ) {
         this.associationsService = associationsService;
         this.usersService = usersService;
     }
 
-    // TODO: change cron = "0 0 0 * * ?", so that the cron job runs everyday at midnight
-    @Scheduled( cron = "0 2 17 * * ?" )
+    @Scheduled( cron = "0 0 0 * * ?" )
     public void processMigratedAssociations(){
         LOG.infoContext(DATA_MIGRATION_USER_ID_UPDATE_TASK, "Starting up data migration user_id task...", null );
 
@@ -41,10 +42,18 @@ public class DataMigrationPostProcessingTask {
 
         LOG.debugContext(DATA_MIGRATION_USER_ID_UPDATE_TASK, String.format( "Identified %s associations to be processed in %s batches in reverse order... starting with batch %s", totalAssociations, totalPages, currentPage ), null );
 
+        int totalSearched = 0;
+        int totalFound = 0;
+        int totalNotFound = 0;
+        final var totalUpdated = new AtomicInteger();
+        final var totalFailed = new AtomicInteger();
         while ( currentPage > -1 ) {
             final var page = associationsService.fetchUnprocessedMigratedAssociations( currentPage, ITEMS_PER_PAGE );
 
             final var users = usersService.searchUserDetails( page.stream() );
+            totalSearched += page.getSize();
+            totalFound += users.size();
+            totalNotFound += totalSearched - totalFound;
 
             page.stream()
                     .filter( associationDao -> users.containsKey( associationDao.getUserEmail() ) )
@@ -53,42 +62,38 @@ public class DataMigrationPostProcessingTask {
                         final var update = new Update()
                                 .set( "user_id", userId )
                                 .set( "user_email", null );
-                        associationsService.updateAssociation( associationId, update );
-                        LOG.debugContext(DATA_MIGRATION_USER_ID_UPDATE_TASK, String.format( "Successfully completed migration of association %s", associationId ), null );
+
+                        try {
+                            associationsService.updateAssociation( associationId, update );
+                            totalUpdated.getAndIncrement();
+                        } catch ( Exception e ){
+                            totalFailed.getAndIncrement();
+                        }
+
+                        LOG.infoContext( DATA_MIGRATION_USER_ID_UPDATE_TASK, String.format( "Successfully completed migration of association %s", associationId ), null );
                     } );
 
-            LOG.debugContext(DATA_MIGRATION_USER_ID_UPDATE_TASK, String.format( "Successfully processed batch %s", currentPage ), null );
+            LOG.infoContext( DATA_MIGRATION_USER_ID_UPDATE_TASK, String.format( "Successfully processed batch %s", currentPage ), null );
+
+
+            final var dataMigrationSummary =
+            String.format(
+                    """
+                    Data Migration Summary:
+                    So far, %d searches have been carried out; %d users were found and %d users were not found.
+                    So far, %d associations were successfully updated, but updates have failed for %s associations.
+                    """, totalSearched, totalFound, totalNotFound, totalUpdated.get(), totalFailed.get() );
+            LOG.infoContext( DATA_MIGRATION_USER_ID_UPDATE_TASK, dataMigrationSummary, null );
+
+            if ( totalFailed.get() > 100 ){
+                LOG.error( String.format( "%s: Excessive number of update failures. Terminating task...", DATA_MIGRATION_USER_ID_UPDATE_TASK ) );
+                break;
+            }
 
             currentPage--;
         }
 
         LOG.infoContext(DATA_MIGRATION_USER_ID_UPDATE_TASK, "Shutting data migration user_id task...", null );
     }
-
-
-
-
-    /*
-TODO: print out a count of people who haven't logged in, in over a month
-
-This query will find a given user's latest session in the last month:
-
-db.oauth2_authorisations.findOne(
-{
-	"user_details.user_id": "WITU002",
-	"token_valid_until": { $gt: (Date.now() / 1000) - (30 * 24 * 60 * 60) }
-},
-{ sort: { "token_valid_until": -1 } }  )
-
-Steps:
-1. For each user in users...
-2.    Run the above query to see if the user logged in, in the last month.
-3.    If they did not log in, then add to a counter
-4. Print counter
-
-Ideally this query would go in the authentication-service. It doesn't look like there is an endpoint
-there to retrieve relevant details
-     */
-
 
 }
