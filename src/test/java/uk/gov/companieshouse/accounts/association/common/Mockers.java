@@ -17,6 +17,7 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
+import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserFindUserBasedOnEmailGet;
 import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserUserGet;
 import uk.gov.companieshouse.api.handler.company.request.PrivateCompanyDetailsGet;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
@@ -91,14 +92,32 @@ public class Mockers {
             final var userEmails = List.of( userDetails.getEmail() );
             final var usersList = new UsersList();
             usersList.add( userDetails );
+
+            final var request = Mockito.mock( PrivateAccountsUserFindUserBasedOnEmailGet.class );
             final var response = new ApiResponse<>( 200, Map.of(), usersList );
-            Mockito.doReturn( response ).when( accountsUserEndpoint ).searchUserDetails( userEmails );
+
+            Mockito.doReturn( request ).when( accountsUserEndpoint ).createSearchUserDetailsRequest( userEmails );
+            Mockito.lenient().doReturn( response ).when( request ).execute();
         }
     }
 
     public void mockSearchUserDetailsNotFound( final String... emails ) throws ApiErrorResponseException, URIValidationException {
         for ( final String email: emails ){
-            Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new UsersList() ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( email ) );
+            final var request = Mockito.mock( PrivateAccountsUserFindUserBasedOnEmailGet.class );
+            final var response = new ApiResponse<>( 204, Map.of(), new UsersList() );
+
+            Mockito.doReturn( request ).when( accountsUserEndpoint ).createSearchUserDetailsRequest( List.of( email ) );
+            Mockito.lenient().doReturn( response ).when( request ).execute();
+        }
+    }
+
+    public void mockSearchUserDetailsNotFoundNull( final String... emails ) throws ApiErrorResponseException, URIValidationException {
+        for ( final String email: emails ){
+            final var request = Mockito.mock( PrivateAccountsUserFindUserBasedOnEmailGet.class );
+            final var response = new ApiResponse<>( 204, Map.of(), null );
+
+            Mockito.doReturn( request ).when( accountsUserEndpoint ).createSearchUserDetailsRequest( List.of( email ) );
+            Mockito.lenient().doReturn( response ).when( request ).execute();
         }
     }
 

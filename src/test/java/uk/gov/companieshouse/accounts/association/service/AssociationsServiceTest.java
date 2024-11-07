@@ -467,4 +467,45 @@ class AssociationsServiceTest {
         assertTrue(invitations.getLinks().getNext().isEmpty());
     }
 
+    @Test
+    void fetchUnprocessedMigratedAssociationsWithMalformedPageNumberOrItemsPerPageThrowsIllegalArgumentException(){
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchUnprocessedMigratedAssociations( -1, 1 ) );
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchUnprocessedMigratedAssociations( 0, -1 ) );
+    }
+
+    @Test
+    void fetchUnprocessedMigratedAssociationsPaginatesCorrectly(){
+        final var firstPageContent = testDataManager.fetchAssociationDaos( "FutAssociation001", "FutAssociation003" );
+        final var mockedFirstPage = new PageImpl<>( firstPageContent, PageRequest.of( 0, 2 ), 3 );
+        Mockito.doReturn( mockedFirstPage ).when( associationsRepository ).fetchUnprocessedMigratedAssociations( PageRequest.of( 0, 2 ) );
+
+        final var secondPageContent = testDataManager.fetchAssociationDaos( "FutAssociation004" );
+        final var mockedSecondPage = new PageImpl<>( secondPageContent, PageRequest.of( 1, 2 ), 3 );
+        Mockito.doReturn( mockedSecondPage ).when( associationsRepository ).fetchUnprocessedMigratedAssociations( PageRequest.of( 1, 2 ) );
+
+        final var firstPage = associationsService.fetchUnprocessedMigratedAssociations( 0, 2 );
+        final var secondPage = associationsService.fetchUnprocessedMigratedAssociations( 1, 2 );
+        final var allContent = List.of( firstPage.getContent().getFirst().getId(), firstPage.getContent().getLast().getId(), secondPage.getContent().getFirst().getId() );
+
+        Assertions.assertEquals( 3, firstPage.getTotalElements() );
+        Assertions.assertEquals( 2, firstPage.getTotalPages() );
+        Assertions.assertEquals( 2, firstPage.getNumberOfElements() );
+        Assertions.assertEquals( 3, secondPage.getTotalElements() );
+        Assertions.assertEquals( 2, secondPage.getTotalPages() );
+        Assertions.assertEquals( 1, secondPage.getNumberOfElements() );
+
+        Assertions.assertTrue( allContent.containsAll( List.of( "FutAssociation001", "FutAssociation003", "FutAssociation004" ) ) );
+    }
+
+    @Test
+    void fetchUnprocessedMigratedAssociationsWithNoResultsReturnsEmptyPage(){
+        Mockito.doReturn( Page.empty() ).when( associationsRepository ).fetchUnprocessedMigratedAssociations( PageRequest.of( 0, 2 ) );
+        Assertions.assertTrue( associationsService.fetchUnprocessedMigratedAssociations( 0, 2 ).isEmpty() );
+    }
+    @Test
+    void fetchNumberOfUnprocessedMigratedAssociationsRetrievesCorrectCount(){
+        Mockito.doReturn( 3L ).when( associationsRepository ).fetchNumberOfUnprocessedMigratedAssociations();
+        Assertions.assertEquals( 3L, associationsService.fetchNumberOfUnprocessedMigratedAssociations() );
+    }
+
 }

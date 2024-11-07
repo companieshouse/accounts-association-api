@@ -872,6 +872,54 @@ public class TestDataManager {
             return association;
         };
         associationDaoSuppliers.put( "38", DominosLightYagamiAssociationDaoSupplier );
+
+        final Supplier<AssociationDao> FuturamaFryAssociationDaoSupplier = () -> {
+            final var association = new AssociationDao();
+            association.setId( "FutAssociation001" );
+            association.setUserEmail( "fry@futurama.com" );
+            association.setCompanyNumber( "FutCompany001" );
+            association.setStatus( "migrated" );
+            association.setApprovalRoute( "migrated" );
+            association.setEtag( "FutEtag001" );
+            return association;
+        };
+        associationDaoSuppliers.put( "FutAssociation001", FuturamaFryAssociationDaoSupplier );
+
+        final Supplier<AssociationDao> FuturamaBenderAssociationDaoSupplier = () -> {
+            final var association = new AssociationDao();
+            association.setId( "FutAssociation002" );
+            association.setUserId( "FutUser002" );
+            association.setCompanyNumber( "FutCompany001" );
+            association.setStatus( "migrated" );
+            association.setApprovalRoute( "migrated" );
+            association.setEtag( "FutEtag002" );
+            return association;
+        };
+        associationDaoSuppliers.put( "FutAssociation002", FuturamaBenderAssociationDaoSupplier );
+
+        final Supplier<AssociationDao> FuturamaLeelaAssociationDaoSupplier = () -> {
+            final var association = new AssociationDao();
+            association.setId( "FutAssociation003" );
+            association.setUserEmail( "leela@futurama.com" );
+            association.setCompanyNumber( "FutCompany001" );
+            association.setStatus( "migrated" );
+            association.setApprovalRoute( "migrated" );
+            association.setEtag( "FutEtag003" );
+            return association;
+        };
+        associationDaoSuppliers.put( "FutAssociation003", FuturamaLeelaAssociationDaoSupplier );
+
+        final Supplier<AssociationDao> FuturamaAmyAssociationDaoSupplier = () -> {
+            final var association = new AssociationDao();
+            association.setId( "FutAssociation004" );
+            association.setUserEmail( "amy@futurama.com" );
+            association.setCompanyNumber( "FutCompany001" );
+            association.setStatus( "migrated" );
+            association.setApprovalRoute( "migrated" );
+            association.setEtag( "FutEtag004" );
+            return association;
+        };
+        associationDaoSuppliers.put( "FutAssociation004", FuturamaAmyAssociationDaoSupplier );
     }
 
 
@@ -895,6 +943,10 @@ public class TestDataManager {
         userDtoSuppliers.put( "7777", () -> new User().userId( "7777" ).email( "chandler@friends.com" ) );
         userDtoSuppliers.put( "8888", () -> new User().userId( "8888" ).email( "mr.blobby@nightmare.com" ) );
         userDtoSuppliers.put( "9999", () -> new User().userId( "9999" ).email( "scrooge.mcduck@disney.land" ).displayName( "Scrooge McDuck" ) );
+        userDtoSuppliers.put( "FutUser001", () -> new User().userId( "FutUser001" ).email( "fry@futurama.com" ).displayName( "Fry" ) );
+        userDtoSuppliers.put( "FutUser002", () -> new User().userId( "FutUser002" ).email( "bender@futurama.com" ).displayName( "Bender" ) );
+        userDtoSuppliers.put( "FutUser003", () -> new User().userId( "FutUser003" ).email( "leela@futurama.com" ).displayName( "Leela" ) );
+        userDtoSuppliers.put( "FutUser004", () -> new User().userId( "FutUser004" ).email( "amy@futurama.com" ).displayName( "Amy" ) );
     }
 
     private void instantiateCompanyDtoSuppliers(){
@@ -915,6 +967,7 @@ public class TestDataManager {
         companyDetailsDtoSuppliers.put( "x777777", () -> new CompanyDetails().companyNumber( "x777777" ).companyName( "Facebook" ).companyStatus( "active" ) );
         companyDetailsDtoSuppliers.put( "x888888", () -> new CompanyDetails().companyNumber( "x888888" ).companyName( "Twitter" ).companyStatus( "active" ) );
         companyDetailsDtoSuppliers.put( "x999999", () -> new CompanyDetails().companyNumber( "x999999" ).companyName( "Instram" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "FutCompany001", () -> new CompanyDetails().companyNumber( "FutCompany001" ).companyName( "Planet Express" ).companyStatus( "active" ) );
     }
 
     private TestDataManager(){

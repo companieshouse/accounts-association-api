@@ -22,6 +22,7 @@ import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
+import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserFindUserBasedOnEmailGet;
 import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserUserGet;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 
@@ -40,6 +41,9 @@ class UsersServiceTest {
 
     @Mock
     private PrivateAccountsUserUserGet privateAccountsUserUserGet;
+
+    @Mock
+    private PrivateAccountsUserFindUserBasedOnEmailGet privateAccountsUserFindUserBasedOnEmailGet;
 
     @InjectMocks
     private UsersService usersService;
@@ -135,7 +139,8 @@ class UsersServiceTest {
         final var nullList = new ArrayList<String>();
         nullList.add( null );
 
-        Mockito.doThrow( new ApiErrorResponseException( new Builder( 400, "Bad input given", new HttpHeaders() ) ) ).when( accountsUserEndpoint ).searchUserDetails( any() );
+        Mockito.doReturn( privateAccountsUserFindUserBasedOnEmailGet ).when( accountsUserEndpoint ).createSearchUserDetailsRequest( any() );
+        Mockito.doThrow( new ApiErrorResponseException( new Builder( 400, "Bad input given", new HttpHeaders() ) ) ).when( privateAccountsUserFindUserBasedOnEmailGet ).execute();
 
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( emptyList ) );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( nullList ) );
@@ -154,7 +159,9 @@ class UsersServiceTest {
         usersList.addAll( List.of( new User().userId( "111" ), new User().userId( "333" ) ) );
         final var intendedResponse = new ApiResponse<>( 200, Map.of(), usersList );
 
-        Mockito.doReturn( intendedResponse ).when( accountsUserEndpoint ).searchUserDetails( List.of( "bruce.wayne@gotham.city", "harley.quinn@gotham.city" ) );
+        final var request = Mockito.mock( PrivateAccountsUserFindUserBasedOnEmailGet.class );
+        Mockito.doReturn( request ).when( accountsUserEndpoint ).createSearchUserDetailsRequest( List.of( "bruce.wayne@gotham.city", "harley.quinn@gotham.city" ) );
+        Mockito.doReturn( intendedResponse ).when( request ).execute();
 
         final var result = usersService.searchUserDetails( List.of( "bruce.wayne@gotham.city", "harley.quinn@gotham.city" ) );
 
@@ -171,7 +178,11 @@ class UsersServiceTest {
     @Test
     void searchUserDetailsWithIncorrectlyFormattedUriThrowsInternalServerError() throws ApiErrorResponseException, URIValidationException {
         final var malformedList = List.of( "" );
-        Mockito.doThrow( new URIValidationException( "Uri incorrectly formatted" ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( "" ) );
+
+        final var request = Mockito.mock( PrivateAccountsUserFindUserBasedOnEmailGet.class );
+        Mockito.doReturn( request ).when( accountsUserEndpoint ).createSearchUserDetailsRequest( malformedList );
+        Mockito.doThrow( new URIValidationException( "Uri incorrectly formatted" ) ).when( request ).execute();
+
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( malformedList ) );
     }
 
@@ -197,6 +208,31 @@ class UsersServiceTest {
         Mockito.doReturn( intendedResponse ).when( privateAccountsUserUserGet ).execute();
 
         Assertions.assertEquals( Map.of( "9999", user ), usersService.fetchUserDetails( associationDaos.stream() ) );
+    }
+
+    @Test
+    void searchUserDetailsWithNullStreamThrowsNullPointerException(){
+        Assertions.assertThrows( NullPointerException.class, () -> usersService.searchUserDetails( (Stream<AssociationDao>) null ) );
+    }
+
+    @Test
+    void searchUserDetailsWithEmptyStreamReturnsEmptyMap(){
+        Assertions.assertTrue( usersService.searchUserDetails( Stream.empty() ).isEmpty() );
+    }
+
+    @Test
+    void searchUserDetailsConductsSearchAndHandlesDuplicatesAndNullEmailsAndNonExistentUsers() throws ApiErrorResponseException, URIValidationException {
+        final var associationDaos = testDataManager.fetchAssociationDaos( "FutAssociation001", "FutAssociation001", "FutAssociation002", "FutAssociation003", "FutAssociation004" );
+
+        mockers.mockSearchUserDetails( "FutUser001" );
+        mockers.mockSearchUserDetailsNotFound( "leela@futurama.com" );
+        mockers.mockSearchUserDetailsNotFoundNull( "amy@futurama.com" );
+
+        final var searchResults = usersService.searchUserDetails( associationDaos.stream() );
+
+        Assertions.assertEquals( 1, searchResults.size() );
+        Assertions.assertTrue( searchResults.containsKey( "fry@futurama.com" ) );
+        Assertions.assertEquals( "Fry", searchResults.get( "fry@futurama.com" ).getDisplayName() );
     }
 
 }
