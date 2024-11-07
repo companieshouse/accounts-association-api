@@ -479,6 +479,44 @@ class AssociationsRepositoryTest {
         Assertions.assertTrue( associationIds.contains( "6" ) );
     }
 
+    @Test
+    void fetchUnprocessedMigratedAssociationsWithNullPageableRetrievesAllUnprocessedMigratedAssociations(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "FutAssociation001", "FutAssociation002", "FutAssociation003", "FutAssociation004", "1" ) );
+
+        final var unprocessedMigratedAssociations =
+        associationsRepository.fetchUnprocessedMigratedAssociations( null )
+                .map( AssociationDao::getId )
+                .stream()
+                .toList();
+
+        Assertions.assertEquals( 3, unprocessedMigratedAssociations.size() );
+        Assertions.assertTrue( unprocessedMigratedAssociations.containsAll( List.of( "FutAssociation001", "FutAssociation003", "FutAssociation004" ) ) );
+    }
+
+    @Test
+    void fetchUnprocessedMigratedAssociationsPaginatesCorrectly(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "FutAssociation001", "FutAssociation002", "FutAssociation003", "FutAssociation004", "1" ) );
+
+        final var firstPage = associationsRepository.fetchUnprocessedMigratedAssociations( PageRequest.of( 0, 2 ) );
+        final var secondPage = associationsRepository.fetchUnprocessedMigratedAssociations( PageRequest.of( 1, 2 ) );
+        final var allContent = List.of( firstPage.getContent().getFirst().getId(), firstPage.getContent().getLast().getId(), secondPage.getContent().getFirst().getId() );
+
+        Assertions.assertEquals( 3, firstPage.getTotalElements() );
+        Assertions.assertEquals( 2, firstPage.getTotalPages() );
+        Assertions.assertEquals( 2, firstPage.getNumberOfElements() );
+        Assertions.assertEquals( 3, secondPage.getTotalElements() );
+        Assertions.assertEquals( 2, secondPage.getTotalPages() );
+        Assertions.assertEquals( 1, secondPage.getNumberOfElements() );
+
+        Assertions.assertTrue( allContent.containsAll( List.of( "FutAssociation001", "FutAssociation003", "FutAssociation004" ) ) );
+    }
+
+    @Test
+    void fetchNumberOfUnprocessedMigratedAssociationsRetrievesCorrectCount(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "FutAssociation001", "FutAssociation002", "FutAssociation003", "FutAssociation004", "1" ) );
+        Assertions.assertEquals( 3, associationsRepository.fetchNumberOfUnprocessedMigratedAssociations() );
+    }
+
     @AfterEach
     public void after() {
         mongoTemplate.dropCollection(AssociationDao.class);

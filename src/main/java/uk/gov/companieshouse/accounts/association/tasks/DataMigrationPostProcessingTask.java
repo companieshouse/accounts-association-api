@@ -37,7 +37,7 @@ public class DataMigrationPostProcessingTask {
         LOG.infoContext(DATA_MIGRATION_USER_ID_UPDATE_TASK, "Starting up data migration user_id task...", null );
 
         final var totalAssociations = associationsService.fetchNumberOfUnprocessedMigratedAssociations();
-        final var totalPages = ( totalAssociations / ITEMS_PER_PAGE ) + ( totalAssociations % 2 == 0 ? 0 : 1 );
+        final var totalPages = ( totalAssociations + ITEMS_PER_PAGE - 1 ) / ITEMS_PER_PAGE;
         int currentPage = (int) totalPages - 1;
 
         LOG.debugContext(DATA_MIGRATION_USER_ID_UPDATE_TASK, String.format( "Identified %s associations to be processed in %s batches in reverse order... starting with batch %s", totalAssociations, totalPages, currentPage ), null );

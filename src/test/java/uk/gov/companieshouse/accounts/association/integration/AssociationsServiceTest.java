@@ -8,6 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Update;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
@@ -380,6 +381,47 @@ class AssociationsServiceTest {
         Assertions.assertEquals( mostRecentInvitationDaoInFirstAssociation.getInvitedBy(), invitation.getInvitedBy() );
         Assertions.assertEquals( localDateTimeToNormalisedString( mostRecentInvitationDaoInFirstAssociation.getInvitedAt() ), reduceTimestampResolution( invitation.getInvitedAt() ) );
     }
+
+    @Test
+    void fetchUnprocessedMigratedAssociationsWithMalformedPageNumberOrItemsPerPageThrowsIllegalArgumentException(){
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchUnprocessedMigratedAssociations( -1, 1 ) );
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchUnprocessedMigratedAssociations( 0, -1 ) );
+    }
+
+    @Test
+    void fetchUnprocessedMigratedAssociationsPaginatesCorrectly(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "FutAssociation001", "FutAssociation002", "FutAssociation003", "FutAssociation004", "1" ) );
+
+        final var firstPage = associationsService.fetchUnprocessedMigratedAssociations( 0, 2 );
+        final var secondPage = associationsService.fetchUnprocessedMigratedAssociations( 1, 2 );
+        final var allContent = List.of( firstPage.getContent().getFirst().getId(), firstPage.getContent().getLast().getId(), secondPage.getContent().getFirst().getId() );
+
+        Assertions.assertEquals( 3, firstPage.getTotalElements() );
+        Assertions.assertEquals( 2, firstPage.getTotalPages() );
+        Assertions.assertEquals( 2, firstPage.getNumberOfElements() );
+        Assertions.assertEquals( 3, secondPage.getTotalElements() );
+        Assertions.assertEquals( 2, secondPage.getTotalPages() );
+        Assertions.assertEquals( 1, secondPage.getNumberOfElements() );
+
+        Assertions.assertTrue( allContent.containsAll( List.of( "FutAssociation001", "FutAssociation003", "FutAssociation004" ) ) );
+    }
+
+    @Test
+    void fetchUnprocessedMigratedAssociationsWithNoResultsReturnsEmptyPage(){
+        final var page = associationsService.fetchUnprocessedMigratedAssociations( 0, 2 );
+
+        Assertions.assertEquals( 0, page.getTotalElements() );
+        Assertions.assertEquals( 0, page.getTotalPages() );
+        Assertions.assertEquals( 0, page.getNumberOfElements() );
+        Assertions.assertTrue( page.isEmpty() );
+    }
+
+    @Test
+    void fetchNumberOfUnprocessedMigratedAssociationsRetrievesCorrectCount(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "FutAssociation001", "FutAssociation002", "FutAssociation003", "FutAssociation004", "1" ) );
+        Assertions.assertEquals( 3, associationsService.fetchNumberOfUnprocessedMigratedAssociations() );
+    }
+
 
     @AfterEach
     public void after() {
