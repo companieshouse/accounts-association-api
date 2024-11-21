@@ -5,7 +5,7 @@
     <parent>
         <groupId>uk.gov.companieshouse</groupId>
         <artifactId>companies-house-parent</artifactId>
-        <version>2.1.7</version> <!-- lookup parent from repository -->
+        <version>2.1.9</version> <!-- lookup parent from repository -->
     </parent>
     <artifactId>accounts-association-api</artifactId>
     <version>unversioned</version>
