@@ -10,28 +10,21 @@
     </suppress>
     <suppress until="2025-06-01Z">
         <notes><![CDATA[
-   file name: http2-common-11.0.16.jar
+   file name: http2-common-11.0.24.jar
    ]]></notes>
-        <cve>CVE-2023-44487</cve>
-        <cve>CVE-2024-22201</cve>
-        <cve>CVE-2024-8184</cve>
-        <cve>CVE-2024-6762</cve>
         <cve>CVE-2024-6763</cve>
     </suppress>
     <suppress until="2025-06-01Z">
         <notes><![CDATA[
-   file name: http2-server-11.0.16.jar
+   file name: http2-server-11.0.24.jar
    ]]></notes>
-        <cve>CVE-2024-8184</cve>
-        <cve>CVE-2024-6762</cve>
         <cve>CVE-2024-6763</cve>
     </suppress>
     <suppress until="2025-06-01Z">
         <notes><![CDATA[
-   file name: jetty-webapp-11.0.16.jar
+   file name: jetty-webapp-11.0.19.jar
    ]]></notes>
         <cve>CVE-2024-8184</cve>
-        <cve>CVE-2024-6762</cve>
         <cve>CVE-2024-6763</cve>
     </suppress>
     <suppress until="2025-06-01Z">
@@ -42,11 +35,5 @@
         <cve>CVE-2023-34454</cve>
         <cve>CVE-2023-34453</cve>
         <cve>CVE-2023-43642</cve>
-    </suppress>
-    <suppress until="2025-06-01Z">
-        <notes><![CDATA[
-   file name: avro-1.11.3.jar
-   ]]></notes>
-        <cve>CVE-2024-47561</cve>
     </suppress>
 </suppressions>
