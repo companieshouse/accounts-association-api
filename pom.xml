@@ -29,7 +29,7 @@
         <commons-compress.version>1.27.1</commons-compress.version>
         <google-http-client.version>1.45.0</google-http-client.version>
         <api-helper-java.version>3.0.1</api-helper-java.version>
-        <email-producer-java.version>3.0.2</email-producer-java.version>
+        <email-producer-java.version>3.0.3</email-producer-java.version>
         <sonar-maven-plugin.version>4.0.0.4121</sonar-maven-plugin.version>
         <flapdoodle.version>4.16.1</flapdoodle.version>
     </properties>
