@@ -65,7 +65,6 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     public ResponseEntity<ResponseBodyPost> addAssociation(final String xRequestId, final String ericIdentity, final RequestBodyPost requestBody) {
         final var companyNumber = requestBody.getCompanyNumber();
 
-        LOG.infoContext( xRequestId, "Routing request to POST /associations.", null );
         LOG.infoContext( xRequestId, String.format( "Received request with user_id=%s, company_number=%s.", ericIdentity, companyNumber ),null );
 
         final var userDetails = Objects.requireNonNull(UserContext.getLoggedUser());
@@ -106,7 +105,6 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
     @Override
     public ResponseEntity<InvitationsList> fetchActiveInvitationsForUser( final String xRequestId, final String ericIdentity, final Integer pageIndex, final Integer itemsPerPage ) {
-        LOG.infoContext( xRequestId, "Routing request to GET /associations/invitations.", null );
         LOG.infoContext( xRequestId, String.format( "Received request with user_id=%s, itemsPerPage=%d, pageIndex=%d.", ericIdentity, itemsPerPage, pageIndex ),null );
 
         if (pageIndex < 0) {
@@ -130,7 +128,6 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
     @Override
     public ResponseEntity<AssociationsList> fetchAssociationsBy( final String xRequestId, final String ericIdentity, final List<String> status, final Integer pageIndex, final Integer itemsPerPage, final String companyNumber ) {
-        LOG.infoContext( xRequestId, "Routing request to GET /associations.", null );
         LOG.infoContext( xRequestId, String.format( "Received request with user_id=%s, status=%s, page_index=%d, items_per_page=%d, company_number=%s.", ericIdentity, String.join( ",", status ), pageIndex, itemsPerPage, companyNumber ),null );
 
         if ( pageIndex < 0 ) {
@@ -154,7 +151,6 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
     @Override
     public ResponseEntity<Association> getAssociationForId(final String xRequestId, final String id) {
-        LOG.infoContext( xRequestId, "Routing request to GET /associations/{id}.", null );
         LOG.infoContext( xRequestId, String.format( "Received request with id=%s.", id ),null );
 
         LOG.debugContext( xRequestId, String.format( "Attempting to retrieve association with id: %s", id ), null );
@@ -172,7 +168,6 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
     @Override
     public ResponseEntity<InvitationsList> getInvitationsForAssociation( final String xRequestId, final String associationId, final Integer pageIndex, final Integer itemsPerPage ) {
-        LOG.infoContext( xRequestId, "Routing request to GET /associations/{id}/invitations.", null );
         LOG.infoContext( xRequestId, String.format( "Received request with id=%s, page_index=%d, items_per_page=%d.", associationId, pageIndex, itemsPerPage ),null );
 
         if ( pageIndex < 0 ) {
@@ -206,7 +201,6 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         final var companyNumber = requestBody.getCompanyNumber();
         final var inviteeEmail = requestBody.getInviteeEmailId();
 
-        LOG.infoContext( xRequestId, "Routing request to POST /associations/invitations.", null );
         LOG.infoContext( xRequestId, String.format( "Received request with user_id=%s, company_number=%s, invitee_email_id=%s.", ericIdentity, companyNumber, inviteeEmail  ),null );
 
         if (Objects.isNull(inviteeEmail)) {
@@ -342,7 +336,6 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     public ResponseEntity<Void> updateAssociationStatusForId( final String xRequestId, final String associationId, final String requestingUserId, final RequestBodyPut requestBody ) {
         final var newStatus = requestBody.getStatus();
 
-        LOG.infoContext( xRequestId, "Routing request to PATCH /associations/{id}.", null );
         LOG.infoContext( xRequestId, String.format( "Received request with id=%s, user_id=%s, status=%s.", associationId, requestingUserId, newStatus.getValue() ),null );
 
         final var requestingUserDetails = Objects.requireNonNull( UserContext.getLoggedUser() );
