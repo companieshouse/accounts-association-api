@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.REMOVED;
@@ -39,9 +40,9 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
 
     private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
-    private static final String PAGE_INDEX_WAS_LESS_THEN_0 = "pageIndex was less then 0";
+    private static final String PAGE_INDEX_WAS_LESS_THAN_0 = "pageIndex was less than 0";
     private static final String PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN = "Please check the request and try again";
-    private static final String ITEMS_PER_PAGE_WAS_LESS_THEN_0 = "itemsPerPage was less then 0";
+    private static final String ITEMS_PER_PAGE_WAS_LESS_THAN_OR_EQUAL_TO_0 = "itemsPerPage was less than or equal to 0";
 
 
     private final UsersService usersService;
@@ -64,12 +65,15 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     public ResponseEntity<ResponseBodyPost> addAssociation(final String xRequestId, final String ericIdentity, final RequestBodyPost requestBody) {
         final var companyNumber = requestBody.getCompanyNumber();
 
-        LOG.debugContext(xRequestId, String.format("Attempting to create association for company_number %s and user_id %s", companyNumber, ericIdentity), null);
+        LOG.infoContext( xRequestId, "Routing request to POST /associations.", null );
+        LOG.infoContext( xRequestId, String.format( "Received request with user_id=%s, company_number=%s.", ericIdentity, companyNumber ),null );
 
         final var userDetails = Objects.requireNonNull(UserContext.getLoggedUser());
         final var displayName = Optional.ofNullable(userDetails.getDisplayName()).orElse(userDetails.getEmail());
 
         final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
+
+        LOG.debugContext( xRequestId, String.format( "Attempting to fetch association between user %s and company %s", ericIdentity, companyNumber ), null );
         var existingAssociation = associationsService.fetchAssociationsDaoForUserStatusAndCompany(userDetails, List.of(AWAITING_APPROVAL.getValue(), CONFIRMED.getValue(), REMOVED.getValue()),0,15,companyNumber);
 
         AssociationDao association;
@@ -77,21 +81,23 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         if(!existingAssociation.isEmpty()){
             association = existingAssociation.get().iterator().next();
             if(association.getStatus().equals(CONFIRMED.getValue())){
-                LOG.error(String.format("%s: Association between user_id %s and company_number %s already exists.", xRequestId, ericIdentity, companyNumber));
+                LOG.errorContext( xRequestId, new Exception( String.format( "Association between user_id %s and company_number %s already exists.", ericIdentity, companyNumber ) ),null );
                 throw new BadRequestRuntimeException("Association already exists.");
             }
             association.setStatus(Association.StatusEnum.CONFIRMED.getValue());
             association.setUserId(userDetails.getUserId());
             association.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
             association.setUserEmail(null);
+            LOG.debugContext( xRequestId, String.format( "Attempting to update association %s", association.getId() ), null );
             association = associationsService.upsertAssociation(association);
-
+            LOG.infoContext( xRequestId, String.format("Successfully updated association for company_number %s and user_id %s.", companyNumber, ericIdentity ), null );
         } else{
+            LOG.debugContext( xRequestId, String.format( "Attempting to create association for company_number %s and user_id %s.", companyNumber, ericIdentity ), null );
             association = associationsService.createAssociation(companyNumber, ericIdentity, null, ApprovalRouteEnum.AUTH_CODE, null);
+            LOG.infoContext( xRequestId, String.format("Successfully created association for company_number %s and user_id %s.", companyNumber, ericIdentity ), null );
         }
 
-        LOG.debugContext(xRequestId, String.format("Successfully created/updated association for company_number %s and user_id %s in user_company_associations.", companyNumber, ericIdentity), null);
-
+        LOG.debugContext( xRequestId, String.format( "Attempting to create requests for users associated with company %s", companyNumber ), null );
         final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
         emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( xRequestId, companyDetails, displayName, associatedUsers );
 
@@ -100,78 +106,97 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
     @Override
     public ResponseEntity<InvitationsList> fetchActiveInvitationsForUser( final String xRequestId, final String ericIdentity, final Integer pageIndex, final Integer itemsPerPage ) {
-        LOG.debugContext( xRequestId, String.format( "Attempting to fetch active invitations for user %s", ericIdentity ), null );
+        LOG.infoContext( xRequestId, "Routing request to GET /associations/invitations.", null );
+        LOG.infoContext( xRequestId, String.format( "Received request with user_id=%s, itemsPerPage=%d, pageIndex=%d.", ericIdentity, itemsPerPage, pageIndex ),null );
 
         if (pageIndex < 0) {
-            LOG.error(PAGE_INDEX_WAS_LESS_THEN_0);
+            LOG.errorContext( xRequestId, new Exception(PAGE_INDEX_WAS_LESS_THAN_0), null );
             throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
 
         if (itemsPerPage <= 0) {
-            LOG.error(ITEMS_PER_PAGE_WAS_LESS_THEN_0);
+            LOG.errorContext( xRequestId, new Exception(ITEMS_PER_PAGE_WAS_LESS_THAN_OR_EQUAL_TO_0), null );
             throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
 
         final var user = UserContext.getLoggedUser();
 
+        LOG.debugContext( xRequestId, String.format( "Attempting to retrieve active invitations for user %s", ericIdentity ), null );
         final var invitations = associationsService.fetchActiveInvitations( user, pageIndex, itemsPerPage );
-        LOG.debugContext( xRequestId, String.format( "Successfully retrieved active invitations for user %s", ericIdentity ), null );
+        LOG.infoContext( xRequestId, String.format( "Successfully retrieved active invitations for user %s", ericIdentity ), null );
 
        return new ResponseEntity<>( invitations, HttpStatus.OK );
     }
 
     @Override
     public ResponseEntity<AssociationsList> fetchAssociationsBy( final String xRequestId, final String ericIdentity, final List<String> status, final Integer pageIndex, final Integer itemsPerPage, final String companyNumber ) {
-        LOG.debugContext( xRequestId, "Trying to fetch associations data for user in session :".concat( ericIdentity ), null );
+        LOG.infoContext( xRequestId, "Routing request to GET /associations.", null );
+        LOG.infoContext( xRequestId, String.format( "Received request with user_id=%s, status=%s, page_index=%d, items_per_page=%d, company_number=%s.", ericIdentity, String.join( ",", status ), pageIndex, itemsPerPage, companyNumber ),null );
 
         if ( pageIndex < 0 ) {
-            LOG.error( PAGE_INDEX_WAS_LESS_THEN_0 );
+            LOG.errorContext( xRequestId, new Exception( PAGE_INDEX_WAS_LESS_THAN_0 ), null );
             throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN );
         }
 
         if ( itemsPerPage <= 0 ) {
-            LOG.error( ITEMS_PER_PAGE_WAS_LESS_THEN_0 );
+            LOG.errorContext( xRequestId, new Exception( ITEMS_PER_PAGE_WAS_LESS_THAN_OR_EQUAL_TO_0 ), null );
             throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN );
         }
 
         final var user = UserContext.getLoggedUser();
+
+        LOG.debugContext( xRequestId, "Attempting to fetch associations", null );
         final var associationsList = associationsService.fetchAssociationsForUserStatusAndCompany( user, status, pageIndex, itemsPerPage, companyNumber );
+        LOG.infoContext( xRequestId, String.format( "Successfully fetched %d associations", associationsList.getItems().size() ), null );
 
         return new ResponseEntity<>( associationsList, HttpStatus.OK );
     }
 
     @Override
     public ResponseEntity<Association> getAssociationForId(final String xRequestId, final String id) {
-        LOG.debugContext(xRequestId, String.format("Attempting to get the Association details : %s", id), null);
+        LOG.infoContext( xRequestId, "Routing request to GET /associations/{id}.", null );
+        LOG.infoContext( xRequestId, String.format( "Received request with id=%s.", id ),null );
+
+        LOG.debugContext( xRequestId, String.format( "Attempting to retrieve association with id: %s", id ), null );
         final var association = associationsService.findAssociationById(id);
         if (association.isEmpty()) {
-            var errorMessage = String.format("Cannot find Association for the Id: %s", id);
-            LOG.error(errorMessage);
+            var errorMessage = String.format("Cannot find Association for the id: %s", id);
+            LOG.errorContext( xRequestId, new Exception( errorMessage ), null );
             throw new NotFoundRuntimeException(StaticPropertyUtil.APPLICATION_NAMESPACE, errorMessage);
         }
+
+        LOG.infoContext( xRequestId, String.format( "Successfully fetched association %s", id ), null );
+
         return new ResponseEntity<>(association.get(), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<InvitationsList> getInvitationsForAssociation( final String xRequestId, final String associationId, final Integer pageIndex, final Integer itemsPerPage ) {
+        LOG.infoContext( xRequestId, "Routing request to GET /associations/{id}/invitations.", null );
+        LOG.infoContext( xRequestId, String.format( "Received request with id=%s, page_index=%d, items_per_page=%d.", associationId, pageIndex, itemsPerPage ),null );
+
         if ( pageIndex < 0 ) {
-            LOG.error( PAGE_INDEX_WAS_LESS_THEN_0 );
+            LOG.errorContext( xRequestId, new Exception( PAGE_INDEX_WAS_LESS_THAN_0 ), null );
             throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN );
         }
 
         if ( itemsPerPage <= 0 ) {
-            LOG.error( ITEMS_PER_PAGE_WAS_LESS_THEN_0 );
+            LOG.errorContext( xRequestId, new Exception( ITEMS_PER_PAGE_WAS_LESS_THAN_OR_EQUAL_TO_0 ), null );
             throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN );
         }
 
+        LOG.debugContext( xRequestId, String.format( "Attempting to fetch association %s", associationId ), null );
         final var associationDaoOptional = associationsService.findAssociationDaoById( associationId );
         if ( associationDaoOptional.isEmpty() ) {
-            LOG.error( String.format( "%s: Could not find association %s in user_company_associations.", xRequestId, associationId ) );
+            LOG.errorContext( xRequestId, new Exception( String.format( "Could not find association %s.", associationId ) ), null );
             throw new NotFoundRuntimeException( "accounts-association-api", String.format( "Association %s was not found.", associationId ) );
         }
 
         final var associationDao = associationDaoOptional.get();
+        LOG.debugContext( xRequestId, String.format( "Attempting to fetch invitations for association %s", associationId ), null );
         final var invitations = associationsService.fetchInvitations( associationDao, pageIndex, itemsPerPage );
+
+        LOG.infoContext( xRequestId, String.format( "Successfully fetched invitations for association %s", associationId ), null );
 
         return new ResponseEntity<>( invitations, HttpStatus.OK );
     }
@@ -181,45 +206,48 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         final var companyNumber = requestBody.getCompanyNumber();
         final var inviteeEmail = requestBody.getInviteeEmailId();
 
-        LOG.infoContext(xRequestId, String.format("%s is attempting to invite a new user to company %s.", ericIdentity, companyNumber), null);
+        LOG.infoContext( xRequestId, "Routing request to POST /associations/invitations.", null );
+        LOG.infoContext( xRequestId, String.format( "Received request with user_id=%s, company_number=%s, invitee_email_id=%s.", ericIdentity, companyNumber, inviteeEmail  ),null );
+
         if (Objects.isNull(inviteeEmail)) {
-            LOG.error(String.format("%s: inviteeEmail is null.", xRequestId));
+            LOG.errorContext( xRequestId, new Exception( "invitee_email_id is null." ), null );
             throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
 
         final var inviterUserDetails= Objects.requireNonNull(UserContext.getLoggedUser());
         CompanyDetails companyDetails;
         try {
-            LOG.debugContext( xRequestId, String.format( "Attempting to fetch %s from company-profile-api.", companyNumber ), null );
             companyDetails= companyService.fetchCompanyProfile( companyNumber );
         } catch( NotFoundRuntimeException notFoundRuntimeException ){
-            LOG.error( notFoundRuntimeException.getMessage() );
+            LOG.errorContext( xRequestId, new Exception( notFoundRuntimeException.getMessage() ), null );
             throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
         if (!associationsService.confirmedAssociationExists(companyNumber,ericIdentity)) {
-            LOG.error(String.format("%s: requesting user %s does not have access to invite", xRequestId, ericIdentity));
+            LOG.errorContext( xRequestId, new Exception( String.format( "Requesting user %s does not have a confirmed association at company %s", ericIdentity, companyNumber ) ), null );
             throw new BadRequestRuntimeException("requesting user does not have access");
         }
 
         final var inviterDisplayName = Optional.ofNullable( inviterUserDetails.getDisplayName() ).orElse( inviterUserDetails.getEmail() );
+        LOG.debugContext( xRequestId, String.format( "Attempting to create requests for users associated with company %s", companyNumber ), null );
         final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
 
-        LOG.debugContext( xRequestId, String.format( "Attempting to search for %s in accounts-user-api.", inviteeEmail ), null );
         final var inviteeUserDetails = usersService.searchUserDetails( List.of( inviteeEmail ) );
 
         final var inviteeUserFound = Objects.nonNull(inviteeUserDetails) && !inviteeUserDetails.isEmpty();
 
+        LOG.debugContext( xRequestId, String.format( "Attempting to fetch association for user %s and company %s", inviteeEmail, companyNumber ), null );
         final var associationWithUserEmail = associationsService.fetchAssociationForCompanyNumberAndUserEmail(companyNumber, inviteeEmail);
         AssociationDao association;
 
         if (associationWithUserEmail.isPresent()) {
-            LOG.debugContext(xRequestId, String.format("Association for company %s and user email %s was found.", companyNumber, inviteeEmail), null);
             association = associationWithUserEmail.get();
             if (inviteeUserFound) {
                 association.setUserEmail(null);
                 association.setUserId(inviteeUserDetails.getFirst().getUserId());
             }
+            LOG.debugContext( xRequestId, String.format( "Attempting to create new invitation. Association's id: %s", association.getId() ), null );
             final var invitationAssociation = associationsService.sendNewInvitation(ericIdentity, association);
+            LOG.infoContext( xRequestId, String.format( "Created new invitation. Association's id: %s", invitationAssociation.getId() ), null );
             emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, invitationAssociation.getApprovalExpiryAt().toString(), inviteeEmail );
             emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeEmail, associatedUsers );
             return new ResponseEntity<>( new ResponseBodyPost().associationId( invitationAssociation.getId() ), HttpStatus.CREATED );
@@ -229,29 +257,32 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         if (inviteeUserFound) {
             final var userDetails = inviteeUserDetails.getFirst();
             final var inviteeUserId = userDetails.getUserId();
-            LOG.debugContext( xRequestId, String.format( "Attempting to fetch association for company %s and user id %s", companyNumber, inviteeUserId ), null );
+            LOG.debugContext( xRequestId, String.format( "Attempting to fetch association for user %s and company %s", inviteeUserId, companyNumber ), null );
             Optional<AssociationDao> associationWithUserID = associationsService.fetchAssociationForCompanyNumberAndUserId( companyNumber, inviteeUserId );
             final var inviteeDisplayName = Optional.ofNullable( userDetails.getDisplayName() ).orElse( userDetails.getEmail() );
 
             if(associationWithUserID.isEmpty()){
-                LOG.infoContext( xRequestId, String.format( "Creating association and invitation for company %s and user id %s", companyNumber, inviteeUserDetails.getFirst().getUserId() ), null );
-
+                LOG.debugContext( xRequestId, String.format( "Attempting to create new invitation. Association's for user %s and company", inviteeUserId, companyNumber ), null );
                 association = associationsService.createAssociation(companyNumber,inviteeUserId,null,ApprovalRouteEnum.INVITATION,ericIdentity);
+                LOG.infoContext( xRequestId, String.format( "Created new invitation. Association's id: %s", association.getId() ), null );
                 emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, association.getApprovalExpiryAt().toString(), inviteeEmail );
                 emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeDisplayName, associatedUsers );
                 return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
             } else if(associationWithUserID.get().getStatus().equals("confirmed")) {
+                LOG.errorContext( xRequestId, new Exception( String.format( "%s already has a confirmed association at company %s", inviteeEmail, companyNumber ) ), null );
                 throw new BadRequestRuntimeException(String.format("There is an existing association with Confirmed status for the user %s", inviteeEmail));
             }
-            LOG.infoContext(xRequestId, String.format("Association for company %s and user id %s found, association id: %s with status %s", companyNumber, inviteeUserDetails.getFirst().getUserId(), associationWithUserID.get().getId(), associationWithUserID.get().getStatus()), null);
+            LOG.debugContext( xRequestId, String.format( "Attempting to create new invitation. Association's id: %s", associationWithUserID.get().getId() ), null );
             association = associationsService.sendNewInvitation(ericIdentity, associationWithUserID.get());
+            LOG.infoContext( xRequestId, String.format( "Created new invitation. Association's id: %s", association.getId() ), null );
             emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, association.getApprovalExpiryAt().toString(), inviteeEmail );
             emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeDisplayName, associatedUsers );
             return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
-
         }
         //if association with email not found, user not found
+        LOG.debugContext( xRequestId, String.format( "Attempting to create new invitation for user %s and company %s", inviteeEmail, companyNumber ), null );
         association = associationsService.createAssociation(companyNumber, null ,inviteeEmail,ApprovalRouteEnum.INVITATION,ericIdentity);
+        LOG.infoContext( xRequestId, String.format( "Created new invitation. Association's id: %s", association.getId() ), null );
         emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, association.getApprovalExpiryAt().toString(), inviteeEmail );
         emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeEmail, associatedUsers );
 
@@ -260,7 +291,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
     private void throwBadRequestWhenUserIsNotPermittedToPerformAction( final String xRequestId, final String requestingUserId, final AssociationDao associationDao, final RequestBodyPut.StatusEnum newStatus, final boolean requestingAndTargetUserMatches ){
         if ( !requestingAndTargetUserMatches && ( newStatus.equals( CONFIRMED ) || !associationsService.confirmedAssociationExists( associationDao.getCompanyNumber(), requestingUserId ) ) ) {
-            LOG.error(String.format( "%s: requesting %s  user does not have access to perform the action", xRequestId, requestingUserId) );
+            LOG.errorContext( xRequestId, new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", requestingUserId, associationDao.getCompanyNumber() ) ), null );
             throw new BadRequestRuntimeException( "requesting user does not have access to perform the action" );
         }
     }
@@ -274,18 +305,18 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                 Optional.ofNullable( usersService.searchUserDetails( List.of( targetUserEmail ) ) )
                         .flatMap( list -> list.stream().findFirst() )
                         .map( user -> {
-                            LOG.debugContext( xRequestId, "Successfully fetched data from accounts-user-api for user.", null );
                             update.set( "user_email", null ).set( "user_id", user.getUserId() );
                             return Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() );
                         } )
                         .orElseGet( () -> {
                             if ( newStatus.equals( CONFIRMED ) ) {
-                                LOG.error( String.format( "%s: Could not find user %s, via the accounts-user-api", xRequestId, targetUserEmail ) );
+                                LOG.errorContext( xRequestId, new Exception( String.format( "Could not find user %s, so cannot change status to confirmed.", targetUserEmail ) ), null );
                                 throw new BadRequestRuntimeException( String.format( "Could not find data for user %s", targetUserEmail ) );
                             }
                             return targetUserEmail;
                         } );
 
+        LOG.debugContext( xRequestId, String.format( "Attempting to update association with id: %s", associationDao.getId() ), null );
         associationsService.updateAssociation( associationDao.getId(), update );
 
         return targetUserDisplayValue;
@@ -301,6 +332,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             targetUserDisplayValue = Optional.ofNullable( tempUser.getDisplayName() ).orElse( tempUser.getEmail() );
         }
 
+        LOG.debugContext( getXRequestId(), String.format( "Attempting to update association with id: %s", associationDao.getId() ), null );
         associationsService.updateAssociation(associationDao.getId(), update);
 
         return targetUserDisplayValue;
@@ -310,15 +342,17 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     public ResponseEntity<Void> updateAssociationStatusForId( final String xRequestId, final String associationId, final String requestingUserId, final RequestBodyPut requestBody ) {
         final var newStatus = requestBody.getStatus();
 
-        LOG.infoContext( xRequestId, String.format( "Attempting to update association status for association %s to %s.", associationId, newStatus.getValue() ), null );
+        LOG.infoContext( xRequestId, "Routing request to PATCH /associations/{id}.", null );
+        LOG.infoContext( xRequestId, String.format( "Received request with id=%s, user_id=%s, status=%s.", associationId, requestingUserId, newStatus.getValue() ),null );
 
         final var requestingUserDetails = Objects.requireNonNull( UserContext.getLoggedUser() );
         final var requestingUserDisplayValue = Optional.ofNullable( requestingUserDetails.getDisplayName() ).orElse( requestingUserDetails.getEmail() );
 
+        LOG.debugContext( xRequestId, String.format( "Attempting to fetch association with id %s", associationId ), null );
         final var associationDao =
         associationsService.findAssociationDaoById( associationId )
                 .orElseThrow( () -> {
-                    LOG.error( String.format( "%s: Could not find association %s in user_company_associations.", xRequestId, associationId ) );
+                    LOG.errorContext( xRequestId, new Exception( String.format( "Could not find association %s.", associationId ) ), null );
                     return new NotFoundRuntimeException( "accounts-association-api", String.format( "Association %s was not found.", associationId ) );
                 } );
         
@@ -335,6 +369,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         } else {
             targetUserDisplayValue = updateAssociationWithUserId( newStatus, associationDao, requestingUserDisplayValue, requestingAndTargetUserMatches );
         }
+        LOG.infoContext( xRequestId, String.format( "Updated association %s", associationDao.getId() ), null );
 
         sendEmailNotificationForStatusUpdate( xRequestId, requestingUserDisplayValue, targetUserDisplayValue, requestingAndTargetUserMatches, newStatus, associationDao.getStatus(), associationDao );
 
@@ -346,6 +381,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         final List<InvitationDao> invitations = associationDao.getInvitations();
 
         final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
+        LOG.debugContext( xRequestId, String.format( "Attempting to create requests for users associated with company %s", companyNumber ), null );
         final var requestsToFetchAssociatedUsers = emailService.createRequestsToFetchAssociatedUsers(companyNumber);
 
         final var authorisedUserRemoved = oldStatus.equals(CONFIRMED.getValue()) && newStatus.equals(REMOVED);

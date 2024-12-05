@@ -27,25 +27,26 @@ public class AssociationsListForCompanyController implements AssociationsListFor
 
     @Override
     public ResponseEntity<AssociationsList> getAssociationsForCompany( final String companyNumber, final String xRequestId, final Boolean includeRemoved, final Integer pageIndex, final Integer itemsPerPage) {
-
-        LOG.debugContext(xRequestId, String.format( "Attempting to fetch users that are associated with company %s. includeRemoved=%b, itemsPerPage=%d, and pageIndex=%d.", companyNumber, includeRemoved, itemsPerPage, pageIndex ),null );
+        LOG.infoContext( xRequestId, "Routing request to GET /associations/companies/{company_number}.", null );
+        LOG.infoContext( xRequestId, String.format( "Received request with company_number=%s, includeRemoved=%b, itemsPerPage=%d, pageIndex=%d.", companyNumber, includeRemoved, itemsPerPage, pageIndex ),null );
 
         if ( pageIndex < 0 ){
-            LOG.error("pageIndex was less then 0" );
+            LOG.errorContext( xRequestId, new Exception( "pageIndex was less than 0" ), null );
             throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
 
         if ( itemsPerPage <= 0 ){
-            LOG.error( "itemsPerPage was less then 0" );
+            LOG.errorContext( xRequestId, new Exception( "itemsPerPage was less than or equal to 0" ), null);
             throw new BadRequestRuntimeException( "Please check the request and try again" );
         }
 
         final var companyProfile = companyService.fetchCompanyProfile( companyNumber );
 
+        LOG.debugContext( xRequestId, "Attempting to fetch associated users", null );
         final var associationsList = associationsService.fetchAssociatedUsers( companyNumber, companyProfile, includeRemoved, itemsPerPage, pageIndex );
         final var associationsListIsEmpty = associationsList.getItems().isEmpty();
 
-        LOG.debugContext(xRequestId, associationsListIsEmpty ? "Could not find any associations" : "Successfully fetched associations",null) ;
+        LOG.infoContext( xRequestId, associationsListIsEmpty ? "Could not find any associations" : String.format( "Successfully fetched %d associations", associationsList.getItems().size() ),null );
 
         return new ResponseEntity<>( associationsList, HttpStatus.OK );
     }

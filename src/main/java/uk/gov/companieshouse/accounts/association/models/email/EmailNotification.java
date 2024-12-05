@@ -34,6 +34,12 @@ public class EmailNotification {
         return message;
     }
 
+    public String toMessageSendingFailureLoggingMessage(){
+        var message = String.format( "Failed to send %s notification to %s at %s from %s, regarding company %s.", messageType, sentTo, sentTime.toString(), sentFrom, companyNumber );
+        message += Objects.isNull( invitationExpiryTimestamp ) ? "" : String.format( " Invitation would have expired at %s.", invitationExpiryTimestamp );
+        return message;
+    }
+
     @Override
     public String toString() {
         return "EmailNotification{" +
