@@ -131,7 +131,7 @@ class UserCompanyAssociationsTest {
     @Test
     void fetchAssociationsByTestShouldReturnDataWhenAssociationsFoundForEricIdentity() throws Exception {
         final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
-        final var associationsList = new AssociationsList().itemsPerPage(15).pageNumber(0).totalPages(1).totalResults(1);
+        final var associationsList = new AssociationsList().itemsPerPage(15).pageNumber(0).totalPages(1).totalResults(1).items(List.of());
 
         mockers.mockUsersServiceFetchUserDetails( "111" );
         when(associationsService.fetchAssociationsForUserStatusAndCompany(user, List.of( StatusEnum.CONFIRMED.getValue() ), 0, 15, "111111")).thenReturn(associationsList);
@@ -228,7 +228,7 @@ class UserCompanyAssociationsTest {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "9999" );
-        Mockito.doReturn(new AssociationsList().totalResults(0)).when(associationsService).fetchAssociationsForUserStatusAndCompany(user, List.of("$$$$"), 0, 15, null);
+        Mockito.doReturn(new AssociationsList().totalResults(0).items(List.of())).when(associationsService).fetchAssociationsForUserStatusAndCompany(user, List.of("$$$$"), 0, 15, null);
 
         final var response = mockMvc.perform(get("/associations?status=$$$$")
                         .header("X-Request-Id", "theId123")
