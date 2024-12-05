@@ -27,7 +27,6 @@ public class AssociationsListForCompanyController implements AssociationsListFor
 
     @Override
     public ResponseEntity<AssociationsList> getAssociationsForCompany( final String companyNumber, final String xRequestId, final Boolean includeRemoved, final Integer pageIndex, final Integer itemsPerPage) {
-        LOG.infoContext( xRequestId, "Routing request to GET /associations/companies/{company_number}.", null );
         LOG.infoContext( xRequestId, String.format( "Received request with company_number=%s, includeRemoved=%b, itemsPerPage=%d, pageIndex=%d.", companyNumber, includeRemoved, itemsPerPage, pageIndex ),null );
 
         if ( pageIndex < 0 ){
