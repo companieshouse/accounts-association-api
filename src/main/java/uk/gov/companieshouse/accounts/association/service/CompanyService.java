@@ -1,5 +1,7 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -32,23 +34,24 @@ public class CompanyService {
 
     public Supplier<CompanyDetails> createFetchCompanyProfileRequest( final String companyNumber ) {
         final var request = companyProfileEndpoint.createFetchCompanyProfileRequest( companyNumber );
+        final var xRequestId = getXRequestId();
         return () -> {
             try {
-                LOG.debug( String.format( "Attempting to fetch company profile for company %s" , companyNumber ) );
+                LOG.debugContext( xRequestId, String.format( "Sending request to company-profile-api: GET /company/{company_number}/company-detail. Attempting to retrieve company profile for company: %s" , companyNumber ), null );
                 return request.execute().getData();
             } catch ( ApiErrorResponseException exception ) {
                 if ( exception.getStatusCode() == 404 ) {
-                    LOG.error( String.format( "Could not find company profile for company %s", companyNumber ) );
+                    LOG.errorContext( xRequestId, new Exception( String.format( "Could not find company profile for company %s", companyNumber ) ), null );
                     throw new NotFoundRuntimeException( "accounts-association-api", "Failed to find company" );
                 } else {
-                    LOG.error( String.format( "Failed to retrieve company profile for company %s", companyNumber ) );
+                    LOG.errorContext( xRequestId, new Exception( String.format( "Failed to retrieve company profile for company %s" , companyNumber ) ), null );
                     throw new InternalServerErrorRuntimeException( "Failed to retrieve company profile" );
                 }
             } catch ( URIValidationException exception ) {
-                LOG.error( String.format( "Failed to fetch company profile for company %s, because uri was incorrectly formatted", companyNumber ) );
+                LOG.errorContext( xRequestId, new Exception( String.format( "Failed to fetch company profile for company %s, because uri was incorrectly formatted", companyNumber ) ), null );
                 throw new InternalServerErrorRuntimeException( "Invalid uri for company-profile-api service" );
             } catch ( Exception exception ) {
-                LOG.error( String.format("Failed to retrieve company profile for company %s", companyNumber) );
+                LOG.errorContext( xRequestId, new Exception( String.format("Failed to retrieve company profile for company %s", companyNumber) ), null );
                 throw new InternalServerErrorRuntimeException( "Failed to retrieve company profile" );
             }
         };

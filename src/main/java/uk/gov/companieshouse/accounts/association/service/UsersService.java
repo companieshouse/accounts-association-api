@@ -1,5 +1,7 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,23 +36,24 @@ public class UsersService {
 
     public Supplier<User> createFetchUserDetailsRequest( final String userId ) {
         PrivateAccountsUserUserGet request = accountsUserEndpoint.createGetUserDetailsRequest(userId);
+        final var xRequestId = getXRequestId();
         return () -> {
             try {
-                LOG.debug( String.format( "Attempting to fetch user details for user %s", userId ) );
+                LOG.debugContext( xRequestId, String.format( "Sending request to accounts-user-api: GET /users/{user_id}. Attempting to fetch user details for user %s", userId ), null );
                 return request.execute().getData();
             } catch( ApiErrorResponseException exception ){
                 if( exception.getStatusCode() == 404 ) {
-                    LOG.error( String.format( "Could not find user details for user %s", userId ) );
+                    LOG.errorContext( xRequestId, new Exception( String.format( "Could not find user details for user with id: %s", userId ) ), null );
                     throw new NotFoundRuntimeException( "accounts-association-api", "Failed to find user" );
                 } else {
-                    LOG.error( String.format( "Failed to retrieve user details for user %s", userId ) );
+                    LOG.errorContext( xRequestId, new Exception( String.format( "Failed to retrieve user details for user with id: %s", userId ) ), null );
                     throw new InternalServerErrorRuntimeException("Failed to retrieve user details");
                 }
             } catch( URIValidationException exception ){
-                LOG.error( String.format( "Failed to fetch user details for user %s, because uri was incorrectly formatted", userId ) );
+                LOG.errorContext( xRequestId, new Exception( String.format( "Failed to fetch user details for user %s, because uri was incorrectly formatted", userId ) ), null );
                 throw new InternalServerErrorRuntimeException( "Invalid uri for accounts-user-api service" );
             } catch ( Exception exception ){
-                LOG.error( String.format( "Failed to retrieve user details for user %s", userId ) );
+                LOG.errorContext( xRequestId, new Exception( String.format( "Failed to retrieve user details for user with id: %s", userId ) ), null );
                 throw new InternalServerErrorRuntimeException("Failed to retrieve user details");
             }
         };
@@ -64,14 +67,14 @@ public class UsersService {
     public UsersList searchUserDetails( final List<String> emails ){
 
         try {
-            LOG.debug( String.format( "Attempting to search for user details for: %s", String.join(", ", emails) ) );
+            LOG.debugContext( getXRequestId(), String.format( "Sending request to accounts-user-api: GET /users/search. Attempting to retrieve users: %s", String.join( ", ", emails ) ), null );
             return accountsUserEndpoint.searchUserDetails(emails)
                     .getData();
         } catch( URIValidationException exception ){
-            LOG.error( String.format( "Search failed to fetch user details for users (%s), because uri was incorrectly formatted", String.join(", ", emails) ) );
+            LOG.errorContext( getXRequestId(), new Exception( String.format( "Search failed to fetch user details for users (%s), because uri was incorrectly formatted", String.join(", ", emails) ) ), null );
             throw new InternalServerErrorRuntimeException( "Invalid uri for accounts-user-api service" );
         } catch ( Exception exception ){
-            LOG.error( String.format( "Search failed to retrieve user details for: %s", String.join(", ", emails) ) );
+            LOG.errorContext( getXRequestId(), new Exception( String.format( "Search failed to retrieve user details for: %s", String.join(", ", emails) ) ), null );
             throw new InternalServerErrorRuntimeException("Search failed to retrieve user details");
         }
 
