@@ -65,14 +65,14 @@ public class EmailService {
                     .setCompanyName( companyDetails.getCompanyName() )
                     .build();
 
-            emailProducer.sendEmail( emailData, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() );
-
-            LOG.infoContext(xRequestId,
-                    new EmailNotification(
-                            AUTH_CODE_CONFIRMATION_MESSAGE_TYPE,
-                            StaticPropertyUtil.APPLICATION_NAMESPACE,
-                            user.getEmail(),
-                            companyDetails.getCompanyNumber()).toMessage(), null);
+            final var logMessageSupplier = new EmailNotification(AUTH_CODE_CONFIRMATION_MESSAGE_TYPE, StaticPropertyUtil.APPLICATION_NAMESPACE, user.getEmail(), companyDetails.getCompanyNumber());
+            try {
+                emailProducer.sendEmail( emailData, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() );
+                LOG.infoContext( xRequestId, logMessageSupplier.toMessage(), null );
+            } catch ( Exception exception ){
+                LOG.errorContext( xRequestId, new Exception( logMessageSupplier.toMessageSendingFailureLoggingMessage() ), null );
+                throw exception;
+            }
         });
     }
 
@@ -88,13 +88,14 @@ public class EmailService {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            emailProducer.sendEmail( emailData, MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() );
-            LOG.infoContext(xRequestId,
-                    new EmailNotification(
-                            MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE,
-                            StaticPropertyUtil.APPLICATION_NAMESPACE,
-                            user.getEmail(),
-                            companyDetails.getCompanyNumber()).toMessage(), null);
+            final var logMessageSupplier = new EmailNotification( MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE, StaticPropertyUtil.APPLICATION_NAMESPACE, user.getEmail(), companyDetails.getCompanyNumber() );
+            try {
+                emailProducer.sendEmail( emailData, MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() );
+                LOG.infoContext( xRequestId, logMessageSupplier.toMessage(), null );
+            } catch ( Exception exception ){
+                LOG.errorContext( xRequestId, new Exception( logMessageSupplier.toMessageSendingFailureLoggingMessage() ), null );
+                throw exception;
+            }
         });
     }
 
@@ -108,13 +109,15 @@ public class EmailService {
                 .setRecipientEmail( user.getEmail() )
                 .build();
 
-        emailProducer.sendEmail( emailData, MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() );
-        LOG.infoContext(xRequestId,
-                new EmailNotification(
-                        MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE,
-                        removedByDisplayName,
-                        user.getEmail(),
-                        companyDetails.getCompanyNumber()).toMessage(), null);
+
+        final var logMessageSupplier = new EmailNotification( MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE, removedByDisplayName, user.getEmail(), companyDetails.getCompanyNumber() );
+        try {
+            emailProducer.sendEmail( emailData, MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() );
+            LOG.infoContext( xRequestId, logMessageSupplier.toMessage(), null );
+        } catch ( Exception exception ){
+            LOG.errorContext( xRequestId, new Exception( logMessageSupplier.toMessageSendingFailureLoggingMessage() ), null );
+            throw exception;
+        }
     }
 
     @Async
@@ -129,13 +132,14 @@ public class EmailService {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            emailProducer.sendEmail( emailData, MessageType.INVITATION_CANCELLED_MESSAGE_TYPE.getValue() );
-            LOG.infoContext(xRequestId, new EmailNotification(
-                    MessageType.INVITATION_CANCELLED_MESSAGE_TYPE,
-                    StaticPropertyUtil.APPLICATION_NAMESPACE,
-                    user.getEmail(),
-                    companyDetails.getCompanyNumber()).toMessage(), null);
-
+            final var loggingMessageSupplier = new EmailNotification( MessageType.INVITATION_CANCELLED_MESSAGE_TYPE, StaticPropertyUtil.APPLICATION_NAMESPACE, user.getEmail(), companyDetails.getCompanyNumber() );
+            try {
+                emailProducer.sendEmail( emailData, MessageType.INVITATION_CANCELLED_MESSAGE_TYPE.getValue() );
+                LOG.infoContext( xRequestId, loggingMessageSupplier.toMessage(), null );
+            } catch ( Exception exception ){
+                LOG.errorContext( xRequestId, new Exception( loggingMessageSupplier.toMessageSendingFailureLoggingMessage() ), null );
+                throw exception;
+            }
         });
     }
 
@@ -151,14 +155,14 @@ public class EmailService {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            emailProducer.sendEmail( emailData, MessageType.INVITATION_MESSAGE_TYPE.getValue() );
-            LOG.infoContext(xRequestId,
-                    new EmailNotification(
-                            MessageType.INVITATION_MESSAGE_TYPE,
-                            StaticPropertyUtil.APPLICATION_NAMESPACE,
-                            user.getEmail(),
-                            companyDetails.getCompanyNumber()).toMessage(), null);
-
+            final var loggingMessageSupplier = new EmailNotification( MessageType.INVITATION_MESSAGE_TYPE, StaticPropertyUtil.APPLICATION_NAMESPACE, user.getEmail(), companyDetails.getCompanyNumber() );
+            try {
+                emailProducer.sendEmail( emailData, MessageType.INVITATION_MESSAGE_TYPE.getValue() );
+                LOG.infoContext( xRequestId, loggingMessageSupplier.toMessage(), null );
+            } catch ( Exception exception ){
+                LOG.errorContext( xRequestId, new Exception( loggingMessageSupplier.toMessageSendingFailureLoggingMessage() ), null );
+                throw exception;
+            }
         });
     }
 
@@ -174,14 +178,15 @@ public class EmailService {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            emailProducer.sendEmail( emailData, MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() );
 
-            LOG.infoContext(xRequestId, new EmailNotification(
-                    MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE,
-                    StaticPropertyUtil.APPLICATION_NAMESPACE,
-                    user.getEmail(),
-                    companyDetails.getCompanyNumber()).toMessage(), null);
-
+            final var loggingMessageSupplier = new EmailNotification( MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE, StaticPropertyUtil.APPLICATION_NAMESPACE, user.getEmail(), companyDetails.getCompanyNumber() );
+            try {
+                emailProducer.sendEmail( emailData, MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() );
+                LOG.infoContext(xRequestId, loggingMessageSupplier.toMessage(), null);
+            } catch ( Exception exception ){
+                LOG.errorContext( xRequestId, new Exception( loggingMessageSupplier.toMessageSendingFailureLoggingMessage() ), null );
+                throw exception;
+            }
         });
     }
 
@@ -196,14 +201,15 @@ public class EmailService {
                     .setRecipientEmail( user.getEmail() )
                     .build();
 
-            emailProducer.sendEmail( emailData, MessageType.INVITATION_REJECTED_MESSAGE_TYPE.getValue() );
 
-            LOG.infoContext(xRequestId,
-                    new EmailNotification(
-                            MessageType.INVITATION_REJECTED_MESSAGE_TYPE,
-                            StaticPropertyUtil.APPLICATION_NAMESPACE,
-                            user.getEmail(),
-                            companyDetails.getCompanyNumber()).toMessage(), null);
+            final var loggingMessageSupplier = new EmailNotification( MessageType.INVITATION_REJECTED_MESSAGE_TYPE, StaticPropertyUtil.APPLICATION_NAMESPACE, user.getEmail(), companyDetails.getCompanyNumber() );
+            try {
+                emailProducer.sendEmail( emailData, MessageType.INVITATION_REJECTED_MESSAGE_TYPE.getValue() );
+                LOG.infoContext( xRequestId, loggingMessageSupplier.toMessage(), null );
+            } catch ( Exception exception ){
+                LOG.errorContext( xRequestId, new Exception( loggingMessageSupplier.toMessageSendingFailureLoggingMessage() ), null );
+                throw exception;
+            }
         });
     }
 
@@ -217,16 +223,14 @@ public class EmailService {
                 .setInvitationLink( invitationLink )
                 .build();
 
-        emailProducer.sendEmail( emailData, MessageType.INVITE_MESSAGE_TYPE.getValue() );
-
-        LOG.infoContext( xRequestId,
-                new EmailNotification(
-                        MessageType.INVITE_MESSAGE_TYPE,
-                        StaticPropertyUtil.APPLICATION_NAMESPACE,
-                        inviteeEmail,
-                        companyDetails.getCompanyNumber() )
-                        .setInvitationExpiryTimestamp( invitationExpiryTimestamp )
-                        .toMessage(), null );
+        final var loggingMessageSupplier = new EmailNotification( MessageType.INVITE_MESSAGE_TYPE, StaticPropertyUtil.APPLICATION_NAMESPACE, inviteeEmail, companyDetails.getCompanyNumber() ).setInvitationExpiryTimestamp( invitationExpiryTimestamp );
+        try {
+            emailProducer.sendEmail( emailData, MessageType.INVITE_MESSAGE_TYPE.getValue() );
+            LOG.infoContext( xRequestId, loggingMessageSupplier.toMessage(), null );
+        } catch ( Exception exception ){
+            LOG.errorContext( xRequestId, new Exception( loggingMessageSupplier.toMessageSendingFailureLoggingMessage() ), null );
+            throw exception;
+        }
     }
 
     @Async
@@ -239,15 +243,14 @@ public class EmailService {
                 .setCancelledBy( cancelledByDisplayName )
                 .build();
 
-        emailProducer.sendEmail( emailData, MessageType.INVITE_CANCELLED_MESSAGE_TYPE.getValue() );
-
-        LOG.infoContext( xRequestId,
-                new EmailNotification(
-                        MessageType.INVITE_CANCELLED_MESSAGE_TYPE,
-                        StaticPropertyUtil.APPLICATION_NAMESPACE,
-                        inviteeEmail,
-                        companyDetails.getCompanyNumber() )
-                        .toMessage(), null );
+        final var loggingMessageSupplier = new EmailNotification( MessageType.INVITE_CANCELLED_MESSAGE_TYPE, StaticPropertyUtil.APPLICATION_NAMESPACE, inviteeEmail, companyDetails.getCompanyNumber() );
+        try {
+            emailProducer.sendEmail( emailData, MessageType.INVITE_CANCELLED_MESSAGE_TYPE.getValue() );
+            LOG.infoContext( xRequestId, loggingMessageSupplier.toMessage(), null );
+        } catch ( Exception exception ){
+            LOG.errorContext( xRequestId, new Exception( loggingMessageSupplier.toMessageSendingFailureLoggingMessage() ), null );
+            throw exception;
+        }
     }
 
 }

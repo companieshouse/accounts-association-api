@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
 
 @Service
@@ -128,10 +129,12 @@ public class AssociationsService {
                                             final ApprovalRouteEnum approvalRoute,
                                             final String invitedByUserId) {
         if (Objects.isNull(companyNumber) || companyNumber.isEmpty()) {
+            LOG.errorContext( getXRequestId(), new Exception( "companyNumber is null" ), null );
             throw new NullPointerException("companyNumber must not be null");
         }
 
         if (Objects.isNull(userId) && Objects.isNull(userEmail)) {
+            LOG.errorContext( getXRequestId(), new Exception( "userId and userEmail is null" ), null );
             throw new NullPointerException("UserId or UserEmail should be provided");
         }
 
@@ -153,6 +156,7 @@ public class AssociationsService {
 
     private static void addInvitation(String invitedByUserId, AssociationDao association) {
         if ( Objects.isNull( invitedByUserId ) ){
+            LOG.errorContext( getXRequestId(), new Exception( "invitedByUserId is null" ), null );
             throw new NullPointerException( "invitedByUserId cannot be null." );
         }
 
@@ -174,14 +178,14 @@ public class AssociationsService {
     @Transactional
     public void updateAssociation(final String associationId, final Update update) {
         if (Objects.isNull(associationId)) {
-            LOG.error("Attempted to update association with null association id");
+            LOG.errorContext( getXRequestId(), new Exception( "Attempted to update association with null association id" ), null);
             throw new NullPointerException("associationId must not be null");
         }
         update.set("etag", generateEtag());
         final var numRecordsUpdated = associationsRepository.updateAssociation(associationId, update);
 
         if (numRecordsUpdated == 0) {
-            LOG.error(String.format("Failed to update association with id: %s", associationId));
+            LOG.errorContext( getXRequestId(), new Exception( String.format( "Failed to update association with id: %s", associationId ) ), null );
             throw new InternalServerErrorRuntimeException("Failed to update association");
         }
 
