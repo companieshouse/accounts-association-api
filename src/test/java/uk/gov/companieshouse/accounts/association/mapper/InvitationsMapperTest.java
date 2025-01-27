@@ -35,7 +35,7 @@ class InvitationsMapperTest {
 
     @BeforeEach
     void setup(){
-        mockers = new Mockers( null, null, null, null, usersService );
+        mockers = new Mockers( null, null, null, usersService );
     }
 
     @Test

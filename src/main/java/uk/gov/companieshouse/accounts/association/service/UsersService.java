@@ -1,95 +1,90 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonTo;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
+import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.APPLICATION_NAMESPACE;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
-import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
-import uk.gov.companieshouse.api.error.ApiErrorResponseException;
-import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserUserGet;
-import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
-
-import java.util.List;
-import java.util.function.Supplier;
 
 @Service
 public class UsersService {
 
-    private final AccountsUserEndpoint accountsUserEndpoint;
+    private final WebClient usersWebClient;
 
-    private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
+    private static final Logger LOG = LoggerFactory.getLogger( APPLICATION_NAMESPACE );
 
-    public UsersService(AccountsUserEndpoint accountsUserEndpoint) {
-        this.accountsUserEndpoint = accountsUserEndpoint;
+    private UsersService( @Qualifier( "usersWebClient" ) final WebClient usersWebClient ){
+        this.usersWebClient = usersWebClient;
     }
 
-    public Supplier<User> createFetchUserDetailsRequest( final String userId ) {
-        PrivateAccountsUserUserGet request = accountsUserEndpoint.createGetUserDetailsRequest(userId);
+    private Mono<User> toFetchUserDetailsRequest( final String userId, final String xRequestId ) {
+        return usersWebClient.get()
+                .uri( String.format( "/users/%s", userId ) )
+                .retrieve()
+                .bodyToMono( String.class )
+                .map( parseJsonTo( User.class ) )
+                .onErrorMap( throwable -> {
+                    if ( throwable instanceof WebClientResponseException exception ){
+                        if ( NOT_FOUND.equals( exception.getStatusCode() ) ){
+                            LOG.errorContext( xRequestId, String.format( "Could not find user details for user with id %s", userId ), exception, null );
+                            return new NotFoundRuntimeException( APPLICATION_NAMESPACE, "Failed to find user" );
+                        }
+                    }
+                    LOG.errorContext( xRequestId, String.format( "Failed to retrieve user details for user with id %s", userId ), (Exception) throwable, null );
+                    throw new InternalServerErrorRuntimeException( "Failed to retrieve user details" );
+                } )
+                .doOnSubscribe( onSubscribe -> LOG.infoContext( xRequestId, String.format( "Sending request to accounts-user-api: GET /users/{user_id}. Attempting to retrieve user: %s", userId ), null ) )
+                .doFinally( signalType -> LOG.infoContext( xRequestId, String.format( "Finished request to accounts-user-api for user: %s", userId ), null ) );
+    }
+
+    public User fetchUserDetails( final String userId ){
         final var xRequestId = getXRequestId();
-        return () -> {
-            try {
-                LOG.debugContext( xRequestId, String.format( "Sending request to accounts-user-api: GET /users/{user_id}. Attempting to fetch user details for user %s", userId ), null );
-                return request.execute().getData();
-            } catch( ApiErrorResponseException exception ){
-                if( exception.getStatusCode() == 404 ) {
-                    LOG.errorContext( xRequestId, new Exception( String.format( "Could not find user details for user with id: %s", userId ) ), null );
-                    throw new NotFoundRuntimeException( "accounts-association-api", "Failed to find user" );
-                } else {
-                    LOG.errorContext( xRequestId, new Exception( String.format( "Failed to retrieve user details for user with id: %s", userId ) ), null );
-                    throw new InternalServerErrorRuntimeException("Failed to retrieve user details");
-                }
-            } catch( URIValidationException exception ){
-                LOG.errorContext( xRequestId, new Exception( String.format( "Failed to fetch user details for user %s, because uri was incorrectly formatted", userId ) ), null );
-                throw new InternalServerErrorRuntimeException( "Invalid uri for accounts-user-api service" );
-            } catch ( Exception exception ){
-                LOG.errorContext( xRequestId, new Exception( String.format( "Failed to retrieve user details for user with id: %s", userId ) ), null );
-                throw new InternalServerErrorRuntimeException("Failed to retrieve user details");
-            }
-        };
-
+        return toFetchUserDetailsRequest( userId, xRequestId ).block( Duration.ofSeconds( 20L ) );
     }
 
-    public User fetchUserDetails( final String userId ) {
-        return createFetchUserDetailsRequest(userId).get();
-    }
-
-    public UsersList searchUserDetails( final List<String> emails ){
-
-        try {
-            LOG.debugContext( getXRequestId(), String.format( "Sending request to accounts-user-api: GET /users/search. Attempting to retrieve users: %s", String.join( ", ", emails ) ), null );
-            return accountsUserEndpoint.searchUserDetails(emails)
-                    .getData();
-        } catch( URIValidationException exception ){
-            LOG.errorContext( getXRequestId(), new Exception( String.format( "Search failed to fetch user details for users (%s), because uri was incorrectly formatted", String.join(", ", emails) ) ), null );
-            throw new InternalServerErrorRuntimeException( "Invalid uri for accounts-user-api service" );
-        } catch ( Exception exception ){
-            LOG.errorContext( getXRequestId(), new Exception( String.format( "Search failed to retrieve user details for: %s", String.join(", ", emails) ) ), null );
-            throw new InternalServerErrorRuntimeException("Search failed to retrieve user details");
-        }
-
-    }
-
-    public Map<String, User> fetchUserDetails( final Stream<AssociationDao> associationDaos ){
-        final Map<String, User> users = new ConcurrentHashMap<>();
-        associationDaos.map( AssociationDao::getUserId )
+    public Map<String, User> fetchUserDetails( final Stream<AssociationDao> associations ){
+        final var xRequestId = getXRequestId();
+        return Flux.fromStream( associations )
+                .filter( association -> Objects.nonNull( association.getUserId() ) )
+                .map( AssociationDao::getUserId )
                 .distinct()
-                .filter( Objects::nonNull )
-                .map( this::createFetchUserDetailsRequest )
-                .parallel()
-                .map( Supplier::get )
-                .forEach( user -> users.put( user.getUserId(), user ) );
-        return users;
+                .flatMap( userId -> toFetchUserDetailsRequest( userId, xRequestId ) )
+                .collectMap( User::getUserId )
+                .block( Duration.ofSeconds( 20L ) );
+    }
+
+    public UsersList searchUserDetails( final List<String> emails ) {
+        final var xRequestId = getXRequestId();
+        return usersWebClient.get()
+                .uri( "/users/search?user_email=" + String.join( "&user_email=", emails ) )
+                .retrieve()
+                .bodyToMono( String.class )
+                .map( parseJsonTo( UsersList.class ) )
+                .onErrorMap( throwable -> {
+                    LOG.errorContext( xRequestId, "Failed to retrieve user details", (Exception) throwable, null );
+                    throw new InternalServerErrorRuntimeException( "Failed to retrieve user details" );
+                } )
+                .doOnSubscribe( onSubscribe -> LOG.infoContext( xRequestId, String.format( "Sending request to accounts-user-api: GET /users/search. Attempting to retrieve users: %s", String.join( ", ", emails ) ), null ) )
+                .doFinally( signalType -> LOG.infoContext( xRequestId, String.format( "Finished request to accounts-user-api for users: %s", String.join( ", ", emails ) ), null ) )
+                .block( Duration.ofSeconds( 20L ) );
     }
 
 }

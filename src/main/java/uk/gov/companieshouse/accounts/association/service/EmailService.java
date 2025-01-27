@@ -1,19 +1,13 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.email.EmailNotification;
 import uk.gov.companieshouse.accounts.association.models.email.builders.*;
-import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
@@ -21,7 +15,6 @@ import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
 import java.util.List;
-import java.util.Set;
 import java.util.function.Supplier;
 
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
@@ -34,30 +27,20 @@ public class EmailService {
 
     protected static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
 
-    private final AssociationsRepository associationsRepository;
     private final UsersService usersService;
     private final EmailProducer emailProducer;
 
 
     @Autowired
-    public EmailService(AssociationsRepository associationsRepository, UsersService usersService, EmailProducer emailProducer) {
-        this.associationsRepository = associationsRepository;
+    public EmailService( final UsersService usersService, final EmailProducer emailProducer ) {
         this.usersService = usersService;
         this.emailProducer = emailProducer;
     }
 
-    @Transactional(readOnly = true)
-    public List<Supplier<User>> createRequestsToFetchAssociatedUsers( final String companyNumber ) {
-        return associationsRepository.fetchAssociatedUsers(companyNumber, Set.of(StatusEnum.CONFIRMED.getValue()), LocalDateTime.now(), Pageable.unpaged())
-                .map(AssociationDao::getUserId)
-                .map(usersService::createFetchUserDetailsRequest)
-                .toList();
-    }
-
     @Async
-    public void sendAuthCodeConfirmationEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String displayName, final List<Supplier<User>> requestsToFetchAssociatedUsers) {
-        requestsToFetchAssociatedUsers.forEach(userSupplier -> {
-            final var user = userSupplier.get();
+    public void sendAuthCodeConfirmationEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String displayName, final List<String> userIds ) {
+        userIds.forEach( userId -> {
+            final var user = usersService.fetchUserDetails( userId );
 
             final var emailData = new AuthCodeConfirmationEmailBuilder()
                     .setRecipientEmail( user.getEmail() )
@@ -77,9 +60,9 @@ public class EmailService {
     }
 
     @Async
-    public void sendAuthorisationRemovedEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String removedByDisplayName, final String removedUserDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers) {
-        requestsToFetchAssociatedUsers.forEach(userSupplier -> {
-            final var user = userSupplier.get();
+    public void sendAuthorisationRemovedEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String removedByDisplayName, final String removedUserDisplayName, final List<String> userIds ) {
+        userIds.forEach( userId -> {
+            final var user = usersService.fetchUserDetails( userId );
 
             final var emailData = new AuthorisationRemovedEmailBuilder()
                     .setCompanyName( companyDetails.getCompanyName() )
@@ -100,8 +83,8 @@ public class EmailService {
     }
 
     @Async
-    public void sendAuthorisationRemovedEmailToRemovedUser(final String xRequestId, final CompanyDetails companyDetails, final String removedByDisplayName, final Supplier<User> userSupplier) {
-        final var user = userSupplier.get();
+    public void sendAuthorisationRemovedEmailToRemovedUser(final String xRequestId, final CompanyDetails companyDetails, final String removedByDisplayName, final String userId ) {
+        final var user = usersService.fetchUserDetails( userId );
 
         final var emailData = new YourAuthorisationRemovedEmailBuilder()
                 .setCompanyName( companyDetails.getCompanyName() )
@@ -121,9 +104,9 @@ public class EmailService {
     }
 
     @Async
-    public void sendInvitationCancelledEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String cancelledByDisplayName, final String cancelledUserDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers) {
-        requestsToFetchAssociatedUsers.forEach(userSupplier -> {
-            final var user = userSupplier.get();
+    public void sendInvitationCancelledEmailToAssociatedUsers( final String xRequestId, final CompanyDetails companyDetails, final String cancelledByDisplayName, final String cancelledUserDisplayName, final List<String> userIds ) {
+        userIds.forEach( userId -> {
+            final var user = usersService.fetchUserDetails( userId );
 
             final var emailData = new InvitationCancelledEmailBuilder()
                     .setCompanyName( companyDetails.getCompanyName() )
@@ -144,9 +127,9 @@ public class EmailService {
     }
 
     @Async
-    public void sendInvitationEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String inviteeDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers) {
-        requestsToFetchAssociatedUsers.forEach(userSupplier -> {
-            final var user = userSupplier.get();
+    public void sendInvitationEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String inviteeDisplayName, final List<String> userIds ) {
+        userIds.forEach( userId -> {
+            final var user = usersService.fetchUserDetails( userId );
 
             final var emailData = new InvitationEmailBuilder()
                     .setCompanyName( companyDetails.getCompanyName() )
@@ -167,9 +150,9 @@ public class EmailService {
     }
 
     @Async
-    public void sendInvitationAcceptedEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String inviteeDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers) {
-        requestsToFetchAssociatedUsers.forEach(userSupplier -> {
-            final var user = userSupplier.get();
+    public void sendInvitationAcceptedEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String inviteeDisplayName, final List<String> userIds ) {
+        userIds .forEach( userId -> {
+            final var user = usersService.fetchUserDetails( userId );
 
             final var emailData = new InvitationAcceptedEmailBuilder()
                     .setCompanyName( companyDetails.getCompanyName() )
@@ -191,9 +174,9 @@ public class EmailService {
     }
 
     @Async
-    public void sendInvitationRejectedEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String inviteeDisplayName, final List<Supplier<User>> requestsToFetchAssociatedUsers) {
-        requestsToFetchAssociatedUsers.forEach(userSupplier -> {
-            final var user = userSupplier.get();
+    public void sendInvitationRejectedEmailToAssociatedUsers(final String xRequestId, final CompanyDetails companyDetails, final String inviteeDisplayName, final List<String> userIds ) {
+        userIds.forEach( userId -> {
+            final var user = usersService.fetchUserDetails( userId );
 
             final var emailData = new InvitationRejectedEmailBuilder()
                     .setCompanyName( companyDetails.getCompanyName() )

@@ -467,4 +467,15 @@ class AssociationsServiceTest {
         assertTrue(invitations.getLinks().getNext().isEmpty());
     }
 
+    @Test
+    void fetchAssociatedUsersRetrieveUsersAssociatedWithCompany(){
+        final var content = testDataManager.fetchAssociationDaos( "1" );
+        final var pageRequest = PageRequest.of(0, 20);
+        final var page = new PageImpl<>(content, pageRequest, content.size());
+
+        Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( eq( "111111" ), any(), any(), any() );
+
+        Assertions.assertEquals( "111", associationsService.fetchAssociatedUsers( "111111" ).getFirst() );
+    }
+
 }

@@ -30,13 +30,11 @@ import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.api.accounts.user.model.User;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -84,7 +82,7 @@ class UserCompanyAssociationsTest {
 
     @BeforeEach
     public void setup() {
-        mockers = new Mockers( null, null, null, companyService, usersService );
+        mockers = new Mockers( null, null, companyService, usersService );
     }
 
     @Test
@@ -605,13 +603,12 @@ class UserCompanyAssociationsTest {
     void addAssociationWithUserThatHasNoDisplayNameSetsDisplayNameToEmailAddress() throws Exception {
         final var associationDao = testDataManager.fetchAssociationDaos( "6" ).getFirst();
         final var company = testDataManager.fetchCompanyDetailsDtos( "333333" ).getFirst();
-        final Supplier<User> userSupplier = () -> new User().userId("666");
 
         mockers.mockUsersServiceFetchUserDetails( "666" );
         mockers.mockCompanyServiceFetchCompanyProfile("333333" );
         Mockito.doReturn(associationDao).when(associationsService).createAssociation("333333", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
         Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(any(),any(), any(),any(),anyString());
-        Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "333333" );
+        Mockito.doReturn( List.of( "666" ) ).when( associationsService ).fetchAssociatedUsers( "333333" );
 
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
@@ -677,12 +674,11 @@ class UserCompanyAssociationsTest {
     void addAssociationWithUserThatHasDisplayNameUsesDisplayName() throws Exception {
         final var associationDao = testDataManager.fetchAssociationDaos( "18" ).getFirst();
         final var company = testDataManager.fetchCompanyDetailsDtos( "333333" ).getFirst();
-        final Supplier<User> userSupplier = () -> new User().userId("000");
 
         mockers.mockUsersServiceFetchUserDetails( "9999" );
         mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
         Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(any(),any(), any(),any(),anyString());
-        Mockito.doReturn( List.of( userSupplier ) ).when( emailService ).createRequestsToFetchAssociatedUsers( "333333" );
+        Mockito.doReturn( List.of( "000" ) ).when( associationsService ).fetchAssociatedUsers( "333333" );
         Mockito.doReturn(associationDao).when(associationsService).createAssociation("333333", "9999", null, ApprovalRouteEnum.AUTH_CODE, null);
 
         mockMvc.perform(post( "/associations" )
@@ -889,14 +885,12 @@ class UserCompanyAssociationsTest {
     @Test
     void updateAssociationStatusForIdNotificationsWhereTargetUserIdExistsSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "35" ).getFirst();
-        final var requestingUser = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "333333" ).getFirst();
-        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> requestingUser );
 
         mockers.mockUsersServiceFetchUserDetails( "9999", "000" );
         mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("35");
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "333333" );
+        Mockito.doReturn( List.of( "9999" ) ).when( associationsService ).fetchAssociatedUsers( "333333" );
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
 
         mockMvc.perform( patch( "/associations/35" )
@@ -914,14 +908,12 @@ class UserCompanyAssociationsTest {
     @Test
     void updateAssociationStatusForIdNotificationsWhereTargetUserIdDoesNotExistSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "34" ).getFirst();
-        final var requestingUser = testDataManager.fetchUserDtos( "111" ).getFirst();
         final var company = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
-        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> requestingUser );
 
         mockers.mockUsersServiceFetchUserDetails( "111", "000" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("34");
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "111111" );
+        Mockito.doReturn( List.of( "111" ) ).when( associationsService ).fetchAssociatedUsers( "111111" );
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
 
         mockMvc.perform( patch( "/associations/34" )
@@ -939,15 +931,13 @@ class UserCompanyAssociationsTest {
     @Test
     void updateAssociationStatusForIdNotificationsWhereUserCannotBeFoundSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "34" ).getFirst();
-        final var user = testDataManager.fetchUserDtos( "000" ).getFirst();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
-        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> user );
 
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "light.yagami@death.note" );
         mockers.mockUsersServiceFetchUserDetails( "111" );
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("34");
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "111111" );
+        Mockito.doReturn( List.of("000" ) ).when( associationsService ).fetchAssociatedUsers( "111111" );
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
 
         mockMvc.perform( patch( "/associations/34" )
@@ -965,15 +955,13 @@ class UserCompanyAssociationsTest {
     @Test
     void updateAssociationStatusForIdNotificationsUsesDisplayNamesWhenAvailable() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "4" ).getFirst();
-        final var requestingUser = testDataManager.fetchUserDtos( "333" ).getFirst();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
-        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> requestingUser );
 
         mockers.mockUsersServiceFetchUserDetails( "333" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         mockers.mockUsersServiceSearchUserDetails( "444" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("4");
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "111111" );
+        Mockito.doReturn( List.of( "333" ) ).when( associationsService ).fetchAssociatedUsers( "111111" );
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
 
         mockMvc.perform( patch( "/associations/4" )
@@ -992,16 +980,13 @@ class UserCompanyAssociationsTest {
     @Test
     void updateAssociationStatusForIdUserAcceptedInvitationNotificationsSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "6" ).getFirst();
-        final var jokerUser = testDataManager.fetchUserDtos( "222" ).getFirst();
-        final var robinUser = testDataManager.fetchUserDtos( "444" ).getFirst();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
-        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> jokerUser, () -> robinUser );
 
         mockers.mockUsersServiceFetchUserDetails( "666", "222" );
         mockers.mockUsersServiceSearchUserDetails( "666" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("6");
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "111111" );
+        Mockito.doReturn( List.of( "222", "444" ) ).when( associationsService ).fetchAssociatedUsers( "111111" );
 
         mockMvc.perform( patch( "/associations/6" )
                         .header("X-Request-Id", "theId123")
@@ -1018,15 +1003,12 @@ class UserCompanyAssociationsTest {
     @Test
     void confirmUserStatusForExistingAssociationWithoutOneLoginUserShouldThrow400BadRequest() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "6" ).getFirst();
-        final var jokerUser = testDataManager.fetchUserDtos( "222" ).getFirst();
-        final var robinUser = testDataManager.fetchUserDtos( "444" ).getFirst();
-        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> jokerUser, () -> robinUser );
 
         mockers.mockUsersServiceFetchUserDetails( "666", "222" );
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "homer.simpson@springfield.com" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("6");
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "111111" );
+        Mockito.doReturn( List.of( "222", "444" ) ).when( associationsService ).fetchAssociatedUsers( "111111" );
 
         mockMvc.perform( patch( "/associations/6" )
                         .header("X-Request-Id", "theId123")
@@ -1041,15 +1023,12 @@ class UserCompanyAssociationsTest {
     @Test
     void confirmUserStatusRequestForExistingAssociationWithoutOneLoginUserAndDifferentRequestingUserShouldThrow400BadRequest() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "6" ).getFirst();
-        final var jokerUser = testDataManager.fetchUserDtos( "222" ).getFirst();
-        final var robinUser = testDataManager.fetchUserDtos( "444" ).getFirst();
-        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> jokerUser, () -> robinUser );
 
         mockers.mockUsersServiceFetchUserDetails( "666", "222" );
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "homer.simpson@springfield.com" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("6");
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "111111" );
+        Mockito.doReturn( List.of( "222", "444" ) ).when( associationsService ).fetchAssociatedUsers( "111111" );
 
         mockMvc.perform( patch( "/associations/6" )
                         .header("X-Request-Id", "theId123")
@@ -1064,17 +1043,13 @@ class UserCompanyAssociationsTest {
     @Test
     void updateAssociationStatusForIdUserAcceptedInvitationNotificationsUsesDisplayNamesWhenAvailable() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "38" ).getFirst();
-        final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
-        final var jokerUser = testDataManager.fetchUserDtos( "222" ).getFirst();
-        final var robinUser = testDataManager.fetchUserDtos( "444" ).getFirst();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "x222222" ).getFirst();
-        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> batmanUser, () -> jokerUser, () -> robinUser );
 
         mockers.mockUsersServiceFetchUserDetails( "9999", "444" );
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "scrooge.mcduck@disney.land" );
         mockers.mockCompanyServiceFetchCompanyProfile( "x222222" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("38");
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x222222" );
+        Mockito.doReturn( List.of( "111", "222", "444" ) ).when( associationsService ).fetchAssociatedUsers( "x222222" );
 
         mockMvc.perform( patch( "/associations/38" )
                         .header("X-Request-Id", "theId123")
@@ -1091,17 +1066,13 @@ class UserCompanyAssociationsTest {
     @Test
     void updateAssociationStatusForIdUserCancelledInvitationNotificationsSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "38" ).getFirst();
-        final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
-        final var jokerUser = testDataManager.fetchUserDtos( "222" ).getFirst();
-        final var robinUser = testDataManager.fetchUserDtos( "444" ).getFirst();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "x222222" ).getFirst();
-        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> batmanUser, () -> jokerUser, () -> robinUser );
 
         mockers.mockUsersServiceFetchUserDetails( "9999", "222" );
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "scrooge.mcduck@disney.land" );
         mockers.mockCompanyServiceFetchCompanyProfile( "x222222" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("38");
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x222222" );
+        Mockito.doReturn( List.of( "111", "222", "444" ) ).when( associationsService ).fetchAssociatedUsers( "x222222" );
         Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "x222222", "222" );
 
         mockMvc.perform( patch( "/associations/38" )
@@ -1119,17 +1090,13 @@ class UserCompanyAssociationsTest {
     @Test
     void updateAssociationStatusForIdUserRejectedInvitationNotificationsSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "38" ).getFirst();
-        final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
-        final var jokerUser = testDataManager.fetchUserDtos( "222" ).getFirst();
-        final var robinUser = testDataManager.fetchUserDtos( "444" ).getFirst();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "x222222" ).getFirst();
-        final List<Supplier<User>> requestsToFetchAssociatedUsers = List.of( () -> batmanUser, () -> jokerUser, () -> robinUser );
 
         mockers.mockUsersServiceFetchUserDetails( "9999" );
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "scrooge.mcduck@disney.land" );
         mockers.mockCompanyServiceFetchCompanyProfile( "x222222" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("38");
-        Mockito.doReturn( requestsToFetchAssociatedUsers ).when( emailService ).createRequestsToFetchAssociatedUsers( "x222222" );
+        Mockito.doReturn( List.of( "111", "222", "444" ) ).when( associationsService ).fetchAssociatedUsers( "x222222" );
 
         mockMvc.perform( patch( "/associations/38" )
                         .header("X-Request-Id", "theId123")

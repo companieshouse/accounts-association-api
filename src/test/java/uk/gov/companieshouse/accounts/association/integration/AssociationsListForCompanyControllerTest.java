@@ -14,8 +14,8 @@ import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfig;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
-import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
-import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
+import uk.gov.companieshouse.accounts.association.service.CompanyService;
+import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
@@ -44,10 +44,10 @@ class AssociationsListForCompanyControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private CompanyProfileEndpoint companyProfileEndpoint;
+    private CompanyService companyService;
 
     @MockBean
-    private AccountsUserEndpoint accountsUserEndpoint;
+    private UsersService usersService;
 
     @MockBean
     private EmailProducer emailProducer;
@@ -72,7 +72,7 @@ class AssociationsListForCompanyControllerTest {
 
     @BeforeEach
     void setup(){
-        mockers = new Mockers( accountsUserEndpoint, companyProfileEndpoint, emailProducer, null, null );
+        mockers = new Mockers( null, emailProducer, companyService, usersService );
     }
 
     @Test
@@ -84,7 +84,7 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyWithNonexistentCompanyReturnsNotFound() throws Exception {
-        mockers.mockFetchCompanyProfileNotFound( "919191" );
+        mockers.mockCompanyServiceFetchCompanyProfileNotFound( "919191" );
         mockMvc.perform( get( "/associations/companies/919191" )
                         .header("X-Request-Id", "theId123") )
                 .andExpect(status().isNotFound());
@@ -99,8 +99,8 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWithoutQueryParamsUsesDefaults() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17" ) );
-        mockers.mockGetUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777" );
-        mockers.mockFetchCompanyProfile( "111111" );
+        mockers.mockUsersServiceFetchUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111" )
@@ -127,8 +127,8 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWithIncludeRemovedFalseAppliesFilter() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17" ) );
-        mockers.mockGetUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777" );
-        mockers.mockFetchCompanyProfile( "111111" );
+        mockers.mockUsersServiceFetchUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111?include_removed=false" )
@@ -156,8 +156,8 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWithIncludeRemovedTrueDoesNotApplyFilter() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17" ) );
-        mockers.mockGetUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777" );
-        mockers.mockFetchCompanyProfile( "111111" );
+        mockers.mockUsersServiceFetchUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111?include_removed=true" )
@@ -185,8 +185,8 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyPaginatesCorrectly() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17" ) );
-        mockers.mockGetUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777" );
-        mockers.mockFetchCompanyProfile( "111111" );
+        mockers.mockUsersServiceFetchUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=3&page_index=2" )
@@ -214,8 +214,8 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWhereAccountsUserEndpointCannotFindUserReturnsNotFound() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1" ) );
-        mockers.mockGetUserDetailsNotFound( "111" );
-        mockers.mockFetchCompanyProfile( "111111" );
+        mockers.mockUsersServiceFetchUserDetailsNotFound( "111" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
         mockMvc.perform( get( "/associations/companies/111111" )
                         .header("X-Request-Id", "theId123") )
@@ -225,8 +225,8 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWhereCompanyProfileEndpointCannotFindCompanyReturnsNotFound() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1" ) );
-        mockers.mockGetUserDetails( "111" );
-        mockers.mockFetchCompanyProfileNotFound( "111111" );
+        mockers.mockUsersServiceFetchUserDetails( "111" );
+        mockers.mockCompanyServiceFetchCompanyProfileNotFound( "111111" );
 
         mockMvc.perform( get( "/associations/companies/111111" )
                         .header("X-Request-Id", "theId123") )
@@ -236,8 +236,8 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyDoesMappingCorrectly() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17" ) );
-        mockers.mockGetUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777" );
-        mockers.mockFetchCompanyProfile( "111111" );
+        mockers.mockUsersServiceFetchUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=2&page_index=0" )
@@ -285,8 +285,8 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyFetchesAssociation() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17" ) );
-        mockers.mockGetUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777" );
-        mockers.mockFetchCompanyProfile( "111111" );
+        mockers.mockUsersServiceFetchUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
         final var response =
         mockMvc.perform( get( "/associations/companies/111111" )
