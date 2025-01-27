@@ -1,11 +1,7 @@
 artifact_name       := accounts-association-api
 version             := "unversioned"
-dependency_check_base_suppressions:=common_suppressions_spring_6.xml
 dependency_check_suppressions_repo_branch:=main
-dependency_check_minimum_cvss := 4
-dependency_check_assembly_analyzer_enabled := false
 dependency_check_suppressions_repo_url:=git@github.com:companieshouse/dependency-check-suppressions.git
-suppressions_file := target/suppressions.xml
 
 .PHONY: all
 all: build
