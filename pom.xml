@@ -247,6 +247,16 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
             </plugin>
             <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <configuration>
+                    <suppressionFiles>
+                        <suppressionFile>${project.basedir}/target/dependency-check-suppressions/suppressions/common_suppressions_spring_6.xml</suppressionFile>
+                        <suppressionFile>${project.basedir}/suppress.xml</suppressionFile>
+                    </suppressionFiles>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
                 <version>${sonar-maven-plugin.version}</version>
