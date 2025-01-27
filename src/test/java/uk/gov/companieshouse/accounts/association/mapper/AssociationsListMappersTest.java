@@ -46,7 +46,7 @@ class AssociationsListMappersTest {
         associationsListMappers = new AssociationsListMappersImpl();
         associationsListMappers.usersService = usersService;
         associationsListMappers.companyService = companyService;
-        mockers = new Mockers( null, null, null, companyService, usersService );
+        mockers = new Mockers( null, null, companyService, usersService );
     }
 
     @Test

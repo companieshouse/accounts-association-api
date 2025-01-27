@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -249,6 +250,13 @@ public class AssociationsService {
 
         invitationsList.setLinks( links );
         return invitationsList;
+    }
+
+    @Transactional( readOnly = true )
+    public List<String> fetchAssociatedUsers( final String companyNumber ) {
+        return associationsRepository.fetchAssociatedUsers( companyNumber, Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), Pageable.unpaged() )
+                .map( AssociationDao::getUserId )
+                .toList();
     }
 
 }
