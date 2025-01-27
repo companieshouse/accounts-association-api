@@ -56,7 +56,7 @@ class AssociationMapperTest {
         associationMapper = new AssociationMapperImpl();
         associationMapper.usersService = usersService;
         associationMapper.companyService = companyService;
-        mockers = new Mockers( null, null, null, companyService, usersService );
+        mockers = new Mockers(  null, null, companyService, usersService );
     }
 
     @Test

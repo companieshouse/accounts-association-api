@@ -3,103 +3,141 @@ package uk.gov.companieshouse.accounts.association.common;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
-import com.google.api.client.http.HttpHeaders;
-import com.google.api.client.http.HttpResponseException.Builder;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import org.mockito.Mockito;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
-import uk.gov.companieshouse.accounts.association.rest.AccountsUserEndpoint;
-import uk.gov.companieshouse.accounts.association.rest.CompanyProfileEndpoint;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
-import uk.gov.companieshouse.api.company.CompanyDetails;
-import uk.gov.companieshouse.api.error.ApiErrorResponseException;
-import uk.gov.companieshouse.api.handler.accountsuser.request.PrivateAccountsUserUserGet;
-import uk.gov.companieshouse.api.handler.company.request.PrivateCompanyDetailsGet;
-import uk.gov.companieshouse.api.handler.exception.URIValidationException;
-import uk.gov.companieshouse.api.model.ApiResponse;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.EmailSendingException;
+import uk.gov.companieshouse.api.accounts.user.model.User;
 
 public class Mockers {
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
-    private final AccountsUserEndpoint accountsUserEndpoint;
-    private final CompanyProfileEndpoint companyProfileEndpoint;
+    private final WebClient webClient;
     private final EmailProducer emailProducer;
     private final CompanyService companyService;
-
     private final UsersService usersService;
 
-    public Mockers( final AccountsUserEndpoint accountsUserEndpoint, final CompanyProfileEndpoint companyProfileEndpoint, final EmailProducer emailProducer, final CompanyService companyService, final UsersService usersService ) {
-        this.accountsUserEndpoint = accountsUserEndpoint;
-        this.companyProfileEndpoint = companyProfileEndpoint;
+    public Mockers( final WebClient webClient, final EmailProducer emailProducer, final CompanyService companyService, final UsersService usersService ) {
+        this.webClient = webClient;
         this.emailProducer = emailProducer;
         this.companyService = companyService;
         this.usersService = usersService;
     }
 
-    public void mockGetUserDetails( final User userData ) throws ApiErrorResponseException, URIValidationException {
-        final var request = Mockito.mock( PrivateAccountsUserUserGet.class );
-        Mockito.doReturn( request ).when( accountsUserEndpoint ).createGetUserDetailsRequest( userData.getUserId() );
-        Mockito.lenient().doReturn( new ApiResponse<>( 200, Map.of(), userData ) ).when( request ).execute();
+    private void mockWebClientSuccessResponse( final String uri, final Mono<String> jsonResponse ){
+        final var requestHeadersUriSpec = Mockito.mock( WebClient.RequestHeadersUriSpec.class );
+        final var requestHeadersSpec = Mockito.mock( WebClient.RequestHeadersSpec.class );
+        final var responseSpec = Mockito.mock( WebClient.ResponseSpec.class );
+
+        Mockito.doReturn( requestHeadersUriSpec ).when(webClient).get();
+        Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri );
+        Mockito.doReturn( responseSpec ).when( requestHeadersSpec ).retrieve();
+        Mockito.doReturn( jsonResponse ).when( responseSpec ).bodyToMono( String.class );
     }
 
-    public void mockGetUserDetails( final String... userIds ) throws ApiErrorResponseException, URIValidationException {
+    public void mockWebClientForFetchUserDetails( final String... userIds ) throws JsonProcessingException {
         for ( final String userId: userIds ){
-            final var userData = testDataManager.fetchUserDtos( userId ).getFirst();
-            mockGetUserDetails( userData );
+            final var user = testDataManager.fetchUserDtos( userId ).getFirst();
+            final var uri = String.format( "/users/%s", userId );
+            final var jsonResponse = new ObjectMapper().writeValueAsString( user );
+            mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ) );
         }
     }
 
-    public void mockGetUserDetailsNotFound( final String... userIds ) throws ApiErrorResponseException, URIValidationException {
+    private void mockWebClientErrorResponse( final String uri, int responseCode ){
+        final var requestHeadersUriSpec = Mockito.mock( WebClient.RequestHeadersUriSpec.class );
+        final var requestHeadersSpec = Mockito.mock( WebClient.RequestHeadersSpec.class );
+        final var responseSpec = Mockito.mock( WebClient.ResponseSpec.class );
+
+        Mockito.doReturn( requestHeadersUriSpec ).when(webClient).get();
+        Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri );
+        Mockito.doReturn( responseSpec ).when( requestHeadersSpec ).retrieve();
+        Mockito.doReturn( Mono.error( new WebClientResponseException( responseCode, "Error", null, null, null ) ) ).when( responseSpec ).bodyToMono( String.class );
+    }
+
+    public void mockWebClientForFetchUserDetailsErrorResponse( final String userId, int responseCode ){
+        final var uri = String.format( "/users/%s", userId );
+        mockWebClientErrorResponse( uri, responseCode );
+    }
+
+    public void mockWebClientForFetchUserDetailsNotFound( final String... userIds ){
         for ( final String userId: userIds ){
-            final var request = Mockito.mock( PrivateAccountsUserUserGet.class );
-            Mockito.doReturn( request ).when( accountsUserEndpoint ).createGetUserDetailsRequest( userId );
-            Mockito.lenient().doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( request ).execute();
+            mockWebClientForFetchUserDetailsErrorResponse( userId,404 );
         }
     }
 
-    public void mockFetchCompanyProfile( final CompanyDetails companyData ) throws ApiErrorResponseException, URIValidationException {
-        final var request = Mockito.mock( PrivateCompanyDetailsGet.class );
-        Mockito.doReturn( request ).when( companyProfileEndpoint ).createFetchCompanyProfileRequest( companyData.getCompanyNumber() );
-        Mockito.lenient().doReturn( new ApiResponse<>( 200, Map.of(), companyData ) ).when( request ).execute();
+    private void mockWebClientJsonParsingError( final String uri ){
+        final var requestHeadersUriSpec = Mockito.mock( WebClient.RequestHeadersUriSpec.class );
+        final var requestHeadersSpec = Mockito.mock( WebClient.RequestHeadersSpec.class );
+        final var responseSpec = Mockito.mock( WebClient.ResponseSpec.class );
+
+        Mockito.doReturn( requestHeadersUriSpec ).when(webClient).get();
+        Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri );
+        Mockito.doReturn( responseSpec ).when( requestHeadersSpec ).retrieve();
+        Mockito.doReturn( Mono.just( "}{" ) ).when( responseSpec ).bodyToMono( String.class );
     }
 
-    public void mockFetchCompanyProfile( final String... companyNumbers ) throws ApiErrorResponseException, URIValidationException {
+    public void mockWebClientForFetchUserDetailsJsonParsingError( final String userId ){
+        final var uri = String.format( "/users/%s", userId );
+        mockWebClientJsonParsingError( uri );
+    }
+
+    public void mockWebClientForSearchUserDetails( final String... userIds ) throws JsonProcessingException {
+        final var users = testDataManager.fetchUserDtos( userIds );
+        final var uri = String.format( "/users/search?user_email=" + String.join( "&user_email=", users.stream().map( User::getEmail ).toList() ) );
+        final var jsonResponse = new ObjectMapper().writeValueAsString( users );
+        mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ) );
+    }
+
+    public void mockWebClientForSearchUserDetailsErrorResponse( final String userEmail, int responseCode ){
+        final var uri = String.format( "/users/search?user_email=%s", userEmail );
+        mockWebClientErrorResponse( uri, responseCode );
+    }
+
+    public void mockWebClientForSearchUserDetailsNonexistentEmail( final String... emails ) {
+        final var uri = String.format( "/users/search?user_email=" + String.join( "&user_email=", Arrays.stream( emails ).toList() ) );
+        mockWebClientSuccessResponse( uri, Mono.empty() );
+    }
+
+    public void mockWebClientForSearchUserDetailsJsonParsingError( final String... emails ){
+        final var uri = String.format( "/users/search?user_email=" + String.join( "&user_email=", Arrays.stream( emails ).toList() ) );
+        mockWebClientJsonParsingError( uri );
+    }
+
+    public void mockWebClientForFetchCompanyProfile( final String... companyNumbers ) throws JsonProcessingException {
         for ( final String companyNumber: companyNumbers ){
-            final var companyData = testDataManager.fetchCompanyDetailsDtos( companyNumber ).getFirst();
-            mockFetchCompanyProfile( companyData );
+            final var company = testDataManager.fetchCompanyDetailsDtos( companyNumber ).getFirst();
+            final var uri = String.format( "/company/%s/company-detail", companyNumber );
+            final var jsonResponse = new ObjectMapper().writeValueAsString( company );
+            mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ) );
         }
     }
 
-    public void mockFetchCompanyProfileNotFound( final String... companyNumbers ) throws ApiErrorResponseException, URIValidationException {
+    public void mockWebClientForFetchCompanyProfileErrorResponse( final String companyNumber, int responseCode ){
+        final var uri = String.format( "/company/%s/company-detail", companyNumber );
+        mockWebClientErrorResponse( uri, responseCode );
+    }
+
+    public void mockWebClientForFetchCompanyProfileNotFound( final String... companyNumbers ){
         for ( final String companyNumber: companyNumbers ){
-            final var request = Mockito.mock( PrivateCompanyDetailsGet.class );
-            Mockito.doReturn( request ).when( companyProfileEndpoint ).createFetchCompanyProfileRequest( companyNumber );
-            Mockito.lenient().doThrow( new ApiErrorResponseException( new Builder( 404, "Not Found", new HttpHeaders() ) ) ).when( request ).execute();
+            mockWebClientForFetchCompanyProfileErrorResponse( companyNumber, 404 );
         }
     }
 
-    public void mockSearchUserDetails( final String... userIds ) throws ApiErrorResponseException, URIValidationException {
-        for ( final String userId: userIds ){
-            final var userDetails = testDataManager.fetchUserDtos( userId ).getFirst();
-            final var userEmails = List.of( userDetails.getEmail() );
-            final var usersList = new UsersList();
-            usersList.add( userDetails );
-            final var response = new ApiResponse<>( 200, Map.of(), usersList );
-            Mockito.doReturn( response ).when( accountsUserEndpoint ).searchUserDetails( userEmails );
-        }
-    }
-
-    public void mockSearchUserDetailsNotFound( final String... emails ) throws ApiErrorResponseException, URIValidationException {
-        for ( final String email: emails ){
-            Mockito.doReturn( new ApiResponse<>( 204, Map.of(), new UsersList() ) ).when( accountsUserEndpoint ).searchUserDetails( List.of( email ) );
-        }
+    public void mockWebClientForFetchCompanyProfileJsonParsingError( final String companyNumber ){
+        final var uri = String.format( "/company/%s/company-detail", companyNumber );
+        mockWebClientJsonParsingError( uri );
     }
 
     public void mockEmailSendingFailure( final String messageType ){

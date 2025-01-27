@@ -72,7 +72,7 @@ class AssociationsListForCompanyControllerTest {
 
     @BeforeEach
     public void setup() {
-        this.mockers = new Mockers( null, null, null, companyService, usersService );
+        this.mockers = new Mockers( null, null, companyService, usersService );
         Mockito.doNothing().when(interceptorConfig).addInterceptors( any() );
     }
 

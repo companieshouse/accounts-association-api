@@ -97,7 +97,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         }
 
         LOG.debugContext( xRequestId, String.format( "Attempting to create requests for users associated with company %s", companyNumber ), null );
-        final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
+        final var associatedUsers = associationsService.fetchAssociatedUsers( companyNumber );
         emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( xRequestId, companyDetails, displayName, associatedUsers );
 
         return new ResponseEntity<>(new ResponseBodyPost().associationId(association.getId()), HttpStatus.CREATED);
@@ -223,7 +223,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         final var inviterDisplayName = Optional.ofNullable( inviterUserDetails.getDisplayName() ).orElse( inviterUserDetails.getEmail() );
         LOG.debugContext( xRequestId, String.format( "Attempting to create requests for users associated with company %s", companyNumber ), null );
-        final var associatedUsers = emailService.createRequestsToFetchAssociatedUsers( companyNumber );
+        final var associatedUsers = associationsService.fetchAssociatedUsers( companyNumber );
 
         final var inviteeUserDetails = usersService.searchUserDetails( List.of( inviteeEmail ) );
 
@@ -375,7 +375,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
         LOG.debugContext( xRequestId, String.format( "Attempting to create requests for users associated with company %s", companyNumber ), null );
-        final var requestsToFetchAssociatedUsers = emailService.createRequestsToFetchAssociatedUsers(companyNumber);
+        final var requestsToFetchAssociatedUsers = associationsService.fetchAssociatedUsers(companyNumber);
 
         final var authorisedUserRemoved = oldStatus.equals(CONFIRMED.getValue()) && newStatus.equals(REMOVED);
         final var userAcceptedInvitation = requestingAndTargetUserMatches && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(CONFIRMED);
@@ -385,8 +385,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         if (userRejectedInvitation) {
             emailService.sendInvitationRejectedEmailToAssociatedUsers(xRequestId, companyDetails, requestingUserDisplayValue, requestsToFetchAssociatedUsers);
         } else if (authorisedUserRemoved) {
-            final Supplier<User> requestToGetRemovedUserEmail = usersService.createFetchUserDetailsRequest(associationDao.getUserId());
-            emailService.sendAuthorisationRemovedEmailToRemovedUser(xRequestId, companyDetails, requestingUserDisplayValue, requestToGetRemovedUserEmail);
+            emailService.sendAuthorisationRemovedEmailToRemovedUser(xRequestId, companyDetails, requestingUserDisplayValue, associationDao.getUserId());
             emailService.sendAuthorisationRemovedEmailToAssociatedUsers(xRequestId, companyDetails, requestingUserDisplayValue, targetUserDisplayValue, requestsToFetchAssociatedUsers);
         } else if (userAcceptedInvitation) {
             final var invitedByDisplayName = invitations.stream()
@@ -398,7 +397,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
             emailService.sendInvitationAcceptedEmailToAssociatedUsers(xRequestId, companyDetails, invitedByDisplayName, requestingUserDisplayValue, requestsToFetchAssociatedUsers);
         } else if (userCancelledInvitation) {
-            final Supplier<User> requestToGetCancelledUserEmail = Objects.isNull( associationDao.getUserEmail() ) ? usersService.createFetchUserDetailsRequest(associationDao.getUserId()) : () -> new User().email( associationDao.getUserEmail() );
+            final Supplier<User> requestToGetCancelledUserEmail = Objects.isNull( associationDao.getUserEmail() ) ? () -> usersService.fetchUserDetails( associationDao.getUserId() ) : () -> new User().email( associationDao.getUserEmail() );
             emailService.sendInviteCancelledEmail(xRequestId, companyDetails, requestingUserDisplayValue, requestToGetCancelledUserEmail );
             emailService.sendInvitationCancelledEmailToAssociatedUsers(xRequestId, companyDetails, requestingUserDisplayValue, targetUserDisplayValue, requestsToFetchAssociatedUsers);
         }
