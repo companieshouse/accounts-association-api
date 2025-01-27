@@ -8,6 +8,7 @@ import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUti
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -62,6 +63,7 @@ public class UsersService {
     public Map<String, User> fetchUserDetails( final Stream<AssociationDao> associations ){
         final var xRequestId = getXRequestId();
         return Flux.fromStream( associations )
+                .filter( association -> Objects.nonNull( association.getUserId() ) )
                 .map( AssociationDao::getUserId )
                 .distinct()
                 .flatMap( userId -> toFetchUserDetailsRequest( userId, xRequestId ) )
