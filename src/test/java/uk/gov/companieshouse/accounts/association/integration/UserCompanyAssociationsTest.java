@@ -21,7 +21,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.reactive.function.client.WebClient;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
@@ -58,10 +57,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_CANCELLED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
 
 @AutoConfigureMockMvc
@@ -875,7 +874,7 @@ class UserCompanyAssociationsTest {
 
         latch.await( 10, TimeUnit.SECONDS );
 
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.authorisationRemovedEmailMatcher( "Batman", "light.yagami@death.note", "Wayne Enterprises", "bruce.wayne@gotham.city" ) ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.inviteCancelledEmailMatcher( "light.yagami@death.note", "Wayne Enterprises", "Batman" ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
@@ -899,7 +898,7 @@ class UserCompanyAssociationsTest {
                 .andExpect( status().isOk() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.authorisationRemovedEmailMatcher( "Batman", "light.yagami@death.note", "Wayne Enterprises", "bruce.wayne@gotham.city" ) ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.inviteCancelledEmailMatcher( "light.yagami@death.note", "Wayne Enterprises", "Batman" ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
