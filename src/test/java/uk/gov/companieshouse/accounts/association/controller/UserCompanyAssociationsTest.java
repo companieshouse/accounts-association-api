@@ -1,6 +1,7 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
 import java.util.Map;
+import java.util.function.Function;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
@@ -73,6 +75,8 @@ class UserCompanyAssociationsTest {
     private static final String DEFAULT_KIND = "association";
 
     private final LocalDateTime now = LocalDateTime.now();
+
+    final Function<String, Mono<Void>> sendEmailMock = userId -> Mono.empty();
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
@@ -567,10 +571,13 @@ class UserCompanyAssociationsTest {
     @Test
     void addAssociationCreatesNewAssociationCorrectlyAndReturnsAssociationIdWithCreatedHttpStatus() throws Exception {
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
+        final var company = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "111" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(associationDao).when(associationsService).createAssociation("111111", "111", null, ApprovalRouteEnum.AUTH_CODE, null);
         Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(any(),any(), any(),any(),anyString());
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( company ), eq( "Batman" ) );
 
         final var response = mockMvc.perform(post("/associations")
                         .header("X-Request-Id", "theId123")
@@ -609,6 +616,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(associationDao).when(associationsService).createAssociation("333333", "666", null, ApprovalRouteEnum.AUTH_CODE, null);
         Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(any(),any(), any(),any(),anyString());
         Mockito.doReturn( List.of( "666" ) ).when( associationsService ).fetchAssociatedUsers( "333333" );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( company ), eq( "homer.simpson@springfield.com" ) );
 
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
@@ -619,7 +627,7 @@ class UserCompanyAssociationsTest {
                         .content( "{\"company_number\":\"333333\"}" ) )
                 .andExpect( status().isCreated() );
 
-        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUsers( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "homer.simpson@springfield.com" ), argThat( list -> list.size() == 1 ) );
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "homer.simpson@springfield.com" ) );
     }
 
     @Test
@@ -633,6 +641,7 @@ class UserCompanyAssociationsTest {
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(page).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(user, List.of(AWAITING_APPROVAL.getValue(), CONFIRMED.getValue(), REMOVED.getValue()),0,15,"111111");
         Mockito.doReturn(associationDao).when(associationsService).upsertAssociation(any(AssociationDao.class));
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( company ), eq( "homer.simpson@springfield.com" ) );
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "666")
@@ -643,7 +652,7 @@ class UserCompanyAssociationsTest {
                         .content("{\"company_number\":\"111111\"}"))
                 .andExpect(status().isCreated());
 
-        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUsers( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "homer.simpson@springfield.com" ), argThat(List::isEmpty) );
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "homer.simpson@springfield.com" ) );
     }
 
     @Test
@@ -657,6 +666,7 @@ class UserCompanyAssociationsTest {
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(page).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(user, List.of(AWAITING_APPROVAL.getValue(), CONFIRMED.getValue(), REMOVED.getValue()),0,15,"111111");
         Mockito.doReturn(associationDao).when(associationsService).upsertAssociation(any(AssociationDao.class));
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( company ), eq( "ross@friends.com" ) );
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "5555")
@@ -667,7 +677,7 @@ class UserCompanyAssociationsTest {
                         .content("{\"company_number\":\"111111\"}"))
                 .andExpect(status().isCreated());
 
-        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUsers( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "ross@friends.com" ), argThat(List::isEmpty) );
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "ross@friends.com" ) );
     }
 
     @Test
@@ -680,6 +690,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(any(),any(), any(),any(),anyString());
         Mockito.doReturn( List.of( "000" ) ).when( associationsService ).fetchAssociatedUsers( "333333" );
         Mockito.doReturn(associationDao).when(associationsService).createAssociation("333333", "9999", null, ApprovalRouteEnum.AUTH_CODE, null);
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( company ), eq( "Scrooge McDuck" ) );
 
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
@@ -690,7 +701,7 @@ class UserCompanyAssociationsTest {
                         .content( "{\"company_number\":\"333333\"}" ) )
                 .andExpect( status().isCreated() );
 
-        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUsers( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "Scrooge McDuck" ), argThat( list -> list.size() == 1 ) );
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "Scrooge McDuck" ) );
     }
 
     @Test
@@ -772,8 +783,11 @@ class UserCompanyAssociationsTest {
 
         mockers.mockUsersServiceFetchUserDetails( "000" );
         mockers.mockUsersServiceFetchUserDetails( "9999" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
         Mockito.doReturn( Optional.of( association ) ).when( associationsService ).findAssociationDaoById( "35" );
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendAuthorisationRemovedEmailToRemovedUser( eq( "theId123" ), eq( "333333" ), any( Mono.class ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthorisationRemovedEmailToAssociatedUser( eq( "theId123" ), eq( "333333" ), any( Mono.class ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
 
         mockMvc.perform(patch("/associations/35")
                         .header("X-Request-Id", "theId123")
@@ -849,6 +863,7 @@ class UserCompanyAssociationsTest {
 
         mockers.mockUsersServiceFetchUserDetails( "000" );
         Mockito.doReturn( Optional.of( association ) ).when( associationsService ).findAssociationDaoById( "34" );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationRejectedEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "light.yagami@death.note" ) );
 
         mockMvc.perform(patch("/associations/34")
                         .header("X-Request-Id", "theId123")
@@ -869,6 +884,7 @@ class UserCompanyAssociationsTest {
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "light.yagami@death.note" );
         mockers.mockUsersServiceFetchUserDetails( "000" );
         Mockito.doReturn( Optional.of( association ) ).when( associationsService ).findAssociationDaoById( "34" );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationRejectedEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "light.yagami@death.note" ) );
 
         mockMvc.perform(patch("/associations/34")
                         .header("X-Request-Id", "theId123")
@@ -885,13 +901,14 @@ class UserCompanyAssociationsTest {
     @Test
     void updateAssociationStatusForIdNotificationsWhereTargetUserIdExistsSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "35" ).getFirst();
-        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "333333" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "9999", "000" );
         mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("35");
         Mockito.doReturn( List.of( "9999" ) ).when( associationsService ).fetchAssociatedUsers( "333333" );
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendAuthorisationRemovedEmailToRemovedUser( eq( "theId123" ), eq( "333333" ), any( Mono.class ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthorisationRemovedEmailToAssociatedUser( eq( "theId123" ), eq( "333333" ), any( Mono.class ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
 
         mockMvc.perform( patch( "/associations/35" )
                         .header("X-Request-Id", "theId123")
@@ -902,19 +919,20 @@ class UserCompanyAssociationsTest {
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
 
-        Mockito.verify( emailService ).sendAuthorisationRemovedEmailToAssociatedUsers( eq( "theId123" ), eq( companyDetails ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ), any() );
+        Mockito.verify( emailService ).sendAuthorisationRemovedEmailToAssociatedUser( eq( "theId123" ), eq( "333333" ), any( Mono.class ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
     }
 
     @Test
     void updateAssociationStatusForIdNotificationsWhereTargetUserIdDoesNotExistSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "34" ).getFirst();
-        final var company = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "111", "000" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("34");
         Mockito.doReturn( List.of( "111" ) ).when( associationsService ).fetchAssociatedUsers( "111111" );
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteCancelledEmail( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Batman" ), eq( association ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationCancelledEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Batman" ), eq( "light.yagami@death.note" ) );
 
         mockMvc.perform( patch( "/associations/34" )
                         .header("X-Request-Id", "theId123")
@@ -925,13 +943,12 @@ class UserCompanyAssociationsTest {
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
 
-        Mockito.verify( emailService ).sendAuthorisationRemovedEmailToAssociatedUsers( eq( "theId123" ), eq( company ), eq( "Batman" ), eq( "light.yagami@death.note" ), any() );
+        Mockito.verify( emailService ).sendInvitationCancelledEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Batman" ), eq( "light.yagami@death.note" ) );
     }
 
     @Test
     void updateAssociationStatusForIdNotificationsWhereUserCannotBeFoundSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "34" ).getFirst();
-        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
 
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "light.yagami@death.note" );
         mockers.mockUsersServiceFetchUserDetails( "111" );
@@ -939,6 +956,8 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("34");
         Mockito.doReturn( List.of("000" ) ).when( associationsService ).fetchAssociatedUsers( "111111" );
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteCancelledEmail( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Batman" ), eq( association ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationCancelledEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Batman" ), eq( "light.yagami@death.note" ) );
 
         mockMvc.perform( patch( "/associations/34" )
                         .header("X-Request-Id", "theId123")
@@ -949,13 +968,12 @@ class UserCompanyAssociationsTest {
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
 
-        Mockito.verify( emailService ).sendAuthorisationRemovedEmailToAssociatedUsers( eq( "theId123" ), eq( companyDetails ), eq( "Batman" ), eq( "light.yagami@death.note" ), any() );
+        Mockito.verify( emailService ).sendInvitationCancelledEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Batman" ), eq( "light.yagami@death.note" ) );
     }
 
     @Test
     void updateAssociationStatusForIdNotificationsUsesDisplayNamesWhenAvailable() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "4" ).getFirst();
-        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "333" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
@@ -963,6 +981,8 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("4");
         Mockito.doReturn( List.of( "333" ) ).when( associationsService ).fetchAssociatedUsers( "111111" );
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendAuthorisationRemovedEmailToRemovedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Harleen Quinzel" ), eq( "Boy Wonder" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthorisationRemovedEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Harleen Quinzel" ), eq( "Boy Wonder" ) );
 
         mockMvc.perform( patch( "/associations/4" )
                         .header("X-Request-Id", "theId123")
@@ -973,8 +993,8 @@ class UserCompanyAssociationsTest {
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
 
-        Mockito.verify( emailService ).sendAuthorisationRemovedEmailToRemovedUser( eq( "theId123" ), eq( companyDetails ), eq( "Harleen Quinzel" ), any() );
-        Mockito.verify( emailService ).sendAuthorisationRemovedEmailToAssociatedUsers( eq( "theId123" ), eq( companyDetails ), eq( "Harleen Quinzel" ), eq("Boy Wonder"), any() );
+        Mockito.verify( emailService ).sendAuthorisationRemovedEmailToRemovedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Harleen Quinzel" ), eq( "444" ) );
+        Mockito.verify( emailService ).sendAuthorisationRemovedEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Harleen Quinzel" ), eq("Boy Wonder") );
     }
 
     @Test
@@ -987,6 +1007,7 @@ class UserCompanyAssociationsTest {
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("6");
         Mockito.doReturn( List.of( "222", "444" ) ).when( associationsService ).fetchAssociatedUsers( "111111" );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationAcceptedEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), any( Mono.class ), eq( "homer.simpson@springfield.com" ) );
 
         mockMvc.perform( patch( "/associations/6" )
                         .header("X-Request-Id", "theId123")
@@ -997,7 +1018,7 @@ class UserCompanyAssociationsTest {
                         .content( "{\"status\":\"confirmed\"}" ) )
                 .andExpect( status().isOk() );
 
-        Mockito.verify( emailService ).sendInvitationAcceptedEmailToAssociatedUsers( eq( "theId123" ), eq( companyDetails ), eq( "the.joker@gotham.city" ), eq( "homer.simpson@springfield.com" ), any() );
+        Mockito.verify( emailService ).sendInvitationAcceptedEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), any( Mono.class ), eq( "homer.simpson@springfield.com" ) );
     }
 
     @Test
@@ -1043,13 +1064,13 @@ class UserCompanyAssociationsTest {
     @Test
     void updateAssociationStatusForIdUserAcceptedInvitationNotificationsUsesDisplayNamesWhenAvailable() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "38" ).getFirst();
-        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "x222222" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "9999", "444" );
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "scrooge.mcduck@disney.land" );
         mockers.mockCompanyServiceFetchCompanyProfile( "x222222" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("38");
         Mockito.doReturn( List.of( "111", "222", "444" ) ).when( associationsService ).fetchAssociatedUsers( "x222222" );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationAcceptedEmailToAssociatedUser( eq( "theId123" ), eq( "x222222" ), any( Mono.class ), any( Mono.class ), eq( "Scrooge McDuck" ) );
 
         mockMvc.perform( patch( "/associations/38" )
                         .header("X-Request-Id", "theId123")
@@ -1060,13 +1081,12 @@ class UserCompanyAssociationsTest {
                         .content( "{\"status\":\"confirmed\"}" ) )
                 .andExpect( status().isOk() );
 
-        Mockito.verify( emailService ).sendInvitationAcceptedEmailToAssociatedUsers( eq( "theId123" ), eq( companyDetails ), eq( "Boy Wonder" ), eq( "Scrooge McDuck" ), any() );
+        Mockito.verify( emailService ).sendInvitationAcceptedEmailToAssociatedUser( eq( "theId123" ), eq( "x222222" ), any( Mono.class ), any(), eq( "Scrooge McDuck" ) );
     }
 
     @Test
     void updateAssociationStatusForIdUserCancelledInvitationNotificationsSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "38" ).getFirst();
-        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "x222222" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "9999", "222" );
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "scrooge.mcduck@disney.land" );
@@ -1074,6 +1094,8 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("38");
         Mockito.doReturn( List.of( "111", "222", "444" ) ).when( associationsService ).fetchAssociatedUsers( "x222222" );
         Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "x222222", "222" );
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteCancelledEmail( eq( "theId123" ), eq( "x222222" ), any( Mono.class ), eq( "the.joker@gotham.city" ), eq( association ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationCancelledEmailToAssociatedUser( eq( "theId123" ), eq( "x222222" ), any( Mono.class ), eq( "the.joker@gotham.city" ), eq( "Scrooge McDuck" ) );
 
         mockMvc.perform( patch( "/associations/38" )
                         .header("X-Request-Id", "theId123")
@@ -1084,19 +1106,20 @@ class UserCompanyAssociationsTest {
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
 
-        Mockito.verify( emailService ).sendInvitationCancelledEmailToAssociatedUsers( eq( "theId123" ), eq( companyDetails ), eq( "the.joker@gotham.city" ), eq( "Scrooge McDuck" ), any() );
+        Mockito.verify( emailService ).sendInvitationCancelledEmailToAssociatedUser( eq( "theId123" ), eq( "x222222" ), any( Mono.class ), eq( "the.joker@gotham.city" ), eq( "Scrooge McDuck" ) );
     }
 
     @Test
     void updateAssociationStatusForIdUserRejectedInvitationNotificationsSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "38" ).getFirst();
-        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "x222222" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "9999" );
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "scrooge.mcduck@disney.land" );
         mockers.mockCompanyServiceFetchCompanyProfile( "x222222" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).findAssociationDaoById("38");
         Mockito.doReturn( List.of( "111", "222", "444" ) ).when( associationsService ).fetchAssociatedUsers( "x222222" );
+
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationRejectedEmailToAssociatedUser( eq( "theId123" ), eq( "x222222" ), any( Mono.class ), eq( "Scrooge McDuck" ) );
 
         mockMvc.perform( patch( "/associations/38" )
                         .header("X-Request-Id", "theId123")
@@ -1107,7 +1130,7 @@ class UserCompanyAssociationsTest {
                         .content( "{\"status\":\"removed\"}" ) )
                 .andExpect( status().isOk() );
 
-        Mockito.verify( emailService ).sendInvitationRejectedEmailToAssociatedUsers( eq( "theId123" ), eq( companyDetails ), eq( "Scrooge McDuck" ), any() );
+        Mockito.verify( emailService ).sendInvitationRejectedEmailToAssociatedUser( eq( "theId123" ), eq( "x222222" ), any( Mono.class ), eq( "Scrooge McDuck" ) );
     }
 
     @Test
@@ -1235,6 +1258,8 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(Optional.of(associationDao)).when(associationsService).fetchAssociationForCompanyNumberAndUserEmail("444444", "light.yagami@death.note");
         Mockito.doReturn(associationDao).when(associationsService).sendNewInvitation(eq("9999"), any());
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( companyDetails ), eq( "Scrooge McDuck" ), any( String.class ), eq( "light.yagami@death.note" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( companyDetails ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -1247,7 +1272,7 @@ class UserCompanyAssociationsTest {
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat( comparisonUtils.compare( associationDaoForComparison, List.of( "id", "companyNumber", "createdAt", "approvedAt", "removedAt", "approvalRoute", "approvalExpiryAt", "invitations", "etag", "version" ), List.of( "userId", "userEmail" ), Map.of() ) ));
         Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), anyString(), eq( "light.yagami@death.note" ) );
-        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123"), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), eq("light.yagami@death.note"), argThat( List::isEmpty ) );
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), eq("light.yagami@death.note") );
     }
 
     @Test
@@ -1262,6 +1287,8 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(Optional.of(associationDao)).when(associationsService).fetchAssociationForCompanyNumberAndUserEmail("444444", "light.yagami@death.note");
         Mockito.doReturn(associationDao).when(associationsService).sendNewInvitation(eq("9999"), any());
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( companyDetails ), eq( "Scrooge McDuck" ), any( String.class ), eq( "light.yagami@death.note" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( companyDetails ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -1274,7 +1301,7 @@ class UserCompanyAssociationsTest {
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), argThat(comparisonUtils.compare( associationDaoForComparison, List.of( "id", "companyNumber", "createdAt", "approvedAt", "removedAt", "approvalRoute", "approvalExpiryAt", "invitations", "etag", "version", "userId", "userEmail" ), List.of(), Map.of() )));
         Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), anyString(), eq( "light.yagami@death.note" ) );
-        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers(  eq("theId123"), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), eq("light.yagami@death.note"), argThat( List::isEmpty ) );
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUser(  eq("theId123"), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), eq("light.yagami@death.note") );
     }
 
     @Test
@@ -1290,6 +1317,8 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(Optional.of(targetUserAssociation)).when(associationsService).fetchAssociationForCompanyNumberAndUserId("444444", "000");
         Mockito.doReturn(requestingUserAssociation).when(associationsService).sendNewInvitation(eq("9999"), any());
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( companyDetails ), eq( "Scrooge McDuck" ), any( String.class ), eq( "light.yagami@death.note" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( companyDetails ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -1302,7 +1331,7 @@ class UserCompanyAssociationsTest {
 
         Mockito.verify(associationsService).sendNewInvitation(eq("9999"), any() );
         Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), anyString(), eq( "light.yagami@death.note" ) );
-        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers( eq("theId123"), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), eq("light.yagami@death.note"), argThat( List::isEmpty ) );
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUser( eq("theId123"), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), eq("light.yagami@death.note") );
     }
 
     @Test
@@ -1317,6 +1346,8 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationForCompanyNumberAndUserId("444444", "000");
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
         Mockito.doReturn( association).when( associationsService ).createAssociation( "444444", "000", null, ApprovalRouteEnum.INVITATION, "9999" );
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( companyDetails ), eq( "Scrooge McDuck" ), any( String.class ), eq( "light.yagami@death.note" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( companyDetails ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -1328,7 +1359,7 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isCreated());
 
         Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), anyString(), eq( "light.yagami@death.note" ) );
-        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers( eq("theId123"), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), eq("light.yagami@death.note"), argThat( List::isEmpty ) );
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUser( eq("theId123"), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), eq("light.yagami@death.note") );
     }
 
     @Test
@@ -1343,6 +1374,8 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationForCompanyNumberAndUserId("444444", "000");
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
         Mockito.doReturn( newAssociation).when( associationsService ).createAssociation( "444444", null, "light.yagami@death.note", ApprovalRouteEnum.INVITATION, "9999" );
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( companyDetails ), eq( "Scrooge McDuck" ), any( String.class ), eq( "light.yagami@death.note" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( companyDetails ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -1354,7 +1387,7 @@ class UserCompanyAssociationsTest {
                 .andExpect(status().isCreated());
 
         Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), anyString(), eq( "light.yagami@death.note" ) );
-        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUsers( eq("theId123"), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), eq("light.yagami@death.note"), argThat( List::isEmpty ) );
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUser( eq("theId123"), argThat( comparisonUtils.compare( companyDetails, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq("Scrooge McDuck"), eq("light.yagami@death.note") );
     }
 
     @Test
