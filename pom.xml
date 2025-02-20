@@ -31,17 +31,16 @@
         <google-http-client.version>1.45.0</google-http-client.version>
         <api-helper-java.version>3.0.1</api-helper-java.version>
         <email-producer-java.version>3.0.3</email-producer-java.version>
-        <sonar-maven-plugin.version>4.0.0.4121</sonar-maven-plugin.version>
         <flapdoodle.version>4.16.1</flapdoodle.version>
+
+        <sonar-maven-plugin.version>4.0.0.4121</sonar-maven-plugin.version>
+        <sonar.token>${CODE_ANALYSIS_TOKEN}</sonar.token>
+        <sonar.login></sonar.login>
+        <sonar.password></sonar.password>
+        <sonar.projectName>accounts-association-api</sonar.projectName>
+        <sonar.projectKey>uk.gov.companieshouse:accounts-association-api</sonar.projectKey>
+        <sonar.java.binaries>${project.basedir}/target,${project.basedir}/target/*</sonar.java.binaries>
     </properties>
-    <profiles>
-        <profile>
-            <id>sonar-pr-analysis</id>
-            <properties>
-                <sonar.pullrequest.base>main</sonar.pullrequest.base>
-            </properties>
-        </profile>
-    </profiles>
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -104,12 +103,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.sonarsource.scanner.maven</groupId>
-            <artifactId>sonar-maven-plugin</artifactId>
-            <version>${sonar-maven-plugin.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -228,6 +221,7 @@
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar-maven-plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
