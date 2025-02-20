@@ -5,6 +5,8 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
@@ -18,17 +20,14 @@ import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.*;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
-import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
@@ -97,8 +96,12 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         }
 
         LOG.debugContext( xRequestId, String.format( "Attempting to create requests for users associated with company %s", companyNumber ), null );
-        final var associatedUsers = associationsService.fetchAssociatedUsers( companyNumber );
-        emailService.sendAuthCodeConfirmationEmailToAssociatedUsers( xRequestId, companyDetails, displayName, associatedUsers );
+
+        Mono.just( companyNumber )
+                .map( associationsService::fetchAssociatedUsers )
+                .flatMapMany( Flux::fromIterable )
+                .flatMap( emailService.sendAuthCodeConfirmationEmailToAssociatedUser( xRequestId, companyDetails, displayName ) )
+                .subscribe();
 
         return new ResponseEntity<>(new ResponseBodyPost().associationId(association.getId()), HttpStatus.CREATED);
     }
@@ -223,7 +226,10 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         final var inviterDisplayName = Optional.ofNullable( inviterUserDetails.getDisplayName() ).orElse( inviterUserDetails.getEmail() );
         LOG.debugContext( xRequestId, String.format( "Attempting to create requests for users associated with company %s", companyNumber ), null );
-        final var associatedUsers = associationsService.fetchAssociatedUsers( companyNumber );
+        final var cachedAssociatedUsers = Mono.just( companyNumber )
+                .map( associationsService::fetchAssociatedUsers )
+                .flatMapMany( Flux::fromIterable )
+                .cache();
 
         final var inviteeUserDetails = usersService.searchUserDetails( List.of( inviteeEmail ) );
 
@@ -242,8 +248,8 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             LOG.debugContext( xRequestId, String.format( "Attempting to create new invitation. Association's id: %s", association.getId() ), null );
             final var invitationAssociation = associationsService.sendNewInvitation(ericIdentity, association);
             LOG.infoContext( xRequestId, String.format( "Created new invitation. Association's id: %s", invitationAssociation.getId() ), null );
-            emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, invitationAssociation.getApprovalExpiryAt().toString(), inviteeEmail );
-            emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeEmail, associatedUsers );
+            emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, invitationAssociation.getApprovalExpiryAt().toString(), inviteeEmail ).subscribe();
+            cachedAssociatedUsers.flatMap( emailService.sendInvitationEmailToAssociatedUser( xRequestId, companyDetails, inviterDisplayName, inviteeEmail ) ).subscribe();
             return new ResponseEntity<>( new ResponseBodyPost().associationId( invitationAssociation.getId() ), HttpStatus.CREATED );
         }
 
@@ -259,8 +265,8 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                 LOG.debugContext( xRequestId, String.format( "Attempting to create new invitation. Association's for user %s and company", inviteeUserId, companyNumber ), null );
                 association = associationsService.createAssociation(companyNumber,inviteeUserId,null,ApprovalRouteEnum.INVITATION,ericIdentity);
                 LOG.infoContext( xRequestId, String.format( "Created new invitation. Association's id: %s", association.getId() ), null );
-                emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, association.getApprovalExpiryAt().toString(), inviteeEmail );
-                emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeDisplayName, associatedUsers );
+                emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, association.getApprovalExpiryAt().toString(), inviteeEmail ).subscribe();
+                cachedAssociatedUsers.flatMap( emailService.sendInvitationEmailToAssociatedUser( xRequestId, companyDetails, inviterDisplayName, inviteeDisplayName ) ).subscribe();
                 return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
             } else if(associationWithUserID.get().getStatus().equals("confirmed")) {
                 LOG.errorContext( xRequestId, new Exception( String.format( "%s already has a confirmed association at company %s", inviteeEmail, companyNumber ) ), null );
@@ -269,17 +275,16 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             LOG.debugContext( xRequestId, String.format( "Attempting to create new invitation. Association's id: %s", associationWithUserID.get().getId() ), null );
             association = associationsService.sendNewInvitation(ericIdentity, associationWithUserID.get());
             LOG.infoContext( xRequestId, String.format( "Created new invitation. Association's id: %s", association.getId() ), null );
-            emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, association.getApprovalExpiryAt().toString(), inviteeEmail );
-            emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeDisplayName, associatedUsers );
+            emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, association.getApprovalExpiryAt().toString(), inviteeEmail ).subscribe();
+            cachedAssociatedUsers.flatMap( emailService.sendInvitationEmailToAssociatedUser( xRequestId, companyDetails, inviterDisplayName, inviteeDisplayName ) ).subscribe();
             return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
         }
         //if association with email not found, user not found
         LOG.debugContext( xRequestId, String.format( "Attempting to create new invitation for user %s and company %s", inviteeEmail, companyNumber ), null );
         association = associationsService.createAssociation(companyNumber, null ,inviteeEmail,ApprovalRouteEnum.INVITATION,ericIdentity);
         LOG.infoContext( xRequestId, String.format( "Created new invitation. Association's id: %s", association.getId() ), null );
-        emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, association.getApprovalExpiryAt().toString(), inviteeEmail );
-        emailService.sendInvitationEmailToAssociatedUsers( xRequestId, companyDetails, inviterDisplayName,inviteeEmail, associatedUsers );
-
+        emailService.sendInviteEmail( xRequestId, companyDetails, inviterDisplayName, association.getApprovalExpiryAt().toString(), inviteeEmail ).subscribe();
+        cachedAssociatedUsers.flatMap( emailService.sendInvitationEmailToAssociatedUser( xRequestId, companyDetails, inviterDisplayName, inviteeEmail ) ).subscribe();
         return new ResponseEntity<>( new ResponseBodyPost().associationId( association.getId() ), HttpStatus.CREATED );
     }
 
@@ -369,40 +374,41 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         return new ResponseEntity<>( HttpStatus.OK );
     }
 
-    private void sendEmailNotificationForStatusUpdate(String xRequestId, String requestingUserDisplayValue, String targetUserDisplayValue, boolean requestingAndTargetUserMatches, RequestBodyPut.StatusEnum newStatus, String oldStatus, AssociationDao associationDao) {
-        final String companyNumber = associationDao.getCompanyNumber();
-        final List<InvitationDao> invitations = associationDao.getInvitations();
+    private void sendEmailNotificationForStatusUpdate( final String xRequestId, final String requestingUserDisplayValue, final String targetUserDisplayValue, final boolean requestingAndTargetUserMatches, final RequestBodyPut.StatusEnum newStatus, final String oldStatus, final AssociationDao associationDao ) {
+        final var cachedCompanyName = Mono.just( associationDao.getCompanyNumber() )
+                .map( companyService::fetchCompanyProfile )
+                .map( CompanyDetails::getCompanyName )
+                .cache();
 
-        final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
-        LOG.debugContext( xRequestId, String.format( "Attempting to create requests for users associated with company %s", companyNumber ), null );
-        final var requestsToFetchAssociatedUsers = associationsService.fetchAssociatedUsers(companyNumber);
+        final var cachedAssociatedUsers =
+        Mono.just( associationDao.getCompanyNumber() )
+                .map( associationsService::fetchAssociatedUsers )
+                .flatMapMany( Flux::fromIterable )
+                .cache();
 
-        final var authorisedUserRemoved = oldStatus.equals(CONFIRMED.getValue()) && newStatus.equals(REMOVED);
-        final var userAcceptedInvitation = requestingAndTargetUserMatches && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(CONFIRMED);
-        final var userCancelledInvitation = !requestingAndTargetUserMatches && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED);
-        final var userRejectedInvitation = requestingAndTargetUserMatches && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED);
+        final var cachedInvitedByDisplayName = Mono.just( associationDao )
+                .map( AssociationDao::getInvitations )
+                .flatMapMany( Flux::fromIterable )
+                .reduce( (firstInvitation, secondInvitation) -> firstInvitation.getInvitedAt().isAfter( secondInvitation.getInvitedAt() ) ? firstInvitation : secondInvitation )
+                .map( InvitationDao::getInvitedBy )
+                .map( usersService::fetchUserDetails )
+                .map( user -> Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() ) )
+                .cache();
 
-        if (userRejectedInvitation) {
-            emailService.sendInvitationRejectedEmailToAssociatedUsers(xRequestId, companyDetails, requestingUserDisplayValue, requestsToFetchAssociatedUsers);
-        } else if (authorisedUserRemoved) {
-            emailService.sendAuthorisationRemovedEmailToRemovedUser(xRequestId, companyDetails, requestingUserDisplayValue, associationDao.getUserId());
-            emailService.sendAuthorisationRemovedEmailToAssociatedUsers(xRequestId, companyDetails, requestingUserDisplayValue, targetUserDisplayValue, requestsToFetchAssociatedUsers);
-        } else if (userAcceptedInvitation) {
-            final var invitedByDisplayName = invitations.stream()
-                    .max(Comparator.comparing(InvitationDao::getInvitedAt))
-                    .map(InvitationDao::getInvitedBy)
-                    .map(usersService::fetchUserDetails)
-                    .map(user -> Optional.ofNullable(user.getDisplayName()).orElse(user.getEmail()))
-                    .orElseThrow(() -> new NullPointerException("Inviter does not exist."));
-
-            emailService.sendInvitationAcceptedEmailToAssociatedUsers(xRequestId, companyDetails, invitedByDisplayName, requestingUserDisplayValue, requestsToFetchAssociatedUsers);
-        } else if (userCancelledInvitation) {
-            final Supplier<User> requestToGetCancelledUserEmail = Objects.isNull( associationDao.getUserEmail() ) ? () -> usersService.fetchUserDetails( associationDao.getUserId() ) : () -> new User().email( associationDao.getUserEmail() );
-            emailService.sendInviteCancelledEmail(xRequestId, companyDetails, requestingUserDisplayValue, requestToGetCancelledUserEmail );
-            emailService.sendInvitationCancelledEmailToAssociatedUsers(xRequestId, companyDetails, requestingUserDisplayValue, targetUserDisplayValue, requestsToFetchAssociatedUsers);
+        var emails = Flux.empty();
+        if ( requestingAndTargetUserMatches && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED ) ) {
+            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationRejectedEmailToAssociatedUser( xRequestId, associationDao.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue ) ) );
+        } else if ( oldStatus.equals( CONFIRMED.getValue() ) && newStatus.equals( REMOVED ) ) {
+            emails = emails.concatWith( emailService.sendAuthorisationRemovedEmailToRemovedUser( xRequestId, associationDao.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, associationDao.getUserId() ) );
+            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendAuthorisationRemovedEmailToAssociatedUser( xRequestId, associationDao.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
+        } else if ( requestingAndTargetUserMatches && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( CONFIRMED ) ) {
+            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationAcceptedEmailToAssociatedUser( xRequestId, associationDao.getCompanyNumber(), cachedCompanyName, cachedInvitedByDisplayName, requestingUserDisplayValue ) ) );
+        } else if ( !requestingAndTargetUserMatches && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED ) ) {
+            emails = emails.concatWith( emailService.sendInviteCancelledEmail(xRequestId, associationDao.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, associationDao ) );
+            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationCancelledEmailToAssociatedUser( xRequestId, associationDao.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
         }
+        emails.subscribe();
     }
-
 
 }
 

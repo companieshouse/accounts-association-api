@@ -764,7 +764,7 @@ public class TestDataManager {
             final var association = new AssociationDao();
             association.setCompanyNumber("111111");
             association.setUserEmail( "light.yagami@death.note" );
-            association.setStatus(StatusEnum.CONFIRMED.getValue());
+            association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
             association.setId("34");
             association.setApprovedAt( now.plusDays(61) );
             association.setRemovedAt( now.plusDays(62) );
