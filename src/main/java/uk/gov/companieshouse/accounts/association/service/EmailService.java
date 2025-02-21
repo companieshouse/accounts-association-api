@@ -179,7 +179,7 @@ public class EmailService {
                 .map( AssociationDao::getUserId )
                 .map( usersService::fetchUserDetails )
                 .map( User::getEmail )
-                .switchIfEmpty( Mono.just( associationDao.getUserEmail() ) )
+                .switchIfEmpty( Mono.just( associationDao ).map( AssociationDao::getUserEmail ) )
                 .map( inviteeEmail -> new InviteCancelledEmailBuilder()
                         .setRecipientEmail( inviteeEmail )
                         .setCancelledBy( cancelledByDisplayName ) )
