@@ -20,4 +20,14 @@ public class ParsingUtil {
         };
     }
 
+    public static <T> String parseJsonFrom( final T object ) {
+        final var objectMapper = new ObjectMapper();
+        objectMapper.registerModule( new JavaTimeModule() );
+        try {
+            return objectMapper.writeValueAsString( object );
+        } catch ( IOException exception ) {
+            throw new InternalServerErrorRuntimeException( "Unable to parse json" );
+        }
+    }
+
 }
