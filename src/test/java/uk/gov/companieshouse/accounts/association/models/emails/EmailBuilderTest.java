@@ -3,11 +3,15 @@ package uk.gov.companieshouse.accounts.association.models.emails;
 import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonFrom;
 
 import java.math.BigDecimal;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -31,146 +35,129 @@ class EmailBuilderTest {
 
     @Test
     void traditionalSetterApproachCorrectlySetsValues(){
-        final var emailContent = testDataManager.fetchCompanyDetailsDtos( "111111" );
-        final var senders = testDataManager.fetchUserDtos( "111", "222", "333" );
-        final var recipients = testDataManager.fetchUserDtos( "444", "555", "666" );
+        final var emailContent = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final var sender = testDataManager.fetchUserDtos( "111", "222", "333" ).getFirst();
+        final var recipient = testDataManager.fetchUserDtos( "444", "555", "666" ).getFirst();
 
         final var emailBuilder = new EmailBuilder<CompanyDetails>();
         emailBuilder.setTemplateId( "greeting_email" );
         emailBuilder.setTemplateVersion( 1 );
-        emailBuilder.setTemplateContents( emailContent );
-        emailBuilder.setSystemIsASender( true );
-        emailBuilder.setSenders( senders );
-        emailBuilder.setRecipients( recipients );
+        emailBuilder.setTemplateContent( emailContent );
+        emailBuilder.setSender( sender );
+        emailBuilder.setRecipient( recipient );
 
         Assertions.assertEquals( "greeting_email", emailBuilder.getTemplateId() );
         Assertions.assertEquals( 1, emailBuilder.getTemplateVersion() );
-        Assertions.assertEquals( emailContent, emailBuilder.getTemplateContents() );
-        Assertions.assertTrue( emailBuilder.getSystemIsASender() );
-        Assertions.assertEquals( senders, emailBuilder.getSenders() );
-        Assertions.assertEquals( recipients, emailBuilder.getRecipients() );
+        Assertions.assertEquals( emailContent, emailBuilder.getTemplateContent() );
+        Assertions.assertEquals( sender, emailBuilder.getSender() );
+        Assertions.assertEquals( recipient, emailBuilder.getRecipient() );
     }
 
     @Test
     void builderApproachCorrectlySetsValues(){
-        final var emailContent = testDataManager.fetchCompanyDetailsDtos( "111111" );
-        final var senders = testDataManager.fetchUserDtos( "111", "222", "333" );
-        final var recipients = testDataManager.fetchUserDtos( "444", "555", "666" );
+        final var emailContent = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final var sender = testDataManager.fetchUserDtos( "111", "222", "333" ).getFirst();
+        final var recipient = testDataManager.fetchUserDtos( "444", "555", "666" ).getFirst();
 
         final var emailBuilder = new EmailBuilder<CompanyDetails>()
                 .templateId( "greeting_email" )
                 .templateVersion( 1 )
-                .templateContents( emailContent )
-                .systemIsASender( true )
-                .senders( senders )
-                .recipients( recipients );
+                .templateContent( emailContent )
+                .sender( sender )
+                .recipient( recipient );
 
         Assertions.assertEquals( "greeting_email", emailBuilder.getTemplateId() );
         Assertions.assertEquals( 1, emailBuilder.getTemplateVersion() );
-        Assertions.assertEquals( emailContent, emailBuilder.getTemplateContents() );
-        Assertions.assertTrue( emailBuilder.getSystemIsASender() );
-        Assertions.assertEquals( senders, emailBuilder.getSenders() );
-        Assertions.assertEquals( recipients, emailBuilder.getRecipients() );
-    }
-
-    @Test
-    void listBasedSettersThrowIllegalArgumentExceptionWhenArgumentsAreNull(){
-        final var emailBuilder = new EmailBuilder<CompanyDetails>();
-        Assertions.assertThrows( IllegalArgumentException.class, () -> emailBuilder.setTemplateContents( null ) );
-        Assertions.assertThrows( IllegalArgumentException.class, () -> emailBuilder.setSenders( null ) );
-        Assertions.assertThrows( IllegalArgumentException.class, () -> emailBuilder.setRecipients( null ) );
-    }
-
-    @Test
-    void addMethodsEnrichListsAndClearMethodsResetLists(){
-        final var emailContent = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
-        final var sender = testDataManager.fetchUserDtos( "111" ).getFirst();
-        final var recipient = testDataManager.fetchUserDtos( "444" ).getFirst();
-
-        final var emailBuilder = new EmailBuilder<CompanyDetails>();
-        emailBuilder.addTemplateContent( emailContent );
-        emailBuilder.addSender( sender );
-        emailBuilder.addRecipient( recipient );
-
-        Assertions.assertEquals( emailContent, emailBuilder.getTemplateContents().getFirst() );
-        Assertions.assertEquals( sender, emailBuilder.getSenders().getFirst() );
-        Assertions.assertEquals( recipient, emailBuilder.getRecipients().getFirst() );
-
-        emailBuilder.clearTemplateContents();
-        emailBuilder.clearSenders();
-        emailBuilder.clearRecipients();
-
-        Assertions.assertTrue( emailBuilder.getTemplateContents().isEmpty() );
-        Assertions.assertTrue( emailBuilder.getSenders().isEmpty() );
-        Assertions.assertTrue( emailBuilder.getRecipients().isEmpty() );
+        Assertions.assertEquals( emailContent, emailBuilder.getTemplateContent() );
+        Assertions.assertEquals( sender, emailBuilder.getSender() );
+        Assertions.assertEquals( recipient, emailBuilder.getRecipient() );
     }
 
     private EmailBuilder<CompanyDetails> createPopulatedEmailBuilder(){
-        final var emailContent = testDataManager.fetchCompanyDetailsDtos( "111111" );
-        final var senders = testDataManager.fetchUserDtos( "111", "222", "333" );
-        final var recipients = testDataManager.fetchUserDtos( "444", "555", "666" );
+        final var emailContent = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final var sender = testDataManager.fetchUserDtos( "111", "222", "333" ).getFirst();
+        final var recipient = testDataManager.fetchUserDtos( "444", "555", "666" ).getFirst();
 
         return new EmailBuilder<CompanyDetails>()
                 .templateId( "greeting_email" )
-                .templateContents( emailContent )
-                .systemIsASender( true )
-                .senders( senders )
-                .recipients( recipients );
+                .templateContent( emailContent )
+                .sender( sender )
+                .recipient( recipient );
     }
 
     @Test
     void buildWithIncompleteDataThrowsIllegalArgumentException(){
         Assertions.assertThrows( IllegalArgumentException.class, () -> createPopulatedEmailBuilder().templateVersion( 1 ).templateId( null ).build() );
         Assertions.assertThrows( IllegalArgumentException.class, () -> createPopulatedEmailBuilder().build() );
-        Assertions.assertThrows( IllegalArgumentException.class, () -> createPopulatedEmailBuilder().templateVersion( 1 ).addSender( null ).build() );
-        Assertions.assertThrows( IllegalArgumentException.class, () -> createPopulatedEmailBuilder().templateVersion( 1 ).addRecipient( null ).build() );
-        Assertions.assertThrows( IllegalArgumentException.class, () -> createPopulatedEmailBuilder().templateVersion( 1 ).addTemplateContent( null ).build() );
-        Assertions.assertThrows( IllegalArgumentException.class, () -> createPopulatedEmailBuilder().templateVersion( 1 ).clearTemplateContents().build() );
-        Assertions.assertThrows( IllegalArgumentException.class, () -> createPopulatedEmailBuilder().templateVersion( 1 ).clearSenders().build() );
-        Assertions.assertThrows( IllegalArgumentException.class, () -> createPopulatedEmailBuilder().templateVersion( 1 ).clearRecipients().build() );
+        Assertions.assertThrows( IllegalArgumentException.class, () -> createPopulatedEmailBuilder().templateVersion( 1 ).recipient( null ).build() );
+        Assertions.assertThrows( IllegalArgumentException.class, () -> createPopulatedEmailBuilder().templateVersion( 1 ).templateContent( null ).build() );
     }
 
-    @Test
-    void buildCorrectlyBuildsEmailWhenEverythingIsSpecified(){
-        final var emailContent = testDataManager.fetchCompanyDetailsDtos( "111111" );
-        final var senders = testDataManager.fetchUserDtos( "111", "222" );
-        final var recipients = testDataManager.fetchUserDtos( "555", "666" );
+    private static Stream<Arguments> buildScenarios(){
+        return Stream.of(
+                Arguments.of( "111", "555", "Batman", "Batwoman" ),
+                Arguments.of( "222", "666", "the.joker@gotham.city", "homer.simpson@springfield.com" )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource( "buildScenarios" )
+    void buildCorrectlyBuildsEmailWhenEverythingIsSpecified( final String senderUserId, final String recipientUserId, final String senderName, final String recipientName ){
+        final var emailContent = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final var sender = testDataManager.fetchUserDtos( senderUserId ).getFirst();
+        final var recipient = testDataManager.fetchUserDtos( recipientUserId ).getFirst();
 
         final var email = new EmailBuilder<CompanyDetails>()
                 .templateId( "greeting_email" )
                 .templateVersion( 1 )
-                .templateContents( emailContent )
-                .systemIsASender( true )
-                .senders( senders )
-                .recipients( recipients )
+                .templateContent( emailContent )
+                .sender( sender )
+                .recipient( recipient )
                 .build();
 
-        Assertions.assertEquals( 1, email.getEmailDetails().size() );
-        Assertions.assertEquals( "greeting_email", email.getEmailDetails().getFirst().getTemplateId() );
-        Assertions.assertEquals( new BigDecimal( 1 ), email.getEmailDetails().getFirst().getTemplateVersion() );
-        Assertions.assertEquals( parseJsonFrom( emailContent.getFirst() ), email.getEmailDetails().getFirst().getPersonalisationDetails() );
-        Assertions.assertEquals( 3, email.getSenderDetails().size() );
-        Assertions.assertEquals( "accounts-association-api", email.getSenderDetails().getFirst().getAppId() );
-        Assertions.assertNotNull( email.getSenderDetails().getFirst().getReference() );
-        Assertions.assertEquals( "111", email.getSenderDetails().getFirst().getUserId() );
-        Assertions.assertEquals( "bruce.wayne@gotham.city", email.getSenderDetails().getFirst().getEmailAddress() );
-        Assertions.assertEquals( "Batman", email.getSenderDetails().getFirst().getName() );
-        Assertions.assertEquals( "accounts-association-api", email.getSenderDetails().get( 1 ).getAppId() );
-        Assertions.assertNotNull( email.getSenderDetails().get( 1 ).getReference() );
-        Assertions.assertEquals( "222", email.getSenderDetails().get( 1 ).getUserId() );
-        Assertions.assertEquals( "the.joker@gotham.city", email.getSenderDetails().get( 1 ).getEmailAddress() );
-        Assertions.assertEquals( "the.joker@gotham.city", email.getSenderDetails().get( 1 ).getName() );
-        Assertions.assertEquals( "accounts-association-api", email.getSenderDetails().getLast().getAppId() );
-        Assertions.assertNotNull( email.getSenderDetails().getLast().getReference() );
-        Assertions.assertNull( email.getSenderDetails().getLast().getUserId() );
-        Assertions.assertNull( email.getSenderDetails().getLast().getEmailAddress() );
-        Assertions.assertNull( email.getSenderDetails().getLast().getName() );
-        Assertions.assertEquals( 2, email.getRecipientDetails().size() );
-        Assertions.assertEquals( "barbara.gordon@gotham.city", email.getRecipientDetails().getFirst().getEmailAddress() );
-        Assertions.assertEquals( "Batwoman", email.getRecipientDetails().getFirst().getName() );
-        Assertions.assertEquals( "homer.simpson@springfield.com", email.getRecipientDetails().getLast().getEmailAddress() );
-        Assertions.assertEquals( "homer.simpson@springfield.com", email.getRecipientDetails().getLast().getName() );
+        Assertions.assertEquals( "greeting_email", email.getEmailDetails().getTemplateId() );
+        Assertions.assertEquals( new BigDecimal( 1 ), email.getEmailDetails().getTemplateVersion() );
+        Assertions.assertEquals( parseJsonFrom( emailContent ), email.getEmailDetails().getPersonalisationDetails() );
+
+        Assertions.assertEquals( "accounts-association-api", email.getSenderDetails().getAppId() );
+        Assertions.assertNotNull( email.getSenderDetails().getReference() );
+        Assertions.assertEquals( senderUserId, email.getSenderDetails().getUserId() );
+        Assertions.assertEquals( sender.getEmail(), email.getSenderDetails().getEmailAddress() );
+        Assertions.assertEquals( senderName, email.getSenderDetails().getName() );
+
+        Assertions.assertEquals( recipient.getEmail(), email.getRecipientDetails().getEmailAddress() );
+        Assertions.assertEquals( recipientName, email.getRecipientDetails().getName() );
+
         Assertions.assertNotNull( email.getCreatedAt() );
+    }
+
+    @Test
+    void buildCorrectlyBuildsEmailWithoutSender(){
+        final var emailContent = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final var recipient = testDataManager.fetchUserDtos( "555" ).getFirst();
+
+        final var email = new EmailBuilder<CompanyDetails>()
+                .templateId( "greeting_email" )
+                .templateVersion( 1 )
+                .templateContent( emailContent )
+                .recipient( recipient )
+                .build();
+
+        Assertions.assertEquals( "greeting_email", email.getEmailDetails().getTemplateId() );
+        Assertions.assertEquals( new BigDecimal( 1 ), email.getEmailDetails().getTemplateVersion() );
+        Assertions.assertEquals( parseJsonFrom( emailContent ), email.getEmailDetails().getPersonalisationDetails() );
+
+        Assertions.assertEquals( "accounts-association-api", email.getSenderDetails().getAppId() );
+        Assertions.assertNotNull( email.getSenderDetails().getReference() );
+        Assertions.assertNull( email.getSenderDetails().getUserId() );
+        Assertions.assertNull( email.getSenderDetails().getEmailAddress() );
+        Assertions.assertNull( email.getSenderDetails().getName() );
+
+        Assertions.assertEquals( recipient.getEmail(), email.getRecipientDetails().getEmailAddress() );
+        Assertions.assertEquals( "Batwoman", email.getRecipientDetails().getName() );
+
+        Assertions.assertNotNull( email.getCreatedAt() );
+
     }
 
 }
