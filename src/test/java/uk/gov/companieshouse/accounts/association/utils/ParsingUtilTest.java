@@ -29,5 +29,11 @@ class ParsingUtilTest {
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> ParsingUtil.parseJsonTo( User.class ).apply( "}{" ) );
     }
 
+    @Test
+    void parseJsonFromSuccessfullyParsesFromSpecifiedClass() throws JsonProcessingException {
+        final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var json = new ObjectMapper().writeValueAsString( user );
+        Assertions.assertEquals( json , ParsingUtil.parseJsonFrom( user ) );
+    }
 
 }
