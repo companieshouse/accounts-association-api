@@ -41,15 +41,15 @@ class BaseEmailServiceTest {
     }
 
     @Test
-    void sendEmailsWithNullInputThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> baseEmailService.sendEmails( null ) );
+    void sendEmailWithNullInputThrowsNullPointerException(){
+        Assertions.assertThrows( NullPointerException.class, () -> baseEmailService.sendEmail( null ) );
     }
 
     @Test
     void sendEmailsPropagatesErrorCorrectly(){
-        final var emailContent = testDataManager.fetchCompanyDetailsDtos( "111111" );
-        final var senders = testDataManager.fetchUserDtos( "111", "222", "333" );
-        final var recipients = testDataManager.fetchUserDtos( "444", "555", "666" );
+        final var emailContent = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final var sender = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var recipient = testDataManager.fetchUserDtos( "444" ).getFirst();
 
         final var requestBodyUriSpec = Mockito.mock( WebClient.RequestBodyUriSpec.class );
         final var requestBodySpec = Mockito.mock( WebClient.RequestBodySpec.class );
@@ -65,20 +65,19 @@ class BaseEmailServiceTest {
         final var email = new EmailBuilder<CompanyDetails>()
                 .templateId( "greeting_email" )
                 .templateVersion( 1 )
-                .templateContents( emailContent )
-                .systemIsASender( true )
-                .senders( senders )
-                .recipients( recipients )
+                .templateContent( emailContent )
+                .sender( sender )
+                .recipient( recipient )
                 .build();
 
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> baseEmailService.sendEmails( email ).block( Duration.ofSeconds( 20L ) ) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> baseEmailService.sendEmail( email ).block( Duration.ofSeconds( 20L ) ) );
     }
 
     @Test
     void sendEmailsCorrectlySendsEmails(){
-        final var emailContent = testDataManager.fetchCompanyDetailsDtos( "111111" );
-        final var senders = testDataManager.fetchUserDtos( "111", "222", "333" );
-        final var recipients = testDataManager.fetchUserDtos( "444", "555", "666" );
+        final var emailContent = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final var sender = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var recipient = testDataManager.fetchUserDtos( "444" ).getFirst();
 
         final var requestBodyUriSpec = Mockito.mock( WebClient.RequestBodyUriSpec.class );
         final var requestBodySpec = Mockito.mock( WebClient.RequestBodySpec.class );
@@ -94,15 +93,14 @@ class BaseEmailServiceTest {
         final var email = new EmailBuilder<CompanyDetails>()
                 .templateId( "greeting_email" )
                 .templateVersion( 1 )
-                .templateContents( emailContent )
-                .systemIsASender( true )
-                .senders( senders )
-                .recipients( recipients )
+                .templateContent( emailContent )
+                .sender( sender )
+                .recipient( recipient )
                 .build();
 
-        final var references = baseEmailService.sendEmails( email ).block( Duration.ofSeconds( 20L ) );
+        final var reference = baseEmailService.sendEmail( email ).block( Duration.ofSeconds( 20L ) );
 
-        Assertions.assertEquals( 4, references.size() );
+        Assertions.assertNotNull( reference );
     }
 
 }

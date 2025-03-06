@@ -3,16 +3,11 @@ package uk.gov.companieshouse.accounts.association.service;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.APPLICATION_NAMESPACE;
 
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
-import uk.gov.companieshouse.api.chs_notification_sender.model.EmailDetails;
 import uk.gov.companieshouse.api.chs_notification_sender.model.GovUkEmailDetailsRequest;
-import uk.gov.companieshouse.api.chs_notification_sender.model.RecipientDetailsEmail;
 import uk.gov.companieshouse.api.chs_notification_sender.model.SenderDetails;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
@@ -28,40 +23,19 @@ public abstract class BaseEmailService {
     }
 
     private String mapToLogMessage( final GovUkEmailDetailsRequest email ){
-        final var templateIds = email.getEmailDetails()
-                .stream()
-                .map( emailDetails -> String.format( "%s:%s", emailDetails.getTemplateId(), emailDetails.getTemplateVersion() ) )
-                .collect( Collectors.joining( ", " ) );
+        final var emailDetails = email.getEmailDetails();
+        final var senderDetails = email.getSenderDetails();
 
-        final var senders = email.getSenderDetails()
-                .stream()
-                .map( SenderDetails::getUserId )
-                .map( userId -> Objects.isNull( userId ) ? APPLICATION_NAMESPACE : userId )
-                .collect( Collectors.joining( ", " ) );
-
-        final var recipients = email.getRecipientDetails()
-                .stream()
-                .map( RecipientDetailsEmail::getEmailAddress )
-                .collect( Collectors.joining( ", " ) );
-
+        final var template = String.format( "%s:%s", emailDetails.getTemplateId(), emailDetails.getTemplateVersion() );
+        final var sender = Objects.isNull( senderDetails.getUserId() ) ? APPLICATION_NAMESPACE : senderDetails.getUserId();
+        final var recipient = email.getRecipientDetails().getEmailAddress();
         final var sentAt = email.getCreatedAt();
+        final var content = email.getEmailDetails().getPersonalisationDetails();
 
-        final var content = email.getEmailDetails()
-                .stream()
-                .map( EmailDetails::getPersonalisationDetails )
-                .collect( Collectors.joining( ", " ) );
-
-        return String.format( "[%s] emails from [%s] to [%s] at [%s]. Email content: [%s]", templateIds, senders, recipients, sentAt, content );
+        return String.format( "[%s] email from [%s] to [%s] at [%s]. Email content: [%s]", template, sender, recipient, sentAt, content );
     }
 
-    protected Mono<List<String>> sendEmails( final GovUkEmailDetailsRequest email ){
-
-        final var references = Mono.just( email )
-                .map( GovUkEmailDetailsRequest::getSenderDetails )
-                .flatMapMany( Flux::fromIterable )
-                .map( SenderDetails::getReference )
-                .collectList();
-
+    protected Mono<String> sendEmail( final GovUkEmailDetailsRequest email ){
         final var xRequestId = getXRequestId();
         return emailWebClient.post()
                 .uri( "/notification-sender/email" )
@@ -75,7 +49,7 @@ public abstract class BaseEmailService {
                 .doOnSuccess( onSuccess -> LOG.infoContext( xRequestId, String.format( "Successfully sent %s", mapToLogMessage( email ) ), null ) )
                 .doOnSubscribe( onSubscribe -> LOG.infoContext( xRequestId, "Sending request to chs-notification-sender-api: POST /notification-sender/email.", null ) )
                 .doFinally( signalType -> LOG.infoContext( xRequestId, "Finished request to chs-notification-sender-api", null ) )
-                .then( references );
+                .then( Mono.just( email ).map( GovUkEmailDetailsRequest::getSenderDetails ).map( SenderDetails::getReference ) );
     }
 
 }

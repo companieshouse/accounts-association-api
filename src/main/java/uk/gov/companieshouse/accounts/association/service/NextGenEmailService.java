@@ -18,11 +18,10 @@ public class NextGenEmailService extends BaseEmailService {
         final var email = new EmailBuilder<String>()
                 .templateId( "greeting_email_test" )
                 .templateVersion( 1 )
-                .addTemplateContent( content )
-                .systemIsASender( true )
-                .addRecipient( recipient )
+                .templateContent( content )
+                .recipient( recipient )
                 .build();
-        sendEmails( email ).subscribe();
+        sendEmail( email ).subscribe();
     }
 
 }
