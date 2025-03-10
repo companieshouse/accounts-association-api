@@ -7,6 +7,7 @@
         <cve>CVE-2022-34917</cve>
         <cve>CVE-2023-25194</cve>
         <cve>CVE-2024-31141</cve>
+        <cve>CVE-2024-56128</cve>
     </suppress>
     <suppress until="2025-06-01Z">
         <notes><![CDATA[
@@ -26,6 +27,7 @@
    ]]></notes>
         <cve>CVE-2024-8184</cve>
         <cve>CVE-2024-6763</cve>
+        <cve>CVE-2024-22201</cve>
     </suppress>
     <suppress until="2025-06-01Z">
         <notes><![CDATA[
