@@ -7,8 +7,13 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfig;
+import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfig;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
@@ -23,11 +28,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Tag("unit-test")
+@Import(WebSecurityConfig.class)
 @WebMvcTest( UserCompanyAssociations.class )
 class ControllerAdviceTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private WebApplicationContext context;
 
     @MockBean
     private AssociationsService associationsService;
@@ -49,7 +58,9 @@ class ControllerAdviceTest {
 
     @BeforeEach
     void setup() {
-        Mockito.doNothing().when(interceptorConfig).addInterceptors(any());
+        mockMvc = MockMvcBuilders.webAppContextSetup( context )
+                .apply( SecurityMockMvcConfigurers.springSecurity() )
+                .build();
     }
 
     @Test
@@ -59,14 +70,17 @@ class ControllerAdviceTest {
 
         mockMvc.perform(get("/associations")
                         .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity", "111"))
+                        .header("ERIC-Identity", "111")
+                        .header( "ERIC-Identity-Type", "oauth2" ))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void testBadRequestRuntimeError() throws Exception {
-        mockMvc.perform(get( "/associations" )
-                        .header("X-Request-Id", "theId123"))
+        mockMvc.perform(get( "/associations?page_index=-1" )
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity", "111")
+                        .header( "ERIC-Identity-Type", "oauth2" ))
                 .andExpect(status().isBadRequest());
     }
 
@@ -74,7 +88,8 @@ class ControllerAdviceTest {
     void testConstraintViolationError() throws Exception {
         mockMvc.perform(get( "/associations?company_number=&&" )
                         .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity", "111"))
+                        .header("ERIC-Identity", "111")
+                        .header( "ERIC-Identity-Type", "oauth2" ))
                 .andExpect(status().isBadRequest());
     }
 
@@ -85,7 +100,8 @@ class ControllerAdviceTest {
 
         mockMvc.perform(get("/associations?company_number=123445")
                         .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity", "111"))
+                        .header("ERIC-Identity", "111")
+                        .header( "ERIC-Identity-Type", "oauth2" ))
                 .andExpect(status().isInternalServerError());
     }
 
@@ -96,7 +112,8 @@ class ControllerAdviceTest {
 
         mockMvc.perform(get("/associations")
                         .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity", "111"))
+                        .header("ERIC-Identity", "111")
+                        .header( "ERIC-Identity-Type", "oauth2" ))
                 .andExpect(status().isInternalServerError());
     }
 
