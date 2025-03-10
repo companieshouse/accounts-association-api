@@ -78,21 +78,27 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWithMalformedCompanyNumberReturnsBadRequest() throws Exception {
         mockMvc.perform( get( "/associations/companies/$$$$$$" )
-                        .header("X-Request-Id", "theId123") )
-                .andExpect(status().isBadRequest());
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                        .andExpect(status().isBadRequest());
     }
 
     @Test
     void getAssociationsForCompanyWithNonexistentCompanyReturnsNotFound() throws Exception {
         mockers.mockCompanyServiceFetchCompanyProfileNotFound( "919191" );
         mockMvc.perform( get( "/associations/companies/919191" )
-                        .header("X-Request-Id", "theId123") )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void getAssociationsForCompanyWithoutXRequestIdReturnsBadRequest() throws Exception {
-        mockMvc.perform( get( "/associations/companies/111111" ) )
+        mockMvc.perform( get( "/associations/companies/111111" )
+                .header( "ERIC-Identity", "111" )
+                .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isBadRequest());
     }
 
@@ -104,7 +110,9 @@ class AssociationsListForCompanyControllerTest {
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111" )
-                                .header("X-Request-Id", "theId123") )
+                                .header("X-Request-Id", "theId123")
+                                .header( "ERIC-Identity", "111" )
+                                .header( "ERIC-Identity-Type", "oauth2" ) )
                         .andExpect(status().isOk());
 
         final var associationsList = parseResponseTo( response, AssociationsList.class );
@@ -132,7 +140,9 @@ class AssociationsListForCompanyControllerTest {
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111?include_removed=false" )
-                                .header("X-Request-Id", "theId123") )
+                                .header("X-Request-Id", "theId123")
+                                .header( "ERIC-Identity", "111" )
+                                .header( "ERIC-Identity-Type", "oauth2" ) )
                         .andExpect(status().isOk());
 
         final var associationsList = parseResponseTo( response, AssociationsList.class );
@@ -161,7 +171,9 @@ class AssociationsListForCompanyControllerTest {
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111?include_removed=true" )
-                                .header("X-Request-Id", "theId123") )
+                                .header("X-Request-Id", "theId123")
+                                .header( "ERIC-Identity", "111" )
+                                .header( "ERIC-Identity-Type", "oauth2" ) )
                         .andExpect(status().isOk());
 
         final var associationsList = parseResponseTo( response, AssociationsList.class );
@@ -190,7 +202,9 @@ class AssociationsListForCompanyControllerTest {
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=3&page_index=2" )
-                                .header("X-Request-Id", "theId123") )
+                                .header("X-Request-Id", "theId123")
+                                .header( "ERIC-Identity", "111" )
+                                .header( "ERIC-Identity-Type", "oauth2" ) )
                         .andExpect(status().isOk());
 
         final var associationsList = parseResponseTo( response, AssociationsList.class );
@@ -218,7 +232,9 @@ class AssociationsListForCompanyControllerTest {
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
         mockMvc.perform( get( "/associations/companies/111111" )
-                        .header("X-Request-Id", "theId123") )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isNotFound());
     }
 
@@ -229,7 +245,9 @@ class AssociationsListForCompanyControllerTest {
         mockers.mockCompanyServiceFetchCompanyProfileNotFound( "111111" );
 
         mockMvc.perform( get( "/associations/companies/111111" )
-                        .header("X-Request-Id", "theId123") )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isNotFound());
     }
 
@@ -241,7 +259,9 @@ class AssociationsListForCompanyControllerTest {
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=2&page_index=0" )
-                                .header("X-Request-Id", "theId123") )
+                                .header("X-Request-Id", "theId123")
+                                .header( "ERIC-Identity", "111" )
+                                .header( "ERIC-Identity-Type", "oauth2" ) )
                         .andExpect(status().isOk());
 
         final var associationsList = parseResponseTo( response, AssociationsList.class );
@@ -274,11 +294,15 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWithUnacceptablePaginationParametersShouldReturnBadRequest() throws Exception {
         mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=1&page_index=-1" )
-                        .header("X-Request-Id", "theId123") )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isBadRequest());
 
         mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=0&page_index=0" )
-                        .header("X-Request-Id", "theId123") )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isBadRequest());
     }
 
@@ -290,7 +314,9 @@ class AssociationsListForCompanyControllerTest {
 
         final var response =
         mockMvc.perform( get( "/associations/companies/111111" )
-                        .header("X-Request-Id", "theId123") )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isOk());
 
         final var associationsList = parseResponseTo( response, AssociationsList.class );

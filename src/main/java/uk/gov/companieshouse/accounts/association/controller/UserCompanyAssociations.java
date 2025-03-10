@@ -11,7 +11,6 @@ import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeEx
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
-import uk.gov.companieshouse.accounts.association.models.UserContext;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
@@ -29,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
@@ -66,7 +66,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         LOG.infoContext( xRequestId, String.format( "Received request with user_id=%s, company_number=%s.", ericIdentity, companyNumber ),null );
 
-        final var userDetails = Objects.requireNonNull(UserContext.getLoggedUser());
+        final var userDetails = Objects.requireNonNull(getUser());
         final var displayName = Optional.ofNullable(userDetails.getDisplayName()).orElse(userDetails.getEmail());
 
         final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
@@ -120,7 +120,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
 
-        final var user = UserContext.getLoggedUser();
+        final var user = getUser();
 
         LOG.debugContext( xRequestId, String.format( "Attempting to retrieve active invitations for user %s", ericIdentity ), null );
         final var invitations = associationsService.fetchActiveInvitations( user, pageIndex, itemsPerPage );
@@ -143,7 +143,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN );
         }
 
-        final var user = UserContext.getLoggedUser();
+        final var user = getUser();
 
         LOG.debugContext( xRequestId, "Attempting to fetch associations", null );
         final var associationsList = associationsService.fetchAssociationsForUserStatusAndCompany( user, status, pageIndex, itemsPerPage, companyNumber );
@@ -211,7 +211,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN);
         }
 
-        final var inviterUserDetails= Objects.requireNonNull(UserContext.getLoggedUser());
+        final var inviterUserDetails= Objects.requireNonNull(getUser());
         CompanyDetails companyDetails;
         try {
             companyDetails= companyService.fetchCompanyProfile( companyNumber );
@@ -343,7 +343,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         LOG.infoContext( xRequestId, String.format( "Received request with id=%s, user_id=%s, status=%s.", associationId, requestingUserId, newStatus.getValue() ),null );
 
-        final var requestingUserDetails = Objects.requireNonNull( UserContext.getLoggedUser() );
+        final var requestingUserDetails = Objects.requireNonNull( getUser() );
         final var requestingUserDisplayValue = Optional.ofNullable( requestingUserDetails.getDisplayName() ).orElse( requestingUserDetails.getEmail() );
 
         LOG.debugContext( xRequestId, String.format( "Attempting to fetch association with id %s", associationId ), null );

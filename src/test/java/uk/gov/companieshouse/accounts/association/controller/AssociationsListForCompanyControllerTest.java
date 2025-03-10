@@ -12,10 +12,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfig;
+import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfig;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -38,6 +43,7 @@ import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.par
 @AutoConfigureMockMvc
 @WebMvcTest(AssociationsListForCompanyController.class)
 @ExtendWith(MockitoExtension.class)
+@Import(WebSecurityConfig.class)
 @Tag("unit-test")
 class AssociationsListForCompanyControllerTest {
 
@@ -46,6 +52,9 @@ class AssociationsListForCompanyControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private WebApplicationContext context;
 
     @MockBean
     private AssociationsService associationsService;
@@ -73,13 +82,17 @@ class AssociationsListForCompanyControllerTest {
     @BeforeEach
     public void setup() {
         this.mockers = new Mockers( null, null, companyService, usersService );
-        Mockito.doNothing().when(interceptorConfig).addInterceptors( any() );
+        mockMvc = MockMvcBuilders.webAppContextSetup( context )
+                .apply( SecurityMockMvcConfigurers.springSecurity() )
+                .build();
     }
 
     @Test
     void getAssociationsForCompanyWithMalformedCompanyNumberReturnsBadRequest() throws Exception {
         mockMvc.perform( get( "/associations/companies/$$$$$$" )
-                        .header("X-Request-Id", "theId123") )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isBadRequest());
     }
 
@@ -88,13 +101,17 @@ class AssociationsListForCompanyControllerTest {
         mockers.mockCompanyServiceFetchCompanyProfileNotFound( "919191" );
 
         mockMvc.perform( get( "/associations/companies/919191" )
-                        .header("X-Request-Id", "theId123") )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void getAssociationsForCompanyWithoutXRequestIdReturnsBadRequest() throws Exception {
-        mockMvc.perform( get( "/associations/companies/111111" ) )
+        mockMvc.perform( get( "/associations/companies/111111" )
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isBadRequest());
     }
 
@@ -114,7 +131,9 @@ class AssociationsListForCompanyControllerTest {
         Mockito.doReturn(associationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
 
         mockMvc.perform( get( "/associations/companies/111111" )
-                        .header("X-Request-Id", "theId123") )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isOk());
 
         Mockito.verify( associationsService ).fetchAssociatedUsers(  "111111" ,  companyDetails ,  false ,  15 , 0 );
@@ -135,7 +154,9 @@ class AssociationsListForCompanyControllerTest {
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
 
         mockMvc.perform( get( "/associations/companies/111111?include_removed=false" )
-                        .header("X-Request-Id", "theId123") )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isOk());
 
         Mockito.verify( associationsService ).fetchAssociatedUsers(  "111111" , companyDetails , false , 15 , 0 );
@@ -158,7 +179,9 @@ class AssociationsListForCompanyControllerTest {
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 15 ), eq( 0 ) );
 
         mockMvc.perform( get( "/associations/companies/111111?include_removed=true" )
-                        .header("X-Request-Id", "theId123") )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isOk());
 
         Mockito.verify( associationsService ).fetchAssociatedUsers( "111111" ,  companyDetails, true , 15 , 0 );
@@ -179,7 +202,9 @@ class AssociationsListForCompanyControllerTest {
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=1&page_index=1" )
-                                .header("X-Request-Id", "theId123") )
+                                .header("X-Request-Id", "theId123")
+                                .header( "ERIC-Identity", "111" )
+                                .header( "ERIC-Identity-Type", "oauth2" ) )
                         .andExpect(status().isOk());
 
         final var associationsList = parseResponseTo( response, AssociationsList.class );
@@ -216,7 +241,9 @@ class AssociationsListForCompanyControllerTest {
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 2 ), eq( 0 ) );
 
         final var response =
-                mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=2&page_index=0" ).header("X-Request-Id", "theId123") )
+                mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=2&page_index=0" ).header("X-Request-Id", "theId123")
+                                .header( "ERIC-Identity", "111" )
+                                .header( "ERIC-Identity-Type", "oauth2" ) )
                         .andExpect(status().isOk());
         final var associationsList = parseResponseTo( response, AssociationsList.class );
 
@@ -248,11 +275,15 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWithUnacceptablePaginationParametersShouldReturnBadRequest() throws Exception {
         mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=1&page_index=-1" )
-                        .header("X-Request-Id", "theId123") )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isBadRequest());
 
         mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=0&page_index=0" )
-                        .header("X-Request-Id", "theId123") )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isBadRequest());
     }
 
@@ -268,7 +299,9 @@ class AssociationsListForCompanyControllerTest {
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( "111111", companyDetails, false, 15, 0 );
 
         final var response =
-                mockMvc.perform( get( "/associations/companies/{company_number}?user_email=bruce.wayne@gotham.city", "111111" ).header("X-Request-Id", "theId123") )
+                mockMvc.perform( get( "/associations/companies/{company_number}?user_email=bruce.wayne@gotham.city", "111111" ).header("X-Request-Id", "theId123")
+                                .header( "ERIC-Identity", "111" )
+                                .header( "ERIC-Identity-Type", "oauth2" ) )
                         .andExpect(status().isOk());
 
         final var associationsList = parseResponseTo( response, AssociationsList.class );
@@ -287,7 +320,9 @@ class AssociationsListForCompanyControllerTest {
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( "111111", companyDetails, false, 15, 0 );
 
         final var response =
-                mockMvc.perform( get( "/associations/companies/111111?user_email=the.void@space.com" ).header("X-Request-Id", "theId123") )
+                mockMvc.perform( get( "/associations/companies/111111?user_email=the.void@space.com" ).header("X-Request-Id", "theId123")
+                                .header( "ERIC-Identity", "111" )
+                                .header( "ERIC-Identity-Type", "oauth2" ) )
                         .andExpect(status().isOk());
 
         final var associationsList = parseResponseTo( response, AssociationsList.class );

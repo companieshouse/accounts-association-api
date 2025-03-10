@@ -139,12 +139,12 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchAssociationsByWithoutEricIdentityReturnsUnauthorised() throws Exception {
+    void fetchAssociationsByWithoutEricIdentityReturnsForbidden() throws Exception {
         mockMvc.perform( get( "/associations" )
                         .header("X-Request-Id", "theId123")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isUnauthorized() );
+                .andExpect( status().isForbidden() );
     }
 
     static Stream<Arguments> malformedQueryParametersTestData(){
@@ -468,14 +468,14 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void addAssociationWithoutEricIdentityReturnsUnauthorised() throws Exception {
+    void addAssociationWithoutEricIdentityReturnsForbidden() throws Exception {
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"company_number\":\"111111\"}" ) )
-                .andExpect( status().isUnauthorized() );
+                .andExpect( status().isForbidden() );
     }
 
     @Test
@@ -977,14 +977,14 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void inviteUserWithoutEricIdentityReturnsUnauthorised() throws Exception {
+    void inviteUserWithoutEricIdentityReturnsForbidden() throws Exception {
         mockMvc.perform( post( "/associations/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}" ) )
-                .andExpect( status().isUnauthorized() );
+                .andExpect( status().isForbidden() );
     }
 
     @Test
@@ -1308,12 +1308,12 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchActiveInvitationsForUserWithoutEricIdentityReturnsUnauthorised() throws Exception {
+    void fetchActiveInvitationsForUserWithoutEricIdentityReturnsForbidden() throws Exception {
         mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
                         .header("X-Request-Id", "theId123")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isUnauthorized() );
+                .andExpect( status().isForbidden() );
     }
 
     @Test
