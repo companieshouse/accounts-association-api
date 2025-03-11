@@ -110,7 +110,7 @@ class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByTestShouldThrow403ErrorRequestWhenPatchApplied() throws Exception {
-        mockMvc.perform(patch("/associations")
+        mockMvc.perform(patch("/associationsx")
                 .header("X-Request-Id", "theId123")
                                 .header("Eric-identity", "000")
                                 .header("ERIC-Identity-Type", "oauth2"))
