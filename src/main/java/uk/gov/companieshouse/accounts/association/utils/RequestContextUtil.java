@@ -1,20 +1,35 @@
 package uk.gov.companieshouse.accounts.association.utils;
 
+import static uk.gov.companieshouse.accounts.association.models.Constants.UNKNOWN;
+import static uk.gov.companieshouse.accounts.association.models.context.RequestContext.getRequestContext;
+
 import java.util.Optional;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import java.util.function.Function;
+import uk.gov.companieshouse.accounts.association.models.context.RequestContextData;
+import uk.gov.companieshouse.api.accounts.user.model.User;
 
-public class RequestContextUtil {
+public final class RequestContextUtil {
 
-    private static final String X_REQUEST_ID = "X-Request-Id";
-    private static final String UNKNOWN_X_REQUEST_ID = "unknown";
+    private RequestContextUtil(){}
 
-    public static String getXRequestId() {
-        return Optional.ofNullable( RequestContextHolder.getRequestAttributes() )
-                .map( requestAttributes -> (ServletRequestAttributes) requestAttributes )
-                .map( ServletRequestAttributes::getRequest )
-                .map( httpServletRequest -> httpServletRequest.getHeader( X_REQUEST_ID ) )
-                .orElse( UNKNOWN_X_REQUEST_ID );
+    private static <T> T getFieldFromRequestContext( final Function<RequestContextData, T> getterMethod, final T defaultValue ){
+        return Optional.ofNullable( getRequestContext() ).map( getterMethod ).orElse( defaultValue );
+    }
+
+    public static String getXRequestId(){
+        return getFieldFromRequestContext( RequestContextData::getXRequestId, UNKNOWN );
+    }
+
+    public static String getEricIdentity(){
+        return getFieldFromRequestContext( RequestContextData::getEricIdentity, UNKNOWN );
+    }
+
+    public static String getEricIdentityType(){
+        return getFieldFromRequestContext( RequestContextData::getEricIdentityType, UNKNOWN );
+    }
+
+    public static User getUser(){
+        return getFieldFromRequestContext( RequestContextData::getUser, null );
     }
 
 }

@@ -11,15 +11,20 @@ import org.mockito.internal.verification.Times;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
+import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfig;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
@@ -51,11 +56,15 @@ import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyP
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.REMOVED;
 
 @WebMvcTest(UserCompanyAssociations.class)
+@Import(WebSecurityConfig.class)
 @Tag("unit-test")
 class UserCompanyAssociationsTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private WebApplicationContext context;
 
     @MockBean
     private StaticPropertyUtil staticPropertyUtil;
@@ -87,20 +96,25 @@ class UserCompanyAssociationsTest {
     @BeforeEach
     public void setup() {
         mockers = new Mockers( null, null, companyService, usersService );
+        mockMvc = MockMvcBuilders.webAppContextSetup( context )
+                .apply( SecurityMockMvcConfigurers.springSecurity() )
+                .build();
     }
 
     @Test
-    void fetchAssociationsByTestShouldThrow401ErrorRequestWhenEricIdNotProvided() throws Exception {
+    void fetchAssociationsByTestShouldThrow403ErrorRequestWhenEricIdNotProvided() throws Exception {
         mockMvc.perform(get("/associations")
                 .header("X-Request-Id", "theId123"))
-                .andExpect( status().isUnauthorized() );
+                .andExpect( status().isForbidden() );
     }
 
     @Test
-    void fetchAssociationsByTestShouldThrow405ErrorRequestWhenPatchApplied() throws Exception {
-        mockMvc.perform(patch("/associations")
-                .header("X-Request-Id", "theId123"))
-                .andExpect( status().isMethodNotAllowed() );
+    void fetchAssociationsByTestShouldThrow403ErrorRequestWhenPatchApplied() throws Exception {
+        mockMvc.perform(patch("/associationsx")
+                .header("X-Request-Id", "theId123")
+                                .header("Eric-identity", "000")
+                                .header("ERIC-Identity-Type", "oauth2"))
+                .andExpect( status().isForbidden() );
     }
 
     @Test
@@ -1476,12 +1490,12 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchActiveInvitationsForUserWithoutEricIdentityReturnsUnauthorised() throws Exception {
+    void fetchActiveInvitationsForUserWithoutEricIdentityReturnsForbidden() throws Exception {
         mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
                         .header("X-Request-Id", "theId123")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*") )
-                .andExpect( status().isUnauthorized() );
+                .andExpect( status().isForbidden() );
     }
 
     @Test
