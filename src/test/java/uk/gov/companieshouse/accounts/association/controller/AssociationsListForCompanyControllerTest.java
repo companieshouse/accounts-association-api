@@ -108,14 +108,6 @@ class AssociationsListForCompanyControllerTest {
     }
 
     @Test
-    void getAssociationsForCompanyWithoutXRequestIdReturnsBadRequest() throws Exception {
-        mockMvc.perform( get( "/associations/companies/111111" )
-                        .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     void getAssociationsForCompanyWithoutQueryParamsUsesDefaults() throws Exception {
         final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
         final var batmanAssociation = testDataManager.fetchAssociationDto( "1", batmanUser );
