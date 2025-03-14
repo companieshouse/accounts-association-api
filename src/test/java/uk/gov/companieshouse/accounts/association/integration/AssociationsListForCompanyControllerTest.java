@@ -16,6 +16,7 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
@@ -314,6 +315,42 @@ class AssociationsListForCompanyControllerTest {
         final var associationsList = parseResponseTo( response, AssociationsList.class );
 
         Assertions.assertEquals( 13, associationsList.getTotalResults() );
+    }
+
+    @Test
+    void getAssociationsForCompanyCanRetrieveMigratedAssociations() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002", "MKAssociation003" ) );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser001", "MKUser002", "MKUser003" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+
+        final var response = mockMvc.perform( get( "/associations/companies/MKCOMP001?include_removed=true" )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                .andExpect( status().isOk() );
+
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
+        final var associations = associationsList.getItems();
+
+        Assertions.assertEquals( 3, associationsList.getTotalResults() );
+
+        for ( final Association association: associations ){
+            final var expectedStatus = switch ( association.getId() ){
+                case "MKAssociation001" -> "migrated";
+                case "MKAssociation002" -> "confirmed";
+                case "MKAssociation003" -> "removed";
+                default -> "unknown";
+            };
+
+            final var expectedApprovalRoute = switch ( association.getId() ){
+                case "MKAssociation001", "MKAssociation003" -> "migration";
+                case "MKAssociation002" -> "auth_code";
+                default -> "unknown";
+            };
+
+            Assertions.assertEquals( expectedStatus, association.getStatus().getValue() );
+            Assertions.assertEquals( expectedApprovalRoute, association.getApprovalRoute().getValue() );
+        }
     }
 
     @AfterEach
