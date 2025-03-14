@@ -80,7 +80,7 @@ public class AssociationsService {
 
     @Transactional( readOnly = true )
     public AssociationsList fetchAssociatedUsers( final String companyNumber, final CompanyDetails companyDetails, final boolean includeRemoved, final int itemsPerPage, final int pageIndex ) {
-        final var statuses = new HashSet<>( Set.of(StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue() ) );
+        final var statuses = new HashSet<>( Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.MIGRATED.getValue() ) );
         if ( includeRemoved ) {
             statuses.add( StatusEnum.REMOVED.getValue() );
         }
