@@ -101,6 +101,14 @@ class AssociationsServiceTest {
     }
 
     @Test
+    void fetchAssociatedUsersCanFetchMigratedAssociations(){
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002", "MKAssociation003" ) );
+        associationsService.fetchAssociatedUsers("MKCOMP001", companyDetails, true, 15, 0 );
+        Mockito.verify( associationsListMappers ).daoToDto( argThat( comparisonUtils.associationsPageMatches( 3, 1, 3, List.of( "MKAssociation001", "MKAssociation002", "MKAssociation003" ) ) ), isNull(), eq( companyDetails ) );
+    }
+
+    @Test
     void fetchAssociationsForUserStatusAndCompanyWithNullInputsThrowsNullPointerException(){
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var status = List.of( StatusEnum.CONFIRMED.getValue() );

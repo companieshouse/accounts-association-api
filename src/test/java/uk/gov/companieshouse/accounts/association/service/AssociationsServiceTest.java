@@ -135,6 +135,21 @@ class AssociationsServiceTest {
     }
 
     @Test
+    void fetchAssociatedUsersCanFetchMigratedAssociations(){
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+
+        final var content = testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002", "MKAssociation003" );
+        final var pageRequest = PageRequest.of( 0, 15 );
+        final var page = new PageImpl<>( content, pageRequest, 3 );
+
+        Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( any(), any(), any(), any() );
+
+        associationsService.fetchAssociatedUsers( "MKCOMP001", companyDetails, true, 15, 0 );
+
+        Mockito.verify( associationsListMappers ).daoToDto( eq( page ), isNull(), eq( companyDetails ) );
+    }
+
+    @Test
     void getAssociationByIdReturnsAssociationDtoWhenAssociationFound() {
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
         Mockito.when(associationsRepository.findById("1")).thenReturn(Optional.of(associationDao));

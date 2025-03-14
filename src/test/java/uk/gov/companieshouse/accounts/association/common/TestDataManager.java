@@ -1,6 +1,7 @@
 package uk.gov.companieshouse.accounts.association.common;
 
 
+import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToOffsetDateTime;
 
 import java.time.LocalDateTime;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
+import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
@@ -872,6 +874,46 @@ public class TestDataManager {
             return association;
         };
         associationDaoSuppliers.put( "38", DominosLightYagamiAssociationDaoSupplier );
+
+        final Supplier<AssociationDao> marioAssociation = () -> new AssociationDao()
+                .id( "MKAssociation001" )
+                .companyNumber( "MKCOMP001" )
+                .userId( "MKUser001" )
+                .status( "migrated" )
+                .approvalRoute( "migration" )
+                .migratedAt( now.minusDays( 10L ) )
+                .etag( generateEtag() );
+        associationDaoSuppliers.put( "MKAssociation001", marioAssociation );
+
+        final Supplier<AssociationDao> luigiAssociation = () -> new AssociationDao()
+                .id( "MKAssociation002" )
+                .companyNumber( "MKCOMP001" )
+                .userId( "MKUser002" )
+                .status( "confirmed" )
+                .approvalRoute( "auth_code" )
+                .etag( generateEtag() );
+        associationDaoSuppliers.put( "MKAssociation002", luigiAssociation );
+
+        final Supplier<AssociationDao> peachAssociation = () -> new AssociationDao()
+                .id( "MKAssociation003" )
+                .companyNumber( "MKCOMP001" )
+                .userId( "MKUser003" )
+                .status( "removed" )
+                .approvalRoute( "migration" )
+                .invitations( List.of( new InvitationDao().invitedBy( "MKUser002" ).invitedAt( now.minusDays( 8L ) ) ) )
+                .approvalExpiryAt( now.minusDays( 1L ) )
+                .approvedAt( now.minusDays( 7L ) )
+                .removedAt( now.minusDays( 6L ) )
+                .migratedAt( now.minusDays( 10L ) )
+
+                .previousStates( List.of(
+                        new PreviousStatesDao().status( "migrated" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 9L ) ),
+                        new PreviousStatesDao().status( "removed" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 8L ) ),
+                        new PreviousStatesDao().status( "awaiting-approval" ).changedBy( "MKUser003" ).changedAt( now.minusDays( 7L ) ),
+                        new PreviousStatesDao().status( "confirmed" ).changedBy( "MKUser003" ).changedAt( now.minusDays( 6L ) )
+                ) )
+                .etag( generateEtag() );
+        associationDaoSuppliers.put( "MKAssociation003", peachAssociation );
     }
 
 
@@ -895,6 +937,9 @@ public class TestDataManager {
         userDtoSuppliers.put( "7777", () -> new User().userId( "7777" ).email( "chandler@friends.com" ) );
         userDtoSuppliers.put( "8888", () -> new User().userId( "8888" ).email( "mr.blobby@nightmare.com" ) );
         userDtoSuppliers.put( "9999", () -> new User().userId( "9999" ).email( "scrooge.mcduck@disney.land" ).displayName( "Scrooge McDuck" ) );
+        userDtoSuppliers.put( "MKUser001", () -> new User().userId( "MKUser001" ).email( "mario@mushroom.kingdom" ).displayName( "Mario" ) );
+        userDtoSuppliers.put( "MKUser002", () -> new User().userId( "MKUser002" ).email( "luigi@mushroom.kingdom" ).displayName( "Luigi" ) );
+        userDtoSuppliers.put( "MKUser003", () -> new User().userId( "MKUser003" ).email( "peach@mushroom.kingdom" ).displayName( "Peach" ) );
     }
 
     private void instantiateCompanyDtoSuppliers(){
@@ -915,6 +960,7 @@ public class TestDataManager {
         companyDetailsDtoSuppliers.put( "x777777", () -> new CompanyDetails().companyNumber( "x777777" ).companyName( "Facebook" ).companyStatus( "active" ) );
         companyDetailsDtoSuppliers.put( "x888888", () -> new CompanyDetails().companyNumber( "x888888" ).companyName( "Twitter" ).companyStatus( "active" ) );
         companyDetailsDtoSuppliers.put( "x999999", () -> new CompanyDetails().companyNumber( "x999999" ).companyName( "Instram" ).companyStatus( "active" ) );
+        companyDetailsDtoSuppliers.put( "MKCOMP001", () -> new CompanyDetails().companyNumber( "MKCOMP001" ).companyName( "Mushroom Kingdom" ).companyStatus( "active" ) );
     }
 
     private TestDataManager(){
@@ -961,7 +1007,7 @@ public class TestDataManager {
         associationDto.setCreatedAt( localDateTimeToOffsetDateTime( associationDao.getCreatedAt() ) );
         associationDto.setApprovedAt( localDateTimeToOffsetDateTime( associationDao.getApprovedAt() ) );
         associationDto.setRemovedAt( localDateTimeToOffsetDateTime( associationDao.getRemovedAt() ) );
-        associationDto.setApprovalExpiryAt( associationDao.getApprovalExpiryAt().toString() );
+        associationDto.setApprovalExpiryAt( Optional.ofNullable( associationDao.getApprovalExpiryAt() ).map( LocalDateTime::toString ).orElse( null ) );
         associationDto.setEtag( associationDao.getEtag() );
         associationDto.setKind( "association" );
         associationDto.setLinks( new AssociationLinks().self( String.format( "/associations/%s", associationDao.getId() ) ) );
@@ -984,6 +1030,12 @@ public class TestDataManager {
                     return invitationDto;
                 })
                 .collect(Collectors.toList());
+
+        // TODO: will need equivalent for previous_states
     }
+
+
+
+
 
 }
