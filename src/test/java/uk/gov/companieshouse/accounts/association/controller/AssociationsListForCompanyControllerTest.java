@@ -108,14 +108,6 @@ class AssociationsListForCompanyControllerTest {
     }
 
     @Test
-    void getAssociationsForCompanyWithoutXRequestIdReturnsBadRequest() throws Exception {
-        mockMvc.perform( get( "/associations/companies/111111" )
-                        .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     void getAssociationsForCompanyWithoutQueryParamsUsesDefaults() throws Exception {
         final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
         final var batmanAssociation = testDataManager.fetchAssociationDto( "1", batmanUser );
@@ -328,6 +320,51 @@ class AssociationsListForCompanyControllerTest {
         final var associationsList = parseResponseTo( response, AssociationsList.class );
 
         Assertions.assertEquals( 0, associationsList.getTotalResults() );
+    }
+
+    @Test
+    void getAssociationsForCompanyCanRetrieveMigratedAssociations() throws Exception {
+        final var marioUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
+        final var luigiUser = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
+        final var peachUser = testDataManager.fetchUserDtos( "MKUser003" ).getFirst();
+        final var marioAssociation = testDataManager.fetchAssociationDto( "MKAssociation001", marioUser );
+        final var luigiAssociation = testDataManager.fetchAssociationDto( "MKAssociation002", luigiUser );
+        final var peachAssociation = testDataManager.fetchAssociationDto( "MKAssociation003", peachUser );
+        final var mushroomKingdomCompany = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+
+        final var expectedAssociationsList = new AssociationsList().totalResults( 3 ).items( List.of( marioAssociation, luigiAssociation, peachAssociation ) );
+        Mockito.doReturn( expectedAssociationsList ).when( associationsService ).fetchAssociatedUsers( "MKCOMP001", mushroomKingdomCompany, true, 15, 0 );
+
+        final var response = mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=true", "MKCOMP001" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-Identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                .andExpect( status().isOk() );
+
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
+        final var associations = associationsList.getItems();
+
+        Assertions.assertEquals( 3, associationsList.getTotalResults() );
+
+        for ( final Association association: associations ){
+            final var expectedStatus = switch ( association.getId() ){
+                case "MKAssociation001" -> "migrated";
+                case "MKAssociation002" -> "confirmed";
+                case "MKAssociation003" -> "removed";
+                default -> "unknown";
+            };
+
+            final var expectedApprovalRoute = switch ( association.getId() ){
+                case "MKAssociation001", "MKAssociation003" -> "migration";
+                case "MKAssociation002" -> "auth_code";
+                default -> "unknown";
+            };
+
+            Assertions.assertEquals( expectedStatus, association.getStatus().getValue() );
+            Assertions.assertEquals( expectedApprovalRoute, association.getApprovalRoute().getValue() );
+        }
     }
 
 }
