@@ -575,6 +575,35 @@ class UserCompanyAssociationsTest {
                 .andExpect( status().isCreated() );
     }
 
+    @Test
+    void addAssociationCanBeAppliedToMigratedAssociation() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ) );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser001", "MKUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+
+        setEmailProducerCountDownLatch( 1 );
+
+        mockMvc.perform( post( "/associations" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-Identity", "MKUser001" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"MKCOMP001\"}" ) )
+                .andExpect( status().isCreated() );
+
+        final var updatedAssociation = associationsRepository.findById( "MKAssociation001" ).get();
+
+        Assertions.assertEquals( "confirmed", updatedAssociation.getStatus() );
+        Assertions.assertEquals( "auth_code", updatedAssociation.getApprovalRoute() );
+        Assertions.assertNotNull( updatedAssociation.getEtag() );
+        Assertions.assertEquals( 1, updatedAssociation.getPreviousStates().size() );
+        Assertions.assertEquals( "migrated", updatedAssociation.getPreviousStates().getFirst().getStatus() );
+        Assertions.assertEquals( "MKUser001", updatedAssociation.getPreviousStates().getFirst().getChangedBy() );
+        Assertions.assertNotNull( updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
+
+        latch.await( 10, TimeUnit.SECONDS );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.authCodeConfirmationEmailMatcher( "luigi@mushroom.kingdom", "Mushroom Kingdom", "Mario" ) ), eq( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() ) );
+    }
 
     @AfterEach
     public void after() {

@@ -26,6 +26,7 @@ import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfi
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
@@ -45,10 +46,12 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.REMOVED;
 
@@ -481,7 +484,7 @@ class UserCompanyAssociationsTest {
         final var page = new PageImpl<>(List.of(association), PageRequest.of(1,15),15);
 
         mockers.mockUsersServiceFetchUserDetails( "9999" );
-        Mockito.doReturn(page).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(user, List.of(AWAITING_APPROVAL.getValue(), CONFIRMED.getValue(), REMOVED.getValue()),0,15,"111111");
+        Mockito.doReturn(page).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(user, List.of(AWAITING_APPROVAL.getValue(), CONFIRMED.getValue(), REMOVED.getValue(),MIGRATED.getValue()),0,15,"111111");
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "9999")
@@ -579,7 +582,7 @@ class UserCompanyAssociationsTest {
 
         mockers.mockUsersServiceFetchUserDetails( "666" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn(page).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(user, List.of(AWAITING_APPROVAL.getValue(), CONFIRMED.getValue(), REMOVED.getValue()),0,15,"111111");
+        Mockito.doReturn(page).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(user, List.of(AWAITING_APPROVAL.getValue(), CONFIRMED.getValue(), REMOVED.getValue(), MIGRATED.getValue()),0,15,"111111");
         Mockito.doReturn(associationDao).when(associationsService).upsertAssociation(any(AssociationDao.class));
         Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( company ), eq( "homer.simpson@springfield.com" ) );
 
@@ -604,7 +607,7 @@ class UserCompanyAssociationsTest {
 
         mockers.mockUsersServiceFetchUserDetails( "5555" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn(page).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(user, List.of(AWAITING_APPROVAL.getValue(), CONFIRMED.getValue(), REMOVED.getValue()),0,15,"111111");
+        Mockito.doReturn(page).when(associationsService).fetchAssociationsDaoForUserStatusAndCompany(user, List.of(AWAITING_APPROVAL.getValue(), CONFIRMED.getValue(), REMOVED.getValue(),MIGRATED.getValue()),0,15,"111111");
         Mockito.doReturn(associationDao).when(associationsService).upsertAssociation(any(AssociationDao.class));
         Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( company ), eq( "ross@friends.com" ) );
 
@@ -642,6 +645,42 @@ class UserCompanyAssociationsTest {
                 .andExpect( status().isCreated() );
 
         Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "Scrooge McDuck" ) );
+    }
+
+    @Test
+    void addAssociationCanBeAppliedToMigratedAssociation() throws Exception {
+        final var originalAssociationDao = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
+        final var company = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+        final var updatedAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst()
+                .status( "confirmed" )
+                .previousStates( new ArrayList<>( List.of( new PreviousStatesDao().status( "migrated" ).changedBy( "MKUser001" ).changedAt( LocalDateTime.now() ) ) ) )
+                .approvalRoute( "auth_code" )
+                .etag( generateEtag() );
+
+        mockers.mockUsersServiceFetchUserDetails( "MKUser001" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( new PageImpl<>( new ArrayList<>( List.of( originalAssociationDao ) ) ) ).when( associationsService ).fetchAssociationsDaoForUserStatusAndCompany( any(),any(), any(),any(),anyString() );
+        Mockito.doReturn( List.of( "MKUser002" ) ).when( associationsService ).fetchAssociatedUsers( "MKCOMP001" );
+        Mockito.doReturn( updatedAssociation ).when( associationsService ).upsertAssociation( any( AssociationDao.class ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( company ), eq( "Mario" ) );
+
+        mockMvc.perform( post( "/associations" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-Identity", "MKUser001" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"MKCOMP001\"}" ) )
+                .andExpect( status().isCreated() );
+
+        Assertions.assertEquals( "confirmed", updatedAssociation.getStatus() );
+        Assertions.assertEquals( "auth_code", updatedAssociation.getApprovalRoute() );
+        Assertions.assertNotNull( updatedAssociation.getEtag() );
+        Assertions.assertEquals( 1, updatedAssociation.getPreviousStates().size() );
+        Assertions.assertEquals( "migrated", updatedAssociation.getPreviousStates().getFirst().getStatus() );
+        Assertions.assertEquals( "MKUser001", updatedAssociation.getPreviousStates().getFirst().getChangedBy() );
+        Assertions.assertNotNull( updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
+
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "Mario" ) );
     }
 
 }
