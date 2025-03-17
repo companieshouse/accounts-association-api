@@ -292,7 +292,12 @@ class AssociationsServiceTest {
         Assertions.assertNotNull( association.getApprovalExpiryAt() );
         Assertions.assertNotNull( invitation.getInvitedAt() );
         Assertions.assertEquals( "9999", invitation.getInvitedBy() );
+        Assertions.assertEquals( 1, updatedAssociation.getPreviousStates().size() );
+        Assertions.assertEquals( StatusEnum.REMOVED.getValue(), updatedAssociation.getPreviousStates().getFirst().getStatus() );
+        Assertions.assertEquals( "9999", updatedAssociation.getPreviousStates().getFirst().getChangedBy() );
+        Assertions.assertNotNull( updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
     }
+
 
     @Test
     void sendNewInvitationWithExistingAssociationCreatesNewInvitation(){
@@ -315,6 +320,11 @@ class AssociationsServiceTest {
         Assertions.assertEquals( "9999", firstInvitation.getInvitedBy() );
         Assertions.assertNotNull( secondInvitation.getInvitedAt() );
         Assertions.assertEquals( "222", secondInvitation.getInvitedBy() );
+        Assertions.assertEquals( 1, updatedAssociation.getPreviousStates().size() );
+        Assertions.assertEquals( StatusEnum.REMOVED.getValue(), updatedAssociation.getPreviousStates().getFirst().getStatus() );
+        Assertions.assertEquals( "222", updatedAssociation.getPreviousStates().getFirst().getChangedBy() );
+        Assertions.assertNotNull( updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
+
     }
 
     @Test
