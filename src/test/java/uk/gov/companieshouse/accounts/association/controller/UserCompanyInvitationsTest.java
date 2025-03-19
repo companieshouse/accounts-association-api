@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
+import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,12 +37,15 @@ import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfig;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
+import uk.gov.companieshouse.accounts.association.models.InvitationDao;
+import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.Links;
 
@@ -490,6 +494,66 @@ class UserCompanyInvitationsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"russell.howard@comedy.com\"}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void inviteUserCanBeAppliedToMigratedAssociationsWithUserId() throws Exception {
+        final var targetCompany = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
+        final var updatedAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst()
+                .status( StatusEnum.AWAITING_APPROVAL.getValue() )
+                .previousStates( List.of( new PreviousStatesDao().status( StatusEnum.MIGRATED.getValue() ).changedBy( "MKUser002" ).changedAt( LocalDateTime.now() ) ) )
+                .approvalExpiryAt( LocalDateTime.now().plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ) )
+                .invitations( List.of( new InvitationDao().invitedBy( "MKUser002" ).invitedAt( LocalDateTime.now() ) ) );
+
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        mockers.mockUsersServiceSearchUserDetails( "MKUser001" );
+        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
+        Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationForCompanyNumberAndUserId( "MKCOMP001", "MKUser001" );
+        Mockito.doReturn( updatedAssociation ).when( associationsService ).sendNewInvitation( eq("MKUser002" ), any() );
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( targetCompany ), eq( "Luigi" ), any( String.class ), eq( "mario@mushroom.kingdom" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( targetCompany ), eq( "Luigi" ), eq( "Mario" ) );
+
+        mockMvc.perform( post( "/associations/invitations" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"MKCOMP001\",\"invitee_email_id\":\"mario@mushroom.kingdom\"}" ) )
+                .andExpect( status().isCreated() );
+
+        Mockito.verify( associationsService ).sendNewInvitation( eq("MKUser002"), eq( targetAssociation ) );
+    }
+
+    @Test
+    void inviteUserCanBeAppliedToMigratedAssociationsWithUserEmail() throws Exception {
+        final var targetCompany = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst().userId( null ).userEmail( "mario@mushroom.kingdom" );
+        final var updatedAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst()
+                .status( StatusEnum.AWAITING_APPROVAL.getValue() )
+                .previousStates( List.of( new PreviousStatesDao().status( StatusEnum.MIGRATED.getValue() ).changedBy( "MKUser002" ).changedAt( LocalDateTime.now() ) ) )
+                .approvalExpiryAt( LocalDateTime.now().plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ) )
+                .invitations( List.of( new InvitationDao().invitedBy( "MKUser002" ).invitedAt( LocalDateTime.now() ) ) );
+
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        mockers.mockUsersServiceSearchUserDetails( "MKUser001" );
+        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
+        Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationForCompanyNumberAndUserEmail("MKCOMP001", "mario@mushroom.kingdom");
+        Mockito.doReturn( updatedAssociation ).when( associationsService ).sendNewInvitation( eq("MKUser002" ), any() );
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( targetCompany ), eq( "Luigi" ), any( String.class ), eq( "mario@mushroom.kingdom" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( targetCompany ), eq( "Luigi" ), eq( "mario@mushroom.kingdom" ) );
+
+        mockMvc.perform( post( "/associations/invitations" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"MKCOMP001\",\"invitee_email_id\":\"mario@mushroom.kingdom\"}" ) )
+                .andExpect( status().isCreated() );
+
+        Mockito.verify( associationsService ).sendNewInvitation( eq("MKUser002"), eq( targetAssociation ) );
     }
 
 }

@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
@@ -25,6 +26,7 @@ import uk.gov.companieshouse.accounts.association.exceptions.InternalServerError
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListMappers;
 import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
@@ -401,7 +403,13 @@ class AssociationsServiceTest {
         final var association = testDataManager.fetchAssociationDaos( "1" ).getFirst();
         final var expectedAssociationData = testDataManager.fetchAssociationDaos( "1" ).getFirst();
         expectedAssociationData.setStatus( StatusEnum.AWAITING_APPROVAL.getValue() );
-        associationsService.sendNewInvitation( "111", association );
+        expectedAssociationData.setPreviousStates( List.of( new PreviousStatesDao().status( StatusEnum.CONFIRMED.getValue() ).changedBy( "111" ).changedAt( LocalDateTime.now() ) ) );
+        Mockito.doReturn( expectedAssociationData ).when( associationsRepository ).save( any( AssociationDao.class ) );
+        final var updatedAssociation = associationsService.sendNewInvitation( "111", association );
+        Assertions.assertEquals( 1, updatedAssociation.getPreviousStates().size() );
+        Assertions.assertEquals( StatusEnum.CONFIRMED.getValue(), updatedAssociation.getPreviousStates().getFirst().getStatus() );
+        Assertions.assertEquals( "111", updatedAssociation.getPreviousStates().getFirst().getChangedBy() );
+        Assertions.assertNotNull( updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
         Mockito.verify( associationsRepository ).save( argThat( comparisonUtils.compare( expectedAssociationData, List.of( "companyNumber", "userId", "userEmail", "approvalRoute", "status" ), List.of( "etag", "approvalExpiryAt", "invitations" ), Map.of() ) ) );
     }
 
@@ -410,7 +418,13 @@ class AssociationsServiceTest {
         final var association = testDataManager.fetchAssociationDaos( "1" ).getFirst();
         final var expectedAssociationData = testDataManager.fetchAssociationDaos( "1" ).getFirst();
         expectedAssociationData.setStatus( StatusEnum.AWAITING_APPROVAL.getValue() );
-        associationsService.sendNewInvitation( "222", association );
+        expectedAssociationData.setPreviousStates( List.of( new PreviousStatesDao().status( StatusEnum.CONFIRMED.getValue() ).changedBy( "222" ).changedAt( LocalDateTime.now() ) ) );
+        Mockito.doReturn( expectedAssociationData ).when( associationsRepository ).save( any( AssociationDao.class ) );
+        final var updatedAssociation = associationsService.sendNewInvitation( "222", association );
+        Assertions.assertEquals( 1, updatedAssociation.getPreviousStates().size() );
+        Assertions.assertEquals( StatusEnum.CONFIRMED.getValue(), updatedAssociation.getPreviousStates().getFirst().getStatus() );
+        Assertions.assertEquals( "222", updatedAssociation.getPreviousStates().getFirst().getChangedBy() );
+        Assertions.assertNotNull( updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
         Mockito.verify( associationsRepository ).save( argThat( comparisonUtils.compare( expectedAssociationData, List.of( "companyNumber", "userId", "userEmail", "approvalRoute", "status" ), List.of( "etag", "approvalExpiryAt", "invitations" ), Map.of() ) ) );
     }
 

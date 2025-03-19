@@ -13,6 +13,7 @@ import uk.gov.companieshouse.accounts.association.mapper.AssociationsListMappers
 import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
+import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
@@ -171,6 +172,7 @@ public class AssociationsService {
 
     @Transactional
     public AssociationDao sendNewInvitation(final String invitedByUserId, final AssociationDao association) {
+        association.getPreviousStates().add( new PreviousStatesDao().status( association.getStatus() ).changedBy( invitedByUserId ).changedAt( LocalDateTime.now() ) );
         association.setEtag( generateEtag() );
         addInvitation(invitedByUserId, association);
         return associationsRepository.save(association);
