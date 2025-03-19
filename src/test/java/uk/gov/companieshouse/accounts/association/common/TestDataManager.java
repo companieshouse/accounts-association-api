@@ -878,7 +878,7 @@ public class TestDataManager {
         final Supplier<AssociationDao> marioAssociation = () -> new AssociationDao()
                 .id( "MKAssociation001" )
                 .companyNumber( "MKCOMP001" )
-                .userId( "MKUser001" )
+                .userEmail( "mario@mushroom.kingdom" )
                 .status( "migrated" )
                 .approvalRoute( "migration" )
                 .migratedAt( now.minusDays( 10L ) )
