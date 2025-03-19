@@ -15,12 +15,16 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,7 +76,7 @@ class UserCompanyInvitationsTest {
     @Autowired
     private AssociationsRepository associationsRepository;
 
-    private TestDataManager testDataManager = TestDataManager.getInstance();
+    private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
     @Value( "${invitation.url}")
     private String COMPANY_INVITATIONS_URL;
@@ -167,18 +171,6 @@ class UserCompanyInvitationsTest {
         final var invitations = parseResponseTo( response, InvitationsList.class );
         Assertions.assertTrue( invitations.getItems().isEmpty() );
     }
-
-
-
-
-
-    @Test
-    void test(){
-
-    }
-
-
-
 
     @Test
     void inviteUserWithoutXRequestIdReturnsBadRequest() throws Exception {
@@ -522,6 +514,44 @@ class UserCompanyInvitationsTest {
 
         latch.await( 10, TimeUnit.SECONDS );
         Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( comparisonUtils.invitationAndInviteEmailDataMatcher( "scrooge.mcduck@disney.land", "Scrooge McDuck", "bruce.wayne@gotham.city", "Batman", "Sainsbury's", COMPANY_INVITATIONS_URL ) ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue() ).contains( messageType ) ) );
+    }
+
+    private static Stream<Arguments> inviteUserAppliedToMigratedAssociationScenarios(){
+         return Stream.of(
+                 Arguments.of( testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst() ),
+                 Arguments.of( testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst().userId( null ).userEmail( "mario@mushroom.kingdom" ) )
+         );
+    }
+
+    @ParameterizedTest
+    @MethodSource( "inviteUserAppliedToMigratedAssociationScenarios" )
+    void inviteUserCanBeAppliedToMigratedAssociations( final AssociationDao targetAssociation ) throws Exception {
+        final var requestingAssociation = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
+
+        associationsRepository.insert( List.of( requestingAssociation, targetAssociation ) );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockers.mockUsersServiceSearchUserDetails( "MKUser001" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+
+        mockMvc.perform( post( "/associations/invitations" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"MKCOMP001\",\"invitee_email_id\":\"mario@mushroom.kingdom\"}" ) )
+                .andExpect( status().isCreated() );
+
+        final var updatedAssociation = associationsRepository.findById( "MKAssociation001" ).get();
+        Assertions.assertEquals( StatusEnum.AWAITING_APPROVAL.getValue(), updatedAssociation.getStatus() );
+        Assertions.assertEquals( 1, updatedAssociation.getPreviousStates().size() );
+        Assertions.assertEquals( StatusEnum.MIGRATED.getValue(), updatedAssociation.getPreviousStates().getFirst().getStatus() );
+        Assertions.assertEquals( "MKUser002", updatedAssociation.getPreviousStates().getFirst().getChangedBy() );
+        Assertions.assertNotNull( updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
+        Assertions.assertNotNull( updatedAssociation.getEtag() );
+        Assertions.assertNotNull( updatedAssociation.getApprovalExpiryAt() );
+        Assertions.assertEquals( 1, updatedAssociation.getInvitations().size() );
+        Assertions.assertEquals( "MKUser002", updatedAssociation.getInvitations().getFirst().getInvitedBy() );
+        Assertions.assertNotNull( updatedAssociation.getInvitations().getFirst().getInvitedAt() );
     }
 
     @AfterEach
