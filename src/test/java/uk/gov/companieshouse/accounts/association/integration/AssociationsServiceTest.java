@@ -36,6 +36,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
@@ -397,6 +398,56 @@ class AssociationsServiceTest {
 
         Assertions.assertEquals( mostRecentInvitationDaoInFirstAssociation.getInvitedBy(), invitation.getInvitedBy() );
         Assertions.assertEquals( localDateTimeToNormalisedString( mostRecentInvitationDaoInFirstAssociation.getInvitedAt() ), reduceTimestampResolution( invitation.getInvitedAt() ) );
+    }
+
+    @Test
+    void fetchPreviousStatesAppliedToAssociationWithPreviousStatesRetrievesAndMaps(){
+        final var now = LocalDateTime.now();
+
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation003" ) );
+
+        final var previousStatesList = associationsService.fetchPreviousStates( "MKAssociation003", 1, 1 ).get();
+        final var links = previousStatesList.getLinks();
+        final var items = previousStatesList.getItems();
+
+        Assertions.assertEquals( 1, previousStatesList.getItemsPerPage() );
+        Assertions.assertEquals( 1, previousStatesList.getPageNumber() );
+        Assertions.assertEquals( 4, previousStatesList.getTotalResults() );
+        Assertions.assertEquals( 4, previousStatesList.getTotalPages() );
+        Assertions.assertEquals( "/associations/MKAssociation003/previous-states?page_index=1&items_per_page=1", links.getSelf() );
+        Assertions.assertEquals( "/associations/MKAssociation003/previous-states?page_index=2&items_per_page=1", links.getNext() );
+        Assertions.assertEquals( 1, items.size() );
+        Assertions.assertEquals( AWAITING_APPROVAL, items.getFirst().getStatus() );
+        Assertions.assertEquals( "MKUser003", items.getFirst().getChangedBy() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( now.minusDays( 7L ) ), reduceTimestampResolution( items.getFirst().getChangedAt() ) );
+    }
+
+    @Test
+    void fetchPreviousStatesAppliedToAssociationWithoutPreviousStatesRetrievesAndMaps(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001" ) );
+
+        final var previousStatesList = associationsService.fetchPreviousStates( "MKAssociation001", 0, 15 ).get();
+        final var links = previousStatesList.getLinks();
+        final var items = previousStatesList.getItems();
+
+        Assertions.assertEquals( 15, previousStatesList.getItemsPerPage() );
+        Assertions.assertEquals( 0, previousStatesList.getPageNumber() );
+        Assertions.assertEquals( 0, previousStatesList.getTotalResults() );
+        Assertions.assertEquals( 0, previousStatesList.getTotalPages() );
+        Assertions.assertEquals( "/associations/MKAssociation001/previous-states?page_index=0&items_per_page=15", links.getSelf() );
+        Assertions.assertEquals( "", links.getNext() );
+        Assertions.assertTrue( items.isEmpty() );
+    }
+
+    @Test
+    void fetchPreviousStatesAppliedToMalformedOrNonexistentAssociationReturnsEmptyOptional(){
+        Assertions.assertTrue( associationsService.fetchPreviousStates( "$$$", 0, 15 ).isEmpty() );
+        Assertions.assertTrue( associationsService.fetchPreviousStates( "404MKAssociation", 0, 15 ).isEmpty() );
+    }
+
+    @Test
+    void fetchPreviousStatesThrowsIllegalArgumentExceptionWhenAssociationIdIsNull(){
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchPreviousStates( null, 0, 15 ).isEmpty() );
     }
 
     @AfterEach

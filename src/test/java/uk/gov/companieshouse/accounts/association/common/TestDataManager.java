@@ -22,6 +22,9 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association.Approva
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
+import uk.gov.companieshouse.api.accounts.associations.model.Links;
+import uk.gov.companieshouse.api.accounts.associations.model.PreviousState;
+import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
@@ -1030,12 +1033,18 @@ public class TestDataManager {
                     return invitationDto;
                 })
                 .collect(Collectors.toList());
-
-        // TODO: will need equivalent for previous_states
     }
 
-
-
-
+    public List<PreviousState> fetchPreviousStates( final String associationId ){
+        return Stream.of( fetchAssociationDaos( associationId ) )
+                .map( List::getFirst )
+                .map( AssociationDao::getPreviousStates )
+                .flatMap( List::stream )
+                .map( previousStatesDao -> new PreviousState()
+                            .status( PreviousState.StatusEnum.fromValue( previousStatesDao.getStatus() ) )
+                            .changedBy( previousStatesDao.getChangedBy() )
+                            .changedAt( previousStatesDao.getChangedAt().toString() ) )
+                .collect( Collectors.toList() );
+    }
 
 }
