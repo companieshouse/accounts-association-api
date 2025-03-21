@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListMappers;
 import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
+import uk.gov.companieshouse.accounts.association.mapper.PreviousStatesCollectionMappers;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
@@ -23,6 +24,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.Links;
+import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.logging.Logger;
@@ -39,6 +41,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
+import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
 
@@ -51,13 +54,16 @@ public class AssociationsService {
 
     private final InvitationsMapper invitationMapper;
 
+    private final PreviousStatesCollectionMappers previousStatesCollectionMapper;
+
     private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
 
     @Autowired
-    public AssociationsService( final AssociationsRepository associationsRepository, final InvitationsMapper invitationMapper, final AssociationsListMappers associationsListMappers ) {
+    public AssociationsService( final AssociationsRepository associationsRepository, final InvitationsMapper invitationMapper, final AssociationsListMappers associationsListMappers, final PreviousStatesCollectionMappers previousStatesCollectionMapper ) {
         this.associationsRepository = associationsRepository;
         this.associationsListMappers = associationsListMappers;
         this.invitationMapper = invitationMapper;
+        this.previousStatesCollectionMapper = previousStatesCollectionMapper;
     }
 
     @Transactional( readOnly = true )
@@ -259,6 +265,11 @@ public class AssociationsService {
         return associationsRepository.fetchAssociatedUsers( companyNumber, Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), Pageable.unpaged() )
                 .map( AssociationDao::getUserId )
                 .toList();
+    }
+
+    public Optional<PreviousStatesList> fetchPreviousStates( final String associationId, final int pageIndex, final int itemsPerPage ){
+        LOGGER.debugContext( getXRequestId(), String.format( "Attempting to fetch previous states for association %s", associationId ), null );
+        return associationsRepository.findById( associationId ).map( association -> previousStatesCollectionMapper.daoToDto( association, pageIndex, itemsPerPage ) );
     }
 
 }

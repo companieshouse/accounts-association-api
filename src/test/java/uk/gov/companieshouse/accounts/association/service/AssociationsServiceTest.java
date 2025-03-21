@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -25,6 +26,8 @@ import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListMappers;
 import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
+import uk.gov.companieshouse.accounts.association.mapper.PreviousStatesCollectionMappers;
+import uk.gov.companieshouse.accounts.association.mapper.PreviousStatesMapperImpl;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
@@ -44,6 +47,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
@@ -67,7 +73,8 @@ class AssociationsServiceTest {
 
     @BeforeEach
     public void setup() {
-        associationsService = new AssociationsService( associationsRepository, invitationMapper, associationsListMappers );
+        final var previousStatesCollectionMappers = new PreviousStatesCollectionMappers( new PreviousStatesMapperImpl() );
+        associationsService = new AssociationsService( associationsRepository, invitationMapper, associationsListMappers, previousStatesCollectionMappers );
     }
 
     @Test
@@ -505,6 +512,60 @@ class AssociationsServiceTest {
         Mockito.doReturn( page ).when( associationsRepository ).fetchAssociatedUsers( eq( "111111" ), any(), any(), any() );
 
         Assertions.assertEquals( "111", associationsService.fetchAssociatedUsers( "111111" ).getFirst() );
+    }
+
+    @Test
+    void fetchPreviousStatesAppliedToAssociationWithPreviousStatesRetrievesAndMaps(){
+        final var association = testDataManager.fetchAssociationDaos( "MKAssociation003" ).getFirst();
+        final var now = LocalDateTime.now();
+
+        Mockito.doReturn( Optional.of( association ) ).when( associationsRepository ).findById( "MKAssociation003" );
+
+        final var previousStatesList = associationsService.fetchPreviousStates( "MKAssociation003", 1, 1 ).get();
+        final var links = previousStatesList.getLinks();
+        final var items = previousStatesList.getItems();
+
+        Assertions.assertEquals( 1, previousStatesList.getItemsPerPage() );
+        Assertions.assertEquals( 1, previousStatesList.getPageNumber() );
+        Assertions.assertEquals( 4, previousStatesList.getTotalResults() );
+        Assertions.assertEquals( 4, previousStatesList.getTotalPages() );
+        Assertions.assertEquals( "/associations/MKAssociation003/previous-states?page_index=1&items_per_page=1", links.getSelf() );
+        Assertions.assertEquals( "/associations/MKAssociation003/previous-states?page_index=2&items_per_page=1", links.getNext() );
+        Assertions.assertEquals( 1, items.size() );
+        Assertions.assertEquals( AWAITING_APPROVAL, items.getFirst().getStatus() );
+        Assertions.assertEquals( "MKUser003", items.getFirst().getChangedBy() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( now.minusDays( 7L ) ), reduceTimestampResolution( items.getFirst().getChangedAt() ) );
+    }
+
+    @Test
+    void fetchPreviousStatesAppliedToAssociationWithoutPreviousStatesRetrievesAndMaps(){
+        final var association = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
+
+        Mockito.doReturn( Optional.of( association ) ).when( associationsRepository ).findById( "MKAssociation001" );
+
+        final var previousStatesList = associationsService.fetchPreviousStates( "MKAssociation001", 0, 15 ).get();
+        final var links = previousStatesList.getLinks();
+        final var items = previousStatesList.getItems();
+
+        Assertions.assertEquals( 15, previousStatesList.getItemsPerPage() );
+        Assertions.assertEquals( 0, previousStatesList.getPageNumber() );
+        Assertions.assertEquals( 0, previousStatesList.getTotalResults() );
+        Assertions.assertEquals( 0, previousStatesList.getTotalPages() );
+        Assertions.assertEquals( "/associations/MKAssociation001/previous-states?page_index=0&items_per_page=15", links.getSelf() );
+        Assertions.assertEquals( "", links.getNext() );
+        Assertions.assertTrue( items.isEmpty() );
+    }
+
+    @Test
+    void fetchPreviousStatesAppliedToMalformedOrNonexistentAssociationReturnsEmptyOptional(){
+        Assertions.assertTrue( associationsService.fetchPreviousStates( "$$$", 0, 15 ).isEmpty() );
+        Assertions.assertTrue( associationsService.fetchPreviousStates( "404MKAssociation", 0, 15 ).isEmpty() );
+    }
+
+    @Test
+    void fetchPreviousStatesThrowsIllegalArgumentExceptionWhenAssociationIdIsNull(){
+        Mockito.doThrow( new IllegalArgumentException( "associationId cannot be null" ) ).when( associationsRepository ).findById( null );
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchPreviousStates( null, 0, 15 ).isEmpty() );
     }
 
 }
