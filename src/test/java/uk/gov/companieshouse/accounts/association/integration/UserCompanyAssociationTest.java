@@ -10,8 +10,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_CANCELLED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -19,12 +21,16 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +55,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
+import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.email_producer.EmailProducer;
@@ -646,6 +653,89 @@ class UserCompanyAssociationTest {
         Assertions.assertEquals( "mario@mushroom.kingdom", updatedAssociation.getUserEmail() );
         Assertions.assertNull( updatedAssociation.getUserId() );
     }
+
+    @Test
+    void getPreviousStatesForAssociationRetrievesData() throws Exception {
+        final var now = LocalDateTime.now();
+
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation003" ) );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+
+        final var response = mockMvc.perform( get( "/associations/MKAssociation003/previous-states?page_index=1&items_per_page=1" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                .andExpect( status().isOk() );
+
+        final var previousStatesList = parseResponseTo( response, PreviousStatesList.class );
+        final var links = previousStatesList.getLinks();
+        final var items = previousStatesList.getItems();
+
+        Assertions.assertEquals( 1, previousStatesList.getItemsPerPage() );
+        Assertions.assertEquals( 1, previousStatesList.getPageNumber() );
+        Assertions.assertEquals( 4, previousStatesList.getTotalResults() );
+        Assertions.assertEquals( 4, previousStatesList.getTotalPages() );
+        Assertions.assertEquals( "/associations/MKAssociation003/previous-states?page_index=1&items_per_page=1", links.getSelf() );
+        Assertions.assertEquals( "/associations/MKAssociation003/previous-states?page_index=2&items_per_page=1", links.getNext() );
+        Assertions.assertEquals( 1, items.size() );
+        Assertions.assertEquals( AWAITING_APPROVAL, items.getFirst().getStatus() );
+        Assertions.assertEquals( "MKUser003", items.getFirst().getChangedBy() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( now.minusDays( 7L ) ), reduceTimestampResolution( items.getFirst().getChangedAt() ) );
+    }
+
+    @Test
+    void getPreviousStatesForAssociationUsesDefaults() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001" ) );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+
+        final var response = mockMvc.perform( get( "/associations/MKAssociation001/previous-states" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                .andExpect( status().isOk() );
+
+        final var previousStatesList = parseResponseTo( response, PreviousStatesList.class );
+        final var links = previousStatesList.getLinks();
+        final var items = previousStatesList.getItems();
+
+        Assertions.assertEquals( 15, previousStatesList.getItemsPerPage() );
+        Assertions.assertEquals( 0, previousStatesList.getPageNumber() );
+        Assertions.assertEquals( 0, previousStatesList.getTotalResults() );
+        Assertions.assertEquals( 0, previousStatesList.getTotalPages() );
+        Assertions.assertEquals( "/associations/MKAssociation001/previous-states?page_index=0&items_per_page=15", links.getSelf() );
+        Assertions.assertEquals( "", links.getNext() );
+        Assertions.assertTrue( items.isEmpty() );
+    }
+
+    private static Stream<Arguments> getPreviousStatesForAssociationMalformedScenarios(){
+        return Stream.of(
+                Arguments.of( "/associations/$$$/previous-states" ),
+                Arguments.of( "/associations/MKAssociation003/previous-states?page_index=-1" ),
+                Arguments.of( "/associations/MKAssociation003/previous-states?items_per_page=-1" )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource( "getPreviousStatesForAssociationMalformedScenarios" )
+    void getPreviousStatesForAssociationWithMalformedAssociationIdReturnsBadRequest( final String uri ) throws Exception {
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockMvc.perform( get( uri )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void getPreviousStatesForAssociationWithNonexistentAssociationReturnsNotFound() throws Exception {
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockMvc.perform( get( "/associations/404MKAssociation/previous-states" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                .andExpect( status().isNotFound() );
+    }
+
 
     @AfterEach
     public void after() {
