@@ -9,8 +9,12 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -47,6 +51,7 @@ import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.Links;
+import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 
 @WebMvcTest( UserCompanyAssociation.class )
 @Import( WebSecurityConfig.class )
@@ -733,6 +738,106 @@ class UserCompanyAssociationTest {
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( String.format( "{\"status\":\"%s\"}", newStatus ) ) )
                 .andExpect( expectedOutcome );
+    }
+
+    @Test
+    void getPreviousStatesForAssociationRetrievesData() throws Exception {
+        final var previousStatesList = new PreviousStatesList()
+                .items( List.of( testDataManager.fetchPreviousStates( "MKAssociation003" ).get( 2 ) ) )
+                .links( new Links().self( "/associations/MKAssociation003/previous-states?page_index=1&items_per_page=1" ).next( "/associations/MKAssociation003/previous-states?page_index=2&items_per_page=1" ) )
+                .pageNumber( 1 )
+                .itemsPerPage( 1 )
+                .totalResults( 4 )
+                .totalPages( 4 );
+
+        final var now = LocalDateTime.now();
+
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        Mockito.doReturn( Optional.of( previousStatesList ) ).when( associationsService ).fetchPreviousStates( "MKAssociation003", 1, 1 );
+
+        final var response = mockMvc.perform( get( "/associations/MKAssociation003/previous-states?page_index=1&items_per_page=1" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                .andExpect( status().isOk() );
+
+        final var result = parseResponseTo( response, PreviousStatesList.class );
+        final var links = result.getLinks();
+        final var items = result.getItems();
+
+        Assertions.assertEquals( 1, result.getItemsPerPage() );
+        Assertions.assertEquals( 1, result.getPageNumber() );
+        Assertions.assertEquals( 4, result.getTotalResults() );
+        Assertions.assertEquals( 4, result.getTotalPages() );
+        Assertions.assertEquals( "/associations/MKAssociation003/previous-states?page_index=1&items_per_page=1", links.getSelf() );
+        Assertions.assertEquals( "/associations/MKAssociation003/previous-states?page_index=2&items_per_page=1", links.getNext() );
+        Assertions.assertEquals( 1, items.size() );
+        Assertions.assertEquals( AWAITING_APPROVAL, items.getFirst().getStatus() );
+        Assertions.assertEquals( "MKUser003", items.getFirst().getChangedBy() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( now.minusDays( 7L ) ), reduceTimestampResolution( items.getFirst().getChangedAt() ) );
+    }
+
+    @Test
+    void getPreviousStatesForAssociationUsesDefaults() throws Exception {
+        final var previousStatesList = new PreviousStatesList()
+                .items( List.of() )
+                .links( new Links().self( "/associations/MKAssociation001/previous-states?page_index=0&items_per_page=15" ).next( "" ) )
+                .pageNumber( 0 )
+                .itemsPerPage( 15 )
+                .totalResults( 0 )
+                .totalPages( 0 );
+
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        Mockito.doReturn( Optional.of( previousStatesList ) ).when( associationsService ).fetchPreviousStates( "MKAssociation001", 0, 15 );
+
+        final var response = mockMvc.perform( get( "/associations/MKAssociation001/previous-states" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                .andExpect( status().isOk() );
+
+        final var result = parseResponseTo( response, PreviousStatesList.class );
+        final var links = result.getLinks();
+        final var items = result.getItems();
+
+        Assertions.assertEquals( 15, result.getItemsPerPage() );
+        Assertions.assertEquals( 0, result.getPageNumber() );
+        Assertions.assertEquals( 0, result.getTotalResults() );
+        Assertions.assertEquals( 0, result.getTotalPages() );
+        Assertions.assertEquals( "/associations/MKAssociation001/previous-states?page_index=0&items_per_page=15", links.getSelf() );
+        Assertions.assertEquals( "", links.getNext() );
+        Assertions.assertTrue( items.isEmpty() );
+    }
+
+    private static Stream<Arguments> getPreviousStatesForAssociationMalformedScenarios(){
+        return Stream.of(
+                Arguments.of( "/associations/$$$/previous-states" ),
+                Arguments.of( "/associations/MKAssociation003/previous-states?page_index=-1" ),
+                Arguments.of( "/associations/MKAssociation003/previous-states?items_per_page=-1" )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource( "getPreviousStatesForAssociationMalformedScenarios" )
+    void getPreviousStatesForAssociationWithMalformedAssociationIdReturnsBadRequest( final String uri ) throws Exception {
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockMvc.perform( get( uri )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void getPreviousStatesForAssociationWithNonexistentAssociationReturnsNotFound() throws Exception {
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        Mockito.doReturn( Optional.empty() ).when( associationsService ).fetchPreviousStates( "404MKAssociation", 0, 15 );
+
+        mockMvc.perform( get( "/associations/404MKAssociation/previous-states" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                .andExpect( status().isNotFound() );
     }
 
 }
