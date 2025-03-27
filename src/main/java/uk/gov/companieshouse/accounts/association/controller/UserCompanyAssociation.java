@@ -3,21 +3,24 @@ package uk.gov.companieshouse.accounts.association.controller;
 import static uk.gov.companieshouse.accounts.association.models.Constants.ITEMS_PER_PAGE_WAS_LESS_THAN_OR_EQUAL_TO_0;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGE_INDEX_WAS_LESS_THAN_0;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToConfirmedUpdate;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToInvitationUpdate;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToRemovedUpdate;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
+import static uk.gov.companieshouse.accounts.association.utils.UserUtil.mapToDisplayValue;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.REMOVED;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,6 +37,7 @@ import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
@@ -107,53 +111,47 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
         return null;
     }
 
-    private void throwBadRequestWhenUserIsNotPermittedToPerformAction( final String xRequestId, final String requestingUserId, final AssociationDao associationDao, final RequestBodyPut.StatusEnum newStatus, final boolean requestingAndTargetUserMatches ){
-        if ( !requestingAndTargetUserMatches && ( newStatus.equals( CONFIRMED ) || !associationsService.confirmedAssociationExists( associationDao.getCompanyNumber(), requestingUserId ) ) ) {
-            LOGGER.errorContext( xRequestId, new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", requestingUserId, associationDao.getCompanyNumber() ) ), null );
+    private void throwBadRequestWhenUserIsNotPermittedToPerformAction( final AssociationDao targetAssociation, final RequestBodyPut.StatusEnum newStatus, final boolean requestingAndTargetUserMatches ){
+        final var oldStatus = StatusEnum.fromValue( targetAssociation.getStatus() );
+        if ( MIGRATED.equals( oldStatus ) && requestingAndTargetUserMatches ){
+            if ( CONFIRMED.equals( newStatus ) ) {
+                LOGGER.errorContext( getXRequestId(), new Exception( "Requesting user cannot change their status from migrated to confirmed" ), null );
+                throw new BadRequestRuntimeException( "requesting user does not have access to perform the action" );
+            }
+        } else if ( !requestingAndTargetUserMatches && ( ( CONFIRMED.equals( newStatus ) && !MIGRATED.equals( oldStatus ) ) || !associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) ) ) {
+            LOGGER.errorContext( getXRequestId(), new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ), null );
             throw new BadRequestRuntimeException( "requesting user does not have access to perform the action" );
         }
     }
 
-    private String updateAssociationWithUserEmail( final String xRequestId, final RequestBodyPut.StatusEnum newStatus, final AssociationDao associationDao ){
-        final var targetUserEmail = associationDao.getUserEmail();
-        final var timestampKey = newStatus.equals( CONFIRMED ) ? "approved_at" : "removed_at";
-        final var update = new Update().set( "status", newStatus.getValue() ).set( timestampKey, LocalDateTime.now().toString() );
+    private String updateAssociationWithUserEmail( final AssociationDao targetAssociation, final RequestBodyPut.StatusEnum newStatus ){
+        final var targetUser = Optional.ofNullable( usersService.searchUserDetails( List.of( targetAssociation.getUserEmail() ) ) )
+                .flatMap( list -> list.stream().findFirst() )
+                .orElse( null );
 
-        final var targetUserDisplayValue =
-                Optional.ofNullable( usersService.searchUserDetails( List.of( targetUserEmail ) ) )
-                        .flatMap( list -> list.stream().findFirst() )
-                        .map( user -> {
-                            update.set( "user_email", null ).set( "user_id", user.getUserId() );
-                            return Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() );
-                        } )
-                        .orElseGet( () -> {
-                            if ( newStatus.equals( CONFIRMED ) ) {
-                                LOGGER.errorContext( xRequestId, new Exception( String.format( "Could not find user %s, so cannot change status to confirmed.", targetUserEmail ) ), null );
-                                throw new BadRequestRuntimeException( String.format( "Could not find data for user %s", targetUserEmail ) );
-                            }
-                            return targetUserEmail;
-                        } );
+        final var update = Optional.of( mapToInvitationUpdate( targetAssociation, targetUser, getEricIdentity() ) )
+                .filter( any -> Objects.isNull( targetUser ) && CONFIRMED.equals( newStatus ) )
+                .map( any -> {
+                    if ( !MIGRATED.equals( StatusEnum.fromValue( targetAssociation.getStatus() ) ) ){
+                        LOGGER.errorContext( getXRequestId(), new Exception( String.format( "Could not find user %s, so cannot change status to confirmed.", targetAssociation.getUserEmail() ) ), null );
+                        throw new BadRequestRuntimeException( String.format( "Could not find data for user %s", targetAssociation.getUserEmail() ) );
+                    }
+                    return any;
+                } )
+                .orElse( CONFIRMED.equals( newStatus ) ? mapToConfirmedUpdate( targetAssociation, targetUser, getEricIdentity() ) : mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() ) );
 
-        LOGGER.debugContext( xRequestId, String.format( "Attempting to update association with id: %s", associationDao.getId() ), null );
-        associationsService.updateAssociation( associationDao.getId(), update );
+        LOGGER.debugContext( getXRequestId(), String.format( "Attempting to update association with id: %s", targetAssociation.getId() ), null );
+        associationsService.updateAssociation( targetAssociation.getId(), update );
 
-        return targetUserDisplayValue;
+        return mapToDisplayValue( targetUser, targetAssociation.getUserEmail() );
     }
 
-    private String updateAssociationWithUserId( final RequestBodyPut.StatusEnum newStatus, final AssociationDao associationDao, final String requestingUserDisplayValue, final boolean requestingAndTargetUserMatches ){
-        final var timestampKey = newStatus.equals( CONFIRMED ) ? "approved_at" : "removed_at";
-        final var update = new Update().set( "status", newStatus.getValue() ).set( timestampKey, LocalDateTime.now().toString() );
-
-        var targetUserDisplayValue = requestingUserDisplayValue;
-        if( !requestingAndTargetUserMatches ){
-            final var tempUser = usersService.fetchUserDetails( associationDao.getUserId() );
-            targetUserDisplayValue = Optional.ofNullable( tempUser.getDisplayName() ).orElse( tempUser.getEmail() );
-        }
-
-        LOGGER.debugContext( getXRequestId(), String.format( "Attempting to update association with id: %s", associationDao.getId() ), null );
-        associationsService.updateAssociation(associationDao.getId(), update);
-
-        return targetUserDisplayValue;
+    private String updateAssociationWithUserId( final AssociationDao targetAssociation, final RequestBodyPut.StatusEnum newStatus, final boolean requestingAndTargetUserMatches ){
+        final var targetUser = requestingAndTargetUserMatches ? getUser() : usersService.fetchUserDetails( targetAssociation.getUserId() );
+        final var update = CONFIRMED.equals( newStatus ) ? mapToConfirmedUpdate( targetAssociation, targetUser, getEricIdentity() ) : mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() );
+        LOGGER.debugContext( getXRequestId(), String.format( "Attempting to update association with id: %s", targetAssociation.getId() ), null );
+        associationsService.updateAssociation( targetAssociation.getId(), update );
+        return mapToDisplayValue( targetUser, null );
     }
 
     @Override
@@ -178,13 +176,13 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
         final boolean requestingAndTargetUserMatches = requestingAndTargetUserIdMatches || requestingAndTargetUserEmailMatches;
         final boolean associationWithUserEmailExists = Objects.nonNull( associationDao.getUserEmail() );
 
-        throwBadRequestWhenUserIsNotPermittedToPerformAction( getXRequestId(), getEricIdentity(), associationDao, newStatus, requestingAndTargetUserMatches );
+        throwBadRequestWhenUserIsNotPermittedToPerformAction( associationDao, newStatus, requestingAndTargetUserMatches );
 
         var targetUserDisplayValue = requestingUserDisplayValue;
         if ( associationWithUserEmailExists ) {
-            targetUserDisplayValue = updateAssociationWithUserEmail( getXRequestId(), newStatus, associationDao );
+            targetUserDisplayValue = updateAssociationWithUserEmail( associationDao, newStatus );
         } else {
-            targetUserDisplayValue = updateAssociationWithUserId( newStatus, associationDao, requestingUserDisplayValue, requestingAndTargetUserMatches );
+            targetUserDisplayValue = updateAssociationWithUserId( associationDao, newStatus, requestingAndTargetUserMatches );
         }
         LOGGER.infoContext( getXRequestId(), String.format( "Updated association %s", associationDao.getId() ), null );
 

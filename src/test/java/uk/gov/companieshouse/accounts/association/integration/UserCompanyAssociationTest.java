@@ -357,6 +357,10 @@ class UserCompanyAssociationTest {
         Assertions.assertNotEquals( oldAssociationData.getEtag(), newAssociationData.getEtag() );
         Assertions.assertEquals( oldAssociationData.getUserEmail(), newAssociationData.getUserEmail() );
         Assertions.assertEquals( oldAssociationData.getUserId(), newAssociationData.getUserId() );
+        Assertions.assertEquals( 1, newAssociationData.getPreviousStates().size() );
+        Assertions.assertEquals( "awaiting-approval", newAssociationData.getPreviousStates().getFirst().getStatus() );
+        Assertions.assertEquals( "111", newAssociationData.getPreviousStates().getFirst().getChangedBy() );
+        Assertions.assertNotNull( newAssociationData.getPreviousStates().getFirst().getChangedAt() );
     }
 
     @Test
@@ -482,6 +486,165 @@ class UserCompanyAssociationTest {
                 .setCompanyName( "Wayne Enterprises" );
 
         Mockito.verify( emailProducer, times( 3 ) ).sendEmail( argThat( comparisonUtils.invitationAcceptedEmailDataMatcher( List.of( "the.joker@gotham.city", "robin@gotham.city", "homer.simpson@springfield.com" ), expectedBaseEmail ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() ) );
+    }
+
+    @Test
+    void updateAssociationStatusForIdThrowsBadRequestWhenUserTriesToConfirmOwnMigratedAssociation() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001" ) );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        mockers.mockUsersServiceSearchUserDetails( "MKUser001" );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser001" );
+
+        mockMvc.perform( patch( "/associations/MKAssociation001"  )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser001" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdUpdatesAssociationWhenUserTriesToRemoveOwnMigratedAssociation() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001" ) );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        mockers.mockUsersServiceSearchUserDetails( "MKUser001" );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser001" );
+
+        mockMvc.perform( patch( "/associations/MKAssociation001"  )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser001" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        final var updatedAssociation = associationsRepository.findById( "MKAssociation001" ).get();
+
+        Assertions.assertEquals( "removed", updatedAssociation.getStatus() );
+        Assertions.assertNotNull( updatedAssociation.getRemovedAt() );
+        Assertions.assertNotNull( updatedAssociation.getEtag() );
+        Assertions.assertEquals( 1, updatedAssociation.getPreviousStates().size() );
+        Assertions.assertEquals( "migrated", updatedAssociation.getPreviousStates().getFirst().getStatus() );
+        Assertions.assertEquals( "MKUser001", updatedAssociation.getPreviousStates().getFirst().getChangedBy() );
+        Assertions.assertNotNull(  updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
+        Assertions.assertNull( updatedAssociation.getUserEmail() );
+        Assertions.assertEquals( "MKUser001", updatedAssociation.getUserId() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdUpdatesAssociationWhenUserTriesToConfirmedAnotherUsersMigratedAssociation() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ) );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        mockers.mockUsersServiceSearchUserDetails( "MKUser001" );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+
+        mockMvc.perform( patch( "/associations/MKAssociation001"  )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        final var updatedAssociation = associationsRepository.findById( "MKAssociation001" ).get();
+
+        Assertions.assertEquals( "confirmed", updatedAssociation.getStatus() );
+        Assertions.assertNotNull( updatedAssociation.getApprovedAt() );
+        Assertions.assertNotNull( updatedAssociation.getEtag() );
+        Assertions.assertEquals( 1, updatedAssociation.getPreviousStates().size() );
+        Assertions.assertEquals( "migrated", updatedAssociation.getPreviousStates().getFirst().getStatus() );
+        Assertions.assertEquals( "MKUser002", updatedAssociation.getPreviousStates().getFirst().getChangedBy() );
+        Assertions.assertNotNull(  updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
+        Assertions.assertNull( updatedAssociation.getUserEmail() );
+        Assertions.assertEquals( "MKUser001", updatedAssociation.getUserId() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdUpdatesAssociationWhenUserTriesToRemoveAnotherUsersMigratedAssociation() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ) );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        mockers.mockUsersServiceSearchUserDetails( "MKUser001" );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+
+        mockMvc.perform( patch( "/associations/MKAssociation001"  )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        final var updatedAssociation = associationsRepository.findById( "MKAssociation001" ).get();
+
+        Assertions.assertEquals( "removed", updatedAssociation.getStatus() );
+        Assertions.assertNotNull( updatedAssociation.getRemovedAt() );
+        Assertions.assertNotNull( updatedAssociation.getEtag() );
+        Assertions.assertEquals( 1, updatedAssociation.getPreviousStates().size() );
+        Assertions.assertEquals( "migrated", updatedAssociation.getPreviousStates().getFirst().getStatus() );
+        Assertions.assertEquals( "MKUser002", updatedAssociation.getPreviousStates().getFirst().getChangedBy() );
+        Assertions.assertNotNull(  updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
+        Assertions.assertNull( updatedAssociation.getUserEmail() );
+        Assertions.assertEquals( "MKUser001", updatedAssociation.getUserId() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdSendInvitationWhenUserTriesToConfirmNonexistentUsersMigratedAssociation() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ) );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        mockers.mockUsersServiceSearchUserDetailsEmptyList( "mario@mushroom.kingdom" );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+
+        mockMvc.perform( patch( "/associations/MKAssociation001"  )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        final var updatedAssociation = associationsRepository.findById( "MKAssociation001" ).get();
+
+        Assertions.assertEquals( "awaiting-approval", updatedAssociation.getStatus() );
+        Assertions.assertNotNull( updatedAssociation.getApprovalExpiryAt() );
+        Assertions.assertEquals( 1, updatedAssociation.getInvitations().size() );
+        Assertions.assertEquals( "MKUser002", updatedAssociation.getInvitations().getFirst().getInvitedBy() );
+        Assertions.assertNotNull( updatedAssociation.getInvitations().getFirst().getInvitedAt() );
+        Assertions.assertNotNull( updatedAssociation.getEtag() );
+        Assertions.assertEquals( 1, updatedAssociation.getPreviousStates().size() );
+        Assertions.assertEquals( "migrated", updatedAssociation.getPreviousStates().getFirst().getStatus() );
+        Assertions.assertEquals( "MKUser002", updatedAssociation.getPreviousStates().getFirst().getChangedBy() );
+        Assertions.assertNotNull(  updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
+        Assertions.assertEquals( "mario@mushroom.kingdom", updatedAssociation.getUserEmail() );
+        Assertions.assertNull( updatedAssociation.getUserId() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdUpdatesAssociationWhenUserTriesToRemoveNonexistentUsersMigratedAssociation() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ) );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        mockers.mockUsersServiceSearchUserDetailsEmptyList( "mario@mushroom.kingdom" );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+
+        mockMvc.perform( patch( "/associations/MKAssociation001"  )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        final var updatedAssociation = associationsRepository.findById( "MKAssociation001" ).get();
+
+        Assertions.assertEquals( "removed", updatedAssociation.getStatus() );
+        Assertions.assertNotNull( updatedAssociation.getRemovedAt() );
+        Assertions.assertNotNull( updatedAssociation.getEtag() );
+        Assertions.assertEquals( 1, updatedAssociation.getPreviousStates().size() );
+        Assertions.assertEquals( "migrated", updatedAssociation.getPreviousStates().getFirst().getStatus() );
+        Assertions.assertEquals( "MKUser002", updatedAssociation.getPreviousStates().getFirst().getChangedBy() );
+        Assertions.assertNotNull(  updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
+        Assertions.assertEquals( "mario@mushroom.kingdom", updatedAssociation.getUserEmail() );
+        Assertions.assertNull( updatedAssociation.getUserId() );
     }
 
     @AfterEach
