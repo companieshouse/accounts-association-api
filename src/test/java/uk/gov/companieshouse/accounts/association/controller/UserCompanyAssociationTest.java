@@ -14,10 +14,14 @@ import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.par
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.mockito.internal.verification.Times;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +32,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
@@ -690,6 +695,44 @@ class UserCompanyAssociationTest {
                 .andExpect( status().isOk() );
 
         Mockito.verify( emailService ).sendInvitationRejectedEmailToAssociatedUser( eq( "theId123" ), eq( "x222222" ), any( Mono.class ), eq( "Scrooge McDuck" ) );
+    }
+
+    public static Stream<Arguments> updateAssociationStatusForIdMigratedScenarios(){
+        return Stream.of(
+                Arguments.of( "MKUser001", "confirmed", true, status().isBadRequest() ),
+                Arguments.of( "MKUser001", "removed", true, status().isOk() ),
+                Arguments.of( "MKUser002", "confirmed", true, status().isOk() ),
+                Arguments.of( "MKUser002", "removed", true, status().isOk() ),
+                Arguments.of( "MKUser002", "confirmed", false, status().isOk() ),
+                Arguments.of( "MKUser002", "removed", false, status().isOk() )
+
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource( "updateAssociationStatusForIdMigratedScenarios" )
+    void updateAssociationStatusForIdSupportsMigratedAssociation( final String requestingUserId, final String newStatus, final boolean targetUserExists, final ResultMatcher expectedOutcome ) throws Exception {
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ).getFirst();
+
+        mockers.mockUsersServiceFetchUserDetails( requestingUserId );
+
+        if ( targetUserExists ) {
+            mockers.mockUsersServiceSearchUserDetails( "MKUser001" );
+        } else {
+            mockers.mockUsersServiceSearchUserDetailsEmptyList( "mario@mushroom.kingdom" );
+        }
+
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).findAssociationDaoById( "MKAssociation001" );
+        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( any(), any() );
+
+        mockMvc.perform( patch( "/associations/MKAssociation001"  )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", requestingUserId )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( String.format( "{\"status\":\"%s\"}", newStatus ) ) )
+                .andExpect( expectedOutcome );
     }
 
 }
