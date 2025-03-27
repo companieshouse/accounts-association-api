@@ -9,6 +9,7 @@ import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
+import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.APPLICATION_NAMESPACE;
 import static uk.gov.companieshouse.accounts.association.utils.UserUtil.mapToDisplayValue;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
@@ -16,8 +17,6 @@ import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyP
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.REMOVED;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Pattern;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,7 +33,6 @@ import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
@@ -67,7 +65,7 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
         if (association.isEmpty()) {
             var errorMessage = String.format("Cannot find Association for the id: %s", id);
             LOGGER.errorContext( getXRequestId(), new Exception( errorMessage ), null );
-            throw new NotFoundRuntimeException(StaticPropertyUtil.APPLICATION_NAMESPACE, errorMessage);
+            throw new NotFoundRuntimeException(APPLICATION_NAMESPACE, errorMessage);
         }
 
         LOGGER.infoContext( getXRequestId(), String.format( "Successfully fetched association %s", id ), null );
@@ -106,9 +104,21 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
     }
 
     @Override
-    public ResponseEntity<PreviousStatesList> getPreviousStatesForAssociation(@Pattern(regexp = "^[a-zA-Z0-9]*$") String s, @Valid Integer integer, @Valid Integer integer1) {
-        // TODO
-        return null;
+    public ResponseEntity<PreviousStatesList> getPreviousStatesForAssociation( final String associationId, final Integer pageIndex, final Integer itemsPerPage ){
+        LOGGER.infoContext( getXRequestId(), String.format( "Received request with id=%s, page_index=%d, items_per_page=%d.", associationId, pageIndex, itemsPerPage ),null );
+
+        if ( pageIndex < 0 || itemsPerPage <= 0 ) {
+            LOGGER.errorContext( getXRequestId(), new Exception( "pageIndex was less than 0 or itemsPerPage was less than or equal to 0" ), null );
+            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN );
+        }
+
+        final var previousStatesList = associationsService.fetchPreviousStates( associationId, pageIndex, itemsPerPage )
+                .orElseThrow( () -> {
+                    LOGGER.errorContext( getXRequestId(), new Exception( String.format( "Association %s was not found", associationId ) ), null );
+                    return new NotFoundRuntimeException( APPLICATION_NAMESPACE, PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN );
+                } );
+
+        return new ResponseEntity<>( previousStatesList, HttpStatus.OK );
     }
 
     private void throwBadRequestWhenUserIsNotPermittedToPerformAction( final AssociationDao targetAssociation, final RequestBodyPut.StatusEnum newStatus, final boolean requestingAndTargetUserMatches ){
