@@ -6,6 +6,7 @@
         <groupId>uk.gov.companieshouse</groupId>
         <artifactId>companies-house-parent</artifactId>
         <version>2.1.11</version> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
     <artifactId>accounts-association-api</artifactId>
     <version>unversioned</version>
@@ -197,7 +198,7 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
-            <version>6.4.2</version>
+            <version>6.4.4</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -248,7 +249,12 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>${dependency-check-maven-plugin.version}</version>
+                <configuration>
+                    <suppressionFiles>
+                        <suppressionFile>${project.basedir}/target/dependency-check-suppressions/suppressions/common_suppressions_spring_6.xml</suppressionFile>
+                        <suppressionFile>${project.basedir}/suppress.xml</suppressionFile>
+                    </suppressionFiles>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
