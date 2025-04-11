@@ -1,49 +1,42 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListMappers;
-import uk.gov.companieshouse.accounts.association.mapper.InvitationsMapper;
+import uk.gov.companieshouse.accounts.association.mapper.InvitationsCollectionMappers;
 import uk.gov.companieshouse.accounts.association.mapper.PreviousStatesCollectionMappers;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
-import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
-import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
-import uk.gov.companieshouse.api.accounts.associations.model.Links;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
-import uk.gov.companieshouse.logging.Logger;
-import uk.gov.companieshouse.logging.LoggerFactory;
-
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.INVITATION;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.CONFIRMED;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 
 @Service
 public class AssociationsService {
@@ -52,224 +45,144 @@ public class AssociationsService {
 
     private final AssociationsListMappers associationsListMappers;
 
-    private final InvitationsMapper invitationMapper;
-
     private final PreviousStatesCollectionMappers previousStatesCollectionMapper;
 
-    private static final Logger LOG = LoggerFactory.getLogger(StaticPropertyUtil.APPLICATION_NAMESPACE);
+    private final InvitationsCollectionMappers invitationsCollectionMappers;
 
     @Autowired
-    public AssociationsService( final AssociationsRepository associationsRepository, final InvitationsMapper invitationMapper, final AssociationsListMappers associationsListMappers, final PreviousStatesCollectionMappers previousStatesCollectionMapper ) {
+    public AssociationsService( final AssociationsRepository associationsRepository, final AssociationsListMappers associationsListMappers, final PreviousStatesCollectionMappers previousStatesCollectionMapper, final InvitationsCollectionMappers invitationsCollectionMappers ) {
         this.associationsRepository = associationsRepository;
         this.associationsListMappers = associationsListMappers;
-        this.invitationMapper = invitationMapper;
         this.previousStatesCollectionMapper = previousStatesCollectionMapper;
+        this.invitationsCollectionMappers = invitationsCollectionMappers;
     }
 
     @Transactional( readOnly = true )
-    public AssociationsList fetchAssociationsForUserStatusAndCompany( @NotNull final User user, List<String> status, final Integer pageIndex, final Integer itemsPerPage, final String companyNumber ) {
-        final var results = fetchAssociationsDaoForUserStatusAndCompany( user, status, pageIndex, itemsPerPage, companyNumber );
+    public Optional<AssociationDao> fetchAssociationDao( final String associationId ) {
+        LOGGER.debugContext( getXRequestId(), String.format( "Attempting to fetch association with id: %s", associationId ), null );
+        final var association = associationsRepository.findById( associationId );
+        LOGGER.debugContext( getXRequestId(), String.format( "Successfully to fetched association with id: %s", associationId ), null );
+        return association;
+    }
+
+    @Transactional( readOnly = true )
+    public Optional<Association> fetchAssociationDto( final String associationId ) {
+        LOGGER.debugContext( getXRequestId(), String.format( "Attempting to retrieve association with id: %s", associationId ), null );
+        final var association = associationsRepository.findById( associationId ).map( associationDao -> associationsListMappers.daoToDto( associationDao, null, null ) );
+        LOGGER.debugContext( getXRequestId(), String.format( "Successfully fetched association with id: %s", associationId ), null );
+        return association;
+    }
+
+    @Transactional( readOnly = true )
+    public Optional<AssociationDao> fetchAssociationDao( final String companyNumber, final String userId, final String userEmail ) {
+        return associationsRepository.fetchAssociation( companyNumber, userId, userEmail );
+    }
+
+    @Transactional( readOnly = true )
+    public boolean confirmedAssociationExists( final String companyNumber, final String userId ) {
+        return associationsRepository.confirmedAssociationExists( companyNumber, userId );
+    }
+
+    @Transactional( readOnly = true )
+    public Flux<String> fetchConfirmedUserIds( final String companyNumber ) {
+        return Flux.fromStream( associationsRepository.fetchConfirmedAssociations( companyNumber ).map( AssociationDao::getUserId ) );
+    }
+
+    @Transactional( readOnly = true )
+    public AssociationsList fetchUnexpiredAssociationsForCompanyAndStatuses( final CompanyDetails companyDetails, final Set<StatusEnum> statuses, final int pageIndex, final int itemsPerPage ) {
+        LOGGER.debugContext( getXRequestId(), "Attempting to fetch associated users", null );
+        final var parsedStatuses = statuses.stream().map( StatusEnum::getValue ).collect( Collectors.toSet() );
+        final var associationDaos = associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails.getCompanyNumber(), parsedStatuses, LocalDateTime.now(), PageRequest.of( pageIndex, itemsPerPage ) );
+        final var associations = associationsListMappers.daoToDto( associationDaos, null, companyDetails );
+        LOGGER.debugContext( getXRequestId(), "Successfully fetched associated users" ,null );
+        return associations;
+    }
+
+    @Transactional( readOnly = true )
+    public Page<AssociationDao> fetchAssociationsForUserAndPartialCompanyNumber( final User user, final String partialCompanyNumber, final int pageIndex, final int itemsPerPage ){
+        final var coalescedPartialCompanyNumber = Optional.ofNullable( partialCompanyNumber ).orElse( "" );
+        final var allStatuses = fetchAllStatusesWithout( Set.of() ).stream().map( StatusEnum::getValue ).collect( Collectors.toSet() );
+        return associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber( user.getUserId(), user.getEmail(), allStatuses, coalescedPartialCompanyNumber, PageRequest.of( pageIndex, itemsPerPage ) );
+    }
+
+    @Transactional( readOnly = true )
+    public AssociationsList fetchAssociationsForUserAndPartialCompanyNumberAndStatuses( final User user, final String partialCompanyNumber, final Set<String> statuses, final int pageIndex, final int itemsPerPage ) {
+        final var coalescedPartialCompanyNumber = Optional.ofNullable( partialCompanyNumber ).orElse( "" );
+        final var coalescedStatuses = Optional.ofNullable( statuses )
+                .filter( parsedStatuses -> !parsedStatuses.isEmpty() )
+                .orElse( Set.of( CONFIRMED.getValue() ) );
+        final var results = associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber( user.getUserId(), user.getEmail(), coalescedStatuses, coalescedPartialCompanyNumber, PageRequest.of( pageIndex, itemsPerPage ) );
         return associationsListMappers.daoToDto( results, user, null );
     }
 
-    @Transactional(readOnly = true)
-    public Page<AssociationDao> fetchAssociationsDaoForUserStatusAndCompany(@NotNull final User user, List<String> status, final Integer pageIndex, final Integer itemsPerPage,
-                                                                            final String companyNumber){
-        if (Objects.isNull(status) || status.isEmpty()) {
-            status = Collections.singletonList(Association.StatusEnum.CONFIRMED.getValue());
-
-        }
-
-        return associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike(
-                user.getUserId(),user.getEmail(), status, Optional.ofNullable(companyNumber).orElse(""), PageRequest.of(pageIndex, itemsPerPage));
-
+    @Transactional( readOnly = true )
+    public Optional<InvitationsList> fetchInvitations( final String associationId, final int pageIndex, final int itemsPerPage ) {
+        LOGGER.debugContext( getXRequestId(), String.format( "Attempting to fetch invitations for association %s", associationId ), null );
+        final var invitations = associationsRepository.findById( associationId ).map( association -> invitationsCollectionMappers.daoToDto( association, pageIndex, itemsPerPage ) );
+        LOGGER.debugContext( getXRequestId(), String.format( "Successfully fetched invitations for association %s", associationId ), null );
+        return invitations;
     }
 
     @Transactional( readOnly = true )
-    public AssociationsList fetchAssociatedUsers( final String companyNumber, final CompanyDetails companyDetails, final boolean includeRemoved, final int itemsPerPage, final int pageIndex ) {
-        final var statuses = new HashSet<>( Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.MIGRATED.getValue() ) );
-        if ( includeRemoved ) {
-            statuses.add( StatusEnum.REMOVED.getValue() );
-        }
-        final Page<AssociationDao> associations = associationsRepository.fetchAssociatedUsers( companyNumber, statuses, LocalDateTime.now(), PageRequest.of( pageIndex, itemsPerPage ) );
-        return associationsListMappers.daoToDto( associations, null, companyDetails );
+    public InvitationsList fetchActiveInvitations( final User user, final int pageIndex, final int itemsPerPage ) {
+        final var associationsWithActiveInvitations = associationsRepository.fetchAssociationsWithActiveInvitations( user.getUserId(), user.getEmail(), LocalDateTime.now() );
+        return invitationsCollectionMappers.daoToDto( associationsWithActiveInvitations, pageIndex, itemsPerPage );
     }
 
     @Transactional( readOnly = true )
-    public Optional<Association> findAssociationById( final String associationId ) {
-        return associationsRepository.findById( associationId ).map( associationDao -> associationsListMappers.daoToDto( associationDao, null, null )  );
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<AssociationDao> findAssociationDaoById(final String id) {
-
-        return associationsRepository.findById(id);
-    }
-
-    @Transactional(readOnly = true)
-    public boolean confirmedAssociationExists(final String companyNumber, final String userId) {
-        return associationsRepository.associationExistsWithStatuses(
-                companyNumber,
-                userId,
-                List.of(StatusEnum.CONFIRMED.getValue())
-        );
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<AssociationDao> fetchAssociationForCompanyNumberAndUserEmail(final String companyNumber, final String userEmail) {
-        return associationsRepository.fetchAssociationForCompanyNumberAndUserEmail(companyNumber, userEmail);
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<AssociationDao> fetchAssociationForCompanyNumberAndUserId(final String companyNumber, final String userId) {
-        return associationsRepository.fetchAssociationForCompanyNumberAndUserId(companyNumber, userId);
-    }
-
-    @Transactional
-    public AssociationDao upsertAssociation(AssociationDao associationDao){
-        return  associationsRepository.save(associationDao);
-    }
-
-    @Transactional
-    public AssociationDao createAssociation(final String companyNumber,
-                                            final String userId,
-                                            final String userEmail,
-                                            final ApprovalRouteEnum approvalRoute,
-                                            final String invitedByUserId) {
-        if (Objects.isNull(companyNumber) || companyNumber.isEmpty()) {
-            LOG.errorContext( getXRequestId(), new Exception( "companyNumber is null" ), null );
-            throw new NullPointerException("companyNumber must not be null");
-        }
-
-        if (Objects.isNull(userId) && Objects.isNull(userEmail)) {
-            LOG.errorContext( getXRequestId(), new Exception( "userId and userEmail is null" ), null );
-            throw new NullPointerException("UserId or UserEmail should be provided");
-        }
-
-        final var association = new AssociationDao();
-        association.setCompanyNumber(companyNumber);
-        association.setUserId(userId);
-        association.setUserEmail(userEmail);
-        association.setApprovalRoute(approvalRoute.getValue());
-        association.setEtag(generateEtag());
-
-        if (ApprovalRouteEnum.INVITATION.equals(approvalRoute)) {
-            addInvitation(invitedByUserId, association);
-        } else {
-            association.setStatus(StatusEnum.CONFIRMED.getValue());
-        }
-
-        return associationsRepository.save(association);
-    }
-
-    private static void addInvitation(String invitedByUserId, AssociationDao association) {
-        if ( Objects.isNull( invitedByUserId ) ){
-            LOG.errorContext( getXRequestId(), new Exception( "invitedByUserId is null" ), null );
-            throw new NullPointerException( "invitedByUserId cannot be null." );
-        }
-
-        final var invitationDao = new InvitationDao();
-        invitationDao.setInvitedAt(LocalDateTime.now());
-        invitationDao.setInvitedBy(invitedByUserId);
-        association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
-        association.setApprovalExpiryAt(LocalDateTime.now().plusDays(DAYS_SINCE_INVITE_TILL_EXPIRES));
-        association.getInvitations().add(invitationDao);
-    }
-
-    @Transactional
-    public AssociationDao sendNewInvitation(final String invitedByUserId, final AssociationDao association) {
-        association.getPreviousStates().add( new PreviousStatesDao().status( association.getStatus() ).changedBy( invitedByUserId ).changedAt( LocalDateTime.now() ) );
-        association.setEtag( generateEtag() );
-        addInvitation(invitedByUserId, association);
-        return associationsRepository.save(association);
-    }
-
-    @Transactional
-    public void updateAssociation(final String associationId, final Update update) {
-        if (Objects.isNull(associationId)) {
-            LOG.errorContext( getXRequestId(), new Exception( "Attempted to update association with null association id" ), null);
-            throw new NullPointerException("associationId must not be null");
-        }
-        update.set("etag", generateEtag());
-        final var numRecordsUpdated = associationsRepository.updateAssociation(associationId, update);
-
-        if (numRecordsUpdated == 0) {
-            LOG.errorContext( getXRequestId(), new Exception( String.format( "Failed to update association with id: %s", associationId ) ), null );
-            throw new InternalServerErrorRuntimeException("Failed to update association");
-        }
-
-    }
-
-    private AssociationDao filterForMostRecentInvitation( AssociationDao associationDao ){
-        final var invitations = associationDao.getInvitations();
-
-        if ( invitations.size() > 1 ){
-            final var mostRecentInvitation = invitations.stream()
-                    .max( Comparator.comparing( InvitationDao::getInvitedAt ) )
-                    .orElseThrow();
-
-            invitations.clear();
-            associationDao.setInvitations( List.of( mostRecentInvitation ) );
-        }
-
-        return associationDao;
-    }
-
-    @Transactional(readOnly = true)
-    public InvitationsList fetchActiveInvitations(final User user, final int pageIndex, final int itemsPerPage) {
-        List<Invitation> allInvitations = associationsRepository.fetchAssociationsWithActiveInvitations(user.getUserId(), user.getEmail(), LocalDateTime.now())
-                .map(this::filterForMostRecentInvitation)
-                .sorted(Comparator.comparing(AssociationDao::getApprovalExpiryAt).reversed())
-                .flatMap(invitationMapper::daoToDto)
-                .collect(Collectors.toList());
-        return createInvitationsList(allInvitations, pageIndex, itemsPerPage, "/associations/invitations");
-    }
-
-    @Transactional(readOnly = true)
-    public InvitationsList fetchInvitations(final AssociationDao associationDao, final int pageIndex, final int itemsPerPage) {
-        List<Invitation> allInvitations = invitationMapper.daoToDto(associationDao).toList();
-        String basePath = "/associations/" + associationDao.getId() + "/invitations";
-        return createInvitationsList(allInvitations, pageIndex, itemsPerPage, basePath);
-    }
-
-    private InvitationsList createInvitationsList( final List<Invitation> allInvitations, final int pageIndex, final int itemsPerPage, final String basePath ) {
-        final var invitationsList = new InvitationsList();
-        final int totalResults = allInvitations.size();
-        final int totalPages = (int) Math.ceil( (double) totalResults / itemsPerPage );
-
-        final var invitations = allInvitations.stream()
-                .skip((long) pageIndex * itemsPerPage )
-                .limit( itemsPerPage )
-                .collect( Collectors.toList() );
-
-        invitationsList.items( invitations );
-        invitationsList.setItemsPerPage( itemsPerPage );
-        invitationsList.setPageNumber( pageIndex );
-        invitationsList.setTotalResults( totalResults );
-        invitationsList.setTotalPages( totalPages );
-
-        final var links = new Links();
-        links.setSelf( basePath + "?page_index=" + pageIndex + "&items_per_page=" + itemsPerPage );
-        if ( pageIndex + 1 < totalPages ) {
-            links.setNext(basePath + "?page_index=" + (pageIndex + 1) + "&items_per_page=" + itemsPerPage);
-        } else {
-            links.setNext("");
-        }
-
-        invitationsList.setLinks( links );
-        return invitationsList;
-    }
-
-    @Transactional( readOnly = true )
-    public List<String> fetchAssociatedUsers( final String companyNumber ) {
-        return associationsRepository.fetchAssociatedUsers( companyNumber, Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), Pageable.unpaged() )
-                .map( AssociationDao::getUserId )
-                .toList();
-    }
-
     public Optional<PreviousStatesList> fetchPreviousStates( final String associationId, final int pageIndex, final int itemsPerPage ){
         LOGGER.debugContext( getXRequestId(), String.format( "Attempting to fetch previous states for association %s", associationId ), null );
         return associationsRepository.findById( associationId ).map( association -> previousStatesCollectionMapper.daoToDto( association, pageIndex, itemsPerPage ) );
     }
+
+    @Transactional
+    public AssociationDao createAssociationWithAuthCodeApprovalRoute( final String companyNumber, final String userId ){
+        if ( Objects.isNull( companyNumber ) || Objects.isNull( userId ) ) {
+            LOGGER.errorContext( getXRequestId(), new Exception( "companyNumber or userId is null" ), null );
+            throw new NullPointerException( "companyNumber and userId must not be null" );
+        }
+
+        final var association = new AssociationDao()
+                .companyNumber( companyNumber )
+                .userId( userId )
+                .status( CONFIRMED.getValue() )
+                .approvalRoute( AUTH_CODE.getValue() )
+                .etag( generateEtag() );
+
+        return associationsRepository.insert( association );
+    }
+
+    @Transactional
+    public AssociationDao createAssociationWithInvitationApprovalRoute( final String companyNumber, final String userId, final String userEmail, final String invitedByUserId ){
+        if ( Objects.isNull( companyNumber ) || ( Objects.isNull( userId ) && Objects.isNull( userEmail ) ) || Objects.isNull( invitedByUserId ) ) {
+            LOGGER.errorContext( getXRequestId(), new Exception( "companyNumber, user, or invitedByUserId is null" ), null );
+            throw new NullPointerException( "companyNumber, user, and invitedByUserId must not be null" );
+        }
+
+        final var association = new AssociationDao()
+                .companyNumber( companyNumber )
+                .userId( userId )
+                .userEmail( userEmail )
+                .status( AWAITING_APPROVAL.getValue() )
+                .approvalRoute( INVITATION.getValue() )
+                .approvalExpiryAt( LocalDateTime.now().plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ) )
+                .invitations( List.of( new InvitationDao().invitedBy( invitedByUserId ).invitedAt( LocalDateTime.now() ) ) )
+                .etag( generateEtag() );
+
+        return associationsRepository.insert( association );
+    }
+
+    @Transactional
+    public void updateAssociation( final String associationId, final Update update ) {
+        LOGGER.debugContext( getXRequestId(), String.format( "Attempting to update association with id: %s", associationId ), null );
+        Optional.ofNullable( associationId )
+                .map( id -> associationsRepository.updateAssociation( id, update ) )
+                .filter( numRecordsUpdated -> numRecordsUpdated > 0 )
+                .orElseThrow( () -> new InternalServerErrorRuntimeException( "Failed to update association", new Exception( String.format( "Failed to update association with id: %s", associationId ) ) ) );
+        LOGGER.debugContext( getXRequestId(), String.format( "Updated association %s", associationId ), null );
+    }
+
+
+    // TODO: improve logging here
 
 }

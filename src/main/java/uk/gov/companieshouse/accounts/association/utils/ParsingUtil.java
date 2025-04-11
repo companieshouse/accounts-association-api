@@ -15,7 +15,7 @@ public class ParsingUtil {
             try {
                 return objectMapper.readValue( json, clazz );
             } catch ( IOException e ){
-                throw new InternalServerErrorRuntimeException( "Unable to parse json" );
+                throw new InternalServerErrorRuntimeException( "Unable to parse json", e );
             }
         };
     }

@@ -67,7 +67,7 @@ class RequestLifecycleInterceptorTest {
 
         final var response = new MockHttpServletResponse();
 
-        Mockito.doThrow( new NotFoundRuntimeException( "accounts-association-api", "Could not find user" ) ).when( usersService ).fetchUserDetails( user.getUserId() );
+        Mockito.doThrow( new NotFoundRuntimeException( "Could not find user", new Exception( "Could not find user" )) ).when( usersService ).fetchUserDetails( user.getUserId() );
 
         final var result = requestLifecycleInterceptor.preHandle( request, response, null );
 

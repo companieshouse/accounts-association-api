@@ -1,5 +1,7 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,12 +14,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.reactive.function.client.WebClient;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.context.RequestContext;
+import uk.gov.companieshouse.accounts.association.models.context.RequestContextData.RequestContextDataBuilder;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
 @ExtendWith( MockitoExtension.class )
@@ -144,6 +149,94 @@ class UsersServiceTest {
     void searchUserDetailsWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
         mockers.mockWebClientForSearchUserDetailsJsonParsingError( "bruce.wayne@gotham.city" );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "bruce.wayne@gotham.city" ) ) );
+    }
+
+    @Test
+    void fetchUserDetailsWithNullAssociationOrNullUserIdAndUserEmailReturnsNull(){
+        Assertions.assertNull( usersService.fetchUserDetails( (AssociationDao) null ) );
+        Assertions.assertNull( usersService.fetchUserDetails( new AssociationDao() ) );
+    }
+
+    @Test
+    void fetchUserDetailsWithNonexistentUserIdThrowsNotFoundRuntimeException(){
+        final var requestingUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
+
+        final var request = new MockHttpServletRequest();
+        request.addHeader( ERIC_IDENTITY, requestingUser.getUserId() );
+        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).build() );
+
+        mockers.mockWebClientForFetchUserDetailsErrorResponse( "MKUser002", 404 );
+
+        Assertions.assertThrows( NotFoundRuntimeException.class, () -> usersService.fetchUserDetails( targetAssociation ) );
+    }
+
+    @Test
+    void fetchUserDetailsWithUserIdAssociationAndSameUsersReturnsEricUser() {
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
+
+        final var request = new MockHttpServletRequest();
+        request.addHeader( ERIC_IDENTITY, targetUser.getUserId() );
+        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( targetUser ).build() );
+
+        Assertions.assertEquals( targetUser, usersService.fetchUserDetails( targetAssociation ) );
+    }
+
+    @Test
+    void fetchUserDetailsWithUserIdAssociationAndDifferentUsersRetrievesUser() throws JsonProcessingException {
+        final var requestingUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
+
+        final var request = new MockHttpServletRequest();
+        request.addHeader( ERIC_IDENTITY, requestingUser.getUserId() );
+        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).build() );
+
+        mockers.mockWebClientForFetchUserDetails( "MKUser002" );
+
+        Assertions.assertEquals( targetUser, usersService.fetchUserDetails( targetAssociation ) );
+    }
+
+    @Test
+    void fetchUserDetailsWithNonexistentUserEmailReturnsNull(){
+        final var requestingUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
+
+        final var request = new MockHttpServletRequest();
+        request.addHeader( ERIC_IDENTITY, requestingUser.getUserId() );
+        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).build() );
+
+        mockers.mockWebClientForSearchUserDetailsNonexistentEmail( "mario@mushroom.kingdom" );
+
+        Assertions.assertNull( usersService.fetchUserDetails( targetAssociation ) );
+    }
+
+    @Test
+    void fetchUserDetailsWithUserEmailAssociationAndSameUsersReturnsEricUser() throws JsonProcessingException {
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
+
+        final var request = new MockHttpServletRequest();
+        request.addHeader( ERIC_IDENTITY, targetUser.getUserId() );
+        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( targetUser ).build() );
+
+        Assertions.assertEquals( targetUser, usersService.fetchUserDetails( targetAssociation ) );
+    }
+
+    @Test
+    void fetchUserDetailsWithUserEmailAssociationAndDifferentUsersRetrievesUser() throws JsonProcessingException {
+        final var requestingUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
+
+        final var request = new MockHttpServletRequest();
+        request.addHeader( ERIC_IDENTITY, requestingUser.getUserId() );
+        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).build() );
+
+        mockers.mockWebClientForSearchUserDetails( "MKUser001" );
+
+        Assertions.assertEquals( targetUser, usersService.fetchUserDetails( targetAssociation ) );
     }
 
 }

@@ -49,27 +49,6 @@ class AssociationsRepositoryTest {
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
     @Test
-    void testInsertAssociation() {
-        associationsRepository.insert( testDataManager.fetchAssociationDaos( "1" ) );
-        Assertions.assertEquals( 1, associationsRepository.findAllByUserId( "111" , PageRequest.of( 0, 1 )) .getTotalElements() );
-    }
-
-    @Test
-    void fetchAssociationWithInvalidOrNonexistentUserIDReturnsEmpty() {
-        final var pageable = PageRequest.of(1, 10);
-        Assertions.assertTrue( associationsRepository.findAllByUserId( "567" , pageable).isEmpty() );
-        Assertions.assertTrue( associationsRepository.findAllByUserId( "@£@" , pageable).isEmpty() );
-        Assertions.assertTrue( associationsRepository.findAllByUserId( null , pageable).isEmpty() );
-        Assertions.assertTrue( associationsRepository.findAllByUserId( "" ,pageable).isEmpty() );
-    }
-
-    @Test
-    void fetchAssociationWithValidUserID() {
-        associationsRepository.insert( testDataManager.fetchAssociationDaos( "1" ) );
-        Assertions.assertEquals( 1, associationsRepository.findAllByUserId( "111" , PageRequest.of(1, 10)).getTotalElements() );
-    }
-
-    @Test
     void updateEtagWithNullThrowsConstraintViolationException() {
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
         associationDao.setEtag(null);
@@ -111,41 +90,28 @@ class AssociationsRepositoryTest {
     }
 
     @Test
-    void updateStatusBasedOnId(){
-        associationsRepository.insert( testDataManager.fetchAssociationDaos( "1" ) );
-        final var update = new Update().set("status", StatusEnum.REMOVED.getValue());
-        associationsRepository.updateUser( "1", update );
-        Assertions.assertEquals( StatusEnum.REMOVED.getValue(), associationsRepository.findById( "1" ).get().getStatus() );
-    }
-
-    @Test
-    void updateStatusWithNullThrowsIllegalStateException(){
-        assertThrows( IllegalStateException.class, () -> associationsRepository.updateUser( "1", null ) );
-    }
-
-    @Test
     void getAssociationsForCompanyNumberAndStatusConfirmedAndCompanyNumberLikeShouldReturnAAssociation() {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2", "3" ) );
-        Assertions.assertEquals(1, associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("111", null, Collections.singletonList("confirmed"),"111111", PageRequest.of(0, 10)).getTotalElements());
-        Assertions.assertEquals(1, associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("222", "the.joker@gotham.city", Collections.singletonList("confirmed"),"111111", PageRequest.of(0, 10)).getTotalElements());
-        Assertions.assertEquals(1, associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("333", "harley.quinn@gotham.city", Collections.singletonList("confirmed"),"111111",PageRequest.of(0, 10)).getTotalElements());
+        Assertions.assertEquals(1, associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("111", null, Set.of("confirmed"),"111111", PageRequest.of(0, 10)).getTotalElements());
+        Assertions.assertEquals(1, associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("222", "the.joker@gotham.city", Set.of("confirmed"),"111111", PageRequest.of(0, 10)).getTotalElements());
+        Assertions.assertEquals(1, associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("333", "harley.quinn@gotham.city", Set.of("confirmed"),"111111",PageRequest.of(0, 10)).getTotalElements());
     }
 
     @Test
     void findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLikeWithNonexistentOrMalformedUserIdOrUserEmailOrEmptyOrMalformedStatusReturnsEmptyPage(){
-        Assertions.assertTrue( associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("1234", "**@abc.com", List.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(0, 5) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("1234","$$$", List.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(0, 5) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("9191", "abcde@abc.com", List.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(0, 5) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("$$$$","abcde@abc.com", List.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(0, 5) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("111","abcde@abc.com", List.of(),"",PageRequest.of(0, 5) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("111","abcde@abc.com", List.of("complicated"),"",PageRequest.of(0, 5) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("1234", "**@abc.com", Set.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(0, 5) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("1234","$$$", Set.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(0, 5) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("9191", "abcde@abc.com", Set.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(0, 5) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("$$$$","abcde@abc.com", Set.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(0, 5) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("111","abcde@abc.com", Set.of(),"",PageRequest.of(0, 5) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("111","abcde@abc.com", Set.of("complicated"),"",PageRequest.of(0, 5) ).isEmpty() );
     }
 
     @Test
     void findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLikeImplementsPaginationCorrectly(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22" ) );
 
-        final var page = associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("9999",null, List.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(1, 1) );
+        final var page = associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("9999",null, Set.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(1, 1) );
         final var ids = page.getContent().stream().map(AssociationDao::getCompanyNumber).toList();
         Assertions.assertTrue( ids.contains( "444444" ) );
         Assertions.assertEquals( 1, ids.size() );
@@ -155,7 +121,7 @@ class AssociationsRepositoryTest {
     void findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLikeWithNullPageableReturnsAllAssociations(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22" ) );
 
-        final var page = associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("9999",null, List.of(StatusEnum.CONFIRMED.getValue() ),"", null);
+        final var page = associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("9999",null, Set.of(StatusEnum.CONFIRMED.getValue() ),"", null);
         final var ids = page.getContent().stream().map(AssociationDao::getCompanyNumber).toList();
         Assertions.assertTrue( ids.containsAll( List.of( "333333", "444444", "555555", "666666", "777777" ) ) );
         Assertions.assertEquals( 5, ids.size() );
@@ -165,7 +131,7 @@ class AssociationsRepositoryTest {
     void findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLikeFiltersBasedOnCompanyNumber(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22" ) );
 
-        final var page = associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("9999",null, List.of(StatusEnum.CONFIRMED.getValue() ),"333333", null);
+        final var page = associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("9999",null, Set.of(StatusEnum.CONFIRMED.getValue() ),"333333", null);
         final var ids = page.getContent().stream().map(AssociationDao::getCompanyNumber).toList();
         Assertions.assertTrue( ids.contains( "333333" ) );
         Assertions.assertEquals( 1, ids.size() );
@@ -173,15 +139,15 @@ class AssociationsRepositoryTest {
 
     @Test
     void findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLikeWithNullCompanyNumberThrowsUncategorizedMongoDbException(){
-        final var statuses = List.of(StatusEnum.CONFIRMED.getValue());
+        final var statuses = Set.of(StatusEnum.CONFIRMED.getValue());
         final var pageRequest = PageRequest.of(0, 15);
-        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("5555","abcd@abc.com", statuses ,null ,pageRequest ) );
+        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("5555","abcd@abc.com", statuses ,null ,pageRequest ) );
     }
 
     @Test
     void findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLikeWithMalformedOrNonexistentCompanyNumberReturnsEmptyPage(){
-        Assertions.assertTrue( associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("5555","abcd@abc.com", List.of(StatusEnum.CONFIRMED.getValue() ),"$556",PageRequest.of(0, 15) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.findAllByUserIdOrUserEmailAndStatusIsInAndCompanyNumberLike("5555","abcd@abc.com", List.of(StatusEnum.CONFIRMED.getValue() ),"abdef",PageRequest.of(0, 15) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("5555","abcd@abc.com", Set.of(StatusEnum.CONFIRMED.getValue() ),"$556",PageRequest.of(0, 15) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("5555","abcd@abc.com", Set.of(StatusEnum.CONFIRMED.getValue() ),"abdef",PageRequest.of(0, 15) ).isEmpty() );
     }
 
     @Test
@@ -198,32 +164,32 @@ class AssociationsRepositoryTest {
 
     @Test
     void fetchAssociatedUsersWithNullOrMalformedOrNonexistentCompanyNumberReturnsEmptyPage(){
-        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( null, Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 3 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( "$", Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 3 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( "999999", Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 3 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( null, Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 3 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( "$", Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 3 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( "999999", Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 3 ) ).isEmpty() );
     }
 
     @Test
     void fetchAssociatedUsersWithNullStatusesThrowsUncategorizedMongoDbException(){
         final var now = LocalDateTime.now();
         final var pageRequest = PageRequest.of( 0, 3 );
-        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchAssociatedUsers( "111111", null, now, pageRequest ) );
+        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( "111111", null, now, pageRequest ) );
     }
 
     @Test
     void fetchAssociatedUsersWithNullPageableReturnsAllAssociatedUsers(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2" ) );
-        Assertions.assertEquals( 2, associationsRepository.fetchAssociatedUsers( "111111", Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), null ).getNumberOfElements() );
+        Assertions.assertEquals( 2, associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( "111111", Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), null ).getNumberOfElements() );
     }
 
     @Test
     void fetchAssociatedUsersFiltersBasedOnSpecifiedStatusesAndExpiryTime(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "6", "14" ) );
 
-        Assertions.assertTrue( associationsRepository.fetchAssociatedUsers( "111111", Set.of(), LocalDateTime.now(), PageRequest.of( 0, 15 ) ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( "111111", Set.of(), LocalDateTime.now(), PageRequest.of( 0, 15 ) ).isEmpty() );
 
         final var queryWithConfirmedFilter =
-                associationsRepository.fetchAssociatedUsers( "111111", Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 15 ) )
+                associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( "111111", Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 15 ) )
                         .getContent()
                         .stream()
                         .map( AssociationDao::getUserId )
@@ -232,7 +198,7 @@ class AssociationsRepositoryTest {
         Assertions.assertTrue( queryWithConfirmedFilter.contains( "111" ) );
 
         final var queryWithConfirmedAndAwaitingFilter =
-                associationsRepository.fetchAssociatedUsers( "111111", Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 15 ) )
+                associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( "111111", Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 15 ) )
                         .getContent()
                         .stream()
                         .map( AssociationDao::getUserId )
@@ -245,7 +211,7 @@ class AssociationsRepositoryTest {
     void fetchAssociatedUsersPaginatesCorrectly(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "6", "14" ) );
 
-        final var secondPage = associationsRepository.fetchAssociatedUsers( "111111", Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() ), LocalDateTime.now(), PageRequest.of( 1, 2 ) );
+        final var secondPage = associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( "111111", Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() ), LocalDateTime.now(), PageRequest.of( 1, 2 ) );
         final var secondPageContent =
                 secondPage.getContent()
                         .stream()
@@ -272,55 +238,13 @@ class AssociationsRepositoryTest {
     @ParameterizedTest
     @MethodSource("nullAndMalformedParameters")
     void associationExistsWithStatusesWithNullOrMalformedOrNonExistentCompanyNumberOrUserReturnsFalse( final String companyNumber, final String userId) {
-        final var statuses = Arrays.stream(StatusEnum.values()).map(StatusEnum::toString).toList();
-        Assertions.assertFalse(associationsRepository.associationExistsWithStatuses(companyNumber, userId, statuses));
+        Assertions.assertFalse(associationsRepository.confirmedAssociationExists(companyNumber, userId));
     }
 
     @Test
     void associationExistsWithExistingConfirmedAssociationReturnsTrue(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1" ) );
-        Assertions.assertTrue( associationsRepository.associationExistsWithStatuses( "111111", "111", List.of(StatusEnum.CONFIRMED.getValue()) ) );
-    }
-
-    @Test
-    void fetchAssociationForCompanyNumberUserEmailAndStatusWithNullOrMalformedOrNonexistentCompanyNumberOrUserEmailReturnsEmptyPage(){
-        Assertions.assertTrue(associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( null, "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty());
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "$$$$$$", "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "919191", "abc@abc.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", null, Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "$$$", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "the.void@space.com", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).isEmpty() );
-    }
-
-    @Test
-    void fetchAssociationForCompanyNumberUserEmailAndStatusWithNullStatusThrowsException(){
-        final var pageRequest = PageRequest.of( 0, 15 );
-        Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "abc@abc.com", null, pageRequest ) );
-    }
-
-    @Test
-    void fetchAssociationForCompanyNumberUserEmailAndStatusWithEmptyStatusesOrNullOrMalformedStatusReturnsEmptyPage(){
-        final var nullSet = new HashSet<String>();
-        nullSet.add(null);
-
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "abc@abc.com", Set.of(), PageRequest.of( 0, 15 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "abc@abc.com", nullSet, PageRequest.of( 0, 15 ) ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "12345", "abc@abc.com", Set.of( "complicated" ), PageRequest.of( 0, 15 ) ).isEmpty() );
-    }
-
-    @Test
-    void fetchAssociationForCompanyNumberUserEmailAndStatusRetrievesAssociation(){
-        associationsRepository.insert( testDataManager.fetchAssociationDaos( "1" ) );
-        Assertions.assertEquals( "1", associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "111111", "bruce.wayne@gotham.city", Set.of( StatusEnum.CONFIRMED.getValue() ), PageRequest.of( 0, 15 ) ).getContent().getFirst().getId() );
-    }
-
-    @Test
-    void fetchAssociationForCompanyNumberUserEmailAndStatusWithoutPageableRetrievesAllAssociationsThatSatisfyQuery(){
-        associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "6", "14" ) );
-
-        final var associations = associationsRepository.fetchAssociationForCompanyNumberUserEmailAndStatus( "111111", "bruce.wayne@gotham.city", Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() ), null );
-        Assertions.assertEquals( 1, associations.getTotalElements() );
-        Assertions.assertEquals( "1", associations.getContent().getFirst().getId() );
+        Assertions.assertTrue( associationsRepository.confirmedAssociationExists( "111111", "111" ) );
     }
 
     @Test
@@ -408,51 +332,51 @@ class AssociationsRepositoryTest {
 
     @Test
     void fetchAssociationForCompanyNumberAndUserEmailWithNullOrMalformedOrNonexistentCompanyNumberReturnsNothing(){
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserEmail( null, "abc@abc.com" ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserEmail( "$$$$$$", "abc@abc.com" ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserEmail( "919191", "abc@abc.com" ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( null, null, "abc@abc.com" ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "$$$$$$", null, "abc@abc.com" ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "919191", null, "abc@abc.com" ).isEmpty() );
     }
 
     @Test
     void fetchAssociationForCompanyNumberAndUserEmailWithMalformedOrNonexistentUserEmailReturnsNothing(){
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserEmail( "12345", "$$$$$$" ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserEmail( "12345", "the.void@space.com" ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", null, "$$$$$$" ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", null, "the.void@space.com" ).isEmpty() );
     }
 
     @Test
     void fetchAssociationForCompanyNumberAndUserEmailRetrievesAssociation(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1" ) );
-        Assertions.assertEquals( "1", associationsRepository.fetchAssociationForCompanyNumberAndUserEmail( "111111", "bruce.wayne@gotham.city" ).get().getId() );
+        Assertions.assertEquals( "1", associationsRepository.fetchAssociation( "111111", null, "bruce.wayne@gotham.city" ).get().getId() );
     }
 
     @Test
     void fetchAssociationForCompanyNumberAndUserIdWithNullOrMalformedOrNonexistentCompanyNumberReturnsNothing(){
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserId( null, "99999" ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserId( "$$$$$$", "99999" ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserId( "919191", "99999" ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( null, "99999", null ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "$$$$$$", "99999", null ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "919191", "99999", null ).isEmpty() );
     }
 
     @Test
     void fetchAssociationForCompanyNumberAndUserIdWithMalformedOrNonexistentUserIdReturnsNothing(){
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserId( "12345", "$$$$$$" ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationForCompanyNumberAndUserId( "12345", "919191" ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", "$$$$$$", null ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociation( "12345", "919191", null ).isEmpty() );
     }
 
     @Test
     void fetchAssociationForCompanyNumberAndUserIdRetrievesAssociation(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1" ) );
-        Assertions.assertEquals( "1", associationsRepository.fetchAssociationForCompanyNumberAndUserId( "111111", "111" ).get().getId() ); ;
+        Assertions.assertEquals( "1", associationsRepository.fetchAssociation( "111111", "111", null ).get().getId() ); ;
     }
 
     @Test
     void fetchAssociationsWithActiveInvitationsWithNullOrMalformedOrNonExistentUserIdOrEmailOrNullTimestampReturnsEmptyStream(){
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, null, LocalDateTime.now() ).toList().isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "$$$", null,LocalDateTime.now() ).toList().isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "9191", null,LocalDateTime.now() ).toList().isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "99999", null,null ).toList().isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "$$$",LocalDateTime.now() ).toList().isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "ronald@mcdonalds.com",LocalDateTime.now() ).toList().isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "ronald@mcdonalds.com",null ).toList().isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, null, LocalDateTime.now() ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "$$$", null,LocalDateTime.now() ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "9191", null,LocalDateTime.now() ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "99999", null,null ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "$$$",LocalDateTime.now() ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "ronald@mcdonalds.com",LocalDateTime.now() ).isEmpty() );
+        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "ronald@mcdonalds.com",null ).isEmpty() );
     }
 
     @Test
@@ -460,6 +384,7 @@ class AssociationsRepositoryTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "23" ) );
 
         final var associationIds = associationsRepository.fetchAssociationsWithActiveInvitations( "9999", null, LocalDateTime.now() )
+                .stream()
                 .map( AssociationDao::getId )
                 .toList();
 
@@ -472,11 +397,36 @@ class AssociationsRepositoryTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "6" ) );
 
         final var associationIds = associationsRepository.fetchAssociationsWithActiveInvitations( null, "homer.simpson@springfield.com", LocalDateTime.now() )
+                .stream()
                 .map( AssociationDao::getId )
                 .toList();
 
         Assertions.assertEquals( 1, associationIds.size() );
         Assertions.assertTrue( associationIds.contains( "6" ) );
+    }
+
+    private static Stream<Arguments> fetchConfirmedAssociationsEmptyStreamScenarios(){
+        return Stream.of(
+                Arguments.of( (String) null ),
+                Arguments.of( "$$$" ),
+                Arguments.of( "404COMP" ),
+                Arguments.of( "111111" )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource( "fetchConfirmedAssociationsEmptyStreamScenarios" )
+    void fetchConfirmedAssociationsWithNullCompanyNumberReturnsEmptyStream( final String companyNumber ){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "6" ) );
+        Assertions.assertTrue( associationsRepository.fetchConfirmedAssociations( companyNumber ).toList().isEmpty() );
+    }
+
+    @Test
+    void fetchConfirmedAssociationsRetrievesConfirmedAssociationsForCompanyNumber(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "5", "6" ) );
+        final var confirmedAssociations = associationsRepository.fetchConfirmedAssociations( "111111" ).toList();
+        Assertions.assertEquals( 1, confirmedAssociations.size() );
+        Assertions.assertEquals( "5", confirmedAssociations.getFirst().getId() );
     }
 
     @AfterEach

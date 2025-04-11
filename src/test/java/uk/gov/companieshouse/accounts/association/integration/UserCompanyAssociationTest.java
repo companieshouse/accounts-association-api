@@ -249,6 +249,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert( oldAssociationData );
         mockers.mockUsersServiceFetchUserDetails(  "9999" );
         mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "9999" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         mockMvc.perform( patch( "/associations/18" )
                         .header("X-Request-Id", "theId123")
@@ -275,6 +276,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert( oldAssociationData );
         mockers.mockUsersServiceFetchUserDetails(  "9999" );
         mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "9999" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         mockMvc.perform( patch( "/associations/18" )
                         .header("X-Request-Id", "theId123")
@@ -297,8 +299,9 @@ class UserCompanyAssociationTest {
     @Test
     void updateAssociationStatusForIdWithNullUserIdAndNonexistentUserAndConfirmedReturnsBadRequest() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "17" ) );
-        mockers.mockUsersServiceSearchUserDetailsEmptyList( "mr.blobby@nightmare.com" );
         mockers.mockUsersServiceFetchUserDetails( "222" );
+        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+
 
         mockMvc.perform( patch( "/associations/17" )
                         .header("X-Request-Id", "theId123")
@@ -316,9 +319,9 @@ class UserCompanyAssociationTest {
         final var oldAssociationData = associationDaos.getLast();
 
         associationsRepository.insert(associationDaos);
-        mockers.mockUsersServiceSearchUserDetails( "000" );
         mockers.mockUsersServiceFetchUserDetails( "111" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         mockMvc.perform( patch( "/associations/34" )
                         .header("X-Request-Id", "theId123")
@@ -344,9 +347,9 @@ class UserCompanyAssociationTest {
         final var oldAssociationData = associationDaos.getLast();
 
         associationsRepository.insert(associationDaos);
-        mockers.mockUsersServiceSearchUserDetailsEmptyList( "light.yagami@death.note" );
         mockers.mockUsersServiceFetchUserDetails( "111" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         mockMvc.perform( patch( "/associations/34" )
                         .header("X-Request-Id", "theId123")
@@ -373,8 +376,9 @@ class UserCompanyAssociationTest {
     @Test
     void updateAssociationStatusForIdNotificationsWhereTargetUserIdExistsSendsNotification() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "35" ) );
-        mockers.mockUsersServiceFetchUserDetails( "9999", "000" );
+        mockers.mockUsersServiceFetchUserDetails( "9999" );
         mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         mockMvc.perform( patch( "/associations/35" )
                         .header("X-Request-Id", "theId123")
@@ -390,8 +394,8 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdNotificationsWhereTargetUserIdDoesNotExistSendsNotification() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "34" ) );
         mockers.mockUsersServiceFetchUserDetails( "111" );
-        mockers.mockUsersServiceSearchUserDetails( "000" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         setEmailProducerCountDownLatch( 1 );
 
@@ -414,9 +418,9 @@ class UserCompanyAssociationTest {
         final var associationDaos = testDataManager.fetchAssociationDaos( "1", "34" );
 
         associationsRepository.insert(associationDaos);
-        mockers.mockUsersServiceSearchUserDetailsEmptyList( "light.yagami@death.note" );
         mockers.mockUsersServiceFetchUserDetails( "111" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         setEmailProducerCountDownLatch( 1 );
 
@@ -437,8 +441,8 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdNotificationsUsesDisplayNamesWhenAvailable() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "3", "4" ) );
         mockers.mockUsersServiceFetchUserDetails( "333" );
-        mockers.mockUsersServiceSearchUserDetails( "444" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "444" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         mockMvc.perform( patch( "/associations/4" )
                         .header("X-Request-Id", "theId123")
@@ -454,8 +458,8 @@ class UserCompanyAssociationTest {
     void updateAssociationToConfirmedStatusForOtherUserShouldThrow400Error() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "3", "4" ) );
         mockers.mockUsersServiceFetchUserDetails( "333" );
-        mockers.mockUsersServiceSearchUserDetails( "444" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "444" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         mockMvc.perform( patch( "/associations/4" )
                         .header("X-Request-Id", "theId123")
@@ -471,8 +475,8 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdUserAcceptedInvitationNotificationsSendsNotification() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "2", "4", "6" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        mockers.mockUsersServiceSearchUserDetails( "666" );
         mockers.mockUsersServiceFetchUserDetails( "222", "444", "666" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "666" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         setEmailProducerCountDownLatch( 3 );
 
@@ -499,8 +503,8 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdThrowsBadRequestWhenUserTriesToConfirmOwnMigratedAssociation() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        mockers.mockUsersServiceSearchUserDetails( "MKUser001" );
         mockers.mockUsersServiceFetchUserDetails( "MKUser001" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "MKUser001" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         mockMvc.perform( patch( "/associations/MKAssociation001"  )
                         .header( "X-Request-Id", "theId123" )
@@ -515,8 +519,8 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdUpdatesAssociationWhenUserTriesToRemoveOwnMigratedAssociation() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        mockers.mockUsersServiceSearchUserDetails( "MKUser001" );
         mockers.mockUsersServiceFetchUserDetails( "MKUser001" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "MKUser001" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         mockMvc.perform( patch( "/associations/MKAssociation001"  )
                         .header( "X-Request-Id", "theId123" )
@@ -543,8 +547,8 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdUpdatesAssociationWhenUserTriesToConfirmedAnotherUsersMigratedAssociation() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        mockers.mockUsersServiceSearchUserDetails( "MKUser001" );
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "MKUser001" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         mockMvc.perform( patch( "/associations/MKAssociation001"  )
                         .header( "X-Request-Id", "theId123" )
@@ -571,8 +575,8 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdUpdatesAssociationWhenUserTriesToRemoveAnotherUsersMigratedAssociation() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        mockers.mockUsersServiceSearchUserDetails( "MKUser001" );
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "MKUser001" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         mockMvc.perform( patch( "/associations/MKAssociation001"  )
                         .header( "X-Request-Id", "theId123" )
@@ -599,8 +603,8 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdSendInvitationWhenUserTriesToConfirmNonexistentUsersMigratedAssociation() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        mockers.mockUsersServiceSearchUserDetailsEmptyList( "mario@mushroom.kingdom" );
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         mockMvc.perform( patch( "/associations/MKAssociation001"  )
                         .header( "X-Request-Id", "theId123" )
@@ -630,8 +634,8 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdUpdatesAssociationWhenUserTriesToRemoveNonexistentUsersMigratedAssociation() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        mockers.mockUsersServiceSearchUserDetailsEmptyList( "mario@mushroom.kingdom" );
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         mockMvc.perform( patch( "/associations/MKAssociation001"  )
                         .header( "X-Request-Id", "theId123" )
