@@ -32,7 +32,7 @@
         <google-http-client.version>1.45.0</google-http-client.version>
         <api-helper-java.version>3.0.1</api-helper-java.version>
         <email-producer-java.version>3.0.3</email-producer-java.version>
-        <flapdoodle.version>4.16.1</flapdoodle.version>
+        <flapdoodle.version>4.20.0</flapdoodle.version>
         <logback-classic.version>1.5.16</logback-classic.version>
 
         <sonar-maven-plugin.version>4.0.0.4121</sonar-maven-plugin.version>
