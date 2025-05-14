@@ -3,7 +3,6 @@ package uk.gov.companieshouse.accounts.association.utils;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
 
-import java.util.Objects;
 import java.util.Optional;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.api.accounts.user.model.User;
