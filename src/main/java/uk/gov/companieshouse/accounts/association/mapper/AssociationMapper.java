@@ -1,5 +1,8 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
+import static uk.gov.companieshouse.accounts.association.models.Constants.DEFAULT_DISPLAY_NAME;
+import static uk.gov.companieshouse.accounts.association.models.Constants.DEFAULT_KIND;
+
 import java.util.Optional;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Context;
@@ -28,10 +31,6 @@ public abstract class AssociationMapper {
 
     @Autowired
     protected CompanyService companyService;
-
-    private static final String DEFAULT_KIND = "association";
-
-    private static final String DEFAULT_DISPLAY_NAME = "Not provided";
 
     protected OffsetDateTime localDateTimeToOffsetDateTime( final LocalDateTime localDateTime ) {
         return Objects.isNull( localDateTime ) ? null : OffsetDateTime.of( localDateTime, ZoneOffset.UTC );

@@ -8,14 +8,15 @@ import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 @SpringBootApplication
 public class AccountsAssociationServiceApplication {
 
-    StaticPropertyUtil staticPropertyUtil;
+    final StaticPropertyUtil staticPropertyUtil;
+
     @Autowired
-    public AccountsAssociationServiceApplication(StaticPropertyUtil staticPropertyUtil) {
+    public AccountsAssociationServiceApplication( final StaticPropertyUtil staticPropertyUtil ) {
         this.staticPropertyUtil = staticPropertyUtil;
     }
 
-    public static void main(String[] args) {
-        SpringApplication.run(AccountsAssociationServiceApplication.class, args);
+    public static void main( String[] args ) {
+        SpringApplication.run( AccountsAssociationServiceApplication.class, args );
     }
 
 }
