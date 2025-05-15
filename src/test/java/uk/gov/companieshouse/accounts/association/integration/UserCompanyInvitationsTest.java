@@ -427,7 +427,7 @@ class UserCompanyInvitationsTest {
                         .content( "{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}" ) )
                 .andExpect( status().isCreated() );
 
-        final var association = associationsRepository.fetchAssociationForCompanyNumberAndUserId("444444", "000").get();
+        final var association = associationsRepository.fetchAssociation("444444", "000", null).get();
         final var invitation = association.getInvitations().getFirst();
 
         Assertions.assertNull( association.getUserEmail() );
@@ -459,7 +459,7 @@ class UserCompanyInvitationsTest {
                         .content( "{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}" ) )
                 .andExpect( status().isCreated() );
 
-        final var association = associationsRepository.fetchAssociationForCompanyNumberAndUserEmail("444444", "light.yagami@death.note").get();
+        final var association = associationsRepository.fetchAssociation("444444", null,"light.yagami@death.note").get();
         final var invitation = association.getInvitations().getFirst();
 
         Assertions.assertEquals( "light.yagami@death.note", association.getUserEmail() );

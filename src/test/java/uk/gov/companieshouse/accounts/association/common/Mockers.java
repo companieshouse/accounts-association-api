@@ -153,7 +153,7 @@ public class Mockers {
 
     public void mockCompanyServiceFetchCompanyProfileNotFound( final String... companyNumbers ){
         for ( final String companyNumber: companyNumbers ){
-            Mockito.doThrow( new NotFoundRuntimeException( "accounts-association-api", "Not found" ) ).when( companyService ).fetchCompanyProfile( companyNumber );
+            Mockito.doThrow( new NotFoundRuntimeException( "Not found", new Exception( "Not found" ) ) ).when( companyService ).fetchCompanyProfile( companyNumber );
         }
     }
 
@@ -182,7 +182,7 @@ public class Mockers {
 
     public void mockUsersServiceFetchUserDetailsNotFound( final String... userIds ){
         for ( final String userId: userIds ){
-            Mockito.doThrow( new NotFoundRuntimeException( "accounts-association-api", "Not found." ) ).when( usersService ).fetchUserDetails( userId );
+            Mockito.doThrow( new NotFoundRuntimeException( "Not found.", new Exception( "Not found." ) ) ).when( usersService ).fetchUserDetails( userId );
         }
     }
 
