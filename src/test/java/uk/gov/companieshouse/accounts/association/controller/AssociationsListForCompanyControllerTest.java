@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
+import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -14,6 +15,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -39,6 +41,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 
 @AutoConfigureMockMvc
 @WebMvcTest(AssociationsListForCompanyController.class)
@@ -85,6 +88,7 @@ class AssociationsListForCompanyControllerTest {
         mockMvc = MockMvcBuilders.webAppContextSetup( context )
                 .apply( SecurityMockMvcConfigurers.springSecurity() )
                 .build();
+        ReflectionTestUtils.setField( staticPropertyUtil, "APPLICATION_NAMESPACE", "acsp-manage-users-api" );
     }
 
     @Test
@@ -120,7 +124,7 @@ class AssociationsListForCompanyControllerTest {
             .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
             .items(List.of( batmanAssociation ));
 
-        Mockito.doReturn(associationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
+        Mockito.doReturn(associationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ) ), eq( 0 ), eq( 15 ) );
 
         mockMvc.perform( get( "/associations/companies/111111" )
                         .header("X-Request-Id", "theId123")
@@ -128,7 +132,7 @@ class AssociationsListForCompanyControllerTest {
                         .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isOk());
 
-        Mockito.verify( associationsService ).fetchAssociatedUsers(  "111111" ,  companyDetails ,  false ,  15 , 0 );
+        Mockito.verify( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails ,  fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ), 0, 15 );
     }
 
     @Test
@@ -143,7 +147,7 @@ class AssociationsListForCompanyControllerTest {
             .totalResults( 1 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
             .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
             .items(List.of( batmanAssociation ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( false ), eq( 15 ), eq( 0 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ) ), eq( 0 ), eq( 15 ) );
 
         mockMvc.perform( get( "/associations/companies/111111?include_removed=false" )
                         .header("X-Request-Id", "theId123")
@@ -151,7 +155,7 @@ class AssociationsListForCompanyControllerTest {
                         .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isOk());
 
-        Mockito.verify( associationsService ).fetchAssociatedUsers(  "111111" , companyDetails , false , 15 , 0 );
+        Mockito.verify( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails , fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ), 0, 15 );
     }
 
     @Test
@@ -168,7 +172,7 @@ class AssociationsListForCompanyControllerTest {
             .totalResults( 2 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
             .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
             .items(List.of( batmanAssociation, jokerAssociation ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 15 ), eq( 0 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of() ) ), eq( 0 ), eq( 15 ) );
 
         mockMvc.perform( get( "/associations/companies/111111?include_removed=true" )
                         .header("X-Request-Id", "theId123")
@@ -176,7 +180,7 @@ class AssociationsListForCompanyControllerTest {
                         .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect(status().isOk());
 
-        Mockito.verify( associationsService ).fetchAssociatedUsers( "111111" ,  companyDetails, true , 15 , 0 );
+        Mockito.verify( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of() ), 0, 15 );
     }
 
     @Test
@@ -190,7 +194,7 @@ class AssociationsListForCompanyControllerTest {
                 .totalResults( 2 ).totalPages( 2 ).pageNumber( 1 ).itemsPerPage( 1 )
                 .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
                 .items(List.of( jokerAssociation ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 1 ), eq( 1 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of() ) ), eq( 1 ), eq( 1 ) );
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=1&page_index=1" )
@@ -230,7 +234,7 @@ class AssociationsListForCompanyControllerTest {
                 .totalResults( 2 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 2 )
                 .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
                 .items(List.of( batmanAssociation, jokerAssociation ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( any(), any(), eq( true ), eq( 2 ), eq( 0 ) );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of() ) ), eq( 0 ), eq( 2 ) );
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=2&page_index=0" ).header("X-Request-Id", "theId123")
@@ -288,7 +292,7 @@ class AssociationsListForCompanyControllerTest {
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
         final var expectedAssociationsList = new AssociationsList().totalResults( 1 ).items(List.of( associationOne ));
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( "111111", companyDetails, false, 15, 0 );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ), 0, 15 );
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/{company_number}?user_email=bruce.wayne@gotham.city", "111111" ).header("X-Request-Id", "theId123")
@@ -309,7 +313,7 @@ class AssociationsListForCompanyControllerTest {
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
         final var expectedAssociationsList = new AssociationsList().totalResults( 0 ).items(List.of());
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociatedUsers( "111111", companyDetails, false, 15, 0 );
+        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ),0 , 15 );
 
         final var response =
                 mockMvc.perform( get( "/associations/companies/111111?user_email=the.void@space.com" ).header("X-Request-Id", "theId123")
@@ -335,7 +339,7 @@ class AssociationsListForCompanyControllerTest {
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
 
         final var expectedAssociationsList = new AssociationsList().totalResults( 3 ).items( List.of( marioAssociation, luigiAssociation, peachAssociation ) );
-        Mockito.doReturn( expectedAssociationsList ).when( associationsService ).fetchAssociatedUsers( "MKCOMP001", mushroomKingdomCompany, true, 15, 0 );
+        Mockito.doReturn( expectedAssociationsList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( mushroomKingdomCompany, fetchAllStatusesWithout( Set.of() ), 0, 15 );
 
         final var response = mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=true", "MKCOMP001" )
                         .header( "X-Request-Id", "theId123" )

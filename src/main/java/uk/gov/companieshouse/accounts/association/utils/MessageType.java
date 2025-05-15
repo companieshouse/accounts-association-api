@@ -2,27 +2,27 @@ package uk.gov.companieshouse.accounts.association.utils;
 
 public enum MessageType {
 
-    AUTH_CODE_CONFIRMATION_MESSAGE_TYPE("associations_authorised_person_added_themselves"),
+    AUTH_CODE_CONFIRMATION_MESSAGE_TYPE( "associations_authorised_person_added_themselves" ),
 
-    YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE("associations_authorisation_to_file_online_removed"),
+    YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE( "associations_authorisation_to_file_online_removed" ),
 
-    AUTHORISATION_REMOVED_MESSAGE_TYPE("associations_authorised_person_removed"),
+    AUTHORISATION_REMOVED_MESSAGE_TYPE( "associations_authorised_person_removed" ),
 
-    INVITATION_CANCELLED_MESSAGE_TYPE("associations_invitation_cancelled"),
+    INVITATION_CANCELLED_MESSAGE_TYPE( "associations_invitation_cancelled" ),
 
-    INVITATION_MESSAGE_TYPE("associations_invited_to_be_authorised"),
+    INVITATION_MESSAGE_TYPE( "associations_invited_to_be_authorised" ),
 
-    INVITATION_ACCEPTED_MESSAGE_TYPE("associations_invitee_accepted"),
+    INVITATION_ACCEPTED_MESSAGE_TYPE( "associations_invitee_accepted" ),
 
-    INVITATION_REJECTED_MESSAGE_TYPE("associations_invitee_declined"),
+    INVITATION_REJECTED_MESSAGE_TYPE( "associations_invitee_declined" ),
 
-    INVITE_MESSAGE_TYPE("associations_invite"),
+    INVITE_MESSAGE_TYPE( "associations_invite" ),
 
-    INVITE_CANCELLED_MESSAGE_TYPE("associations_invite_cancelled");
+    INVITE_CANCELLED_MESSAGE_TYPE( "associations_invite_cancelled" );
 
     private final String value;
 
-    MessageType(String messageType) {
+    MessageType( final String messageType ) {
         this.value = messageType;
     }
 

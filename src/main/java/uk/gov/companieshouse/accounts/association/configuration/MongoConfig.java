@@ -12,19 +12,18 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Configuration
-@EnableMongoRepositories("uk.gov.companieshouse.accounts.association.repositories")
-@EnableMongoAuditing(dateTimeProviderRef = "mongodbDatetimeProvider")
+@EnableMongoRepositories( "uk.gov.companieshouse.accounts.association.repositories" )
+@EnableMongoAuditing( dateTimeProviderRef = "mongodbDatetimeProvider" )
 public class MongoConfig {
 
     @Bean
-    public ValidatingMongoEventListener validatingMongoEventListener(
-            final LocalValidatorFactoryBean factory) {
-        return new ValidatingMongoEventListener(factory);
+    public ValidatingMongoEventListener validatingMongoEventListener( final LocalValidatorFactoryBean factory ) {
+        return new ValidatingMongoEventListener( factory );
     }
 
-    @Bean(name = "mongodbDatetimeProvider")
+    @Bean( name = "mongodbDatetimeProvider" )
     public DateTimeProvider dateTimeProvider() {
-        return () -> Optional.of(LocalDateTime.now());
+        return () -> Optional.of( LocalDateTime.now() );
     }
 
 }

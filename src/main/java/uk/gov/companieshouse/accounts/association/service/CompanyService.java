@@ -1,9 +1,9 @@
 package uk.gov.companieshouse.accounts.association.service;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonTo;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.APPLICATION_NAMESPACE;
 
 import java.time.Duration;
 import java.util.Map;
@@ -18,15 +18,11 @@ import uk.gov.companieshouse.accounts.association.exceptions.InternalServerError
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.api.company.CompanyDetails;
-import uk.gov.companieshouse.logging.Logger;
-import uk.gov.companieshouse.logging.LoggerFactory;
 
 @Service
 public class CompanyService {
 
     private final WebClient companyWebClient;
-
-    private static final Logger LOG = LoggerFactory.getLogger( APPLICATION_NAMESPACE );
 
     public CompanyService( @Qualifier( "companyWebClient" ) final WebClient companyWebClient ) {
         this.companyWebClient = companyWebClient;
@@ -39,22 +35,17 @@ public class CompanyService {
                 .bodyToMono( String.class )
                 .map( parseJsonTo( CompanyDetails.class ) )
                 .onErrorMap( throwable -> {
-                    if ( throwable instanceof WebClientResponseException exception ){
-                        if ( NOT_FOUND.equals( exception.getStatusCode() ) ){
-                            LOG.errorContext( xRequestId, String.format( "Could not find company profile for company %s", companyNumber ), exception, null );
-                            return new NotFoundRuntimeException( APPLICATION_NAMESPACE, "Failed to find company" );
-                        }
+                    if ( throwable instanceof WebClientResponseException exception && NOT_FOUND.equals( exception.getStatusCode() ) ){
+                        return new NotFoundRuntimeException( "Failed to find company", exception );
                     }
-                    LOG.errorContext( xRequestId, String.format( "Failed to retrieve company profile for company %s", companyNumber ), (Exception) throwable, null );
-                    throw new InternalServerErrorRuntimeException( "Failed to retrieve company profile" );
+                    throw new InternalServerErrorRuntimeException( "Failed to retrieve company profile", (Exception) throwable );
                 } )
-                .doOnSubscribe( onSubscribe -> LOG.infoContext( xRequestId, String.format( "Sending request to company-profile-api: GET /company/{company_number}/company-detail. Attempting to retrieve company profile for company: %s" , companyNumber ), null ) )
-                .doFinally( signalType -> LOG.infoContext( xRequestId, String.format( "Finished request to company-profile-api for company: %s.", companyNumber ), null ) );
+                .doOnSubscribe( onSubscribe -> LOGGER.infoContext( xRequestId, String.format( "Sending request to company-profile-api: GET /company/{company_number}/company-detail. Attempting to retrieve company profile for company: %s" , companyNumber ), null ) )
+                .doFinally( signalType -> LOGGER.infoContext( xRequestId, String.format( "Finished request to company-profile-api for company: %s.", companyNumber ), null ) );
     }
 
     public CompanyDetails fetchCompanyProfile( final String companyNumber ){
-        final var xRequestId = getXRequestId();
-        return toFetchCompanyProfileRequest( companyNumber, xRequestId ).block( Duration.ofSeconds( 20L ) );
+        return toFetchCompanyProfileRequest( companyNumber, getXRequestId() ).block( Duration.ofSeconds( 20L ) );
     }
 
     public Map<String, CompanyDetails> fetchCompanyProfiles( final Stream<AssociationDao> associations ) {
