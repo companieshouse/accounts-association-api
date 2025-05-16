@@ -9,5 +9,9 @@ public class Constants {
     public static final String PAGINATION_IS_MALFORMED = "pageIndex was less than 0 or itemsPerPage was less than or equal to 0";
     public static final String DEFAULT_KIND = "association";
     public static final String DEFAULT_DISPLAY_NAME = "Not provided";
+    public static final String ADMIN_READ_PERMISSION = "/admin/user-company-associations/read";
+    public static final String ADMIN_UPDATE_PERMISSION = "/admin/user-company-associations/update";
+    public static final String COMPANIES_HOUSE =  "Companies House";
+
 
 }

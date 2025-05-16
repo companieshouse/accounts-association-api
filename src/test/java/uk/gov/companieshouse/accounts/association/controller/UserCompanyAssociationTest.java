@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -12,11 +14,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
+import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_CANCELLED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_CANCELLED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
@@ -162,6 +172,20 @@ class UserCompanyAssociationTest {
         Assertions.assertEquals( "MKAssociation001", responseAssociation.getId() );
         Assertions.assertEquals( "migrated", responseAssociation.getStatus().getValue() );
         Assertions.assertEquals( "migration", responseAssociation.getApprovalRoute().getValue() );
+    }
+
+    @Test
+    void getAssociationForIdCanBeCalledByAdmin() throws Exception {
+        final var user = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
+        final var association = testDataManager.fetchAssociationDto( "MKAssociation001", user );
+        Mockito.doReturn( Optional.of( association ) ).when( associationsService ).fetchAssociationDto( "MKAssociation001" );
+
+        mockMvc.perform( get( "/associations/MKAssociation001" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .header( "Eric-Authorised-Roles", ADMIN_READ_PERMISSION ) )
+                .andExpect( status().isOk() );
     }
 
     @Test
@@ -700,6 +724,59 @@ class UserCompanyAssociationTest {
     }
 
     @Test
+    void updateAssociationStatusForIdAllowsAdminUserToRemoveAuthorisation() throws Exception {
+        final var association = testDataManager.fetchAssociationDaos( "1" ).getFirst();
+
+        mockers.mockUsersServiceFetchUserDetails( "9999" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "111" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( Optional.of( association ) ).when( associationsService ).fetchAssociationDao( "1" );
+        Mockito.doReturn( Flux.just( "222" ) ).when( associationsService ).fetchConfirmedUserIds( "111111" );
+
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendAuthorisationRemovedEmailToRemovedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), eq( "111" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthorisationRemovedEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), eq( "Batman" ) );
+
+        mockMvc.perform( patch( "/associations/1"  )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "9999" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .header( "Eric-Authorised-Roles", ADMIN_UPDATE_PERMISSION )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( emailService ).sendAuthorisationRemovedEmailToRemovedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), eq( "111" ) );
+        Mockito.verify( emailService ).sendAuthorisationRemovedEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), eq( "Batman" ) );
+    }
+
+    @Test
+    void updateAssociationStatusForIdAllowsAdminUserToCancelInvitation() throws Exception {
+        final var association = testDataManager.fetchAssociationDaos( "6" ).getFirst();
+
+        mockers.mockUsersServiceFetchUserDetails( "9999" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "666" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( Optional.of( association ) ).when( associationsService ).fetchAssociationDao( "6" );
+        Mockito.doReturn( Flux.just( "222" ) ).when( associationsService ).fetchConfirmedUserIds( "111111" );
+
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteCancelledEmail( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), any( AssociationDao.class ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationCancelledEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), eq( "homer.simpson@springfield.com" ) );
+
+        mockMvc.perform( patch( "/associations/6"  )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "9999" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .header( "Eric-Authorised-Roles", ADMIN_UPDATE_PERMISSION )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+
+        Mockito.verify( emailService ).sendInviteCancelledEmail( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), any( AssociationDao.class ) );
+        Mockito.verify( emailService ).sendInvitationCancelledEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), eq( "homer.simpson@springfield.com" ) );
+    }
+
+    @Test
     void getPreviousStatesForAssociationRetrievesData() throws Exception {
         final var previousStatesList = new PreviousStatesList()
                 .items( List.of( testDataManager.fetchPreviousStates( "MKAssociation003" ).get( 2 ) ) )
@@ -797,6 +874,27 @@ class UserCompanyAssociationTest {
                         .header( "Eric-identity", "MKUser002" )
                         .header( "ERIC-Identity-Type", "oauth2" ) )
                 .andExpect( status().isNotFound() );
+    }
+
+    @Test
+    void getPreviousStatesForAssociationCanBeCalledByAdmin() throws Exception {
+        final var previousStatesList = new PreviousStatesList()
+                .items( List.of() )
+                .links( new Links().self( "/associations/MKAssociation001/previous-states?page_index=0&items_per_page=15" ).next( "" ) )
+                .pageNumber( 0 )
+                .itemsPerPage( 15 )
+                .totalResults( 0 )
+                .totalPages( 0 );
+
+        mockers.mockUsersServiceFetchUserDetails( "111" );
+        Mockito.doReturn( Optional.of( previousStatesList ) ).when( associationsService ).fetchPreviousStates( "MKAssociation001", 0, 15 );
+
+        mockMvc.perform( get( "/associations/MKAssociation001/previous-states" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .header( "Eric-Authorised-Roles", ADMIN_READ_PERMISSION ) )
+                .andExpect( status().isOk() );
     }
 
 }

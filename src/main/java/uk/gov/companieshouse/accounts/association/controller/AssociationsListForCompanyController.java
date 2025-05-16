@@ -1,21 +1,25 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
 import static org.springframework.http.HttpStatus.OK;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 
 import java.util.Set;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.ForbiddenRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.api.accounts.associations.api.AssociationsListForCompanyInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.hasAdminPrivilege;
 
 @RestController
 public class AssociationsListForCompanyController implements AssociationsListForCompanyInterface {
@@ -34,6 +38,10 @@ public class AssociationsListForCompanyController implements AssociationsListFor
 
         if ( pageIndex < 0 || itemsPerPage <= 0 ){
             throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
+        }
+
+        if ( !associationsService.confirmedAssociationExists( companyNumber, getEricIdentity() ) && !hasAdminPrivilege( ADMIN_READ_PERMISSION ) ){
+            throw new ForbiddenRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user is not permitted to retrieve data." ) );
         }
 
         final var companyProfile = companyService.fetchCompanyProfile( companyNumber );

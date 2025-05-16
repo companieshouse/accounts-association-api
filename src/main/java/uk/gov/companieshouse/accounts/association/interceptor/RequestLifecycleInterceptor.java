@@ -32,6 +32,7 @@ public class RequestLifecycleInterceptor implements HandlerInterceptor, RequestL
                 .setXRequestId( request )
                 .setEricIdentity( request )
                 .setEricIdentityType( request )
+                .setAdminPrivileges( request )
                 .setUser( user )
                 .build();
 
