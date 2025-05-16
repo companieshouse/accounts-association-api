@@ -3,6 +3,7 @@ package uk.gov.companieshouse.accounts.association.utils;
 import static uk.gov.companieshouse.accounts.association.models.Constants.UNKNOWN;
 import static uk.gov.companieshouse.accounts.association.models.context.RequestContext.getRequestContext;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.function.Function;
 import uk.gov.companieshouse.accounts.association.models.context.RequestContextData;
@@ -26,6 +27,10 @@ public final class RequestContextUtil {
 
     public static String getEricIdentityType(){
         return getFieldFromRequestContext( RequestContextData::getEricIdentityType, UNKNOWN );
+    }
+
+    public static boolean hasAdminPrivilege( final String privilege ){
+        return getFieldFromRequestContext( RequestContextData::getAdminPrivileges, new HashSet<>() ).contains( privilege );
     }
 
     public static User getUser(){

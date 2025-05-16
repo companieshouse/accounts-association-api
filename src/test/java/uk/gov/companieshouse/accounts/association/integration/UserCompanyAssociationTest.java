@@ -11,13 +11,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
+import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_CANCELLED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_CANCELLED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -34,13 +39,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
@@ -52,9 +54,6 @@ import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepos
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
@@ -171,6 +170,20 @@ class UserCompanyAssociationTest {
         Assertions.assertEquals( "MKAssociation001", association.getId() );
         Assertions.assertEquals( "migrated", association.getStatus().getValue() );
         Assertions.assertEquals( "migration", association.getApprovalRoute().getValue() );
+    }
+
+    @Test
+    void getAssociationForIdCanBeCalledByAdmin() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001" ) );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser001", "111" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+
+        mockMvc.perform( get( "/associations/MKAssociation001" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .header( "Eric-Authorised-Roles", ADMIN_READ_PERMISSION ) )
+                .andExpect( status().isOk() );
     }
 
     @Test
@@ -410,7 +423,7 @@ class UserCompanyAssociationTest {
 
         latch.await( 10, TimeUnit.SECONDS );
 
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.inviteCancelledEmailMatcher( "light.yagami@death.note", "Wayne Enterprises", "Batman" ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "null", "Batman", "null", "Wayne Enterprises", "light.yagami@death.note"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
@@ -434,7 +447,7 @@ class UserCompanyAssociationTest {
                 .andExpect( status().isOk() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.inviteCancelledEmailMatcher( "light.yagami@death.note", "Wayne Enterprises", "Batman" ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "null", "Batman", "null", "Wayne Enterprises",  "light.yagami@death.note"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
@@ -659,6 +672,60 @@ class UserCompanyAssociationTest {
     }
 
     @Test
+    void updateAssociationStatusForIdAllowsAdminUserToRemoveAuthorisation() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2" ) );
+        mockers.mockUsersServiceFetchUserDetails( "9999", "111", "222" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "111" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+
+        setEmailProducerCountDownLatch( 2 );
+
+        mockMvc.perform( patch( "/associations/1"  )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "9999" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .header( "Eric-Authorised-Roles", ADMIN_UPDATE_PERMISSION )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        latch.await( 10, TimeUnit.SECONDS );
+
+        final var updatedAssociation = associationsRepository.findById( "1" ).get();
+
+        Assertions.assertEquals( "removed", updatedAssociation.getStatus() );
+
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( comparisonUtils.authorisationRemovedAndYourAuthorisationRemovedEmailMatcher( COMPANIES_HOUSE, "Batman", "Wayne Enterprises", "the.joker@gotham.city", "bruce.wayne@gotham.city" ) ), argThat( messageType -> List.of( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue(), YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() ).contains( messageType ) ) );
+    }
+
+    @Test
+    void updateAssociationStatusForIdAllowsAdminUserToCancelInvitation() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "6", "2" ) );
+        mockers.mockUsersServiceFetchUserDetails( "9999", "666", "222" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "666" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+
+        setEmailProducerCountDownLatch( 2 );
+
+        mockMvc.perform( patch( "/associations/6"  )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "9999" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .header( "Eric-Authorised-Roles", ADMIN_UPDATE_PERMISSION )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        latch.await( 10, TimeUnit.SECONDS );
+
+        final var updatedAssociation = associationsRepository.findById( "6" ).get();
+
+        Assertions.assertEquals( "removed", updatedAssociation.getStatus() );
+
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "the.joker@gotham.city", "Companies House", "homer.simpson@springfield.com", "Wayne Enterprises", "homer.simpson@springfield.com" ) ), argThat( messageType -> List.of( INVITATION_CANCELLED_MESSAGE_TYPE.getValue(), INVITE_CANCELLED_MESSAGE_TYPE.getValue() ).contains( messageType ) ) );
+    }
+
+    @Test
     void getPreviousStatesForAssociationRetrievesData() throws Exception {
         final var now = LocalDateTime.now();
 
@@ -740,6 +807,18 @@ class UserCompanyAssociationTest {
                 .andExpect( status().isNotFound() );
     }
 
+    @Test
+    void getPreviousStatesForAssociationCanBeCalledByAdmin() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001" ) );
+        mockers.mockUsersServiceFetchUserDetails( "111" );
+
+        mockMvc.perform( get( "/associations/MKAssociation001/previous-states" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .header( "Eric-Authorised-Roles", ADMIN_READ_PERMISSION ) )
+                .andExpect( status().isOk() );
+    }
 
     @AfterEach
     public void after() {

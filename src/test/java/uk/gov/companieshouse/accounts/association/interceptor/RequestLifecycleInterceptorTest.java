@@ -1,9 +1,11 @@
 package uk.gov.companieshouse.accounts.association.interceptor;
 
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentityType;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.hasAdminPrivilege;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -41,6 +43,7 @@ class RequestLifecycleInterceptorTest {
         request.addHeader( "X-Request-Id", "theId123" );
         request.addHeader( "Eric-Identity", user.getUserId() );
         request.addHeader( "Eric-Identity-Type", "oauth2" );
+        request.addHeader( "Eric-Authorised-Roles", ADMIN_READ_PERMISSION );
 
         final var response = new MockHttpServletResponse();
 
@@ -52,6 +55,7 @@ class RequestLifecycleInterceptorTest {
         Assertions.assertEquals( "theId123", getXRequestId() );
         Assertions.assertEquals( user.getUserId(), getEricIdentity() );
         Assertions.assertEquals( "oauth2", getEricIdentityType() );
+        Assertions.assertTrue( hasAdminPrivilege( ADMIN_READ_PERMISSION ) );
         Assertions.assertEquals( user, getUser() );
         Assertions.assertEquals( 200, response.getStatus() );
     }

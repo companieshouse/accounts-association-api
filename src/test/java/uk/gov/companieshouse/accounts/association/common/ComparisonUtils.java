@@ -19,9 +19,14 @@ import uk.gov.companieshouse.accounts.association.models.email.builders.Invitati
 import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationRejectedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.InviteCancelledEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.InviteEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.YourAuthorisationRemovedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.data.AuthorisationRemovedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.InvitationCancelledEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.InviteCancelledEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InviteEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.YourAuthorisationRemovedEmailData;
 import uk.gov.companieshouse.email_producer.model.EmailData;
 
 public class ComparisonUtils {
@@ -122,26 +127,46 @@ public class ComparisonUtils {
         return compare( expectedEmail, List.of( "authorisedPerson", "companyName", "to", "subject" ), List.of(), Map.of() );
     }
 
-    public ArgumentMatcher<EmailData> authorisationRemovedEmailMatcher( final String removedByDisplayName, final String removedUserDisplayName, final String companyName, final String recipientEmail ){
-        final var expectedEmail = new AuthorisationRemovedEmailBuilder()
+    public ArgumentMatcher<EmailData> authorisationRemovedAndYourAuthorisationRemovedEmailMatcher( final String removedByDisplayName, final String removedUserDisplayName, final String companyName, final String authorisationRemovedRecipientEmail, final String yourAuthorisationRemovedRecipientEmail ){
+        final var expectedAuthorisationRemovedEmail = new AuthorisationRemovedEmailBuilder()
                 .setRemovedByDisplayName( removedByDisplayName )
                 .setRemovedUserDisplayName( removedUserDisplayName )
                 .setCompanyName( companyName )
-                .setRecipientEmail( recipientEmail )
+                .setRecipientEmail( authorisationRemovedRecipientEmail )
                 .build();
 
-        return compare( expectedEmail, List.of( "personWhoWasRemoved", "personWhoRemovedAuthorisation", "companyName", "to", "subject" ), List.of(), Map.of() );
+        final var expectedYourAuthorisationRemovedEmail = new YourAuthorisationRemovedEmailBuilder()
+                .setRemovedByDisplayName( removedByDisplayName )
+                .setCompanyName( companyName )
+                .setRecipientEmail( yourAuthorisationRemovedRecipientEmail )
+                .build();
+
+        return emailData -> {
+            if ( emailData instanceof AuthorisationRemovedEmailData ) return compare( expectedAuthorisationRemovedEmail, List.of( "personWhoWasRemoved", "personWhoRemovedAuthorisation", "companyName", "to", "subject" ), List.of(), Map.of() ).matches( (AuthorisationRemovedEmailData) emailData );
+            if ( emailData instanceof YourAuthorisationRemovedEmailData ) return compare( expectedYourAuthorisationRemovedEmail, List.of( "personWhoRemovedAuthorisation", "companyName", "to", "subject" ), List.of(), Map.of() ).matches( (YourAuthorisationRemovedEmailData) emailData );
+            return false;
+        };
     }
 
-    public ArgumentMatcher<EmailData> invitationCancelledEmailMatcher( final String recipientEmail, final String cancelledByDisplayName, final String cancelledUserDisplayName, final String companyName ){
-        final var expectedEmail = new InvitationCancelledEmailBuilder()
-                .setRecipientEmail( recipientEmail )
+    public ArgumentMatcher<EmailData> invitationCancelledAndInviteCancelledEmailMatcher( final String invitationCancelledRecipientEmail, final String cancelledByDisplayName, final String cancelledUserDisplayName, final String companyName, final String inviteCancelledRecipientEmail ){
+        final var expectedInvitationCancelledEmail = new InvitationCancelledEmailBuilder()
+                .setRecipientEmail( invitationCancelledRecipientEmail )
                 .setCancelledByDisplayName( cancelledByDisplayName )
                 .setCancelledUserDisplayName( cancelledUserDisplayName )
                 .setCompanyName( companyName )
                 .build();
 
-        return compare( expectedEmail, List.of( "personWhoWasCancelled", "companyName", "personWhoCancelledInvite", "to", "subject" ), List.of(), Map.of() );
+        final var expectedCancelledInviteEmail = new InviteCancelledEmailBuilder()
+                .setRecipientEmail( inviteCancelledRecipientEmail )
+                .setCompanyName( companyName )
+                .setCancelledBy( cancelledByDisplayName )
+                .build();
+
+        return emailData -> {
+            if ( emailData instanceof InvitationCancelledEmailData ) return compare( expectedInvitationCancelledEmail, List.of( "personWhoWasCancelled", "companyName", "personWhoCancelledInvite", "to", "subject" ), List.of(), Map.of() ).matches( (InvitationCancelledEmailData) emailData );
+            if ( emailData instanceof InviteCancelledEmailData ) return compare( expectedCancelledInviteEmail, List.of( "cancelledBy", "companyName", "to", "subject" ), List.of(), Map.of() ).matches( (InviteCancelledEmailData) emailData );
+            return false;
+        };
     }
 
     public ArgumentMatcher<EmailData> invitationRejectedEmailMatcher( final String recipientEmail, final String inviteeDisplayName, final String companyName ){
@@ -152,16 +177,6 @@ public class ComparisonUtils {
                 .build();
 
         return compare( expectedEmail, List.of( "personWhoDeclined", "companyName", "to", "subject" ), List.of(), Map.of() );
-    }
-
-    public ArgumentMatcher<EmailData> inviteCancelledEmailMatcher( final String recipientEmail, final String companyName, final String cancelledBy ){
-        final var expectedEmail = new InviteCancelledEmailBuilder()
-                .setRecipientEmail( recipientEmail )
-                .setCompanyName( companyName )
-                .setCancelledBy( cancelledBy )
-                .build();
-
-        return compare( expectedEmail, List.of( "cancelledBy", "companyName", "to", "subject" ), List.of(), Map.of() );
     }
 
     public ArgumentMatcher<Page<AssociationDao>> associationsPageMatches( final int totalElements, final int totalPages, final int numElementsOnPage, final List<String> expectedAssociationIds ){
