@@ -2,12 +2,16 @@ package uk.gov.companieshouse.accounts.association.models.context;
 
 import static uk.gov.companieshouse.accounts.association.models.Constants.UNKNOWN;
 import static uk.gov.companieshouse.accounts.association.models.Constants.X_REQUEST_ID;
+import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_AUTHORISED_ROLES;
 import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY;
 import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY_TYPE;
 import static uk.gov.companieshouse.api.util.security.RequestUtils.getRequestHeader;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
 public class RequestContextData {
@@ -15,12 +19,14 @@ public class RequestContextData {
     private final String xRequestId;
     private final String ericIdentity;
     private final String ericIdentityType;
+    private final HashSet<String> adminPrivileges;
     private final User user;
 
-    protected RequestContextData( final String xRequestId, final String ericIdentity, final String ericIdentityType, final User user ){
+    protected RequestContextData( final String xRequestId, final String ericIdentity, final String ericIdentityType, final HashSet<String> adminPrivileges, final User user ){
         this.xRequestId = xRequestId;
         this.ericIdentity = ericIdentity;
         this.ericIdentityType = ericIdentityType;
+        this.adminPrivileges = adminPrivileges;
         this.user = user;
     }
 
@@ -36,6 +42,10 @@ public class RequestContextData {
         return ericIdentityType;
     }
 
+    public HashSet<String> getAdminPrivileges(){
+        return adminPrivileges;
+    }
+
     public User getUser(){
         return user;
     }
@@ -44,6 +54,7 @@ public class RequestContextData {
         private String xRequestId = UNKNOWN;
         private String ericIdentity = UNKNOWN;
         private String ericIdentityType = UNKNOWN;
+        private HashSet<String> adminPrivileges = new HashSet<>();
         private User user;
 
         public RequestContextDataBuilder setXRequestId( final HttpServletRequest request ){
@@ -61,13 +72,21 @@ public class RequestContextData {
             return this;
         }
 
+        public RequestContextDataBuilder setAdminPrivileges( final HttpServletRequest request ){
+            adminPrivileges = Optional.ofNullable( getRequestHeader( request, ERIC_AUTHORISED_ROLES ) )
+                    .map( roles -> roles.split(" ") )
+                    .map( roles -> Arrays.stream( roles ).collect( Collectors.toCollection( HashSet::new ) ) )
+                    .orElse( new HashSet<>() );
+            return this;
+        }
+
         public RequestContextDataBuilder setUser( final User user ){
             this.user = user;
             return this;
         }
 
         public RequestContextData build(){
-            return new RequestContextData( xRequestId, ericIdentity, ericIdentityType, user );
+            return new RequestContextData( xRequestId, ericIdentity, ericIdentityType, adminPrivileges, user );
         }
 
     }

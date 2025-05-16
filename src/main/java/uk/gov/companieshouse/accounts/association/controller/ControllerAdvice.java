@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.ForbiddenRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.service.rest.err.Errors;
@@ -55,6 +56,13 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
     @ResponseStatus( HttpStatus.INTERNAL_SERVER_ERROR )
     @ResponseBody
     public Errors onInternalServerErrorRuntimeException( final InternalServerErrorRuntimeException exception, final HttpServletRequest request ) {
+        return mapThrownExceptionsToErrors( exception, request );
+    }
+
+    @ExceptionHandler( ForbiddenRuntimeException.class )
+    @ResponseStatus( HttpStatus.FORBIDDEN )
+    @ResponseBody
+    public Errors onForbiddenRuntimeException( final ForbiddenRuntimeException exception, final HttpServletRequest request ) {
         return mapThrownExceptionsToErrors( exception, request );
     }
 

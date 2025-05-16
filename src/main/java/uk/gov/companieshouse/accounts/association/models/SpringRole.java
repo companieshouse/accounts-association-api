@@ -3,6 +3,8 @@ package uk.gov.companieshouse.accounts.association.models;
 public enum SpringRole {
 
     BASIC_OAUTH_ROLE ( "BASIC_OAUTH" ),
+    ADMIN_READ_ROLE ( "ADMIN_READ" ),
+    ADMIN_UPDATE_ROLE ( "ADMIN_UPDATE" ),
     UNKNOWN_ROLE ( "UNKNOWN" );
 
     private final String value;
