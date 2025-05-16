@@ -94,7 +94,7 @@ class EmailServiceTest {
     void sendAuthorisationRemovedEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
         mockers.mockUsersServiceFetchUserDetails( "333" );
         emailService.sendAuthorisationRemovedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel", "Batman" ).apply( "333" ).block();
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.authorisationRemovedEmailMatcher( "Harleen Quinzel", "Batman", "Wayne Enterprises", "harley.quinn@gotham.city" ) ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.authorisationRemovedAndYourAuthorisationRemovedEmailMatcher( "Harleen Quinzel", "Batman", "Wayne Enterprises", "harley.quinn@gotham.city", "null" ) ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
@@ -118,7 +118,7 @@ class EmailServiceTest {
     void sendInvitationCancelledEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
         mockers.mockUsersServiceFetchUserDetails( "333" );
         emailService.sendInvitationCancelledEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel", "Batman" ).apply( "333" ).block();
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledEmailMatcher( "harley.quinn@gotham.city", "Harleen Quinzel", "Batman", "Wayne Enterprises" ) ), eq( INVITATION_CANCELLED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "harley.quinn@gotham.city", "Harleen Quinzel", "Batman", "Wayne Enterprises", "null" ) ), eq( INVITATION_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
@@ -247,9 +247,8 @@ class EmailServiceTest {
     @Test
     void sendInviteCancelledEmailSendsEmail(){
         final var association = testDataManager.fetchAssociationDaos( "34" ).getFirst();
-
         emailService.sendInviteCancelledEmail( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Batman", association ).block();
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.inviteCancelledEmailMatcher( "light.yagami@death.note", "Wayne Enterprises", "Batman" ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "null", "Batman", "null", "Wayne Enterprises", "light.yagami@death.note"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
 }

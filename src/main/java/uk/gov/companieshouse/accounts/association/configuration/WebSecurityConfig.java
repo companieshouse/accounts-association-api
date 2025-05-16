@@ -1,6 +1,9 @@
 package uk.gov.companieshouse.accounts.association.configuration;
 
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.PATCH;
+import static uk.gov.companieshouse.accounts.association.models.SpringRole.ADMIN_READ_ROLE;
+import static uk.gov.companieshouse.accounts.association.models.SpringRole.ADMIN_UPDATE_ROLE;
 import static uk.gov.companieshouse.accounts.association.models.SpringRole.BASIC_OAUTH_ROLE;
 import static uk.gov.companieshouse.accounts.association.models.SpringRole.getValues;
 
@@ -33,7 +36,12 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests( request -> request
                         .requestMatchers( GET, "/associations-api/healthcheck" ).permitAll()
                         .requestMatchers("/associations" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE ) )
-                        .requestMatchers("/associations/**" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE ) )
+                        .requestMatchers("/associations/invitations" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE ) )
+                        .requestMatchers( GET,"/associations/*/invitations" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE ) )
+                        .requestMatchers( GET,"/associations/*" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_READ_ROLE ) )
+                        .requestMatchers( GET,"/associations/companies/*" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_READ_ROLE ) )
+                        .requestMatchers( GET,"/associations/*/previous-states" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_READ_ROLE ) )
+                        .requestMatchers( PATCH,"/associations/*" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_UPDATE_ROLE ) )
                         .anyRequest().denyAll()
                 );
         return http.build();

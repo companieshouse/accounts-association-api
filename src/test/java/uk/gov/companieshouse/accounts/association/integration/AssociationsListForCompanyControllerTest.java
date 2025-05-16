@@ -1,7 +1,9 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
+import java.io.IOException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -31,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
 
 @AutoConfigureMockMvc
 @SpringBootTest
@@ -58,9 +61,6 @@ class AssociationsListForCompanyControllerTest {
 
     @Autowired
     private AssociationsRepository associationsRepository;
-
-    @MockBean
-    private InterceptorConfig interceptorConfig;
 
     private static final String DEFAULT_KIND = "association";
     private static final String DEFAULT_DISPLAY_NAME = "Not provided";
@@ -91,7 +91,8 @@ class AssociationsListForCompanyControllerTest {
         mockMvc.perform( get( "/associations/companies/919191" )
                         .header("X-Request-Id", "theId123")
                         .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .header( "Eric-Authorised-Roles", "/admin/user-company-associations/read" ) )
                 .andExpect(status().isNotFound());
     }
 
@@ -221,13 +222,15 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWhereAccountsUserEndpointCannotFindUserReturnsNotFound() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1" ) );
+        mockers.mockUsersServiceFetchUserDetails( "9999" );
         mockers.mockUsersServiceFetchUserDetailsNotFound( "111" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
         mockMvc.perform( get( "/associations/companies/111111" )
                         .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                        .header( "ERIC-Identity", "9999" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .header( "Eric-Authorised-Roles", "/admin/user-company-associations/read" ) )
                 .andExpect(status().isNotFound());
     }
 
@@ -351,6 +354,38 @@ class AssociationsListForCompanyControllerTest {
             Assertions.assertEquals( expectedStatus, association.getStatus().getValue() );
             Assertions.assertEquals( expectedApprovalRoute, association.getApprovalRoute().getValue() );
         }
+    }
+
+    @Test
+    void getAssociationsForCompanyCanBeCalledByAdminUser() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17" ) );
+        mockers.mockUsersServiceFetchUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777", "MKUser001" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+
+        final var response =
+                mockMvc.perform( get( "/associations/companies/111111" )
+                                .header("X-Request-Id", "theId123")
+                                .header( "ERIC-Identity", "MKUser001" )
+                                .header( "ERIC-Identity-Type", "oauth2" )
+                                .header( "Eric-Authorised-Roles", ADMIN_READ_PERMISSION ) )
+                        .andExpect( status().isOk() );
+
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
+
+        Assertions.assertEquals( 13, associationsList.getTotalResults() );
+    }
+
+    @Test
+    void getAssociationsForCompanyReturnsForbiddenWhenCalledByAUserThatIsNotAMemberOfCompanyOrAdmin() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17" ) );
+        mockers.mockUsersServiceFetchUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777", "MKUser001" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+
+        mockMvc.perform( get( "/associations/companies/111111" )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "MKUser001" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                .andExpect( status().isForbidden() );
     }
 
     @AfterEach
