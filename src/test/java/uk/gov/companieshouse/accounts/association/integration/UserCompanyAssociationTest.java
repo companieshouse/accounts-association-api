@@ -572,16 +572,20 @@ class UserCompanyAssociationTest {
                 .andExpect( status().isOk() );
 
         final var updatedAssociation = associationsRepository.findById( "MKAssociation001" ).get();
+        final var invitation = updatedAssociation.getInvitations().getFirst();
 
-        Assertions.assertEquals( "confirmed", updatedAssociation.getStatus() );
-        Assertions.assertNotNull( updatedAssociation.getApprovedAt() );
         Assertions.assertNotNull( updatedAssociation.getEtag() );
         Assertions.assertEquals( 1, updatedAssociation.getPreviousStates().size() );
         Assertions.assertEquals( "migrated", updatedAssociation.getPreviousStates().getFirst().getStatus() );
         Assertions.assertEquals( "MKUser002", updatedAssociation.getPreviousStates().getFirst().getChangedBy() );
         Assertions.assertNotNull(  updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
-        Assertions.assertNull( updatedAssociation.getUserEmail() );
         Assertions.assertEquals( "MKUser001", updatedAssociation.getUserId() );
+        Assertions.assertNull( updatedAssociation.getUserEmail() );
+        Assertions.assertEquals( "MKUser002", invitation.getInvitedBy() );
+        Assertions.assertNotNull( invitation.getInvitedAt() );
+        Assertions.assertNotNull( invitation.getExpiredAt() );
+        Assertions.assertEquals( "awaiting-approval", updatedAssociation.getStatus() );
+        Assertions.assertNotNull( updatedAssociation.getApprovalExpiryAt() );
     }
 
     @Test
