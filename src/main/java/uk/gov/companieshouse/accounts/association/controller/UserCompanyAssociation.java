@@ -21,7 +21,6 @@ import static uk.gov.companieshouse.api.accounts.associations.model.Association.
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.REMOVED;
 
-import java.util.Objects;
 import java.util.Optional;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.ResponseEntity;
@@ -121,7 +120,7 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
                 case CONFIRMED -> Optional.of( CONFIRMED )
                         .filter( status -> MIGRATED.equals( oldStatus ) )
                         .filter( status -> associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) )
-                        .map( status -> Objects.isNull( targetUser ) ? mapToInvitationUpdate( targetAssociation, targetUser, getEricIdentity(), now() ) : mapToConfirmedUpdate( targetAssociation, targetUser, getEricIdentity() ) )
+                        .map( status -> mapToInvitationUpdate( targetAssociation, targetUser, getEricIdentity(), now() ) )
                         .orElseThrow( () -> new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) );
                 case REMOVED -> Optional.of( REMOVED )
                         .filter( status -> associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) || hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) )
