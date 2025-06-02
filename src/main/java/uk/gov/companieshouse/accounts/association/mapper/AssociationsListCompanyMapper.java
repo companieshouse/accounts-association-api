@@ -1,7 +1,9 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
 
+import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.MapperUtil.enrichWithMetadata;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 
 import java.util.Objects;
 import org.mapstruct.Mapper;
@@ -16,6 +18,10 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
 public abstract class AssociationsListCompanyMapper extends AssociationMapper {
 
     public AssociationsList daoToDto( final Page<AssociationDao> associationsList, final CompanyDetails company ) {
+        if ( Objects.isNull( company ) ){
+            LOGGER.errorContext( getXRequestId(), new Exception( "Company cannot be null" ), null );
+            throw new IllegalArgumentException( "Company cannot be null" );
+        }
         final var endpointUrl = String.format( "/companies/%s", company.getCompanyNumber() );
 
         final var users = usersService.fetchUserDetails( associationsList.stream() );
