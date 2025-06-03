@@ -9,7 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
-import uk.gov.companieshouse.accounts.association.mapper.AssociationsListMappers;
+import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
+import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
 import uk.gov.companieshouse.accounts.association.mapper.InvitationsCollectionMappers;
 import uk.gov.companieshouse.accounts.association.mapper.PreviousStatesCollectionMappers;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
@@ -43,16 +44,19 @@ public class AssociationsService {
 
     private final AssociationsRepository associationsRepository;
 
-    private final AssociationsListMappers associationsListMappers;
+    private final AssociationsListUserMapper associationsListUserMapper;
+
+    private final AssociationsListCompanyMapper associationsListCompanyMapper;
 
     private final PreviousStatesCollectionMappers previousStatesCollectionMapper;
 
     private final InvitationsCollectionMappers invitationsCollectionMappers;
 
     @Autowired
-    public AssociationsService( final AssociationsRepository associationsRepository, final AssociationsListMappers associationsListMappers, final PreviousStatesCollectionMappers previousStatesCollectionMapper, final InvitationsCollectionMappers invitationsCollectionMappers ) {
+    public AssociationsService( final AssociationsRepository associationsRepository, final AssociationsListUserMapper associationsListUserMapper, final AssociationsListCompanyMapper associationsListCompanyMapper, final PreviousStatesCollectionMappers previousStatesCollectionMapper, final InvitationsCollectionMappers invitationsCollectionMappers ) {
         this.associationsRepository = associationsRepository;
-        this.associationsListMappers = associationsListMappers;
+        this.associationsListUserMapper = associationsListUserMapper;
+        this.associationsListCompanyMapper = associationsListCompanyMapper;
         this.previousStatesCollectionMapper = previousStatesCollectionMapper;
         this.invitationsCollectionMappers = invitationsCollectionMappers;
     }
@@ -68,7 +72,7 @@ public class AssociationsService {
     @Transactional( readOnly = true )
     public Optional<Association> fetchAssociationDto( final String associationId ) {
         LOGGER.debugContext( getXRequestId(), String.format( "Attempting to retrieve association with id: %s", associationId ), null );
-        final var association = associationsRepository.findById( associationId ).map( associationDao -> associationsListMappers.daoToDto( associationDao, null, null ) );
+        final var association = associationsRepository.findById( associationId ).map( associationDao -> associationsListCompanyMapper.daoToDto( associationDao, null, null ) );
         LOGGER.debugContext( getXRequestId(), String.format( "Successfully retrieved association with id: %s", associationId ), null );
         return association;
     }
@@ -97,7 +101,7 @@ public class AssociationsService {
         LOGGER.debugContext( getXRequestId(), "Attempting to fetch unexpired associations for company and statuses", null );
         final var parsedStatuses = statuses.stream().map( StatusEnum::getValue ).collect( Collectors.toSet() );
         final var associationDaos = associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails.getCompanyNumber(), parsedStatuses, LocalDateTime.now(), PageRequest.of( pageIndex, itemsPerPage ) );
-        final var associations = associationsListMappers.daoToDto( associationDaos, null, companyDetails );
+        final var associations = associationsListCompanyMapper.daoToDto( associationDaos, companyDetails );
         LOGGER.debugContext( getXRequestId(), "Successfully fetched unexpired associations for company and statuses" ,null );
         return associations;
     }
@@ -121,7 +125,7 @@ public class AssociationsService {
                 .filter( parsedStatuses -> !parsedStatuses.isEmpty() )
                 .orElse( Set.of( CONFIRMED.getValue() ) );
         final var results = associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber( user.getUserId(), user.getEmail(), coalescedStatuses, coalescedPartialCompanyNumber, PageRequest.of( pageIndex, itemsPerPage ) );
-        final var associations =  associationsListMappers.daoToDto( results, user, null );
+        final var associations =  associationsListUserMapper.daoToDto( results, user );
         LOGGER.infoContext( getXRequestId(), "Successfully fetched associations for user, partial company number, and statuses", null );
         return associations;
     }
