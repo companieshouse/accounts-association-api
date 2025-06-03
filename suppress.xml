@@ -18,4 +18,30 @@
     <cve>CVE-2023-34453</cve>
     <cve>CVE-2023-43642</cve>
   </suppress>
+  <suppress until="2026-01-01Z">
+    <notes><![CDATA[
+   file name: commons-beanutils-1.9.4.jar
+   ]]></notes>
+    <cve>CVE-2025-48734</cve>
+  </suppress>
+  <suppress until="2026-01-01Z">
+    <notes><![CDATA[
+   file name: http2-common-11.0.24.jar
+   ]]></notes>
+    <cve>CVE-2024-6763</cve>
+  </suppress>
+  <suppress until="2026-01-01Z">
+    <notes><![CDATA[
+   file name: http2-server-11.0.24.jar
+   ]]></notes>
+    <cve>CVE-2024-6763</cve>
+  </suppress>
+  <suppress until="2026-01-01Z">
+    <notes><![CDATA[
+   file name: jetty-webapp-11.0.19.jar
+   ]]></notes>
+    <cve>CVE-2024-8184</cve>
+    <cve>CVE-2024-6763</cve>
+    <cve>CVE-2024-22201</cve>
+  </suppress>
 </suppressions>
