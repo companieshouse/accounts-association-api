@@ -29,6 +29,7 @@
    file name: http2-common-11.0.24.jar
    ]]></notes>
     <cve>CVE-2024-6763</cve>
+    <cve>CVE-2025-1948</cve>
   </suppress>
   <suppress until="2026-01-01Z">
     <notes><![CDATA[
