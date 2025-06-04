@@ -14,15 +14,15 @@
     <description>User and Company association.</description>
     <properties>
         <java.version>21</java.version>
-        <spring-boot.version>3.4.3</spring-boot.version>
+        <spring-boot.version>3.5.0</spring-boot.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.1</maven-surefire-plugin.version>
         <structured-logging.version>3.0.20</structured-logging.version>
         <log4j-version>2.24.2</log4j-version>
-        <rest-service-common-library-version>2.0.2</rest-service-common-library-version>
+        <rest-service-common-library-version>2.0.4</rest-service-common-library-version>
         <private-api-sdk-java.version>4.0.281</private-api-sdk-java.version>
-        <api-sdk-manager-java-library.version>3.0.6</api-sdk-manager-java-library.version>
+        <api-sdk-manager-java-library.version>3.0.7</api-sdk-manager-java-library.version>
         <api-security-java-version>2.0.8</api-security-java-version>
         <org.mapstruct.version>1.6.2</org.mapstruct.version>
         <junit-jupiter.version>1.20.3</junit-jupiter.version>
@@ -31,7 +31,7 @@
         <commons-compress.version>1.27.1</commons-compress.version>
         <google-http-client.version>1.45.0</google-http-client.version>
         <api-helper-java.version>3.0.1</api-helper-java.version>
-        <email-producer-java.version>3.0.3</email-producer-java.version>
+        <email-producer-java.version>3.0.4</email-producer-java.version>
         <flapdoodle.version>4.20.0</flapdoodle.version>
         <logback-classic.version>1.5.16</logback-classic.version>
 
