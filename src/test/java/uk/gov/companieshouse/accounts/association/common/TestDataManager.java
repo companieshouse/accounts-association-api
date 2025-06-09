@@ -974,7 +974,7 @@ public class TestDataManager {
                 .id( "MiAssociation006" )
                 .companyNumber( "MICOMP005" )
                 .userId( "MiUser002" )
-                .userEmail( "" )
+                .userEmail( "" ) // TODO: remove this
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
                 .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2500-05-01T10:30:00.000000" ) ) ) )
@@ -1000,6 +1000,7 @@ public class TestDataManager {
                 .status( "removed" )
                 .approvalRoute( "auth_code" )
                 .etag( generateEtag() );
+        // TODO: add removed_at
         associationDaoSuppliers.put( "MiAssociation008", MiAssociation008 );
 
         final Supplier<AssociationDao> MiAssociation009 = () -> new AssociationDao()
@@ -1009,6 +1010,7 @@ public class TestDataManager {
                 .status( "removed" )
                 .approvalRoute( "auth_code" )
                 .etag( generateEtag() );
+        // TODO: add removed_at
         associationDaoSuppliers.put( "MiAssociation009", MiAssociation009 );
 
         final Supplier<AssociationDao> MiAssociation010 = () -> new AssociationDao()
@@ -1075,7 +1077,7 @@ public class TestDataManager {
         final Supplier<AssociationDao> MiAssociation015 = () -> new AssociationDao()
                 .id( "MiAssociation015" )
                 .companyNumber( "MICOMP001" )
-                .userEmail( "largo.lagrande.monkey.island@inugami-example.com\"" )
+                .userEmail( "largo.lagrande.monkey.island@inugami-example.com\"" ) // TODO remove escape character
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
                 .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2021-05-01T10:30:00.000000" ) ) ) )
@@ -1094,7 +1096,7 @@ public class TestDataManager {
                 .approvalExpiryAt( LocalDateTime.parse( "2500-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
-        associationDaoSuppliers.put( "MiAssociation016", MiAssociation015 );
+        associationDaoSuppliers.put( "MiAssociation016", MiAssociation015 ); // TODO: change to MiAssociation016
 
         final Supplier<AssociationDao> MiAssociation017 = () -> new AssociationDao()
                 .id( "MiAssociation017" )
@@ -1115,7 +1117,7 @@ public class TestDataManager {
                 .status( "removed" )
                 .approvalRoute( "auth_code" )
                 .etag( generateEtag() );
-
+                // TODO: add removed at
         associationDaoSuppliers.put( "MiAssociation018", MiAssociation018 );
 
         final Supplier<AssociationDao> MiAssociation019 = () -> new AssociationDao()
@@ -1125,7 +1127,7 @@ public class TestDataManager {
                 .status( "removed" )
                 .approvalRoute( "auth_code" )
                 .etag( generateEtag() );
-
+        // TODO: add removed at
         associationDaoSuppliers.put( "MiAssociation019", MiAssociation019 );
 
         final Supplier<AssociationDao> MiAssociation020 = () -> new AssociationDao()
@@ -1137,7 +1139,7 @@ public class TestDataManager {
                 .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "1992-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
-
+        // TODO: add removed at
         associationDaoSuppliers.put( "MiAssociation020", MiAssociation020 );
 
         final Supplier<AssociationDao> MiAssociation021 = () -> new AssociationDao()
@@ -1160,7 +1162,7 @@ public class TestDataManager {
                 .status( "removed" )
                 .approvalRoute( "auth_code" )
                 .etag( generateEtag() );
-
+                // TODO: add removed at
         associationDaoSuppliers.put( "MiAssociation022", MiAssociation022 );
 
         final Supplier<AssociationDao> MiAssociation023 = () -> new AssociationDao()
@@ -1170,7 +1172,7 @@ public class TestDataManager {
                 .status( "removed" )
                 .approvalRoute( "auth_code" )
                 .etag( generateEtag() );
-
+        // TODO: add removed at
         associationDaoSuppliers.put( "MiAssociation023", MiAssociation023 );
 
         final Supplier<AssociationDao> MiAssociation024 = () -> new AssociationDao()
@@ -1192,7 +1194,7 @@ public class TestDataManager {
                 .status( "removed" )
                 .approvalRoute( "auth_code" )
                 .etag( generateEtag() );
-
+            // TODO: add removed at
         associationDaoSuppliers.put( "MiAssociation025", MiAssociation025 );
 
         final Supplier<AssociationDao> MiAssociation026 = () -> new AssociationDao()
