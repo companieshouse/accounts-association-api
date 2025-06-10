@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
 
 import java.time.LocalDateTime;
@@ -20,7 +21,7 @@ public abstract class InvitationMapper {
 
     @AfterMapping
     protected void replaceUserIdWithUserEmail( @MappingTarget final Invitation invitation ){
-        invitation.setInvitedBy( usersService.fetchUserDetails( invitation.getInvitedBy() ).getEmail() );
+        invitation.setInvitedBy( usersService.fetchUserDetails( invitation.getInvitedBy(), getXRequestId() ).getEmail() );
     }
 
     @AfterMapping

@@ -50,8 +50,8 @@ public class UsersService {
                 .doFinally( signalType -> LOGGER.infoContext( xRequestId, String.format( "Finished request to accounts-user-api for user: %s", userId ), null ) );
     }
 
-    public User fetchUserDetails( final String userId ){
-        return toFetchUserDetailsRequest( userId, getXRequestId() ).block( Duration.ofSeconds( 20L ) );
+    public User fetchUserDetails(final String userId, final String xRequestId ){
+        return toFetchUserDetailsRequest( userId, xRequestId ).block( Duration.ofSeconds( 20L ) );
     }
 
     public Map<String, User> fetchUserDetails( final Stream<AssociationDao> associations ){
@@ -87,7 +87,7 @@ public class UsersService {
                     if ( userId.equals( getEricIdentity() ) ){
                         return getUser();
                     }
-                    return fetchUserDetails( userId );
+                    return fetchUserDetails( userId, getXRequestId() );
                 } )
                 .orElse( null );
 
