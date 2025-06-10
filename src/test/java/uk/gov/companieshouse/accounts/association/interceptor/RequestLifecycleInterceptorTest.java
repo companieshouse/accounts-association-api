@@ -1,5 +1,7 @@
 package uk.gov.companieshouse.accounts.association.interceptor;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentityType;
@@ -47,7 +49,7 @@ class RequestLifecycleInterceptorTest {
 
         final var response = new MockHttpServletResponse();
 
-        Mockito.doReturn( user ).when( usersService ).fetchUserDetails( user.getUserId() );
+        Mockito.doReturn( user ).when( usersService ).fetchUserDetails( eq(user.getUserId()), any() );
 
         final var result = requestLifecycleInterceptor.preHandle( request, response, null );
 
@@ -71,7 +73,7 @@ class RequestLifecycleInterceptorTest {
 
         final var response = new MockHttpServletResponse();
 
-        Mockito.doThrow( new NotFoundRuntimeException( "Could not find user", new Exception( "Could not find user" )) ).when( usersService ).fetchUserDetails( user.getUserId() );
+        Mockito.doThrow( new NotFoundRuntimeException( "Could not find user", new Exception( "Could not find user" )) ).when( usersService ).fetchUserDetails( eq(user.getUserId()), any() );
 
         final var result = requestLifecycleInterceptor.preHandle( request, response, null );
 

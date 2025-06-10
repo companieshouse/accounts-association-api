@@ -43,7 +43,7 @@ public class RequestLifecycleInterceptor implements HandlerInterceptor, RequestL
     public boolean preHandle( final HttpServletRequest request, final HttpServletResponse response, final Object handler ) {
         logStartRequestProcessing( request, LOGGER );
         try {
-            final var user = usersService.fetchUserDetails( getRequestHeader( request, ERIC_IDENTITY ) );
+            final var user = usersService.fetchUserDetails( getRequestHeader( request, ERIC_IDENTITY ), getRequestHeader( request, X_REQUEST_ID ) );
             setupRequestContext( request, user );
             return true;
         } catch ( NotFoundRuntimeException exception ) {

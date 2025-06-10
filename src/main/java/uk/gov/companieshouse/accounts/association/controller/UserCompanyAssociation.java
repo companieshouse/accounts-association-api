@@ -157,7 +157,7 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
                 .flatMapMany( Flux::fromIterable )
                 .reduce( (firstInvitation, secondInvitation) -> firstInvitation.getInvitedAt().isAfter( secondInvitation.getInvitedAt() ) ? firstInvitation : secondInvitation )
                 .map( InvitationDao::getInvitedBy )
-                .map( usersService::fetchUserDetails )
+                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
                 .map( user -> Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() ) )
                 .cache();
 

@@ -160,7 +160,7 @@ public class Mockers {
     public void mockUsersServiceFetchUserDetails( final String... userIds ){
         for ( final String userId: userIds ){
             final var userDetails = testDataManager.fetchUserDtos( userId ).getFirst();
-            Mockito.doReturn( userDetails ).when( usersService ).fetchUserDetails( userId );
+            Mockito.doReturn( userDetails ).when( usersService ).fetchUserDetails( eq(userId), any() );
         }
     }
 
@@ -182,7 +182,7 @@ public class Mockers {
 
     public void mockUsersServiceFetchUserDetailsNotFound( final String... userIds ){
         for ( final String userId: userIds ){
-            Mockito.doThrow( new NotFoundRuntimeException( "Not found.", new Exception( "Not found." ) ) ).when( usersService ).fetchUserDetails( userId );
+            Mockito.doThrow( new NotFoundRuntimeException( "Not found.", new Exception( "Not found." ) ) ).when( usersService ).fetchUserDetails( eq(userId), any() );
         }
     }
 
