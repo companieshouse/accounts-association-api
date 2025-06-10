@@ -2,6 +2,7 @@ package uk.gov.companieshouse.accounts.association.mapper;
 
 import static uk.gov.companieshouse.accounts.association.models.Constants.DEFAULT_DISPLAY_NAME;
 import static uk.gov.companieshouse.accounts.association.models.Constants.DEFAULT_KIND;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 
 import java.util.Optional;
 import org.mapstruct.AfterMapping;
@@ -40,7 +41,7 @@ public abstract class AssociationMapper {
     protected void enrichWithUserDetails( @MappingTarget final Association association, @Context User userDetails ){
         if ( Objects.isNull( userDetails ) ){
             userDetails = Optional.ofNullable( association.getUserId() )
-                    .map( usersService::fetchUserDetails )
+                    .map( user -> usersService.fetchUserDetails( user, getXRequestId() ) )
                     .orElse( new User().email( association.getUserEmail() ) );
         }
         association.setUserEmail( userDetails.getEmail() );

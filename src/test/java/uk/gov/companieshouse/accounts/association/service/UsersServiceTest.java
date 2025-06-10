@@ -47,28 +47,28 @@ class UsersServiceTest {
     @Test
     void fetchUserDetailsForNullOrNonexistentUserReturnsNotFoundRuntimeException() {
         mockers.mockWebClientForFetchUserDetailsErrorResponse( null, 404 );
-        Assertions.assertThrows( NotFoundRuntimeException.class, () -> usersService.fetchUserDetails( (String) null ) );
+        Assertions.assertThrows( NotFoundRuntimeException.class, () -> usersService.fetchUserDetails( null, "id123" ) );
 
         mockers.mockWebClientForFetchUserDetailsErrorResponse( "404User", 404 );
-        Assertions.assertThrows( NotFoundRuntimeException.class, () -> usersService.fetchUserDetails( "404User" ) );
+        Assertions.assertThrows( NotFoundRuntimeException.class, () -> usersService.fetchUserDetails( "404User", "id123" ) );
     }
 
     @Test
     void fetchUserDetailsWithMalformedUserIdReturnsInternalServerErrorRuntimeException() {
         mockers.mockWebClientForFetchUserDetailsErrorResponse( "£$@123", 400 );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails( "£$@123" ) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails( "£$@123" , "id123") );
     }
 
     @Test
     void fetchUserDetailsWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
         mockers.mockWebClientForFetchUserDetailsJsonParsingError( "111" );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails( "111" ) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails( "111", "id123" ) );
     }
 
     @Test
     void fetchUserDetailsReturnsSpecifiedUser() throws JsonProcessingException {
         mockers.mockWebClientForFetchUserDetails( "111" );
-        Assertions.assertEquals( "Batman", usersService.fetchUserDetails( "111" ).getDisplayName() );
+        Assertions.assertEquals( "Batman", usersService.fetchUserDetails( "111", "id123" ).getDisplayName() );
     }
 
     @Test

@@ -59,7 +59,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendAuthCodeConfirmationEmailToAssociatedUser( final String xRequestId, final CompanyDetails companyDetails, final String displayName ) {
         return userId -> Mono.just( userId )
-                .map( usersService::fetchUserDetails )
+                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
                 .map( user -> new AuthCodeConfirmationEmailBuilder()
                         .setRecipientEmail( user.getEmail() )
                         .setDisplayName( displayName )
@@ -73,7 +73,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendAuthorisationRemovedEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String removedByDisplayName, final String removedUserDisplayName ) {
         return userId -> Mono.just( userId )
-                .map( usersService::fetchUserDetails )
+                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
                 .map( user -> new AuthorisationRemovedEmailBuilder()
                         .setRemovedByDisplayName( removedByDisplayName )
                         .setRemovedUserDisplayName( removedUserDisplayName )
@@ -88,7 +88,7 @@ public class EmailService {
 
     public Mono<Void> sendAuthorisationRemovedEmailToRemovedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String removedByDisplayName, final String userId ) {
        return Mono.just( userId )
-               .map( usersService::fetchUserDetails )
+               .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
                .map( user -> new YourAuthorisationRemovedEmailBuilder()
                        .setRemovedByDisplayName( removedByDisplayName )
                        .setRecipientEmail( user.getEmail() ) )
@@ -102,7 +102,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendInvitationCancelledEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String cancelledByDisplayName, final String cancelledUserDisplayName ) {
         return userId -> Mono.just( userId )
-                .map( usersService::fetchUserDetails )
+                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
                 .map( user -> new InvitationCancelledEmailBuilder()
                         .setCancelledByDisplayName( cancelledByDisplayName )
                         .setCancelledUserDisplayName( cancelledUserDisplayName )
@@ -117,7 +117,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendInvitationEmailToAssociatedUser( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String inviteeDisplayName ) {
         return userId -> Mono.just( userId )
-                .map( usersService::fetchUserDetails )
+                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
                 .map( user -> new InvitationEmailBuilder()
                         .setCompanyName( companyDetails.getCompanyName() )
                         .setInviteeDisplayName( inviteeDisplayName )
@@ -132,7 +132,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendInvitationAcceptedEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final Mono<String> invitedByDisplayName, final String inviteeDisplayName ) {
         return userId -> Mono.just( userId )
-                .map( usersService::fetchUserDetails )
+                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
                 .map( user -> new InvitationAcceptedEmailBuilder()
                                 .setInviteeDisplayName( inviteeDisplayName )
                                 .setRecipientEmail( user.getEmail() ) )
@@ -147,7 +147,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendInvitationRejectedEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String inviteeDisplayName ) {
         return userId -> Mono.just( userId )
-                .map( usersService::fetchUserDetails )
+                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
                 .map( user -> new InvitationRejectedEmailBuilder()
                                 .setInviteeDisplayName( inviteeDisplayName )
                                 .setRecipientEmail( user.getEmail() ) )
@@ -177,7 +177,7 @@ public class EmailService {
         return Mono.just( associationDao )
                 .filter( dao -> Objects.nonNull( dao.getUserId() ) )
                 .map( AssociationDao::getUserId )
-                .map( usersService::fetchUserDetails )
+                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
                 .map( User::getEmail )
                 .switchIfEmpty( Mono.just( associationDao ).map( AssociationDao::getUserEmail ) )
                 .map( inviteeEmail -> new InviteCancelledEmailBuilder()

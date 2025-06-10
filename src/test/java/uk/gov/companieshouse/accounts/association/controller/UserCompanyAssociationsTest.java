@@ -163,7 +163,7 @@ class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByTestShouldThrow500WhenInternalServerError() throws Exception {
-        when(usersService.fetchUserDetails("000")).thenThrow(new InternalServerErrorRuntimeException("test", new Exception("test")));
+        when(usersService.fetchUserDetails(eq("000"), any())).thenThrow(new InternalServerErrorRuntimeException("test", new Exception("test")));
         mockMvc.perform(get("/associations?page_index=0&items_per_page=15&company_number=111111")
                 .header("Eric-identity", "000")
                 .header("X-Request-Id", "theId")
