@@ -90,7 +90,7 @@ class AssociationsRepositoryTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndStatusesAndPartialCompanyNumberConfirmedAndCompanyNumberLikeShouldReturnAAssociation() {
+    void fetchAssociationsForUserAndStatusesAndPartialCompanyNumberShouldReturnAAssociation() {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2", "3" ) );
         Assertions.assertEquals(1, associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("111", null, Set.of("confirmed"),"111111", PageRequest.of(0, 10)).getTotalElements());
         Assertions.assertEquals(1, associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("222", "the.joker@gotham.city", Set.of("confirmed"),"111111", PageRequest.of(0, 10)).getTotalElements());
@@ -98,7 +98,7 @@ class AssociationsRepositoryTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndStatusesAndPartialCompanyNumberLikeWithNonexistentOrMalformedUserIdOrUserEmailOrEmptyOrMalformedStatusReturnsEmptyPage(){
+    void fetchAssociationsForUserAndStatusesAndPartialCompanyNumberWithNonexistentOrMalformedUserIdOrUserEmailOrEmptyOrMalformedStatusReturnsEmptyPage(){
         Assertions.assertTrue( associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("1234", "**@abc.com", Set.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(0, 5) ).isEmpty() );
         Assertions.assertTrue( associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("1234","$$$", Set.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(0, 5) ).isEmpty() );
         Assertions.assertTrue( associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("9191", "abcde@abc.com", Set.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(0, 5) ).isEmpty() );
@@ -108,7 +108,7 @@ class AssociationsRepositoryTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndStatusesAndPartialCompanyNumberLikeImplementsPaginationCorrectly(){
+    void fetchAssociationsForUserAndStatusesAndPartialCompanyNumberImplementsPaginationCorrectly(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22" ) );
 
         final var page = associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("9999",null, Set.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(1, 1) );
@@ -118,7 +118,7 @@ class AssociationsRepositoryTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndStatusesAndPartialCompanyNumberLikeWithNullPageableReturnsAllAssociations(){
+    void fetchAssociationsForUserAndStatusesAndPartialCompanyNumberWithNullPageableReturnsAllAssociations(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22" ) );
 
         final var page = associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("9999",null, Set.of(StatusEnum.CONFIRMED.getValue() ),"", null);
@@ -128,7 +128,7 @@ class AssociationsRepositoryTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndStatusesAndPartialCompanyNumberLikeFiltersBasedOnCompanyNumber(){
+    void fetchAssociationsForUserAndStatusesAndPartialCompanyNumberFiltersBasedOnCompanyNumber(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22" ) );
 
         final var page = associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("9999",null, Set.of(StatusEnum.CONFIRMED.getValue() ),"333333", null);
@@ -138,14 +138,14 @@ class AssociationsRepositoryTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndStatusesAndPartialCompanyNumberLikeWithNullCompanyNumberThrowsUncategorizedMongoDbException(){
+    void fetchAssociationsForUserAndStatusesAndPartialCompanyNumberWithNullCompanyNumberThrowsUncategorizedMongoDbException(){
         final var statuses = Set.of(StatusEnum.CONFIRMED.getValue());
         final var pageRequest = PageRequest.of(0, 15);
         Assertions.assertThrows( UncategorizedMongoDbException.class, () -> associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("5555","abcd@abc.com", statuses ,null ,pageRequest ) );
     }
 
     @Test
-    void fetchAssociationsForUserAndStatusesAndPartialCompanyNumberLikeWithMalformedOrNonexistentCompanyNumberReturnsEmptyPage(){
+    void fetchAssociationsForUserAndStatusesAndPartialCompanyNumberWithMalformedOrNonexistentCompanyNumberReturnsEmptyPage(){
         Assertions.assertTrue( associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("5555","abcd@abc.com", Set.of(StatusEnum.CONFIRMED.getValue() ),"$556",PageRequest.of(0, 15) ).isEmpty() );
         Assertions.assertTrue( associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("5555","abcd@abc.com", Set.of(StatusEnum.CONFIRMED.getValue() ),"abdef",PageRequest.of(0, 15) ).isEmpty() );
     }

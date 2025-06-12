@@ -119,9 +119,9 @@ class AssociationsListForCompanyControllerTest {
         Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "111111", "111" );
 
         final var associationsList = new AssociationsList()
-            .totalResults( 1 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
-            .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
-            .items(List.of( batmanAssociation ));
+                .totalResults( 1 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
+                .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
+                .items(List.of( batmanAssociation ));
 
         Mockito.doReturn(associationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ) ), eq( 0 ), eq( 15 ) );
 
@@ -144,9 +144,9 @@ class AssociationsListForCompanyControllerTest {
         Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "111111", "111" );
 
         final var expectedAssociationsList = new AssociationsList()
-            .totalResults( 1 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
-            .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
-            .items(List.of( batmanAssociation ));
+                .totalResults( 1 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
+                .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
+                .items(List.of( batmanAssociation ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ) ), eq( 0 ), eq( 15 ) );
 
         mockMvc.perform( get( "/associations/companies/111111?include_removed=false" )
@@ -170,9 +170,9 @@ class AssociationsListForCompanyControllerTest {
         Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "111111", "111" );
 
         final var expectedAssociationsList = new AssociationsList()
-            .totalResults( 2 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
-            .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
-            .items(List.of( batmanAssociation, jokerAssociation ));
+                .totalResults( 2 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
+                .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
+                .items(List.of( batmanAssociation, jokerAssociation ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of() ) ), eq( 0 ), eq( 15 ) );
 
         mockMvc.perform( get( "/associations/companies/111111?include_removed=true" )
@@ -185,7 +185,7 @@ class AssociationsListForCompanyControllerTest {
     }
 
     @Test
-    void getAssociationsForCompanyExistsPaginatesCorrectly() throws Exception {
+    void getAssociationsForCompanyPaginatesCorrectly() throws Exception {
         final var jokerUser = testDataManager.fetchUserDtos( "222" ).getFirst();
         final var jokerAssociation = testDataManager.fetchAssociationDto( "2", jokerUser );
 
@@ -272,7 +272,7 @@ class AssociationsListForCompanyControllerTest {
     }
 
     @Test
-    void getAssociationsForCompanyWithUnacceptablePaginationParametersShouldReturnBadReques() throws Exception {
+    void getAssociationsForCompanyWithUnacceptablePaginationParametersShouldReturnBadRequest() throws Exception {
         Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "111111", "111" );
 
         mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=1&page_index=-1" )
@@ -381,7 +381,7 @@ class AssociationsListForCompanyControllerTest {
     }
 
     @Test
-    void getAssociationsForCompanyExistsCanBeCalledByAdminUser() throws Exception {
+    void getAssociationsForCompanyCanBeCalledByAdminUser() throws Exception {
         mockers.mockUsersServiceFetchUserDetails( "MKUser001" );
         Mockito.doReturn( false ).when( associationsService ).confirmedAssociationExists( "111111", "MKUser001" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
