@@ -90,7 +90,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserReturnEmptyItemsWhenNoAssociationFound() {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesReturnEmptyItemsWhenNoAssociationFound() {
         final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
         when(associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("111","bruce.wayne@gotham.city", Set.of( "confirmed" ), "", PageRequest.of(0, 15))).thenReturn(Page.empty());
         associationsService.fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, "", Set.of( "confirmed" ), 0, 15);
@@ -98,7 +98,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserUsesStatusConfirmedAsDefaultWhenStatusNotProvided() throws ApiErrorResponseException, URIValidationException {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesConfirmedAsDefaultWhenStatusNotProvided() throws ApiErrorResponseException, URIValidationException {
         final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
         associationsService.fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, "", null, 0, 15);
         verify(associationsRepository).fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("111", "bruce.wayne@gotham.city", Set.of("confirmed"), "", PageRequest.of(0, 15));
@@ -107,12 +107,12 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociatedUsersWithNullCompanyThrowsNullPointerException() {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithNullCompanyThrowsNullPointerException() {
         Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses(null, fetchAllStatusesWithout( Set.of() ), 0, 15 ) );
     }
 
     @Test
-    void fetchAssociatedUsersWithIncludeRemovedTrueDoesNotApplyFilter() {
+    void fetchUnexpiredAssociationsForCompanyAndStatusesWithIncludeRemovedTrueDoesNotApplyFilter() {
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
         final var content = testDataManager.fetchAssociationDaos( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" );
         final var pageRequest = PageRequest.of(0, 20);
@@ -126,7 +126,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociatedUsersWithIncludeRemovedFalseAppliesFilter() {
+    void fetchUnexpiredAssociationsForCompanyAndStatusesWithIncludeRemovedFalseAppliesFilter() {
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
         final var content = testDataManager.fetchAssociationDaos( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13" );
         final var pageRequest = PageRequest.of(0, 20);
@@ -140,7 +140,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociatedUsersAppliesPaginationCorrectly() {
+    void fetchUnexpiredAssociationsForCompanyAndStatusesAppliesPaginationCorrectly() {
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
         final var content = testDataManager.fetchAssociationDaos( "16" );
         final var pageRequest = PageRequest.of(1, 15);
@@ -154,7 +154,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociatedUsersCanFetchMigratedAssociations(){
+    void fetchUnexpiredAssociationsForCompanyAndStatusesCanFetchMigratedAssociations(){
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
 
         final var content = testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002", "MKAssociation003" );
@@ -169,7 +169,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void getAssociationByIdReturnsAssociationDtoWhenAssociationFound() {
+    void fetchAssociationDtoReturnsAssociationDtoWhenAssociationFound() {
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
         Mockito.when(associationsRepository.findById("1")).thenReturn(Optional.of(associationDao));
         associationsService.fetchAssociationDto("1");
@@ -178,20 +178,20 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void getAssociationByIdReturnsEmptyWhenAssociationNotFound() {
+    void fetchAssociationDtoReturnsEmptyWhenAssociationNotFound() {
         Mockito.when(associationsRepository.findById("1111")).thenReturn(Optional.empty());
         assertTrue(associationsService.fetchAssociationDto("1111").isEmpty());
     }
 
     @Test
-    void fetchAssociationsForUserStatusAndCompanyWithNullInputsThrowsNullPointerException(){
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithNullInputsThrowsNullPointerException(){
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var status = Set.of( StatusEnum.CONFIRMED.getValue() );
         Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchAssociationsForUserAndPartialCompanyNumberAndStatuses( null, "333333", status, 0, 15 ) );
     }
 
     @Test
-    void fetchAssociationsForUserStatusAndCompanyWithInvalidPageIndexOrItemsPerPageThrowsIllegalArgumentException() {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithInvalidPageIndexOrItemsPerPageThrowsIllegalArgumentException() {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var status = Set.of( StatusEnum.CONFIRMED.getValue() );
         Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchAssociationsForUserAndPartialCompanyNumberAndStatuses( user, "333333", status, -1, 15 ) );
@@ -199,7 +199,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserStatusAndCompanyPaginatesCorrectly() {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesPaginatesCorrectly() {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var status = Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() );
         final var content = testDataManager.fetchAssociationDaos( "33" );
@@ -214,7 +214,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserStatusAndCompanyFiltersByCompanyNumber(){
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesFiltersByCompanyNumber(){
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var status = Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue() );
         final var content = testDataManager.fetchAssociationDaos( "18", "27" );
@@ -229,7 +229,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserStatusAndCompanyFiltersBasedOnStatus(){
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesiltersBasedOnStatus(){
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var status = Set.of( StatusEnum.REMOVED.getValue() );
         final var content = testDataManager.fetchAssociationDaos( "31", "32", "33" );
@@ -244,7 +244,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserStatusAndCompanyFiltersBasedOnAwaitingApprovalStatus(){
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesFiltersBasedOnAwaitingApprovalStatus(){
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var status = Set.of( StatusEnum.AWAITING_APPROVAL.getValue() );
         final var content = testDataManager.fetchAssociationDaos( "25", "26", "27" );
@@ -259,7 +259,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserStatusAndCompanyWithNullStatusDefaultsToConfirmedStatus(){
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithNullStatusDefaultsToConfirmedStatus(){
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var content = testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22" );
         final var pageRequest = PageRequest.of(0, 15);
@@ -273,7 +273,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserStatusAndCompanyWithEmptyStatusDefaultsToConfirmedStatus(){
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithEmptyStatusDefaultsToConfirmedStatus(){
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var content = testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22" );
         final var pageRequest = PageRequest.of(0, 15);
@@ -287,7 +287,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserStatusAndCompanyWithInvalidStatusReturnsEmptyPage() {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithInvalidStatusReturnsEmptyPage() {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var content = new ArrayList<AssociationDao>();
         final var pageRequest = PageRequest.of(0, 15);
@@ -301,7 +301,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserStatusAndCompanyWithNonexistentOrInvalidCompanyNumberReturnsEmptyPage() {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithNonexistentOrInvalidCompanyNumberReturnsEmptyPage() {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var content = new ArrayList<AssociationDao>();
         final var pageRequest = PageRequest.of(0, 15);
@@ -315,7 +315,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserStatusAndCompanyWithNonexistentUserIdReturnsEmptyPage() {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithNonexistentUserIdReturnsEmptyPage() {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var content = new ArrayList<AssociationDao>();
         final var pageRequest = PageRequest.of(0, 15);
@@ -406,7 +406,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociatedUsersRetrieveUsersAssociatedWithCompany(){
+    void fetchConfirmedUserIdsRetrieveUsersAssociatedWithCompany(){
         final var associations = testDataManager.fetchAssociationDaos( "1" ).stream();
 
         Mockito.doReturn( associations ).when( associationsRepository ).fetchConfirmedAssociations( eq( "111111" ) );
