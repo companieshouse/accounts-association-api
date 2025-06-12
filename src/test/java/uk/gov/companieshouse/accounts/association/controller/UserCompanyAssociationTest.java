@@ -106,7 +106,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchAssociationWithoutPathVariableReturnsNotFound() throws Exception {
+    void getAssociationDetailsWithoutPathVariableReturnsNotFound() throws Exception {
         mockMvc.perform(get("/associations/")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "000")
@@ -116,7 +116,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchAssociationWithMalformedInputReturnsBadRequest() throws Exception {
+    void getAssociationDetailsWithMalformedInputReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/associations/$")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "000")
@@ -126,7 +126,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchAssociationDtoWithNonexistentIdReturnsNotFound() throws Exception {
+    void getAssociationUserDetailsWithNonexistentIdReturnsNotFound() throws Exception {
         Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationDto("11");
         mockMvc.perform(get("/associations/11")
                         .header("X-Request-Id", "theId123")
@@ -137,7 +137,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchAssociationDtoFetchesAssociationDetails() throws Exception {
+    void getAssociationDetailsFetchesAssociationDetails() throws Exception {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var association = testDataManager.fetchAssociationDto( "18", user );
 
@@ -155,7 +155,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchAssociationDtoForIdCanFetchMigratedAssociation() throws Exception {
+    void getAssociationForIdCanFetchMigratedAssociation() throws Exception {
         final var user = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
         final var association = testDataManager.fetchAssociationDto( "MKAssociation001", user );
         Mockito.doReturn( Optional.of( association ) ).when( associationsService ).fetchAssociationDto( "MKAssociation001" );
@@ -175,7 +175,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchAssociationDtoForIdCanBeCalledByAdmin() throws Exception {
+    void getAssociationForIdCanBeCalledByAdmin() throws Exception {
         final var user = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
         final var association = testDataManager.fetchAssociationDto( "MKAssociation001", user );
         Mockito.doReturn( Optional.of( association ) ).when( associationsService ).fetchAssociationDto( "MKAssociation001" );
@@ -189,7 +189,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchInvitationsForAssociationWithUnacceptablePageIndexReturnsBadRequest() throws Exception {
+    void getInvitationsForAssociationWithUnacceptablePageIndexReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/associations/1/invitations?page_index=-1&items_per_page=1")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "111")
@@ -199,7 +199,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchInvitationsForAssociationWithUnacceptableItemsPerPageReturnsBadRequest() throws Exception {
+    void getInvitationsForAssociationWithUnacceptableItemsPerPageReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/associations/1/invitations?page_index=0&items_per_page=-1")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "111")
@@ -209,7 +209,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchInvitationsForAssociationWithMalformedInputReturnsBadRequest() throws Exception {
+    void getInvitationsForAssociationWithMalformedInputReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/associations/$/invitations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "000")
@@ -219,7 +219,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchInvitationsForAssociationWithNonexistentIdReturnsNotFound() throws Exception {
+    void getInvitationsForAssociationWithNonexistentIdReturnsNotFound() throws Exception {
         Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationDao("11");
 
         mockMvc.perform(get("/associations/11/invitations")
@@ -231,7 +231,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchInvitationsForAssociationFetchesInvitations() throws Exception {
+    void getInvitationsForAssociationFetchesInvitations() throws Exception {
         final var invitations = testDataManager.fetchInvitations( "37" );
 
         Mockito.doReturn( Optional.of( new InvitationsList().items( invitations ) ) ).when(associationsService).fetchInvitations("37", 0, 15);
@@ -253,7 +253,7 @@ class UserCompanyAssociationTest {
 
 
     @Test
-    void fetchInvitationsForAssociationWithPaginationAndVerifyResponse() throws Exception {
+    void getInvitationsForAssociationWithPaginationAndVerifyResponse() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "37" ).getFirst();
         final var invitations = testDataManager.fetchInvitations( "37" );
 
@@ -288,7 +288,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchInvitationsForAssociationWithMigratedAssociationReturnsEmpty() throws Exception {
+    void getInvitationsForAssociationWithMigratedAssociationReturnsEmpty() throws Exception {
         Mockito.doReturn( Optional.of( new InvitationsList().items( List.of() ) ) ).when( associationsService ).fetchInvitations( "MKAssociation001", 0, 15 );
 
         final var response = mockMvc.perform( get( "/associations/MKAssociation001/invitations" )
@@ -594,7 +594,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchConfirmedUserIdsStatusRequestForExistingAssociationWithoutOneLoginUserAndDifferentRequestingUserShouldThrow400BadRequest() throws Exception {
+    void confirmUserStatusRequestForExistingAssociationWithoutOneLoginUserAndDifferentRequestingUserShouldThrow400BadRequest() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "6" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "666", "222" );
@@ -614,7 +614,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void updateAssociationStatusForIdUserAcceptedInvitationNotificationsUsesDisplayNamesWhenAvailable() throws Exception { //todo: do these need changed to fetchAssociationDTO
+    void updateAssociationStatusForIdUserAcceptedInvitationNotificationsUsesDisplayNamesWhenAvailable() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "38" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "9999", "444" );
@@ -724,7 +724,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void updateAssociationStatusForIdAllowsAdminUserToRemoveAuthorisation() throws Exception { //todo: fetchAssociationDaos?
+    void updateAssociationStatusForIdAllowsAdminUserToRemoveAuthorisation() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "1" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "9999" );
@@ -777,7 +777,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchPreviousStatesForAssociationRetrievesData() throws Exception {
+    void getPreviousStatesForAssociationRetrievesData() throws Exception {
         final var previousStatesList = new PreviousStatesList()
                 .items( List.of( testDataManager.fetchPreviousStates( "MKAssociation003" ).get( 2 ) ) )
                 .links( new Links().self( "/associations/MKAssociation003/previous-states?page_index=1&items_per_page=1" ).next( "/associations/MKAssociation003/previous-states?page_index=2&items_per_page=1" ) )
@@ -814,7 +814,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchPreviousStatesForAssociationUsesDefaults() throws Exception {
+    void getPreviousStatesForAssociationUsesDefaults() throws Exception {
         final var previousStatesList = new PreviousStatesList()
                 .items( List.of() )
                 .links( new Links().self( "/associations/MKAssociation001/previous-states?page_index=0&items_per_page=15" ).next( "" ) )
@@ -845,7 +845,7 @@ class UserCompanyAssociationTest {
         Assertions.assertTrue( items.isEmpty() );
     }
 
-    private static Stream<Arguments> getPreviousStatesForAssociationMalformedScenarios(){ //todo: should this be changed to fetchPrevious like above
+    private static Stream<Arguments> getPreviousStatesForAssociationMalformedScenarios(){
         return Stream.of(
                 Arguments.of( "/associations/$$$/previous-states" ),
                 Arguments.of( "/associations/MKAssociation003/previous-states?page_index=-1" ),
@@ -865,7 +865,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchPreviousStatesForAssociationWithNonexistentAssociationReturnsNotFound() throws Exception {
+    void getPreviousStatesForAssociationWithNonexistentAssociationReturnsNotFound() throws Exception {
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
         Mockito.doReturn( Optional.empty() ).when( associationsService ).fetchPreviousStates( "404MKAssociation", 0, 15 );
 
@@ -877,7 +877,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void fetchPreviousStatesForAssociationCanBeCalledByAdmin() throws Exception {
+    void getPreviousStatesForAssociationCanBeCalledByAdmin() throws Exception {
         final var previousStatesList = new PreviousStatesList()
                 .items( List.of() )
                 .links( new Links().self( "/associations/MKAssociation001/previous-states?page_index=0&items_per_page=15" ).next( "" ) )
