@@ -115,7 +115,7 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchAssociationsByTestShouldReturnEmptyDataWhenNoAssociationsFoundForEricIdentity() throws Exception {
+    void fetchAssociationsByTestShouldReturnEmptyDataWhenNoAssociationsFoundForEricIdentity() throws Exception { //todo: should these be fetchUserDtos
         final var user = testDataManager.fetchUserDtos( "000" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "000" );
@@ -133,7 +133,7 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchAssociationsByTestShouldReturnDataWhenAssociationsFoundForEricIdentity() throws Exception {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesShouldReturnDataWhenAssociationsFoundForEricIdentity() throws Exception { //todo: should this be changed from test
         final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
         final var associationsList = new AssociationsList().itemsPerPage(15).pageNumber(0).totalPages(1).totalResults(1).items(List.of());
 
@@ -193,7 +193,7 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchAssociationsByWithNonexistentCompanyReturnsNotFound() throws Exception {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesByWithNonexistentCompanyReturnsNotFound() throws Exception {
         final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "111" );
@@ -208,7 +208,7 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchAssociationsByWithInvalidStatusReturnsZeroResults() throws Exception {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesByWithInvalidStatusReturnsZeroResults() throws Exception {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "9999" );
@@ -226,7 +226,7 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchAssociationsByUsesDefaultsIfValuesAreNotProvided() throws Exception {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesByUsesDefaultsIfValuesAreNotProvided() throws Exception {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var expectedAssociationsList = new AssociationsList()
                 .items( List.of( testDataManager.fetchAssociationDto( "18", user ) ) )
@@ -256,7 +256,7 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchAssociationsByWithOneStatusAppliesStatusFilterCorrectly() throws Exception {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesByWithOneStatusAppliesStatusFilterCorrectly() throws Exception {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var expectedAssociationsList = new AssociationsList()
                 .items(List.of(testDataManager.fetchAssociationDto( "19", user )))
@@ -286,7 +286,7 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchAssociationsByWithMultipleStatusesAppliesStatusFilterCorrectly() throws Exception {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesByWithMultipleStatusesAppliesStatusFilterCorrectly() throws Exception {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var expectedAssociationsList = new AssociationsList()
                 .items(List.of(testDataManager.fetchAssociationDto( "18", user ), testDataManager.fetchAssociationDto( "19", user )))
@@ -316,7 +316,7 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchAssociationsByImplementsPaginationCorrectly() throws Exception {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesByImplementsPaginationCorrectly() throws Exception {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var expectedAssociationsList = new AssociationsList()
                 .items(List.of(testDataManager.fetchAssociationDto( "19", user )))
@@ -346,7 +346,7 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchAssociationsByFiltersBasedOnCompanyNumberCorrectly() throws Exception {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesByFiltersBasedOnCompanyNumberCorrectly() throws Exception {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var expectedAssociationsList = new AssociationsList()
                 .items(List.of(testDataManager.fetchAssociationDto( "19", user )))
@@ -376,7 +376,7 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchAssociationsByDoesMappingCorrectly() throws Exception {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesByDoesMappingCorrectly() throws Exception {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var expectedAssociationsList = new AssociationsList()
                 .items(List.of(testDataManager.fetchAssociationDto( "18", user )))
@@ -413,7 +413,7 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void fetchAssociationsByCanFetchMigratedAssociation() throws Exception {
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesByCanFetchMigratedAssociation() throws Exception {
         final var user = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
         final var expectedAssociationsList = new AssociationsList()
                 .items( List.of( testDataManager.fetchAssociationDto( "MKAssociation001", user  ) ) )
@@ -509,7 +509,7 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void addAssociationCreatesNewAssociationCorrectlyAndReturnsAssociationIdWithCreatedHttpStatus() throws Exception {
+    void createAssociationWithAuthCodeApprovalRouteCorrectlyAndReturnsAssociationIdWithCreatedHttpStatus() throws Exception {
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
         final var company = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
 
@@ -547,7 +547,7 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void addAssociationWithUserThatHasNoDisplayNameSetsDisplayNameToEmailAddress() throws Exception {
+    void createAssociationWithAuthCodeApprovalRouteThatHasNoDisplayNameSetsDisplayNameToEmailAddress() throws Exception {
         final var associationDao = testDataManager.fetchAssociationDaos( "6" ).getFirst();
         final var company = testDataManager.fetchCompanyDetailsDtos( "333333" ).getFirst();
 
@@ -619,7 +619,7 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void addAssociationWithUserThatHasDisplayNameUsesDisplayName() throws Exception {
+    void createAssociationWithAuthCodeApprovalRouteThatHasDisplayNameUsesDisplayName() throws Exception {
         final var associationDao = testDataManager.fetchAssociationDaos( "18" ).getFirst();
         final var company = testDataManager.fetchCompanyDetailsDtos( "333333" ).getFirst();
 

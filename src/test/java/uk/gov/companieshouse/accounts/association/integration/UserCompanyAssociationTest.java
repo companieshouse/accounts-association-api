@@ -283,7 +283,7 @@ class UserCompanyAssociationTest {
     }
 
     @Test
-    void updateAssociationStatusForIdWithConfirmedUpdatesAssociationStatus() throws Exception {
+    void fetchAssociationDaosWithConfirmedUpdatesAssociationStatus() throws Exception { //todo: does these need changed?
         final var oldAssociationData = testDataManager.fetchAssociationDaos( "18" ).getFirst();
 
         associationsRepository.insert( oldAssociationData );

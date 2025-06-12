@@ -64,7 +64,7 @@ class ControllerAdviceTest {
                 .apply( SecurityMockMvcConfigurers.springSecurity() )
                 .build();
     }
-
+    // todo: are these tests okay
     @Test
     void testNotFoundRuntimeError() throws Exception {
         Mockito.doThrow(new NotFoundRuntimeException( "Couldn't find association", new Exception( "Couldn't find association" ) ))

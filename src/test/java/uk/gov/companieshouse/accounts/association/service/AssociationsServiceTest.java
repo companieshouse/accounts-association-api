@@ -90,7 +90,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserReturnEmptyItemsWhenNoAssociationFound() {
+    void fetchAssociationsForUserReturnEmptyItemsWhenNoAssociationFound() { //todo: do these next few need changed to fetchAssociationsForUserAndPartialCompanyNumberAndStatuses
         final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
         when(associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("111","bruce.wayne@gotham.city", Set.of( "confirmed" ), "", PageRequest.of(0, 15))).thenReturn(Page.empty());
         associationsService.fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, "", Set.of( "confirmed" ), 0, 15);
@@ -169,7 +169,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void getAssociationByIdReturnsAssociationDtoWhenAssociationFound() {
+    void fetchAssociationDtoReturnsAssociationDtoWhenAssociationFound() {
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
         Mockito.when(associationsRepository.findById("1")).thenReturn(Optional.of(associationDao));
         associationsService.fetchAssociationDto("1");
@@ -178,13 +178,13 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void getAssociationByIdReturnsEmptyWhenAssociationNotFound() {
+    void fetchAssociationDtoReturnsEmptyWhenAssociationNotFound() {
         Mockito.when(associationsRepository.findById("1111")).thenReturn(Optional.empty());
         assertTrue(associationsService.fetchAssociationDto("1111").isEmpty());
     }
 
     @Test
-    void fetchAssociationsForUserStatusAndCompanyWithNullInputsThrowsNullPointerException(){
+    void fetchAssociationsForUserStatusAndCompanyWithNullInputsThrowsNullPointerException(){ //todo: should these be fetchAssociationsForUserAndPartialCompanyNumberAndStatuses or no change
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
         final var status = Set.of( StatusEnum.CONFIRMED.getValue() );
         Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchAssociationsForUserAndPartialCompanyNumberAndStatuses( null, "333333", status, 0, 15 ) );
@@ -406,7 +406,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociatedUsersRetrieveUsersAssociatedWithCompany(){
+    void fetchAssociationDaosRetrieveUsersAssociatedWithCompany(){
         final var associations = testDataManager.fetchAssociationDaos( "1" ).stream();
 
         Mockito.doReturn( associations ).when( associationsRepository ).fetchConfirmedAssociations( eq( "111111" ) );
