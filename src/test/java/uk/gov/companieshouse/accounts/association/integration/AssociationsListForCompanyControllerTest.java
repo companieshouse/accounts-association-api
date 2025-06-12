@@ -82,7 +82,7 @@ class AssociationsListForCompanyControllerTest {
                         .header("X-Request-Id", "theId123")
                         .header( "ERIC-Identity", "111" )
                         .header( "ERIC-Identity-Type", "oauth2" ) )
-                        .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -309,11 +309,11 @@ class AssociationsListForCompanyControllerTest {
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
         final var response =
-        mockMvc.perform( get( "/associations/companies/111111" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
-                .andExpect(status().isOk());
+                mockMvc.perform( get( "/associations/companies/111111" )
+                                .header("X-Request-Id", "theId123")
+                                .header( "ERIC-Identity", "111" )
+                                .header( "ERIC-Identity-Type", "oauth2" ) )
+                        .andExpect(status().isOk());
 
         final var associationsList = parseResponseTo( response, AssociationsList.class );
 
