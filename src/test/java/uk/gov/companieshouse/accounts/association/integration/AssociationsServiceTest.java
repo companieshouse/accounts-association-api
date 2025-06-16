@@ -80,6 +80,104 @@ class AssociationsServiceTest {
     private static final ComparisonUtils comparisonUtils = new ComparisonUtils();
 
     @Test
+    void fetchInvitationsFiltersWorkingCorrectly(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation041", "MiAssociation040", "MiAssociation042", "MiAssociation043", "MiAssociation030" ) );
+        Mockito.doReturn(testDataManager.fetchInvitations( "MiAssociation041" ).getFirst() ).when(invitationsMapper).daoToDto( any(), eq("MiAssociation041"));
+        final var invitations = associationsService.fetchInvitations( "MiAssociation041" , 0, 15).stream().count();
+        Assertions.assertEquals(1, invitations );
+        Assertions.assertEquals( "MiAssociation041", associationsService.fetchInvitations( "MiAssociation041", 0, 15).get().getItems().getFirst().getAssociationId() );
+    }
+
+    @Test
+    void fetchInvitationsPaginationWorksCorrectly(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation007", "MiAssociation040", "MiAssociation042", "MiAssociation043", "MiAssociation030" ) );
+        Mockito.doReturn(testDataManager.fetchInvitations( "MiAssociation007" ).getFirst() ).when(invitationsMapper).daoToDto( any(), eq("MiAssociation007"));
+        final var invitations = associationsService.fetchInvitations( "MiAssociation007" , 1, 2).stream().count();
+        Assertions.assertEquals(1, invitations );
+        Assertions.assertEquals( "MiAssociation007", associationsService.fetchInvitations( "MiAssociation007", 1, 2).get().getItems().getFirst().getAssociationId() );
+    }
+
+    @Test
+    void fetchInvitationsWhenAssociationDoesNotExist(){
+        Assertions.assertTrue( associationsService.fetchInvitations( "MiAssociation040", 0, 15).isEmpty() );
+    }
+
+    @Test
+    void fetchAssociationsForUserAndPartialCompanyNumberFiltersWorkingCorrectly(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation001", "MiAssociation003", "MiAssociation004", "MiAssociation006" ) );
+        final var user = testDataManager.fetchUserDtos( "MiUser002" ).getFirst();
+        final var associations = associationsService.fetchAssociationsForUserAndPartialCompanyNumber( user, "ICOMP001", 0, 15 ).getContent();
+        Assertions.assertEquals(1, associations.size() );
+        Assertions.assertEquals( "MiAssociation002", associations.getFirst().getId() );
+    }
+
+    @Test
+    void fetchAssociationsForUserAndPartialCompanyNumberWithMalformedPaginationParametersThrowsIllegalArgumentException(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation001", "MiAssociation003", "MiAssociation004", "MiAssociation006" ) );
+        final var user = testDataManager.fetchUserDtos( "MiUser002" ).getFirst();
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchAssociationsForUserAndPartialCompanyNumber( user, "ICOMP001", -1, 15 ) );
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchAssociationsForUserAndPartialCompanyNumber( user, "ICOMP001", 0, -15 ) );
+    }
+
+    @Test
+    void fetchAssociationsForUserAndPartialCompanyNumberWhereThrowsNullPointerException(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation001", "MiAssociation003", "MiAssociation004", "MiAssociation006" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchAssociationsForUserAndPartialCompanyNumber( null, "ICOMP001", 0, 15 ) );
+    }
+
+    @Test
+    void fetchAssociationsForUserAndPartialCompanyNumberPaginationWorksCorrectly(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation001", "MiAssociation003", "MiAssociation004", "MiAssociation006" ) );
+        final var user = testDataManager.fetchUserDtos( "MiUser002" ).getFirst();
+        final var associations = associationsService.fetchAssociationsForUserAndPartialCompanyNumber( user, null, 1, 2 ).map( AssociationDao :: getId ).getContent();
+        Assertions.assertEquals(2, associations.size() );
+        Assertions.assertTrue(  associations.containsAll( List.of ( "MiAssociation004" , "MiAssociation006" ) ) );
+    }
+
+    private static Stream<Arguments> fetchAssociationsForUserAndPartialCompanyNumberEmptyTestData(){
+        return Stream.of(
+                Arguments.of(testDataManager.fetchUserDtos( "MiUser003" ).getFirst(), "ICOMP001" ),
+                Arguments.of(testDataManager.fetchUserDtos( "MiUser002" ).getFirst(), "test" )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("fetchAssociationsForUserAndPartialCompanyNumberEmptyTestData")
+    void fetchAssociationsForUserAndPartialCompanyNumberWhenUserAndCompanyNumberDoesNotExist(final User user, final String companyNumber){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation001", "MiAssociation003", "MiAssociation004", "MiAssociation006" ) );
+        final var associations = associationsService.fetchAssociationsForUserAndPartialCompanyNumber( user, companyNumber, 0, 15 ).getContent();
+        Assertions.assertEquals(0, associations.size() );
+    }
+
+    @Test
+    void fetchConfirmedUserIdsCanRetrieveUsers(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation003" ) );
+        Assertions.assertEquals( "MiUser002", associationsService.fetchConfirmedUserIds( "MICOMP002" ).blockFirst() );
+    }
+
+    @Test
+    void fetchConfirmedUserIdsRetrievesEmptyFluxWhenNoRecordsFound(){
+        Assertions.assertEquals( 0, associationsService.fetchConfirmedUserIds( "MICOMP002" ).count().block() );
+        Assertions.assertEquals( 0, associationsService.fetchConfirmedUserIds( null ).count().block() );
+    }
+
+    @Test
+    void fetchAssociationDaoRetrievesAssociation(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation024" ) );
+        Assertions.assertEquals( "MiAssociation024", associationsService.fetchAssociationDao( "MiAssociation024").get().getId() );
+    }
+
+    @Test
+    void fetchAssociationDaoReturnsEmptyOptionalWhenAssociationDoesNotExist(){
+        Assertions.assertTrue( associationsService.fetchAssociationDao( "MiAssociation024").isEmpty() );
+    }
+
+    @Test
+    void fetchAssociationDaoWithNullInputThrowsIllegalArgumentException(){
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchAssociationDao( null ) );
+    }
+
+    @Test
     void fetchUnexpiredAssociationsForCompanyAndStatusesWithNullCompanyThrowsNullPointerException(){
         Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( null, fetchAllStatusesWithout( Set.of() ), null, null, 0,15 ) );
     }
