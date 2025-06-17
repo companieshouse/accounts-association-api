@@ -8,6 +8,8 @@ import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,9 +17,12 @@ import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeEx
 import uk.gov.companieshouse.accounts.association.exceptions.ForbiddenRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
+import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.api.AssociationsListForCompanyInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
+import uk.gov.companieshouse.api.accounts.user.model.User;
+
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.hasAdminPrivilege;
 
@@ -26,10 +31,12 @@ public class AssociationsListForCompanyController implements AssociationsListFor
 
     private final CompanyService companyService;
     private final AssociationsService associationsService;
+    private final UsersService usersService;
 
-    public AssociationsListForCompanyController( final CompanyService companyService, final AssociationsService associationsService ) {
+    public AssociationsListForCompanyController(final CompanyService companyService, final AssociationsService associationsService, final UsersService usersService) {
         this.companyService = companyService;
         this.associationsService = associationsService;
+        this.usersService = usersService;
     }
 
     @Override
@@ -44,14 +51,17 @@ public class AssociationsListForCompanyController implements AssociationsListFor
             throw new ForbiddenRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user is not permitted to retrieve data." ) );
         }
 
-        // TODO:
-        // If user_email is not null
-        //    searchUserDetails - may or may not have user_id
+        final var userId = Optional.ofNullable( userEmail )
+                .map( List :: of )
+                .map( usersService :: searchUserDetails )
+                .filter( users -> !users.isEmpty() )
+                .map( List :: getFirst )
+                .map( User :: getUserId )
+                .orElse( null );
 
         final var companyProfile = companyService.fetchCompanyProfile( companyNumber );
         final var statuses = includeRemoved ? fetchAllStatusesWithout( Set.of() ) : fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) );
-        // TODO: pass user_email through to this method from header, pass user_id throgh to this method from fetch above
-        final var associationsList = associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, statuses, pageIndex, itemsPerPage );
+        final var associationsList = associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, statuses, userId, userEmail, pageIndex, itemsPerPage );
 
         return new ResponseEntity<>( associationsList, OK );
     }

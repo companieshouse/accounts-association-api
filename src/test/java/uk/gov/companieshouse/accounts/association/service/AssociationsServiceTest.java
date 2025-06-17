@@ -108,7 +108,7 @@ class AssociationsServiceTest {
 
     @Test
     void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithNullCompanyThrowsNullPointerException() {
-        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses(null, fetchAllStatusesWithout( Set.of() ), 0, 15 ) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses(null, fetchAllStatusesWithout( Set.of() ),  null, null, 0, 15 ) );
     }
 
     @Test
@@ -120,7 +120,7 @@ class AssociationsServiceTest {
 
         Mockito.doReturn(page).when(associationsRepository).fetchUnexpiredAssociationsForCompanyAndStatuses(any(), any(), any(), any());
 
-        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of() ), 0,20);
+        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of() ),  null, null, 0,20);
 
         Mockito.verify(associationsListCompanyMapper).daoToDto( eq( page ), eq(companyDetails));
     }
@@ -134,7 +134,7 @@ class AssociationsServiceTest {
 
         Mockito.doReturn(page).when(associationsRepository).fetchUnexpiredAssociationsForCompanyAndStatuses(any(), any(), any(), any());
 
-        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ),0, 20);
+        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ),  null, null, 0, 20);
 
         Mockito.verify(associationsListCompanyMapper).daoToDto(eq( page ), eq(companyDetails));
     }
@@ -148,7 +148,7 @@ class AssociationsServiceTest {
 
         Mockito.doReturn(page).when(associationsRepository).fetchUnexpiredAssociationsForCompanyAndStatuses(any(), any(), any(), any());
 
-        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of() ),1, 15);
+        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of() ),  null, null, 1, 15);
 
         Mockito.verify(associationsListCompanyMapper).daoToDto(eq( page ), eq(companyDetails));
     }
@@ -163,7 +163,7 @@ class AssociationsServiceTest {
 
         Mockito.doReturn( page ).when( associationsRepository ).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), any(), any(), any() );
 
-        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of() ), 0, 15);
+        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of() ),  null, null,  0, 15);
 
         Mockito.verify(associationsListCompanyMapper).daoToDto( eq( page ), eq( companyDetails ) );
     }
