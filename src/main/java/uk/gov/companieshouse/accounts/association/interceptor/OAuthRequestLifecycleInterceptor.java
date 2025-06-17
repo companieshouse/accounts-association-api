@@ -19,15 +19,15 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.logging.util.RequestLogger;
 
 @Component
-public class RequestLifecycleInterceptor implements HandlerInterceptor, RequestLogger {
+public class OAuthRequestLifecycleInterceptor implements HandlerInterceptor, RequestLogger {
 
     private final UsersService usersService;
 
-    public RequestLifecycleInterceptor( final UsersService usersService ) {
+    public OAuthRequestLifecycleInterceptor( final UsersService usersService ) {
         this.usersService = usersService;
     }
 
-    private void setupRequestContext( final HttpServletRequest request, final User user ){
+    protected void setupRequestContext( final HttpServletRequest request, final User user ){
         final var requestContextData = new RequestContextDataBuilder()
                 .setXRequestId( request )
                 .setEricIdentity( request )

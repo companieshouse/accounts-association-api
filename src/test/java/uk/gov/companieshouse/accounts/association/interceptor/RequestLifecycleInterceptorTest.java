@@ -33,7 +33,7 @@ class RequestLifecycleInterceptorTest {
     private UsersService usersService;
 
     @InjectMocks
-    private RequestLifecycleInterceptor requestLifecycleInterceptor;
+    private OAuthRequestLifecycleInterceptor requestLifecycleInterceptor;
 
     private final TestDataManager testDataManager = TestDataManager.getInstance();
 
