@@ -224,6 +224,27 @@ class AssociationsRepositoryTest {
         Assertions.assertTrue( secondPageContent.contains( "5555" ) );
     }
 
+    @Test
+    void fetchUnexpiredAssociationsForCompanyAndStatusesAndUserWithUserFiltersFetchesAssociation(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation005" ).getFirst().companyNumber( "MICOMP001" ) );
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation003" ) );
+
+        final var page = associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatusesAndUser( "MICOMP001", Set.of( StatusEnum.CONFIRMED.getValue() ), "MiUser002", "lechuck.monkey.island@inugami-example.com", LocalDateTime.now(), PageRequest.of( 0, 2 ) );
+
+        Assertions.assertEquals( 1 , page.getContent().size() );
+        Assertions.assertEquals( "MiAssociation002", page.getContent().getFirst().getId() );
+    }
+
+    @Test
+    void fetchUnexpiredAssociationsForCompanyAndStatusesAndUserWithUserFiltersDoesNotFetchesAssociation(){
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation005" ).getFirst().companyNumber( "MICOMP001" ) );
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation003" ) );
+
+        final var page = associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatusesAndUser( "MICOMP001", Set.of( StatusEnum.CONFIRMED.getValue() ), "test", "test@inugami-example.com", LocalDateTime.now(), PageRequest.of( 0, 2 ) );
+
+        Assertions.assertTrue( page.isEmpty() );
+    }
+
     static Stream<Arguments> nullAndMalformedParameters() {
         return Stream.of(
                 Arguments.of(null, "111"),
