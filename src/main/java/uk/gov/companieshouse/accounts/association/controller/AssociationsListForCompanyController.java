@@ -25,7 +25,6 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.hasAdminPrivilege;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isOAuth2Request;
 
 @RestController
 public class AssociationsListForCompanyController implements AssociationsListForCompanyInterface {
@@ -48,16 +47,16 @@ public class AssociationsListForCompanyController implements AssociationsListFor
             throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
         }
 
-        if ( isOAuth2Request() && !associationsService.confirmedAssociationExists( companyNumber, getEricIdentity() ) && !hasAdminPrivilege( ADMIN_READ_PERMISSION ) ){
+        if ( !associationsService.confirmedAssociationExists( companyNumber, getEricIdentity() ) && !hasAdminPrivilege( ADMIN_READ_PERMISSION ) ){
             throw new ForbiddenRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user is not permitted to retrieve data." ) );
         }
 
         final var userId = Optional.ofNullable( userEmail )
-                .map( List :: of )
-                .map( usersService :: searchUserDetails )
+                .map( List::of )
+                .map( usersService::searchUserDetails )
                 .filter( users -> !users.isEmpty() )
-                .map( List :: getFirst )
-                .map( User :: getUserId )
+                .map( List::getFirst )
+                .map( User::getUserId )
                 .orElse( null );
 
         final var companyProfile = companyService.fetchCompanyProfile( companyNumber );

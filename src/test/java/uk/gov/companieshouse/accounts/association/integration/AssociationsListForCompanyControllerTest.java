@@ -389,9 +389,10 @@ class AssociationsListForCompanyControllerTest {
     }
 
     @Test
-    void getAssociationsForCompanyWithApiKeyAndEmailReturnsData() throws Exception {
-        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
+    void getAssociationsForCompanyWithEmailReturnsData() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation001", "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
 
+        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
         mockers.mockUsersServiceSearchUserDetails( "MiUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
         mockers.mockUsersServiceFetchUserDetails( "MiUser002" );
@@ -399,9 +400,8 @@ class AssociationsListForCompanyControllerTest {
         final var response = mockMvc
                 .perform( get( "/associations/companies/MICOMP001" )
                         .header("X-Request-Id", "theId123" )
-                        .header( "ERIC-Identity", "MKUser001" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "Eric-Authorised-Key-Roles", "*" )
+                        .header( "ERIC-Identity", "MiUser001" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
                         .header( "user_email", "lechuck.monkey.island@inugami-example.com" ) )
                 .andExpect( status().isOk() );
 
@@ -413,17 +413,17 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyWithNonexistentUserReturnsEmptyList() throws Exception {
-        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation001", "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
 
+        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "MiUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
 
         final var response = mockMvc
                 .perform( get( "/associations/companies/MICOMP001" )
                         .header("X-Request-Id", "theId123" )
-                        .header( "ERIC-Identity", "MKUser001" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "Eric-Authorised-Key-Roles", "*" )
+                        .header( "ERIC-Identity", "MiUser001" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
                         .header( "user_email", "lechuck.monkey.island@inugami-example.com" ) )
                 .andExpect( status().isOk() );
 
@@ -436,11 +436,12 @@ class AssociationsListForCompanyControllerTest {
     void getAssociationsForCompanyWithMalformedEmailReturnsBadRequest() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
 
+        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
+
         mockMvc.perform( get( "/associations/companies/MICOMP001" )
                         .header("X-Request-Id", "theId123" )
-                        .header( "ERIC-Identity", "MKUser001" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "Eric-Authorised-Key-Roles", "*" )
+                        .header( "ERIC-Identity", "MiUser001" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
                         .header( "user_email", "$$$@inugami-example.com" ) )
                 .andExpect( status().isBadRequest() );
     }
