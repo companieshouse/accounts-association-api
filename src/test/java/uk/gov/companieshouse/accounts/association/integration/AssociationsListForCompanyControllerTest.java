@@ -388,6 +388,63 @@ class AssociationsListForCompanyControllerTest {
                 .andExpect( status().isForbidden() );
     }
 
+    @Test
+    void getAssociationsForCompanyWithApiKeyAndEmailReturnsData() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
+
+        mockers.mockUsersServiceSearchUserDetails( "MiUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
+        mockers.mockUsersServiceFetchUserDetails( "MiUser002" );
+
+        final var response = mockMvc
+                .perform( get( "/associations/companies/MICOMP001" )
+                        .header("X-Request-Id", "theId123" )
+                        .header( "ERIC-Identity", "MKUser001" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "Eric-Authorised-Key-Roles", "*" )
+                        .header( "user_email", "lechuck.monkey.island@inugami-example.com" ) )
+                .andExpect( status().isOk() );
+
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
+
+        Assertions.assertEquals( 1, associationsList.getItems().size() );
+        Assertions.assertEquals( "MiAssociation002", associationsList.getItems().getFirst().getId() );
+    }
+
+    @Test
+    void getAssociationsForCompanyWithNonexistentUserReturnsEmptyList() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
+
+        mockers.mockUsersServiceSearchUserDetailsEmptyList( "MiUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
+
+        final var response = mockMvc
+                .perform( get( "/associations/companies/MICOMP001" )
+                        .header("X-Request-Id", "theId123" )
+                        .header( "ERIC-Identity", "MKUser001" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "Eric-Authorised-Key-Roles", "*" )
+                        .header( "user_email", "lechuck.monkey.island@inugami-example.com" ) )
+                .andExpect( status().isOk() );
+
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
+
+        Assertions.assertTrue( associationsList.getItems().isEmpty() );
+    }
+
+    @Test
+    void getAssociationsForCompanyWithMalformedEmailReturnsBadRequest() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
+
+        mockMvc.perform( get( "/associations/companies/MICOMP001" )
+                        .header("X-Request-Id", "theId123" )
+                        .header( "ERIC-Identity", "MKUser001" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "Eric-Authorised-Key-Roles", "*" )
+                        .header( "user_email", "$$$@inugami-example.com" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
     @AfterEach
     public void after() {
         mongoTemplate.dropCollection(AssociationDao.class);

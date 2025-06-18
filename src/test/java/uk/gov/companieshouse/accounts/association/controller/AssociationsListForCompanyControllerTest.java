@@ -42,6 +42,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.CONFIRMED;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
 
 @AutoConfigureMockMvc
 @WebMvcTest(AssociationsListForCompanyController.class)
@@ -256,7 +259,7 @@ class AssociationsListForCompanyControllerTest {
         Assertions.assertEquals( "Batman", firstAssociation.getDisplayName() );
         Assertions.assertEquals( "111111", firstAssociation.getCompanyNumber() );
         Assertions.assertEquals( "Wayne Enterprises", firstAssociation.getCompanyName() );
-        Assertions.assertEquals( StatusEnum.CONFIRMED, firstAssociation.getStatus() );
+        Assertions.assertEquals( CONFIRMED, firstAssociation.getStatus() );
         Assertions.assertNull( firstAssociation.getCreatedAt() );
         Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(1) ), localDateTimeToNormalisedString( firstAssociation.getApprovedAt().toLocalDateTime() ) );
         Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(2) ), localDateTimeToNormalisedString( firstAssociation.getRemovedAt().toLocalDateTime() ) );
@@ -407,5 +410,66 @@ class AssociationsListForCompanyControllerTest {
                 .andExpect( status().isForbidden() );
     }
 
+    @Test
+    void getAssociationsForCompanyWithApiKeyAndEmailReturnsData() throws Exception {
+        final var companyProfile = testDataManager.fetchCompanyDetailsDtos( "MICOMP001" ).getFirst();
+        final var user = testDataManager.fetchUserDtos( "MiUser002" ).getFirst();
+        final var association = testDataManager.fetchAssociationDto( "MiAssociation002", user );
+        final var expectedList = new AssociationsList();
+        expectedList.addItemsItem( association );
+
+        mockers.mockUsersServiceSearchUserDetails( "MiUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
+        Mockito.doReturn( expectedList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED ), "MiUser002", "lechuck.monkey.island@inugami-example.com", 0, 15 );
+
+        final var response = mockMvc
+                .perform( get( "/associations/companies/MICOMP001" )
+                        .header("X-Request-Id", "theId123" )
+                        .header( "ERIC-Identity", "MKUser001" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "Eric-Authorised-Key-Roles", "*" )
+                        .header( "user_email", "lechuck.monkey.island@inugami-example.com" ) )
+                .andExpect( status().isOk() );
+
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
+
+        Assertions.assertEquals( 1, associationsList.getItems().size() );
+        Assertions.assertEquals( "MiAssociation002", associationsList.getItems().getFirst().getId() );
+    }
+
+    @Test
+    void getAssociationsForCompanyWithNonexistentUserReturnsEmptyList() throws Exception {
+        final var companyProfile = testDataManager.fetchCompanyDetailsDtos( "MICOMP001" ).getFirst();
+        final var expectedList = new AssociationsList();
+        expectedList.setItems( List.of() );
+
+        mockers.mockUsersServiceSearchUserDetailsEmptyList( "MiUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
+        Mockito.doReturn( expectedList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED ), null, "lechuck.monkey.island@inugami-example.com", 0, 15 );
+
+        final var response = mockMvc
+                .perform( get( "/associations/companies/MICOMP001" )
+                        .header("X-Request-Id", "theId123" )
+                        .header( "ERIC-Identity", "MKUser001" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "Eric-Authorised-Key-Roles", "*" )
+                        .header( "user_email", "lechuck.monkey.island@inugami-example.com" ) )
+                .andExpect( status().isOk() );
+
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
+
+        Assertions.assertTrue( associationsList.getItems().isEmpty() );
+    }
+
+    @Test
+    void getAssociationsForCompanyWithMalformedEmailReturnsBadRequest() throws Exception {
+        mockMvc.perform( get( "/associations/companies/MICOMP001" )
+                        .header("X-Request-Id", "theId123" )
+                        .header( "ERIC-Identity", "MKUser001" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "Eric-Authorised-Key-Roles", "*" )
+                        .header( "user_email", "$$$@inugami-example.com" ) )
+                .andExpect( status().isBadRequest() );
+    }
 
 }

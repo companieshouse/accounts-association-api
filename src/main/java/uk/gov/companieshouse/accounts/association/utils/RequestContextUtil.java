@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.utils;
 
+import static uk.gov.companieshouse.accounts.association.models.Constants.OAUTH2;
 import static uk.gov.companieshouse.accounts.association.models.Constants.UNKNOWN;
 import static uk.gov.companieshouse.accounts.association.models.context.RequestContext.getRequestContext;
 
@@ -35,6 +36,10 @@ public final class RequestContextUtil {
 
     public static User getUser(){
         return getFieldFromRequestContext( RequestContextData::getUser, null );
+    }
+
+    public static boolean isOAuth2Request(){
+        return OAUTH2.equals( getEricIdentityType() );
     }
 
 }
