@@ -110,24 +110,6 @@ class UserAuthenticationFilterTest {
         Mockito.verify( securityContext ).setAuthentication( argThat( springRolesWereAssigned( List.of( "ROLE_BASIC_OAUTH" ) ) ) );
     }
 
-    @Test
-    void doFilterInternalWithValidAPIKeyRequestAddsKeyRole() {
-        final var request = new MockHttpServletRequest();
-        request.addHeader( "X-Request-Id", "theId123" );
-        request.addHeader( "Eric-Identity", "67ZeMsvAEgkBWs7tNKacdrPvOmQ" );
-        request.addHeader( "Eric-Identity-Type","key" );
-        request.addHeader( "ERIC-Authorised-Key-Roles", "*" );
-        final var response = new MockHttpServletResponse();
-        final var filterChain = Mockito.mock( FilterChain.class );
-
-        final var securityContext = Mockito.mock( SecurityContext.class );
-        SecurityContextHolder.setContext( securityContext );
-
-        userAuthenticationFilter.doFilterInternal( request, response, filterChain );
-
-        Mockito.verify( securityContext ).setAuthentication( argThat( springRolesWereAssigned( List.of( "ROLE_KEY" ) ) ) );
-    }
-
     private static Stream<Arguments> adminPrivilegeScenarios(){
         return Stream.of(
                 Arguments.of( ADMIN_READ_PERMISSION, List.of( "ROLE_BASIC_OAUTH", "ROLE_ADMIN_READ" ) ),

@@ -411,13 +411,15 @@ class AssociationsListForCompanyControllerTest {
     }
 
     @Test
-    void getAssociationsForCompanyWithApiKeyAndEmailReturnsData() throws Exception {
+    void getAssociationsForCompanyWithEmailReturnsData() throws Exception {
         final var companyProfile = testDataManager.fetchCompanyDetailsDtos( "MICOMP001" ).getFirst();
         final var user = testDataManager.fetchUserDtos( "MiUser002" ).getFirst();
         final var association = testDataManager.fetchAssociationDto( "MiAssociation002", user );
         final var expectedList = new AssociationsList();
         expectedList.addItemsItem( association );
 
+        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
+        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MICOMP001", "MiUser001" );
         mockers.mockUsersServiceSearchUserDetails( "MiUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
         Mockito.doReturn( expectedList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED ), "MiUser002", "lechuck.monkey.island@inugami-example.com", 0, 15 );
@@ -425,9 +427,8 @@ class AssociationsListForCompanyControllerTest {
         final var response = mockMvc
                 .perform( get( "/associations/companies/MICOMP001" )
                         .header("X-Request-Id", "theId123" )
-                        .header( "ERIC-Identity", "MKUser001" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "Eric-Authorised-Key-Roles", "*" )
+                        .header( "ERIC-Identity", "MiUser001" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
                         .header( "user_email", "lechuck.monkey.island@inugami-example.com" ) )
                 .andExpect( status().isOk() );
 
@@ -443,6 +444,8 @@ class AssociationsListForCompanyControllerTest {
         final var expectedList = new AssociationsList();
         expectedList.setItems( List.of() );
 
+        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
+        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MICOMP001", "MiUser001" );
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "MiUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
         Mockito.doReturn( expectedList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED ), null, "lechuck.monkey.island@inugami-example.com", 0, 15 );
@@ -450,9 +453,8 @@ class AssociationsListForCompanyControllerTest {
         final var response = mockMvc
                 .perform( get( "/associations/companies/MICOMP001" )
                         .header("X-Request-Id", "theId123" )
-                        .header( "ERIC-Identity", "MKUser001" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "Eric-Authorised-Key-Roles", "*" )
+                        .header( "ERIC-Identity", "MiUser001" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
                         .header( "user_email", "lechuck.monkey.island@inugami-example.com" ) )
                 .andExpect( status().isOk() );
 
@@ -463,11 +465,12 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyWithMalformedEmailReturnsBadRequest() throws Exception {
+        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
+
         mockMvc.perform( get( "/associations/companies/MICOMP001" )
                         .header("X-Request-Id", "theId123" )
-                        .header( "ERIC-Identity", "MKUser001" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "Eric-Authorised-Key-Roles", "*" )
+                        .header( "ERIC-Identity", "MiUser001" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
                         .header( "user_email", "$$$@inugami-example.com" ) )
                 .andExpect( status().isBadRequest() );
     }

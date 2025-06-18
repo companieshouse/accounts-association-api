@@ -3,23 +3,20 @@ package uk.gov.companieshouse.accounts.association.configuration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import uk.gov.companieshouse.accounts.association.interceptor.OAuth2AndKeyRequestLifecycleInterceptor;
-import uk.gov.companieshouse.accounts.association.interceptor.OAuthRequestLifecycleInterceptor;
-import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.accounts.association.interceptor.RequestLifecycleInterceptor;
 
 @Configuration
 public class InterceptorConfig implements WebMvcConfigurer {
 
-    private final UsersService usersService;
+    private final RequestLifecycleInterceptor requestLifecycleInterceptor;
 
-    public InterceptorConfig( final UsersService usersService ) {
-        this.usersService = usersService;
+    public InterceptorConfig( final RequestLifecycleInterceptor requestLifecycleInterceptor ) {
+        this.requestLifecycleInterceptor = requestLifecycleInterceptor;
     }
 
     @Override
     public void addInterceptors( final InterceptorRegistry registry ) {
-        registry.addInterceptor( new OAuthRequestLifecycleInterceptor( usersService ) ).excludePathPatterns( "/associations/companies/*" );
-        registry.addInterceptor( new OAuth2AndKeyRequestLifecycleInterceptor( usersService ) ).addPathPatterns( "/associations/companies/*" );
+        registry.addInterceptor( requestLifecycleInterceptor );
     }
 
 }
