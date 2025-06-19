@@ -108,7 +108,7 @@ class AssociationsServiceTest {
 
     @Test
     void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithNullCompanyThrowsNullPointerException() {
-        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses(null, fetchAllStatusesWithout( Set.of() ), 0, 15 ) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses(null, fetchAllStatusesWithout( Set.of() ),  null, null, 0, 15 ) );
     }
 
     @Test
@@ -120,7 +120,7 @@ class AssociationsServiceTest {
 
         Mockito.doReturn(page).when(associationsRepository).fetchUnexpiredAssociationsForCompanyAndStatuses(any(), any(), any(), any());
 
-        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of() ), 0,20);
+        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of() ),  null, null, 0,20);
 
         Mockito.verify(associationsListCompanyMapper).daoToDto( eq( page ), eq(companyDetails));
     }
@@ -134,7 +134,7 @@ class AssociationsServiceTest {
 
         Mockito.doReturn(page).when(associationsRepository).fetchUnexpiredAssociationsForCompanyAndStatuses(any(), any(), any(), any());
 
-        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ),0, 20);
+        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ),  null, null, 0, 20);
 
         Mockito.verify(associationsListCompanyMapper).daoToDto(eq( page ), eq(companyDetails));
     }
@@ -148,7 +148,7 @@ class AssociationsServiceTest {
 
         Mockito.doReturn(page).when(associationsRepository).fetchUnexpiredAssociationsForCompanyAndStatuses(any(), any(), any(), any());
 
-        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of() ),1, 15);
+        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of() ),  null, null, 1, 15);
 
         Mockito.verify(associationsListCompanyMapper).daoToDto(eq( page ), eq(companyDetails));
     }
@@ -163,9 +163,45 @@ class AssociationsServiceTest {
 
         Mockito.doReturn( page ).when( associationsRepository ).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), any(), any(), any() );
 
-        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of() ), 0, 15);
+        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout( Set.of() ),  null, null,  0, 15);
 
         Mockito.verify(associationsListCompanyMapper).daoToDto( eq( page ), eq( companyDetails ) );
+    }
+
+    @Test
+    void fetchUnexpiredAssociationsForCompanyAndStatusesWithUserIdRetrievesAssociations(){
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "MICOMP001" ).getFirst();
+
+        final var content = testDataManager.fetchAssociationDaos( "MiAssociation002" );
+        final var pageRequest = PageRequest.of( 0, 15 );
+        final var page = new PageImpl<>( content, pageRequest, 1 );
+
+        Mockito.doReturn( page ).when( associationsRepository ).fetchUnexpiredAssociationsForCompanyAndStatusesAndUser( eq( "MICOMP001" ), eq( Set.of( "confirmed" ) ), eq( "MiUser002" ), eq( "lechuck.monkey.island@inugami-example.com" ), any(), eq( pageRequest ) );
+
+        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, Set.of( StatusEnum.CONFIRMED ), "MiUser002", "lechuck.monkey.island@inugami-example.com", 0, 15 );
+        Mockito.verify( associationsListCompanyMapper ).daoToDto( argThat( comparisonUtils.associationsPageMatches( 1, 1, 1, List.of( "MiAssociation002" ) ) ), eq( companyDetails ) );
+    }
+
+    @Test
+    void fetchUnexpiredAssociationsForCompanyAndStatusesWithUserEmailRetrievesAssociations(){
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "MICOMP005" ).getFirst();
+
+        final var content = testDataManager.fetchAssociationDaos( "MiAssociation006" );
+        final var pageRequest = PageRequest.of( 0, 15 );
+        final var page = new PageImpl<>( content, pageRequest, 1 );
+
+        Mockito.doReturn( page ).when( associationsRepository ).fetchUnexpiredAssociationsForCompanyAndStatusesAndUser( eq( "MICOMP005" ), eq( Set.of( "awaiting-approval" ) ), isNull(), eq( "lechuck.monkey.island@inugami-example.com" ), any(), eq( pageRequest ) );
+
+        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, Set.of( StatusEnum.AWAITING_APPROVAL ), null, "lechuck.monkey.island@inugami-example.com", 0, 15 );
+        Mockito.verify( associationsListCompanyMapper ).daoToDto( argThat( comparisonUtils.associationsPageMatches( 1, 1, 1, List.of( "MiAssociation006" ) ) ), eq( companyDetails ) );
+    }
+
+    @Test
+    void fetchUnexpiredAssociationsForCompanyAndStatusesWithNonexistentUserReturnsEmptyList(){
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "MICOMP001" ).getFirst();
+        Mockito.doReturn( Page.empty() ).when( associationsRepository ).fetchUnexpiredAssociationsForCompanyAndStatusesAndUser( eq( "MICOMP001" ), eq( Set.of( "confirmed" ) ), eq( "404User" ), eq( "404@inugami-example.com" ), any(), eq( PageRequest.of( 0, 15 ) ) );
+        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, Set.of( StatusEnum.CONFIRMED ), "404User", "404@inugami-example.com", 0, 15 );
+        Mockito.verify( associationsListCompanyMapper ).daoToDto( eq( Page.empty() ), eq( companyDetails ) );
     }
 
     @Test
