@@ -97,10 +97,12 @@ public class AssociationsService {
     }
 
     @Transactional( readOnly = true )
-    public AssociationsList fetchUnexpiredAssociationsForCompanyAndStatuses( final CompanyDetails companyDetails, final Set<StatusEnum> statuses, final int pageIndex, final int itemsPerPage ) {
+    public AssociationsList fetchUnexpiredAssociationsForCompanyAndStatuses( final CompanyDetails companyDetails, final Set<StatusEnum> statuses, final String userId, final String userEmail,  final int pageIndex, final int itemsPerPage ) {
         LOGGER.debugContext( getXRequestId(), "Attempting to fetch unexpired associations for company and statuses", null );
         final var parsedStatuses = statuses.stream().map( StatusEnum::getValue ).collect( Collectors.toSet() );
-        final var associationDaos = associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails.getCompanyNumber(), parsedStatuses, LocalDateTime.now(), PageRequest.of( pageIndex, itemsPerPage ) );
+        final var associationDaos = Objects.nonNull( userEmail ) || Objects.nonNull( userId )
+                ? associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatusesAndUser( companyDetails.getCompanyNumber(), parsedStatuses, userId, userEmail, LocalDateTime.now(), PageRequest.of( pageIndex, itemsPerPage ) )
+                : associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails.getCompanyNumber(), parsedStatuses, LocalDateTime.now(), PageRequest.of( pageIndex, itemsPerPage ) );
         final var associations = associationsListCompanyMapper.daoToDto( associationDaos, companyDetails );
         LOGGER.debugContext( getXRequestId(), "Successfully fetched unexpired associations for company and statuses" ,null );
         return associations;
