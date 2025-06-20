@@ -2,30 +2,6 @@
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
   <suppress until="2026-01-01Z">
     <notes><![CDATA[
-   file name: kafka-clients-3.1.0.jar
-   ]]></notes>
-    <cve>CVE-2022-34917</cve>
-    <cve>CVE-2023-25194</cve>
-    <cve>CVE-2024-31141</cve>
-    <cve>CVE-2024-56128</cve>
-  </suppress>
-  <suppress until="2026-01-01Z">
-    <notes><![CDATA[
-   file name: snappy-java-1.1.8.4.jar
-   ]]></notes>
-    <cve>CVE-2023-34455</cve>
-    <cve>CVE-2023-34454</cve>
-    <cve>CVE-2023-34453</cve>
-    <cve>CVE-2023-43642</cve>
-  </suppress>
-  <suppress until="2026-01-01Z">
-    <notes><![CDATA[
-   file name: commons-beanutils-1.9.4.jar
-   ]]></notes>
-    <cve>CVE-2025-48734</cve>
-  </suppress>
-  <suppress until="2026-01-01Z">
-    <notes><![CDATA[
    file name: http2-common-11.0.24.jar
    ]]></notes>
     <cve>CVE-2024-6763</cve>
@@ -33,16 +9,19 @@
   </suppress>
   <suppress until="2026-01-01Z">
     <notes><![CDATA[
-   file name: http2-server-11.0.24.jar
+   file name: kafka-clients-3.1.0.jar
    ]]></notes>
-    <cve>CVE-2024-6763</cve>
+    <cve>CVE-2022-34917</cve>
+    <cve>CVE-2023-25194</cve>
+    <cve>CVE-2024-31141</cve>
+    <cve>CVE-2024-56128</cve>
+    <cve>CVE-2025-27817</cve>
+    <cve>CVE-2025-27818</cve>
   </suppress>
   <suppress until="2026-01-01Z">
     <notes><![CDATA[
-   file name: jetty-webapp-11.0.19.jar
+   file name: commons-fileupload2-core-2.0.0-M2.jar
    ]]></notes>
-    <cve>CVE-2024-8184</cve>
-    <cve>CVE-2024-6763</cve>
-    <cve>CVE-2024-22201</cve>
+    <cve>CVE-2025-48976</cve>
   </suppress>
 </suppressions>
