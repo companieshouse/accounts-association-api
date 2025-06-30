@@ -5,6 +5,7 @@ import static uk.gov.companieshouse.accounts.association.models.context.RequestC
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY;
 import static uk.gov.companieshouse.api.util.security.RequestUtils.getRequestHeader;
+import static org.springframework.http.HttpMethod.PATCH;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,15 +20,15 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.logging.util.RequestLogger;
 
 @Component
-public class RequestLifecycleInterceptor implements HandlerInterceptor, RequestLogger {
+public class OAuth2RequestLifecycleInterceptor implements HandlerInterceptor, RequestLogger {
 
     private final UsersService usersService;
 
-    public RequestLifecycleInterceptor( final UsersService usersService ) {
+    public OAuth2RequestLifecycleInterceptor( final UsersService usersService ) {
         this.usersService = usersService;
     }
 
-    private void setupRequestContext( final HttpServletRequest request, final User user ){
+    protected void setupRequestContext( final HttpServletRequest request, final User user ){
         final var requestContextData = new RequestContextDataBuilder()
                 .setXRequestId( request )
                 .setEricIdentity( request )
@@ -39,8 +40,7 @@ public class RequestLifecycleInterceptor implements HandlerInterceptor, RequestL
         setRequestContext( requestContextData );
     }
 
-    @Override
-    public boolean preHandle( final HttpServletRequest request, final HttpServletResponse response, final Object handler ) {
+    protected boolean preHandleOAuth2Request( final HttpServletRequest request, final HttpServletResponse response ){
         logStartRequestProcessing( request, LOGGER );
         try {
             final var user = usersService.fetchUserDetails( getRequestHeader( request, ERIC_IDENTITY ), getRequestHeader( request, X_REQUEST_ID ) );
@@ -51,6 +51,14 @@ public class RequestLifecycleInterceptor implements HandlerInterceptor, RequestL
             response.setStatus( 403 );
             return false;
         }
+    }
+
+    @Override
+    public boolean preHandle( final HttpServletRequest request, final HttpServletResponse response, final Object handler ) {
+        if ( PATCH.name().equalsIgnoreCase( request.getMethod() ) ){
+            return true;
+        }
+        return preHandleOAuth2Request( request, response );
     }
 
     @Override
