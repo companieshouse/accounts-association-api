@@ -45,6 +45,7 @@ import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.CONFIRMED;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.UNAUTHORISED;
 
 @AutoConfigureMockMvc
 @WebMvcTest(AssociationsListForCompanyController.class)
@@ -422,7 +423,7 @@ class AssociationsListForCompanyControllerTest {
         Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MICOMP001", "MiUser001" );
         mockers.mockUsersServiceSearchUserDetails( "MiUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
-        Mockito.doReturn( expectedList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED ), "MiUser002", "lechuck.monkey.island@inugami-example.com", 0, 15 );
+        Mockito.doReturn( expectedList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED, UNAUTHORISED ), "MiUser002", "lechuck.monkey.island@inugami-example.com", 0, 15 );
 
         final var response = mockMvc
                 .perform( get( "/associations/companies/MICOMP001" )
@@ -448,7 +449,7 @@ class AssociationsListForCompanyControllerTest {
         Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MICOMP001", "MiUser001" );
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "MiUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
-        Mockito.doReturn( expectedList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED ), null, "lechuck.monkey.island@inugami-example.com", 0, 15 );
+        Mockito.doReturn( expectedList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED, UNAUTHORISED ), null, "lechuck.monkey.island@inugami-example.com", 0, 15 );
 
         final var response = mockMvc
                 .perform( get( "/associations/companies/MICOMP001" )

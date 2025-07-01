@@ -440,6 +440,33 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
+    void fetchAssociationsByCanFetchUnauthorisedAssociation() throws Exception {
+        final var user = testDataManager.fetchUserDtos( "MKUser004" ).getFirst();
+        final var expectedAssociationsList = new AssociationsList()
+                .items( List.of( testDataManager.fetchAssociationDto( "MKAssociation004", user  ) ) )
+                .links( new Links().self( "/associations?page_index=0&items_per_page=15" ).next( "" ) )
+                .itemsPerPage( 15 ).pageNumber( 0 ).totalPages( 1 ).totalResults( 1 );
+
+        mockers.mockUsersServiceFetchUserDetails( "MKUser004" );
+        Mockito.doReturn( expectedAssociationsList ).when( associationsService ).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses( user, null,Set.of( StatusEnum.UNAUTHORISED.getValue() ), 0, 15 );
+
+        final var response =
+                mockMvc.perform( get( "/associations?status=unauthorised" )
+                                .header( "X-Request-Id", "theId123" )
+                                .header( "Eric-identity", "MKUser004" )
+                                .header( "ERIC-Identity-Type", "oauth2" ) )
+                        .andExpect( status().isOk() );
+
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
+        final var associations = associationsList.getItems();
+        final var associationOne = associations.getFirst();
+
+        Assertions.assertEquals( "MKAssociation004", associationOne.getId() );
+        Assertions.assertEquals( StatusEnum.UNAUTHORISED, associationOne.getStatus() );
+        Assertions.assertNotNull( associationOne.getUnauthorisedAt() );
+    }
+
+    @Test
     void addAssociationWithoutRequestBodyReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "000")
