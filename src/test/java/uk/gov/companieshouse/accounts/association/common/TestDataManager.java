@@ -918,6 +918,51 @@ public class TestDataManager {
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MKAssociation003", peachAssociation );
 
+        final Supplier<AssociationDao> bowserAssociation = () -> new AssociationDao()
+                .id( "MKAssociation004" )
+                .companyNumber( "MKCOMP001" )
+                .userId( "MKUser004" )
+                .status( "unauthorised" )
+                .approvalRoute( "migration" )
+                .invitations( List.of( new InvitationDao().invitedBy( "MKUser002" ).invitedAt( now.minusDays( 8L ) ) ) )
+                .unauthorisedAt( now.minusDays( 6L ) )
+                .unauthorisedBy( "Companies House" )
+                .approvalExpiryAt( now.minusDays( 1L ) )
+                .approvedAt( now.minusDays( 7L ) )
+                .removedAt( now.minusDays( 9L ) )
+                .migratedAt( now.minusDays( 10L ) )
+                .previousStates( List.of(
+                        new PreviousStatesDao().status( "migrated" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 9L ) ),
+                        new PreviousStatesDao().status( "removed" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 8L ) ),
+                        new PreviousStatesDao().status( "awaiting-approval" ).changedBy( "MKUser004" ).changedAt( now.minusDays( 7L ) ),
+                        new PreviousStatesDao().status( "confirmed" ).changedBy( "Companies House" ).changedAt( now.minusDays( 6L ) )
+                ) )
+                .etag( generateEtag() );
+        associationDaoSuppliers.put( "MKAssociation004", bowserAssociation );
+
+        final Supplier<AssociationDao> bowsetteAssociation = () -> new AssociationDao()
+                .id( "MKAssociation005" )
+                .companyNumber( "MKCOMP001" )
+                .userId( "MKUser005" )
+                .status( "confirmed" )
+                .approvalRoute( "auth_code" )
+                .invitations( List.of( new InvitationDao().invitedBy( "MKUser002" ).invitedAt( now.minusDays( 8L ) ) ) )
+                .unauthorisedAt( now.minusDays( 6L ) )
+                .unauthorisedBy( "Companies House" )
+                .approvalExpiryAt( now.minusDays( 1L ) )
+                .approvedAt( now.minusDays( 7L ) )
+                .removedAt( now.minusDays( 9L ) )
+                .migratedAt( now.minusDays( 10L ) )
+                .previousStates( List.of(
+                        new PreviousStatesDao().status( "migrated" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 9L ) ),
+                        new PreviousStatesDao().status( "removed" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 8L ) ),
+                        new PreviousStatesDao().status( "awaiting-approval" ).changedBy( "MKUser005" ).changedAt( now.minusDays( 7L ) ),
+                        new PreviousStatesDao().status( "confirmed" ).changedBy( "Companies House" ).changedAt( now.minusDays( 6L ) ),
+                        new PreviousStatesDao().status( "unauthorised" ).changedBy( "MKUser005" ).changedAt( now.minusDays( 3L ) )
+                ) )
+                .etag( generateEtag() );
+        associationDaoSuppliers.put( "MKAssociation005", bowsetteAssociation );
+
         final Supplier<AssociationDao> MiAssociation001 = () -> new AssociationDao()
                 .id( "MiAssociation001" )
                 .companyNumber( "MICOMP001" )
@@ -1438,6 +1483,8 @@ public class TestDataManager {
         userDtoSuppliers.put( "MKUser001", () -> new User().userId( "MKUser001" ).email( "mario@mushroom.kingdom" ).displayName( "Mario" ) );
         userDtoSuppliers.put( "MKUser002", () -> new User().userId( "MKUser002" ).email( "luigi@mushroom.kingdom" ).displayName( "Luigi" ) );
         userDtoSuppliers.put( "MKUser003", () -> new User().userId( "MKUser003" ).email( "peach@mushroom.kingdom" ).displayName( "Peach" ) );
+        userDtoSuppliers.put( "MKUser004", () -> new User().userId( "MKUser004" ).email( "bowser@mushroom.kingdom" ).displayName( "Bowser" ) );
+        userDtoSuppliers.put( "MKUser005", () -> new User().userId( "MKUser005" ).email( "bowsette@mushroom.kingdom" ).displayName( "Bowsette" ) );
         userDtoSuppliers.put( "MiUser001", () -> new User().userId( "MiUser001" ).email( "guybrush.threepwood.monkey.island@inugami-example.com" ).displayName( "Guybrush Threepwood" ) );
         userDtoSuppliers.put( "MiUser002", () -> new User().userId( "MiUser002" ).email( "lechuck.monkey.island@inugami-example.com" ).displayName( "LeChuck" ) );
         userDtoSuppliers.put( "MiUser003", () -> new User().userId( "MiUser003" ).email( "elaine.marley.monkey.island@inugami-example.com" ).displayName( "Elaine Marley" ) );
@@ -1545,6 +1592,7 @@ public class TestDataManager {
         associationDto.setCreatedAt( localDateTimeToOffsetDateTime( associationDao.getCreatedAt() ) );
         associationDto.setApprovedAt( localDateTimeToOffsetDateTime( associationDao.getApprovedAt() ) );
         associationDto.setRemovedAt( localDateTimeToOffsetDateTime( associationDao.getRemovedAt() ) );
+        associationDto.setUnauthorisedAt( localDateTimeToOffsetDateTime( associationDao.getUnauthorisedAt() ) );
         associationDto.setApprovalExpiryAt( Optional.ofNullable( associationDao.getApprovalExpiryAt() ).map( LocalDateTime::toString ).orElse( null ) );
         associationDto.setEtag( associationDao.getEtag() );
         associationDto.setKind( "association" );

@@ -40,7 +40,7 @@ public class AssociationsListForCompanyController implements AssociationsListFor
     }
 
     @Override
-    public ResponseEntity<AssociationsList> getAssociationsForCompany( final String companyNumber, final Boolean includeRemoved, final String userEmail, final Integer pageIndex, final Integer itemsPerPage ) {
+    public ResponseEntity<AssociationsList> getAssociationsForCompany( final String companyNumber, final Boolean includeRemoved, final String userEmail, String userId, final Integer pageIndex, final Integer itemsPerPage ) {
         LOGGER.infoContext( getXRequestId(), String.format( "Received request with company_number=%s, includeRemoved=%b, itemsPerPage=%d, pageIndex=%d.", companyNumber, includeRemoved, itemsPerPage, pageIndex ),null );
 
         if ( pageIndex < 0 || itemsPerPage <= 0 ){
@@ -51,7 +51,7 @@ public class AssociationsListForCompanyController implements AssociationsListFor
             throw new ForbiddenRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user is not permitted to retrieve data." ) );
         }
 
-        final var userId = Optional.ofNullable( userEmail )
+        userId = Optional.ofNullable( userEmail )
                 .map( List::of )
                 .map( usersService::searchUserDetails )
                 .filter( users -> !users.isEmpty() )
