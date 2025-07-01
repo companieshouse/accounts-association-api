@@ -27,7 +27,7 @@ public class OAuth2AndKeyRequestLifecycleInterceptor extends OAuth2RequestLifecy
             return true;
         }
 
-        if( OAUTH2.equals( getRequestHeader( request, ERIC_IDENTITY_TYPE ) ) ){
+        if ( OAUTH2.equals( getRequestHeader( request, ERIC_IDENTITY_TYPE ) ) ) {
             return preHandleOAuth2Request( request, response );
         }
 
