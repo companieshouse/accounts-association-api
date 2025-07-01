@@ -22,6 +22,8 @@ import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVIT
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_CANCELLED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.CONFIRMED;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.UNAUTHORISED;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -61,6 +63,7 @@ import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.Links;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
@@ -186,6 +189,28 @@ class UserCompanyAssociationTest {
                         .header( "ERIC-Identity-Type", "oauth2" )
                         .header( "Eric-Authorised-Roles", ADMIN_READ_PERMISSION ) )
                 .andExpect( status().isOk() );
+    }
+
+    @Test
+    void getAssociationForIdCanRetrieveUnauthorisedAssociation() throws Exception {
+        final var user = testDataManager.fetchUserDtos( "MKUser004" ).getFirst();
+        final var proposedAssociation = testDataManager.fetchAssociationDto( "MKAssociation004", user );
+
+        mockers.mockUsersServiceFetchUserDetails( "111" );
+        Mockito.doReturn( Optional.of( proposedAssociation ) ).when( associationsService ).fetchAssociationDto( "MKAssociation004" );
+
+        final var response =
+                mockMvc.perform( get( "/associations/MKAssociation004" )
+                                .header( "X-Request-Id", "theId123" )
+                                .header( "Eric-identity", "111" )
+                                .header( "ERIC-Identity-Type", "oauth2" )
+                                .header( "Eric-Authorised-Roles", ADMIN_READ_PERMISSION ) )
+                        .andExpect( status().isOk() );
+
+        final var association = parseResponseTo( response, Association.class );
+        Assertions.assertEquals( "MKAssociation004", association.getId() );
+        Assertions.assertEquals( StatusEnum.UNAUTHORISED, association.getStatus() );
+        Assertions.assertNotNull( association.getUnauthorisedAt() );
     }
 
     @Test
@@ -811,6 +836,50 @@ class UserCompanyAssociationTest {
         Assertions.assertEquals( AWAITING_APPROVAL, items.getFirst().getStatus() );
         Assertions.assertEquals( "MKUser003", items.getFirst().getChangedBy() );
         Assertions.assertEquals( localDateTimeToNormalisedString( now.minusDays( 7L ) ), reduceTimestampResolution( items.getFirst().getChangedAt() ) );
+    }
+
+    @Test
+    void getPreviousStatesForAssociationSupportsUnauthorisedAssociation() throws Exception {
+        final var proposedPreviousStates = testDataManager.fetchPreviousStates( "MKAssociation005" );
+
+        final var proposedPreviousStatesList = new PreviousStatesList()
+                .items( List.of( proposedPreviousStates.getLast(), proposedPreviousStates.get( 3 ) ) )
+                .links( new Links().self( "/associations/MKAssociation005/previous-states?page_index=0&items_per_page=2" ).next( "/associations/MKAssociation005/previous-states?page_index=1&items_per_page=2" ) )
+                .pageNumber( 0 )
+                .itemsPerPage( 2 )
+                .totalResults( 5 )
+                .totalPages( 3 );
+
+        final var now = LocalDateTime.now();
+
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        Mockito.doReturn( Optional.of( proposedPreviousStatesList ) ).when( associationsService ).fetchPreviousStates( "MKAssociation005", 0, 2 );
+
+        final var response = mockMvc.perform( get( "/associations/MKAssociation005/previous-states?page_index=0&items_per_page=2" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                .andExpect( status().isOk() );
+
+        final var previousStatesList = parseResponseTo( response, PreviousStatesList.class );
+        final var links = previousStatesList.getLinks();
+        final var items = previousStatesList.getItems();
+
+        Assertions.assertEquals( 2, previousStatesList.getItemsPerPage() );
+        Assertions.assertEquals( 0, previousStatesList.getPageNumber() );
+        Assertions.assertEquals( 5, previousStatesList.getTotalResults() );
+        Assertions.assertEquals( 3, previousStatesList.getTotalPages() );
+        Assertions.assertEquals( "/associations/MKAssociation005/previous-states?page_index=0&items_per_page=2", links.getSelf() );
+        Assertions.assertEquals( "/associations/MKAssociation005/previous-states?page_index=1&items_per_page=2", links.getNext() );
+        Assertions.assertEquals( 2, items.size() );
+
+        Assertions.assertEquals( UNAUTHORISED, items.getFirst().getStatus() );
+        Assertions.assertEquals( "MKUser005", items.getFirst().getChangedBy() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( now.minusDays( 3L ) ), reduceTimestampResolution( items.getFirst().getChangedAt() ) );
+
+        Assertions.assertEquals( CONFIRMED, items.getLast().getStatus() );
+        Assertions.assertEquals( "Companies House", items.getLast().getChangedBy() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( now.minusDays( 6L ) ), reduceTimestampResolution( items.getLast().getChangedAt() ) );
     }
 
     @Test
