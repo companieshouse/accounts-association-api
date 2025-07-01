@@ -51,6 +51,7 @@ public class AssociationsListForCompanyController implements AssociationsListFor
             throw new ForbiddenRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user is not permitted to retrieve data." ) );
         }
 
+        // TODO: will implement changes in ticket SIV-396
         userId = Optional.ofNullable( userEmail )
                 .map( List::of )
                 .map( usersService::searchUserDetails )

@@ -114,7 +114,7 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
                         .map( status -> mapToConfirmedUpdate( targetAssociation, targetUser, getEricIdentity() ) )
                         .orElseThrow( () -> new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( "Requesting user cannot change their status from migrated to confirmed" ) ) );
                 case REMOVED -> mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() );
-                case UNAUTHORISED -> null; // TODO
+                case UNAUTHORISED -> null; // TODO: Implement changes in ticket SIV-397
             };
         } else {
             update = switch ( requestBody.getStatus() ){
@@ -127,7 +127,7 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
                         .filter( status -> associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) || hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) )
                         .map( status -> mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() ) )
                         .orElseThrow( () -> new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) );
-                case UNAUTHORISED -> null; // TODO
+                case UNAUTHORISED -> null; // TODO: Implement changes in ticket SIV-397
             };
         }
         associationsService.updateAssociation( targetAssociation.getId(), update );
