@@ -80,9 +80,8 @@ public class UsersService {
                 .block( Duration.ofSeconds( 20L ) );
     }
 
-    public User fetchUserDetails( final AssociationDao association ){
-        final var fetchedByUserId = Optional.ofNullable( association )
-                .map( AssociationDao::getUserId )
+    public User retrieveUserDetails( final String targetUserId, final String targetUserEmail ){
+        final var fetchedByUserId = Optional.ofNullable( targetUserId )
                 .map( userId -> {
                     if ( userId.equals( getEricIdentity() ) ){
                         return getUser();
@@ -91,8 +90,7 @@ public class UsersService {
                 } )
                 .orElse( null );
 
-        final var fetchedByUserEmail = Optional.ofNullable( association )
-                .map( AssociationDao::getUserEmail )
+        final var fetchedByUserEmail = Optional.ofNullable( targetUserEmail )
                 .map( userEmail -> {
                     if ( userEmail.equals( getUser().getEmail() ) ){
                         return getUser();
@@ -107,6 +105,10 @@ public class UsersService {
                 .orElse( null );
 
         return Optional.ofNullable( fetchedByUserId ).orElse( fetchedByUserEmail );
+    }
+
+    public User fetchUserDetails( final AssociationDao association ){
+        return retrieveUserDetails( association.getUserId(), association.getUserEmail() );
     }
 
 }
