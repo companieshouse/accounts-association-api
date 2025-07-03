@@ -476,4 +476,102 @@ class AssociationsListForCompanyControllerTest {
                 .andExpect( status().isBadRequest() );
     }
 
+    @Test
+    void getAssociationsForCompanyWithAPIKeyCanFetchUnauthorised() throws Exception {
+        final var companyProfile = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+        final var user = testDataManager.fetchUserDtos( "MKUser004" ).getFirst();
+        final var association = testDataManager.fetchAssociationDto( "MKAssociation004", user );
+        final var expectedList = new AssociationsList();
+        expectedList.addItemsItem( association );
+
+        Mockito.doReturn( false ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MiUser001" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( expectedList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED, UNAUTHORISED ), "MKUser004", null, 0, 15 );
+
+        final var response = mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser004" )
+                        .header("X-Request-Id", "theId123" )
+                        .header( "ERIC-Identity", "MiUser001" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" ) )
+                .andExpect( status().isOk() );
+
+        final var result = parseResponseTo( response, AssociationsList.class ).getItems().getFirst();
+
+        Assertions.assertEquals( PreviousState.StatusEnum.UNAUTHORISED.getValue(), result.getStatus().getValue() );
+        Assertions.assertEquals( "MKAssociation004", result.getId() );
+        Assertions.assertNotNull( result.getUnauthorisedAt() );
+    }
+
+    @Test
+    void getAssociationsForCompanyWithAPIKeyAndUserEmailCanFetchUnauthorised() throws Exception {
+        final var companyProfile = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+        final var user = testDataManager.fetchUserDtos( "MKUser004" ).getFirst();
+        final var association = testDataManager.fetchAssociationDto( "MKAssociation004", user );
+        final var expectedList = new AssociationsList();
+        expectedList.addItemsItem( association );
+
+        Mockito.doReturn( false ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MiUser001" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( expectedList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED, UNAUTHORISED ), "MKUser004", null, 0, 15 );
+
+        final var response = mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser004" )
+                        .header("X-Request-Id", "theId123" )
+                        .header( "ERIC-Identity", "MiUser001" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "user_email", "bowser@mushroom.kingdom" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" ) )
+                .andExpect( status().isOk() );
+
+        final var result = parseResponseTo( response, AssociationsList.class ).getItems().getFirst();
+
+        Assertions.assertEquals( PreviousState.StatusEnum.UNAUTHORISED.getValue(), result.getStatus().getValue() );
+        Assertions.assertEquals( "MKAssociation004", result.getId() );
+        Assertions.assertNotNull( result.getUnauthorisedAt() );
+    }
+
+    @Test
+    void getAssociationsForCompanyWithMalformedUserId() throws Exception {
+        mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=???" )
+                        .header("X-Request-Id", "theId123" )
+                        .header( "ERIC-Identity", "MiUser001" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "user_email", "bowser@mushroom.kingdom" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void getAssociationsForCompanyWithNonExistentUserIdReturnsEmptyList() throws Exception {
+        final var companyProfile = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+
+        Mockito.doReturn( false ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MiUser001" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( new AssociationsList().items( List.of() ) ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED, UNAUTHORISED ), "MKUser2", null, 0, 15 );
+
+        final var response = mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser2" )
+                        .header("X-Request-Id", "theId123" )
+                        .header( "ERIC-Identity", "MiUser001" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "user_email", "bowser@mushroom.kingdom" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" ) )
+                .andExpect( status().isOk() );
+
+        final var associationList = parseResponseTo( response, AssociationsList.class ).getItems();
+
+        Assertions.assertTrue( associationList.isEmpty() );
+    }
+
+    @Test
+    void getAssociationsForCompanyWithOAuth2AndUserIdReturnsForbidden() throws Exception {
+        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
+        Mockito.doReturn( false ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MiUser001" );
+
+        mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser2" )
+                        .header("X-Request-Id", "theId123" )
+                        .header( "ERIC-Identity", "MiUser001" )
+                        .header( "Eric-Authorised-Roles", "/admin/user-company-associations/read" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                .andExpect( status().isForbidden() );
+    }
+
 }
