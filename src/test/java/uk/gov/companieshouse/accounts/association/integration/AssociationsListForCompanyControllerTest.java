@@ -2,6 +2,7 @@ package uk.gov.companieshouse.accounts.association.integration;
 
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -11,6 +12,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
@@ -388,10 +390,12 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyWithEmailReturnsData() throws Exception {
+        final var user = testDataManager.fetchUserDtos( "MiUser002" ).getFirst();
+
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation001", "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
 
         mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
-        mockers.mockUsersServiceSearchUserDetails( "MiUser002" );
+        Mockito.doReturn( user ).when( usersService ).retrieveUserDetails( null, "lechuck.monkey.island@inugami-example.com" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
         mockers.mockUsersServiceFetchUserDetails( "MiUser002" );
 
@@ -504,23 +508,19 @@ class AssociationsListForCompanyControllerTest {
     }
 
     @Test
-    void getAssociationsForCompanyWithNonExistentUserIdReturnsEmptyList() throws Exception {
+    void getAssociationsForCompanyWithNonExistentUserIdReturnsNotFound() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation004" ) );
 
-        mockers.mockUsersServiceFetchUserDetails( "MKUser004" );
+        Mockito.doThrow( new NotFoundRuntimeException( "not found", new Exception() ) ).when( usersService ).retrieveUserDetails( "MKUser2", "bowser@mushroom.kingdom" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
 
-        final var response = mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser2" )
+        mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser2" )
                         .header("X-Request-Id", "theId123" )
                         .header( "ERIC-Identity", "MiUser001" )
                         .header( "ERIC-Identity-Type", "key" )
                         .header( "user_email", "bowser@mushroom.kingdom" )
                         .header( "ERIC-Authorised-Key-Roles", "*" ) )
-                .andExpect( status().isOk() );
-
-        final var associationList = parseResponseTo( response, AssociationsList.class ).getItems();
-
-        Assertions.assertTrue( associationList.isEmpty() );
+                .andExpect( status().isNotFound() );
     }
 
     @Test

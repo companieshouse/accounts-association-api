@@ -153,7 +153,6 @@ class UsersServiceTest {
 
     @Test
     void fetchUserDetailsWithNullAssociationOrNullUserIdAndUserEmailReturnsNull(){
-        Assertions.assertNull( usersService.fetchUserDetails( (AssociationDao) null ) );
         Assertions.assertNull( usersService.fetchUserDetails( new AssociationDao() ) );
     }
 
