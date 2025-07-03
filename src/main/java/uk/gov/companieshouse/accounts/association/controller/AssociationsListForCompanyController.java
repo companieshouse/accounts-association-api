@@ -6,7 +6,6 @@ import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINA
 import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -51,20 +50,13 @@ public class AssociationsListForCompanyController implements AssociationsListFor
             throw new ForbiddenRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user is not permitted to retrieve data." ) );
         }
 
-        final var proposedUserEmail = Objects.nonNull( userId ) ? null : userEmail;
-        final var proposedUserId = Objects.nonNull( userId )
-                ? userId
-                : Optional.ofNullable( userEmail )
-                        .map( List::of )
-                        .map( usersService::searchUserDetails )
-                        .filter( users -> !users.isEmpty() )
-                        .map( List::getFirst )
-                        .map( User::getUserId )
-                        .orElse( null );
+        final var targetUser = usersService.retrieveUserDetails( userId, userEmail );
+        final var targetUserId = Optional.ofNullable( targetUser ).map( User::getUserId ).orElse( userId );
+        final var targetUserEmail = Optional.ofNullable( targetUser ).map( User::getEmail ).orElse( userEmail );
 
         final var companyProfile = companyService.fetchCompanyProfile( companyNumber );
         final var statuses = includeRemoved ? fetchAllStatusesWithout( Set.of() ) : fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) );
-        final var associationsList = associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, statuses, proposedUserId, proposedUserEmail, pageIndex, itemsPerPage );
+        final var associationsList = associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, statuses, targetUserId, targetUserEmail, pageIndex, itemsPerPage );
 
         return new ResponseEntity<>( associationsList, OK );
     }
