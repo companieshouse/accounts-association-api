@@ -203,5 +203,5 @@ To set up and build the service using Docker, follow these steps:
 6. Open your browser and navigate to http://api.chs.local/associations/healthcheck.
 
 Note: These instructions are tailored for a local Docker environment.
-
+ 
 For  further details, please refer to the documentation and associated resources.
