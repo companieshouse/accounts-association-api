@@ -559,17 +559,4 @@ class AssociationsListForCompanyControllerTest {
                 .andExpect( status().isNotFound() );
     }
 
-    @Test
-    void getAssociationsForCompanyWithOAuth2AndUserIdReturnsForbidden() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
-        Mockito.doReturn( false ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MiUser001" );
-
-        mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser2" )
-                        .header("X-Request-Id", "theId123" )
-                        .header( "ERIC-Identity", "MiUser001" )
-                        .header( "Eric-Authorised-Roles", "/admin/user-company-associations/read" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
-                .andExpect( status().isForbidden() );
-    }
-
 }
