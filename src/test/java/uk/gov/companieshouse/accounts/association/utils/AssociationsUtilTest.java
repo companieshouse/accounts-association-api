@@ -6,6 +6,7 @@ import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToConfirmedUpdate;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToInvitationUpdate;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToRemovedUpdate;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToUnauthorisedUpdate;
 
 import java.util.Set;
 import org.bson.Document;
@@ -100,6 +101,17 @@ class AssociationsUtilTest {
         final var documentSet = update.getUpdateObject().get( "$set", Document.class );
         Assertions.assertEquals( "confirmed", documentSet.get( "status" ) );
         Assertions.assertEquals( "auth_code", documentSet.get( "approval_route" ) );
+    }
+
+    @Test
+    void mapToUnauthorisedUpdateCarriesOutUpdateCorrectly(){
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
+        final var update = mapToUnauthorisedUpdate( targetAssociation, targetUser );
+        final var documentSet = update.getUpdateObject().get( "$set", Document.class );
+        Assertions.assertEquals( "unauthorised", documentSet.get( "status" ) );
+        Assertions.assertNotNull( documentSet.get( "unauthorised_at" ) );
+        Assertions.assertEquals( "Companies House", documentSet.get( "unauthorised_by" ) );
     }
 
     @Test

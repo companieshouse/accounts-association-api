@@ -883,6 +883,119 @@ class UserCompanyAssociationTest {
     }
 
     @Test
+    void updateAssociationStatusForIdWithAPIKeyCanSetStatusToUnauthorised() throws Exception {
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
+
+        Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation002" );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( targetAssociation );
+
+        mockMvc.perform( patch( "/associations/MKAssociation002" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "9999" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"unauthorised\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( associationsService ).updateAssociation( eq( targetAssociation.getId() ), any( Update.class ) );
+    }
+
+
+
+    private static Stream<Arguments> updateAssociationStatusForIdWithAPIKeyBadRequestScenarios(){
+        return Stream.of(
+                Arguments.of( "confirmed" ),
+                Arguments.of( "removed" )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource( "updateAssociationStatusForIdWithAPIKeyBadRequestScenarios" )
+    void updateAssociationStatusForIdWithAPIKeyReturnsBadRequestWhenBodyContainsConfirmedOrRemoved( final String status ) throws Exception {
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
+
+        Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation002" );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( targetAssociation );
+
+        mockMvc.perform( patch( "/associations/MKAssociation002" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "9999" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( String.format( "{\"status\":\"%s\"}", status ) ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    private static Stream<Arguments> updateAssociationStatusForIdSameUserUnauthorisedBadRequestScenarios(){
+        return Stream.of(
+                Arguments.of( "confirmed" ),
+                Arguments.of( "unauthorised" )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource( "updateAssociationStatusForIdSameUserUnauthorisedBadRequestScenarios" )
+    void updateAssociationStatusForIdWhereUserTriesToConfirmOwnUnauthorisedAssociationOrSetStatusToUnauthorisedReturnsBadRequest( final String status ) throws Exception {
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation004" ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser004" ).getFirst();
+
+        Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation004" );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( targetAssociation );
+
+        mockMvc.perform( patch( "/associations/MKAssociation004" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "MKUser004" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( String.format( "{\"status\":\"%s\"}", status ) ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWhereDifferentUserAttemptsToConfirmAnotherUsersUnauthorisedAssociationSendsInvitation() throws Exception {
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation004" ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser004" ).getFirst();
+
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation004" );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( targetAssociation );
+        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
+
+        mockMvc.perform( patch( "/associations/MKAssociation004" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( associationsService ).updateAssociation( eq( targetAssociation.getId() ), any( Update.class ) );
+    }
+
+    @Test
+    void updateAssociationStatusForIdWhereDifferentUserAttemptsToSetAnotherUsersAssociationToUnauthorisedReturnsBadRequest() throws Exception {
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation004" ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser004" ).getFirst();
+
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation004" );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( targetAssociation );
+        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
+
+        mockMvc.perform( patch( "/associations/MKAssociation004" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"unauthorised\"}" ) )
+                .andExpect( status().isBadRequest() );
+    }
+
+    @Test
     void getPreviousStatesForAssociationUsesDefaults() throws Exception {
         final var previousStatesList = new PreviousStatesList()
                 .items( List.of() )
