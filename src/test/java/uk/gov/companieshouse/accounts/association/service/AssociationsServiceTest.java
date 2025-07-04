@@ -54,8 +54,7 @@ import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.red
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.INVITATION;
-import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
-import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.CONFIRMED;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.*;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
@@ -560,4 +559,63 @@ class AssociationsServiceTest {
         Mockito.verify( associationsRepository ).insert( argThat( comparisonUtils.compare( expectedAssociation, List.of( "companyNumber", "userId", "userEmail", "status", "approvalRoute", "approvalExpiryAt" ), List.of(), Map.of( "approvalExpiryAt", new ReduceTimeStampResolutionPreprocessor() ) ) ) );
     }
 
+    @Test
+    void fetchInvitationsFiltersWorkingCorrectly(){
+        final var association = testDataManager.fetchAssociationDaos( "MiAssociation041" ).getFirst();
+        Mockito.doReturn( Optional.of(association) ).when(associationsRepository).findById( "MiAssociation041" );
+        associationsService.fetchInvitations( "MiAssociation041", 0, 15);
+        Mockito.verify( invitationsCollectionMappers ).daoToDto( association, 0, 15 );
+    }
+
+    @Test
+    void fetchAssociationsForUserAndPartialCompanyNumberFiltersWorkingCorrectly(){
+        final var user = testDataManager.fetchUserDtos( "MiUser002" ).getFirst();
+        associationsService.fetchAssociationsForUserAndPartialCompanyNumber( user, "ICOMP001", 0, 15 );
+        Mockito.verify( associationsRepository ).fetchAssociationsForUserAndStatusesAndPartialCompanyNumber( user.getUserId(), user.getEmail(), Set.of( "confirmed", "awaiting-approval", "removed", "migrated" ),"ICOMP001", PageRequest.of(0,15 ) );
+    }
+
+
+    @Test
+    void fetchAssociationsForUserAndPartialCompanyNumberWithMalformedPaginationParametersThrowsIllegalArgumentException(){
+        final var user = testDataManager.fetchUserDtos( "MiUser002" ).getFirst();
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchAssociationsForUserAndPartialCompanyNumber( user, "ICOMP001", -1, 15 ) );
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchAssociationsForUserAndPartialCompanyNumber( user, "ICOMP001", 0, -15 ) );
+    }
+
+    @Test
+    void fetchAssociationsForUserAndPartialCompanyNumberWhereThrowsNullPointerException(){
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchAssociationsForUserAndPartialCompanyNumber( null, "ICOMP001", 0, 15 ) );
+    }
+
+    @Test
+    void fetchConfirmedUserIdsCanRetrieveUsers(){
+        final var associations = testDataManager.fetchAssociationDaos( "MiAssociation003" ).stream();
+        Mockito.doReturn( associations ).when( associationsRepository ).fetchConfirmedAssociations( eq( "MICOMP002" ) );
+        Assertions.assertEquals( "MiUser002", associationsService.fetchConfirmedUserIds( "MICOMP002" ).blockFirst() );
+    }
+
+    @Test
+    void fetchConfirmedUserIdsRetrievesEmptyFluxWhenNoRecordsFound(){
+        Assertions.assertEquals( 0, associationsService.fetchConfirmedUserIds( "MICOMP002" ).count().block() );
+        Assertions.assertEquals( 0, associationsService.fetchConfirmedUserIds( null ).count().block() );
+    }
+
+    @Test
+    void fetchAssociationDaoRetrievesAssociation(){
+        associationsService.fetchAssociationDao( "MICOMP001", null, "apple.bob.monkey.island@inugami-example.com");
+        Mockito.verify( associationsRepository ).fetchAssociation( "MICOMP001", null, "apple.bob.monkey.island@inugami-example.com");
+    }
+
+
+    @Test
+    void fetchAssociationDaoReturnsEmptyOptionalWhenAssociationDoesNotExist(){
+        Mockito.when(associationsRepository.findById("MiAssociation024")).thenReturn(Optional.empty());
+        Assertions.assertTrue( associationsService.fetchAssociationDao( "MiAssociation024").isEmpty() );
+    }
+
+    @Test
+    void fetchAssociationDaoWithNullInputThrowsIllegalArgumentException(){
+        Mockito.doThrow( new IllegalArgumentException( "associationId cannot be null") ).when( associationsRepository ).findById( null );
+        Assertions.assertThrows( IllegalArgumentException.class, () -> associationsService.fetchAssociationDao( null ).isEmpty() );
+    }
 }
