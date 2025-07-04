@@ -1,0 +1,4 @@
+# service configs
+environment = "livesbox"
+aws_profile = "live-eu-west-2"
+log_level = "info"
