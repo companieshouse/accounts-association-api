@@ -410,6 +410,28 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
+    void fetchAssociationsByCanFetchUnauthorisedAssociation() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation004" ) );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser004" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+
+        final var response =
+                mockMvc.perform( get( "/associations?status=unauthorised" )
+                                .header( "X-Request-Id", "theId123" )
+                                .header( "Eric-identity", "MKUser004" )
+                                .header( "ERIC-Identity-Type", "oauth2" ) )
+                        .andExpect( status().isOk() );
+
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
+        final var associations = associationsList.getItems();
+        final var associationOne = associations.getFirst();
+
+        Assertions.assertEquals( "MKAssociation004", associationOne.getId() );
+        Assertions.assertEquals( StatusEnum.UNAUTHORISED, associationOne.getStatus() );
+        Assertions.assertNotNull( associationOne.getUnauthorisedAt() );
+    }
+
+    @Test
     void addAssociationWithoutEricIdentityReturnsForbidden() throws Exception {
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")

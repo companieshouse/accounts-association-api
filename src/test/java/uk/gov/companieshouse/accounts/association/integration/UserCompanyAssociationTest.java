@@ -20,6 +20,8 @@ import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVIT
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_CANCELLED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.CONFIRMED;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.UNAUTHORISED;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -54,6 +56,7 @@ import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepos
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
@@ -184,6 +187,26 @@ class UserCompanyAssociationTest {
                         .header( "ERIC-Identity-Type", "oauth2" )
                         .header( "Eric-Authorised-Roles", ADMIN_READ_PERMISSION ) )
                 .andExpect( status().isOk() );
+    }
+
+    @Test
+    void getAssociationForIdCanRetrieveUnauthorisedAssociation() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation004" ) );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser004", "111" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+
+        final var response =
+                mockMvc.perform( get( "/associations/MKAssociation004" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .header( "Eric-Authorised-Roles", ADMIN_READ_PERMISSION ) )
+                .andExpect( status().isOk() );
+
+        final var association = parseResponseTo( response, Association.class );
+        Assertions.assertEquals( "MKAssociation004", association.getId() );
+        Assertions.assertEquals( StatusEnum.UNAUTHORISED, association.getStatus() );
+        Assertions.assertNotNull( association.getUnauthorisedAt() );
     }
 
     @Test
@@ -756,6 +779,40 @@ class UserCompanyAssociationTest {
         Assertions.assertEquals( AWAITING_APPROVAL, items.getFirst().getStatus() );
         Assertions.assertEquals( "MKUser003", items.getFirst().getChangedBy() );
         Assertions.assertEquals( localDateTimeToNormalisedString( now.minusDays( 7L ) ), reduceTimestampResolution( items.getFirst().getChangedAt() ) );
+    }
+
+    @Test
+    void getPreviousStatesForAssociationSupportsUnauthorisedAssociation() throws Exception {
+        final var now = LocalDateTime.now();
+
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation005" ) );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+
+        final var response = mockMvc.perform( get( "/associations/MKAssociation005/previous-states?page_index=0&items_per_page=2" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" ) )
+                .andExpect( status().isOk() );
+
+        final var previousStatesList = parseResponseTo( response, PreviousStatesList.class );
+        final var links = previousStatesList.getLinks();
+        final var items = previousStatesList.getItems();
+
+        Assertions.assertEquals( 2, previousStatesList.getItemsPerPage() );
+        Assertions.assertEquals( 0, previousStatesList.getPageNumber() );
+        Assertions.assertEquals( 5, previousStatesList.getTotalResults() );
+        Assertions.assertEquals( 3, previousStatesList.getTotalPages() );
+        Assertions.assertEquals( "/associations/MKAssociation005/previous-states?page_index=0&items_per_page=2", links.getSelf() );
+        Assertions.assertEquals( "/associations/MKAssociation005/previous-states?page_index=1&items_per_page=2", links.getNext() );
+        Assertions.assertEquals( 2, items.size() );
+
+        Assertions.assertEquals( UNAUTHORISED, items.getFirst().getStatus() );
+        Assertions.assertEquals( "MKUser005", items.getFirst().getChangedBy() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( now.minusDays( 3L ) ), reduceTimestampResolution( items.getFirst().getChangedAt() ) );
+
+        Assertions.assertEquals( CONFIRMED, items.getLast().getStatus() );
+        Assertions.assertEquals( "Companies House", items.getLast().getChangedBy() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( now.minusDays( 6L ) ), reduceTimestampResolution( items.getLast().getChangedAt() ) );
     }
 
     @Test

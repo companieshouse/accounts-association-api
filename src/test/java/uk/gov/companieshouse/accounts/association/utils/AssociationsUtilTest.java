@@ -109,12 +109,12 @@ class AssociationsUtilTest {
 
     @Test
     void fetchAllStatusesWithoutWithEmptyListRetrievesAllStatuses(){
-        Assertions.assertEquals( 4, fetchAllStatusesWithout( Set.of() ).size() );
+        Assertions.assertEquals( 5, fetchAllStatusesWithout( Set.of() ).size() );
     }
 
     @Test
     void fetchAllStatusesWithoutRetrievesSpecifiedStatuses(){
-        final var statuses = fetchAllStatusesWithout( Set.of( StatusEnum.CONFIRMED, StatusEnum.REMOVED, StatusEnum.AWAITING_APPROVAL ) );
+        final var statuses = fetchAllStatusesWithout( Set.of( StatusEnum.CONFIRMED, StatusEnum.REMOVED, StatusEnum.AWAITING_APPROVAL, StatusEnum.UNAUTHORISED ) );
         Assertions.assertEquals( 1, statuses.size() );
         Assertions.assertTrue(  statuses.contains( StatusEnum.MIGRATED ) );
     }

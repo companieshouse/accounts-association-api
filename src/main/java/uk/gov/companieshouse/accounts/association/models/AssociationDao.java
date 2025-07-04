@@ -58,6 +58,12 @@ public class AssociationDao {
     @Field( "migrated_at" )
     private LocalDateTime migratedAt;
 
+    @Field( "unauthorised_at" )
+    private LocalDateTime unauthorisedAt;
+
+    @Field( "unauthorised_by" )
+    private String unauthorisedBy;
+
     @Field( "previous_states" )
     private final List<PreviousStatesDao> previousStates = new ArrayList<>();
 
@@ -216,6 +222,32 @@ public class AssociationDao {
         return migratedAt;
     }
 
+    public void setUnauthorisedAt( final LocalDateTime unauthorisedAt ){
+        this.unauthorisedAt = unauthorisedAt;
+    }
+
+    public AssociationDao unauthorisedAt( final LocalDateTime unauthorisedAt ){
+        setUnauthorisedAt( unauthorisedAt );
+        return this;
+    }
+
+    public LocalDateTime getUnauthorisedAt(){
+        return unauthorisedAt;
+    }
+
+    public void setUnauthorisedBy( final String unauthorisedBy ){
+        this.unauthorisedBy = unauthorisedBy;
+    }
+
+    public AssociationDao unauthorisedBy( final String unauthorisedBy ){
+        setUnauthorisedBy( unauthorisedBy );
+        return this;
+    }
+
+    public String getUnauthorisedBy(){
+        return unauthorisedBy;
+    }
+
     public void setPreviousStates( final List<PreviousStatesDao> previousStates ){
         this.previousStates.clear();
         this.previousStates.addAll( previousStates );
@@ -262,6 +294,8 @@ public class AssociationDao {
                 ", removedAt=" + removedAt +
                 ", createdAt=" + createdAt +
                 ", migratedAt=" + migratedAt +
+                ", unauthorisedAt=" + unauthorisedAt +
+                ", unauthorisedBy='" + unauthorisedBy + '\'' +
                 ", previousStates=" + previousStates +
                 ", etag='" + etag + '\'' +
                 ", version=" + version +
