@@ -5,10 +5,8 @@ import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 
-import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +22,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.hasAdminPrivilege;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.*;
 
 @RestController
 public class AssociationsListForCompanyController implements AssociationsListForCompanyInterface {
@@ -40,29 +38,24 @@ public class AssociationsListForCompanyController implements AssociationsListFor
     }
 
     @Override
-    public ResponseEntity<AssociationsList> getAssociationsForCompany( final String companyNumber, final Boolean includeRemoved, final String userEmail, String userId, final Integer pageIndex, final Integer itemsPerPage ) {
+    public ResponseEntity<AssociationsList> getAssociationsForCompany( final String companyNumber, final Boolean includeRemoved, final String userEmail, final String userId, final Integer pageIndex, final Integer itemsPerPage ) {
         LOGGER.infoContext( getXRequestId(), String.format( "Received request with company_number=%s, includeRemoved=%b, itemsPerPage=%d, pageIndex=%d.", companyNumber, includeRemoved, itemsPerPage, pageIndex ),null );
 
         if ( pageIndex < 0 || itemsPerPage <= 0 ){
             throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
         }
 
-        if ( !associationsService.confirmedAssociationExists( companyNumber, getEricIdentity() ) && !hasAdminPrivilege( ADMIN_READ_PERMISSION ) ){
+        if ( isOAuth2Request() && !associationsService.confirmedAssociationExists( companyNumber, getEricIdentity() ) && !hasAdminPrivilege( ADMIN_READ_PERMISSION ) ){
             throw new ForbiddenRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user is not permitted to retrieve data." ) );
         }
 
-        // TODO: will implement changes in ticket SIV-396
-        userId = Optional.ofNullable( userEmail )
-                .map( List::of )
-                .map( usersService::searchUserDetails )
-                .filter( users -> !users.isEmpty() )
-                .map( List::getFirst )
-                .map( User::getUserId )
-                .orElse( null );
+        final var targetUser = usersService.retrieveUserDetails( userId, userEmail );
+        final var targetUserId = Optional.ofNullable( targetUser ).map( User::getUserId ).orElse( userId );
+        final var targetUserEmail = Optional.ofNullable( targetUser ).map( User::getEmail ).orElse( userEmail );
 
         final var companyProfile = companyService.fetchCompanyProfile( companyNumber );
         final var statuses = includeRemoved ? fetchAllStatusesWithout( Set.of() ) : fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) );
-        final var associationsList = associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, statuses, userId, userEmail, pageIndex, itemsPerPage );
+        final var associationsList = associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, statuses, targetUserId, targetUserEmail, pageIndex, itemsPerPage );
 
         return new ResponseEntity<>( associationsList, OK );
     }
