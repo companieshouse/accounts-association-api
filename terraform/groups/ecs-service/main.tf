@@ -61,7 +61,6 @@ module "ecs-service" {
   healthcheck_healthy_threshold     = "2"
   health_check_grace_period_seconds = 240
 
-
   # Docker container details
   docker_registry   = var.docker_registry
   docker_repo       = local.docker_repo
