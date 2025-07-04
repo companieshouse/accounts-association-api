@@ -9,10 +9,12 @@ import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToConfirmedUpdate;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToInvitationUpdate;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToRemovedUpdate;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToUnauthorisedUpdate;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.hasAdminPrivilege;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isAPIKeyRequest;
 import static uk.gov.companieshouse.accounts.association.utils.UserUtil.isRequestingUser;
 import static uk.gov.companieshouse.accounts.association.utils.UserUtil.mapToDisplayValue;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
@@ -20,6 +22,7 @@ import static uk.gov.companieshouse.api.accounts.associations.model.Association.
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.REMOVED;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.UNAUTHORISED;
 
 import java.util.Optional;
 import org.springframework.data.mongodb.core.query.Update;
@@ -93,6 +96,40 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
                 .orElseThrow( () -> new NotFoundRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Association %s was not found", associationId ) ) ) );
     }
 
+
+    private Update mapToAPIKeyUpdate( final RequestBodyPut.StatusEnum proposedStatus, final AssociationDao targetAssociation, final User targetUser ){
+        return switch ( proposedStatus ){
+            case CONFIRMED, REMOVED -> throw new BadRequestRuntimeException( "API Key does not have access to perform the action", new Exception( "API Key cannot change the association status to confirmed or removed" ) );
+            case UNAUTHORISED -> mapToUnauthorisedUpdate( targetAssociation, targetUser );
+        };
+    }
+
+    private Update mapToOAuth2Update( final RequestBodyPut.StatusEnum proposedStatus, final AssociationDao targetAssociation, final User targetUser ){
+        final var oldStatus = StatusEnum.fromValue( targetAssociation.getStatus() );
+        if ( isRequestingUser( targetAssociation ) ){
+            return switch( proposedStatus ){
+                case CONFIRMED -> Optional.of( CONFIRMED )
+                        .filter( status -> !( MIGRATED.equals( oldStatus ) || UNAUTHORISED.equals( oldStatus ) ) )
+                        .map( status -> mapToConfirmedUpdate( targetAssociation, targetUser, getEricIdentity() ) )
+                        .orElseThrow( () -> new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( "Requesting user cannot change their status from migrated to confirmed" ) ) );
+                case REMOVED -> mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() );
+                case UNAUTHORISED -> throw new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( "Requesting user cannot change their status to unauthorised" ) );
+            };
+        }
+        return switch ( proposedStatus ){
+            case CONFIRMED -> Optional.of( CONFIRMED )
+                    .filter( status -> MIGRATED.equals( oldStatus ) || UNAUTHORISED.equals( oldStatus ) )
+                    .filter( status -> associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) )
+                    .map( status -> mapToInvitationUpdate( targetAssociation, targetUser, getEricIdentity(), now() ) )
+                    .orElseThrow( () -> new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) );
+            case REMOVED -> Optional.of( REMOVED )
+                    .filter( status -> associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) || hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) )
+                    .map( status -> mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() ) )
+                    .orElseThrow( () -> new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) );
+            case UNAUTHORISED -> throw new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( String.format( "Requesting %s user cannot change another user to unauthorised", getEricIdentity() ) ) );
+        };
+    }
+
     @Override
     public ResponseEntity<Void> updateAssociationStatusForId( final String associationId, final RequestBodyPut requestBody ) {
         LOGGER.infoContext( getXRequestId(), String.format( "Received request with id=%s, user_id=%s, status=%s.", associationId, getEricIdentity(), requestBody.getStatus() ),null );
@@ -103,34 +140,10 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
 
         final var targetUser = usersService.fetchUserDetails( targetAssociation );
 
-        final var oldStatus = StatusEnum.fromValue( targetAssociation.getStatus() );
-        final var newStatus = StatusEnum.fromValue( requestBody.getStatus().getValue() );
-
-        final Update update;
-        if ( isRequestingUser( targetAssociation ) ){
-            update = switch( requestBody.getStatus() ){
-                case CONFIRMED -> Optional.of( CONFIRMED )
-                        .filter( status -> !MIGRATED.equals( oldStatus ) )
-                        .map( status -> mapToConfirmedUpdate( targetAssociation, targetUser, getEricIdentity() ) )
-                        .orElseThrow( () -> new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( "Requesting user cannot change their status from migrated to confirmed" ) ) );
-                case REMOVED -> mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() );
-                case UNAUTHORISED -> null; // TODO: Implement changes in ticket SIV-397
-            };
-        } else {
-            update = switch ( requestBody.getStatus() ){
-                case CONFIRMED -> Optional.of( CONFIRMED )
-                        .filter( status -> MIGRATED.equals( oldStatus ) )
-                        .filter( status -> associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) )
-                        .map( status -> mapToInvitationUpdate( targetAssociation, targetUser, getEricIdentity(), now() ) )
-                        .orElseThrow( () -> new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) );
-                case REMOVED -> Optional.of( REMOVED )
-                        .filter( status -> associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) || hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) )
-                        .map( status -> mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() ) )
-                        .orElseThrow( () -> new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) );
-                case UNAUTHORISED -> null; // TODO: Implement changes in ticket SIV-397
-            };
-        }
+        final var update = isAPIKeyRequest() ? mapToAPIKeyUpdate( requestBody.getStatus(), targetAssociation, targetUser ) : mapToOAuth2Update( requestBody.getStatus(), targetAssociation, targetUser );
         associationsService.updateAssociation( targetAssociation.getId(), update );
+
+        final var newStatus = StatusEnum.fromValue( requestBody.getStatus().getValue() );
         sendStatusUpdateEmails( targetAssociation, targetUser, newStatus );
 
         return new ResponseEntity<>( OK );
@@ -138,7 +151,7 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
 
     private void sendStatusUpdateEmails( final AssociationDao targetAssociation, final User targetUser, final StatusEnum newStatus ) {
         final var xRequestId = getXRequestId();
-        final var requestingUserDisplayValue = mapToDisplayValue( getUser(), getUser().getEmail() );
+        final var requestingUserDisplayValue = isAPIKeyRequest() || hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) ? COMPANIES_HOUSE : mapToDisplayValue( getUser(), getUser().getEmail() );
         final var targetUserDisplayValue = mapToDisplayValue( targetUser, targetAssociation.getUserEmail() );
         final var oldStatus = targetAssociation.getStatus();
 
@@ -167,13 +180,13 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
         if ( isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED ) ) {
             emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationRejectedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue ) ) );
         } else if ( oldStatus.equals( CONFIRMED.getValue() ) && newStatus.equals( REMOVED ) ) {
-            emails = emails.concatWith( emailService.sendAuthorisationRemovedEmailToRemovedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) ? COMPANIES_HOUSE : requestingUserDisplayValue, targetAssociation.getUserId() ) );
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendAuthorisationRemovedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) ? COMPANIES_HOUSE : requestingUserDisplayValue, targetUserDisplayValue ) ) );
+            emails = emails.concatWith( emailService.sendAuthorisationRemovedEmailToRemovedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation.getUserId() ) );
+            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendAuthorisationRemovedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
         } else if ( isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( CONFIRMED ) ) {
             emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationAcceptedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, cachedInvitedByDisplayName, requestingUserDisplayValue ) ) );
         } else if ( !isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED ) ) {
-            emails = emails.concatWith( emailService.sendInviteCancelledEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) ? COMPANIES_HOUSE : requestingUserDisplayValue, targetAssociation ) );
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationCancelledEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) ? COMPANIES_HOUSE : requestingUserDisplayValue, targetUserDisplayValue ) ) );
+            emails = emails.concatWith( emailService.sendInviteCancelledEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation ) );
+            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationCancelledEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
         }
         emails.subscribe();
     }
