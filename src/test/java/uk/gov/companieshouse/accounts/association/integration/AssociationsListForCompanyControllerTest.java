@@ -511,14 +511,13 @@ class AssociationsListForCompanyControllerTest {
     void getAssociationsForCompanyWithNonExistentUserIdReturnsNotFound() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation004" ) );
 
-        Mockito.doThrow( new NotFoundRuntimeException( "not found", new Exception() ) ).when( usersService ).retrieveUserDetails( "MKUser2", "bowser@mushroom.kingdom" );
+        Mockito.doThrow( new NotFoundRuntimeException( "not found", new Exception() ) ).when( usersService ).retrieveUserDetails( "MKUser2", null );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
 
         mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser2" )
                         .header("X-Request-Id", "theId123" )
                         .header( "ERIC-Identity", "MiUser001" )
                         .header( "ERIC-Identity-Type", "key" )
-                        .header( "user_email", "bowser@mushroom.kingdom" )
                         .header( "ERIC-Authorised-Key-Roles", "*" ) )
                 .andExpect( status().isNotFound() );
     }

@@ -49,9 +49,16 @@ public class AssociationsListForCompanyController implements AssociationsListFor
             throw new ForbiddenRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user is not permitted to retrieve data." ) );
         }
 
-        final var targetUser = usersService.retrieveUserDetails( userId, userEmail );
-        final var targetUserId = Optional.ofNullable( targetUser ).map( User::getUserId ).orElse( userId );
-        final var targetUserEmail = Optional.ofNullable( targetUser ).map( User::getEmail ).orElse( userEmail );
+        final String targetUserId;
+        final String targetUserEmail;
+        if ( Objects.nonNull( userId ) && Objects.nonNull( userEmail ) ){
+            targetUserId = userId;
+            targetUserEmail = userEmail;
+        } else {
+            final var targetUser = usersService.retrieveUserDetails( userId, userEmail );
+            targetUserId = Optional.ofNullable( targetUser ).map( User::getUserId ).orElse( userId );
+            targetUserEmail = Optional.ofNullable( targetUser ).map( User::getEmail ).orElse( userEmail );
+        }
 
         final var companyProfile = companyService.fetchCompanyProfile( companyNumber );
         final var statuses = includeRemoved ? fetchAllStatusesWithout( Set.of() ) : fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) );
