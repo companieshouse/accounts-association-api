@@ -90,7 +90,11 @@ public class UsersService {
                 } )
                 .orElse( null );
 
-        final var fetchedByUserEmail = Optional.ofNullable( targetUserEmail )
+        if ( Objects.nonNull( fetchedByUserId ) ){
+            return fetchedByUserId;
+        }
+
+        return Optional.ofNullable( targetUserEmail )
                 .map( userEmail -> {
                     if ( userEmail.equals( getUser().getEmail() ) ){
                         return getUser();
@@ -103,8 +107,6 @@ public class UsersService {
                             .orElse( null );
                 } )
                 .orElse( null );
-
-        return Optional.ofNullable( fetchedByUserId ).orElse( fetchedByUserEmail );
     }
 
     public User fetchUserDetails( final AssociationDao association ){

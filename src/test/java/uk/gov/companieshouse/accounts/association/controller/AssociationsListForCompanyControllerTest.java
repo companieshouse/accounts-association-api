@@ -546,15 +546,14 @@ class AssociationsListForCompanyControllerTest {
         final var companyProfile = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
 
         Mockito.doReturn( false ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MiUser001" );
-        Mockito.doThrow( new NotFoundRuntimeException( "not found", new Exception() ) ).when( usersService ).retrieveUserDetails( "MKUser2", "bowser@mushroom.kingdom" );
+        Mockito.doThrow( new NotFoundRuntimeException( "not found", new Exception() ) ).when( usersService ).retrieveUserDetails( "MKUser2", null );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         Mockito.doReturn( new AssociationsList().items( List.of() ) ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED, UNAUTHORISED ), "MKUser2", null, 0, 15 );
 
-        final var response = mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser2" )
+        mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser2" )
                         .header("X-Request-Id", "theId123" )
                         .header( "ERIC-Identity", "MiUser001" )
                         .header( "ERIC-Identity-Type", "key" )
-                        .header( "user_email", "bowser@mushroom.kingdom" )
                         .header( "ERIC-Authorised-Key-Roles", "*" ) )
                 .andExpect( status().isNotFound() );
     }
