@@ -99,7 +99,7 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
 
     private Update mapToAPIKeyUpdate( final RequestBodyPut.StatusEnum proposedStatus, final AssociationDao targetAssociation, final User targetUser ){
         return switch ( proposedStatus ){
-            case CONFIRMED, REMOVED -> throw new BadRequestRuntimeException( "API Key does not have access to perform the action", new Exception( "API Key cannot change the association status to confirmed or removed" ) );
+            case CONFIRMED, REMOVED -> throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Unable to change the association status to confirmed or removed with API Key" ) );
             case UNAUTHORISED -> mapToUnauthorisedUpdate( targetAssociation, targetUser );
         };
     }
@@ -111,9 +111,9 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
                 case CONFIRMED -> Optional.of( CONFIRMED )
                         .filter( status -> !( MIGRATED.equals( oldStatus ) || UNAUTHORISED.equals( oldStatus ) ) )
                         .map( status -> mapToConfirmedUpdate( targetAssociation, targetUser, getEricIdentity() ) )
-                        .orElseThrow( () -> new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( "Requesting user cannot change their status from migrated to confirmed" ) ) );
+                        .orElseThrow( () -> new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user cannot change their status from migrated to confirmed" ) ) );
                 case REMOVED -> mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() );
-                case UNAUTHORISED -> throw new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( "Requesting user cannot change their status to unauthorised" ) );
+                case UNAUTHORISED -> throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user cannot change their status to unauthorised" ) );
             };
         }
         return switch ( proposedStatus ){
@@ -121,12 +121,12 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
                     .filter( status -> MIGRATED.equals( oldStatus ) || UNAUTHORISED.equals( oldStatus ) )
                     .filter( status -> associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) )
                     .map( status -> mapToInvitationUpdate( targetAssociation, targetUser, getEricIdentity(), now() ) )
-                    .orElseThrow( () -> new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) );
+                    .orElseThrow( () -> new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) );
             case REMOVED -> Optional.of( REMOVED )
                     .filter( status -> associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) || hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) )
                     .map( status -> mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() ) )
-                    .orElseThrow( () -> new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) );
-            case UNAUTHORISED -> throw new BadRequestRuntimeException( "requesting user does not have access to perform the action", new Exception( String.format( "Requesting %s user cannot change another user to unauthorised", getEricIdentity() ) ) );
+                    .orElseThrow( () -> new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) );
+            case UNAUTHORISED -> throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Requesting %s user cannot change another user to unauthorised", getEricIdentity() ) ) );
         };
     }
 
@@ -136,7 +136,7 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
 
         final var targetAssociation = associationsService
                 .fetchAssociationDao( associationId )
-                .orElseThrow( () -> new NotFoundRuntimeException( String.format( "Association %s was not found.", associationId ), new Exception( String.format( "Could not find association %s.", associationId ) ) ) );
+                .orElseThrow( () -> new NotFoundRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Could not find association %s.", associationId ) ) ) );
 
         final var targetUser = usersService.fetchUserDetails( targetAssociation );
 
