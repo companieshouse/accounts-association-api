@@ -251,4 +251,66 @@ class EmailServiceTest {
         Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "null", "Batman", "null", "Wayne Enterprises", "light.yagami@death.note"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
+    @Test
+    void sendDelegatedRemovalOfMigratedBatchWithNullCompanyNameOrNullRemovedByOrNullRemovedUsersThrowsNullPointerException(){
+        mockers.mockUsersServiceFetchUserDetails( "111" );
+
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedBatchEmail( "theId12345", "111111", null, "Batman", "Ronald" ).apply("111").block() );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedBatchEmail( "theId12345", "111111", Mono.just("McDonalds"), null, "Ronald" ).apply("111").block() );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedBatchEmail( "theId12345", "111111", Mono.just("McDonalds"), "Batman", null ).apply("111").block() );
+    }
+
+    @Test
+    void sendDelegatedRemovalOfMigratedBatchThrowsEmailOnKafkaQueue(){
+        mockers.mockUsersServiceFetchUserDetails( "333" );
+        emailService.sendDelegatedRemovalOfMigratedBatchEmail( "theId12345", "111111", Mono.just("McDonalds"), "Batman", "Harleen Quinzel" ).apply("333").block();
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.delegatedRemovalOfMigratedBatchMatcher( "harley.quinn@gotham.city", "McDonalds", "Batman" , "Harleen Quinzel") ), eq( DELEGATED_REMOVAL_OF_MIGRATED_BATCH.getValue() ) );
+    }
+
+    @Test
+    void sendDelegatedRemovalOfMigratedBatchWithUnexpectedIssueThrowsEmailSendingException(){
+        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockEmailSendingFailure( DELEGATED_REMOVAL_OF_MIGRATED_BATCH.getValue() );
+        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendDelegatedRemovalOfMigratedBatchEmail( "theId12345", "111111", Mono.just("McDonalds"), "Batman", "Ronald" ).apply( "333" ).block() );
+    }
+
+    @Test
+    void sendDelegatedRemovalOfMigratedWithNullCompanyNameOrNullRemovedByThrowsNullPointerException(){
+        mockers.mockUsersServiceFetchUserDetails( "111" );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedEmail( "theId12345", "111111", null, "Batman", "111").block() );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedEmail( "theId12345", "111111", Mono.just("McDonalds"), null, "111" ).block() );
+    }
+
+    @Test
+    void sendDelegatedRemovalOfMigratedThrowsEmailOnKafkaQueue(){
+        mockers.mockUsersServiceFetchUserDetails( "333" );
+        emailService.sendDelegatedRemovalOfMigratedEmail( "theId12345", "111111", Mono.just("McDonalds"), "Batman", "333" ).block();
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.delegatedRemovalOfMigratedMatcher( "harley.quinn@gotham.city", "McDonalds", "Batman" ) ), eq( DELEGATED_REMOVAL_OF_MIGRATED.getValue() ) );
+    }
+
+    @Test
+    void sendDelegatedRemovalOfMigratedWithUnexpectedIssueThrowsEmailSendingException(){
+        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockEmailSendingFailure( DELEGATED_REMOVAL_OF_MIGRATED.getValue() );
+        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendDelegatedRemovalOfMigratedEmail( "theId12345", "111111", Mono.just("McDonalds"), "Batman", "333" ).block() );
+    }
+
+    @Test
+    void sendRemovalOfOwnMigratedWithNullCompanyNameThrowsNullPointerException(){
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendRemoveOfOwnMigratedEmail( "theId12345", "111111", null, "111").block() );
+    }
+
+    @Test
+    void sendRemovalOfOwnMigratedThrowsEmailOnKafkaQueue(){
+        mockers.mockUsersServiceFetchUserDetails( "333" );
+        emailService.sendRemoveOfOwnMigratedEmail( "theId12345", "111111", Mono.just("McDonalds"), "333" ).block();
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.removalOfOwnMigratedMatcher( "harley.quinn@gotham.city", "McDonalds" ) ), eq( REMOVAL_OF_OWN_MIGRATED.getValue() ) );
+    }
+
+    @Test
+    void sendRemovalOfOwnMigratedWithUnexpectedIssueThrowsEmailSendingException(){
+        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockEmailSendingFailure( REMOVAL_OF_OWN_MIGRATED.getValue() );
+        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendRemoveOfOwnMigratedEmail( "theId12345", "111111", Mono.just("McDonalds"),  "333" ).block() );
+    }
 }
