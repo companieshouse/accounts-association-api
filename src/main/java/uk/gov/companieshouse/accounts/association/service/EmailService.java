@@ -18,15 +18,7 @@ import uk.gov.companieshouse.email_producer.model.EmailData;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_CANCELLED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_REJECTED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_CANCELLED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.*;
 import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.APPLICATION_NAMESPACE;
 
 @Service
@@ -188,6 +180,47 @@ public class EmailService {
                 .doOnNext( emailData -> {
                     final var logMessageSupplier = new EmailNotification( INVITE_CANCELLED_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber );
                     sendEmail( xRequestId, INVITE_CANCELLED_MESSAGE_TYPE, emailData, logMessageSupplier ); } )
+                .then();
+    }
+    public Mono<Void> sendDelegatedRemovalOfMigratedEmail( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String removedBy, final String userId ) {
+        return Mono.just( userId )
+                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
+                .map( user -> new DelegatedRemovalOfMigratedEmailBuilder()
+                        .setRemovedBy( removedBy )
+                        .setRecipientEmail( user.getEmail() ) )
+                .zipWith( companyName, DelegatedRemovalOfMigratedEmailBuilder::setCompanyName )
+                .map( DelegatedRemovalOfMigratedEmailBuilder::build )
+                .doOnNext( emailData -> {
+                    final var logMessageSupplier = new EmailNotification( DELEGATED_REMOVAL_OF_MIGRATED, removedBy, emailData.getTo(), companyNumber );
+                    sendEmail( xRequestId, DELEGATED_REMOVAL_OF_MIGRATED, emailData, logMessageSupplier ); } )
+                .then();
+    }
+
+    public Mono<Void> sendRemoveOfOwnMigratedEmail( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String userId ) {
+        return Mono.just( userId )
+                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
+                .map( user -> new RemovalOfOwnMigratedEmailBuilder()
+                        .setRecipientEmail( user.getEmail() ) )
+                .zipWith( companyName, RemovalOfOwnMigratedEmailBuilder::setCompanyName )
+                .map( RemovalOfOwnMigratedEmailBuilder::build )
+                .doOnNext( emailData -> {
+                    final var logMessageSupplier = new EmailNotification( REMOVAL_OF_OWN_MIGRATED, emailData.getTo(), emailData.getTo(), companyNumber );
+                    sendEmail( xRequestId, REMOVAL_OF_OWN_MIGRATED, emailData, logMessageSupplier ); } )
+                .then();
+    }
+
+    public Function<String, Mono<Void>> sendDelegatedRemovalOfMigratedBatchEmail(final String xRequestId, final String companyNumber, final Mono<String> companyName, final String removedBy, final String removedUser ) {
+        return userId -> Mono.just( userId )
+                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
+                .map( user -> new DelegatedRemovalOfMigratedBatchEmailBuilder()
+                        .setRemovedBy( removedBy )
+                        .setRemovedUser( removedUser )
+                        .setRecipientEmail( user.getEmail() ) )
+                .zipWith( companyName, DelegatedRemovalOfMigratedBatchEmailBuilder::setCompanyName )
+                .map( DelegatedRemovalOfMigratedBatchEmailBuilder::build )
+                .doOnNext( emailData -> {
+                    final var logMessageSupplier = new EmailNotification( DELEGATED_REMOVAL_OF_MIGRATED_BATCH, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber );
+                    sendEmail( xRequestId, DELEGATED_REMOVAL_OF_MIGRATED_BATCH, emailData, logMessageSupplier ); } )
                 .then();
     }
 

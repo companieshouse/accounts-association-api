@@ -11,15 +11,7 @@ import org.mockito.ArgumentMatcher;
 import org.springframework.data.domain.Page;
 import uk.gov.companieshouse.accounts.association.common.Preprocessors.Preprocessor;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.models.email.builders.AuthCodeConfirmationEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.AuthorisationRemovedEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationAcceptedEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationCancelledEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationRejectedEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InviteCancelledEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InviteEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.YourAuthorisationRemovedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.*;
 import uk.gov.companieshouse.accounts.association.models.email.data.AuthorisationRemovedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationCancelledEmailData;
@@ -177,6 +169,36 @@ public class ComparisonUtils {
                 .build();
 
         return compare( expectedEmail, List.of( "personWhoDeclined", "companyName", "to", "subject" ), List.of(), Map.of() );
+    }
+
+    public ArgumentMatcher<EmailData> delegatedRemovalOfMigratedBatchMatcher( final String recipientEmail, final String companyName, final String removedBy, final String removedUser ){
+        final var expectedEmail = new DelegatedRemovalOfMigratedBatchEmailBuilder()
+                .setRemovedBy( removedBy )
+                .setRemovedUser( removedUser )
+                .setRecipientEmail( recipientEmail )
+                .setCompanyName( companyName )
+                .build();
+
+        return compare( expectedEmail, List.of( "removedBy", "removedUser", "companyName", "to", "subject" ), List.of(), Map.of() );
+    }
+
+    public ArgumentMatcher<EmailData> delegatedRemovalOfMigratedMatcher( final String recipientEmail, final String companyName, final String removedBy ){
+        final var expectedEmail = new DelegatedRemovalOfMigratedEmailBuilder()
+                .setRemovedBy( removedBy )
+                .setRecipientEmail( recipientEmail )
+                .setCompanyName( companyName )
+                .build();
+
+        return compare( expectedEmail, List.of( "removedBy", "companyName", "to", "subject" ), List.of(), Map.of() );
+    }
+
+    public ArgumentMatcher<EmailData> removalOfOwnMigratedMatcher( final String recipientEmail, final String companyName ){
+        final var expectedEmail = new RemovalOfOwnMigratedEmailBuilder()
+                .setRecipientEmail( recipientEmail )
+                .setCompanyName( companyName )
+                .build();
+
+        return compare( expectedEmail, List.of( "companyName", "to", "subject" ), List.of(), Map.of() );
     }
 
     public ArgumentMatcher<Page<AssociationDao>> associationsPageMatches( final int totalElements, final int totalPages, final int numElementsOnPage, final List<String> expectedAssociationIds ){
