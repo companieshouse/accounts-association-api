@@ -120,7 +120,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndPartialCompanyNumberWhereThrowsNullPointerException(){
+    void fetchAssociationsForUserAndPartialCompanyNumberWhereCompanyNumberIsNullThrowsNullPointerException(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation001", "MiAssociation003", "MiAssociation004", "MiAssociation006" ) );
         Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchAssociationsForUserAndPartialCompanyNumber( null, "ICOMP001", 0, 15 ) );
     }
