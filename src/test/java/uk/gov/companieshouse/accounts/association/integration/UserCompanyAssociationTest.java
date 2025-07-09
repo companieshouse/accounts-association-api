@@ -15,9 +15,14 @@ import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.DELEGATED_REMOVAL_OF_MIGRATED;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.DELEGATED_REMOVAL_OF_MIGRATED_BATCH;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_CANCELLED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_CANCELLED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.REMOVAL_OF_OWN_MIGRATED;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.CONFIRMED;
@@ -41,6 +46,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -68,6 +74,9 @@ import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 @ExtendWith( MockitoExtension.class )
 @Tag( "integration-test" )
 class UserCompanyAssociationTest {
+
+    @Value( "${invitation.url}")
+    private String COMPANY_INVITATIONS_URL;
 
     @Autowired
     private MongoTemplate mongoTemplate;
@@ -864,6 +873,106 @@ class UserCompanyAssociationTest {
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"status\":\"unauthorised\"}" ) )
                 .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void updateAssociationStatusForIdSendsEmailWhenOneUserRemovesAnotherUsersMigratedAssociation() throws Exception {
+        final var associations = testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" );
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
+
+        associationsRepository.insert( associations );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+
+        setEmailProducerCountDownLatch( 2 );
+
+        mockMvc.perform( patch( "/associations/MKAssociation001" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        latch.await( 10, TimeUnit.SECONDS );
+
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( comparisonUtils.delegatedRemovalOfMigratedAndBatchEmailMatcher( "mario@mushroom.kingdom", "Mario", "luigi@mushroom.kingdom", "Luigi", "Mushroom Kingdom" ) ), argThat( messageType -> List.of( DELEGATED_REMOVAL_OF_MIGRATED.getValue(), DELEGATED_REMOVAL_OF_MIGRATED_BATCH.getValue() ).contains( messageType ) ) );
+    }
+
+    @Test
+    void updateAssociationStatusForIdSendsEmailWhenOneUserRemovesTheirOwnMigratedAssociation() throws Exception {
+        final var associations = testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" );
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
+
+        associationsRepository.insert( associations );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser001", "MKUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+
+        setEmailProducerCountDownLatch( 2 );
+
+        mockMvc.perform( patch( "/associations/MKAssociation001" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "MKUser001" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        latch.await( 10, TimeUnit.SECONDS );
+
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( comparisonUtils.removalOfOwnMigratedEmailAndBatchMatcher( "mario@mushroom.kingdom", "Mario", "luigi@mushroom.kingdom", "Mario", "Mushroom Kingdom" ) ), argThat( messageType -> List.of( REMOVAL_OF_OWN_MIGRATED.getValue(), DELEGATED_REMOVAL_OF_MIGRATED_BATCH.getValue() ).contains( messageType ) ) );
+    }
+
+    @Test
+    void updateAssociationStatusForIdSendsEmailWhenOneUserConfirmsAnotherUsersMigratedAssociation() throws Exception {
+        final var associations = testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" );
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
+
+        associationsRepository.insert( associations );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+
+        setEmailProducerCountDownLatch( 2 );
+
+        mockMvc.perform( patch( "/associations/MKAssociation001" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        latch.await( 10, TimeUnit.SECONDS );
+
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( comparisonUtils.invitationAndInviteEmailDataMatcher( "luigi@mushroom.kingdom", "Luigi", "mario@mushroom.kingdom", "Mario", "Mushroom Kingdom", COMPANY_INVITATIONS_URL ) ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue() ).contains( messageType ) ) );
+    }
+
+    @Test
+    void updateAssociationStatusForIdSendsEmailWhenAPIKeyConfirmsAnUnauthorisedAssociation() throws Exception {
+        final var associations = testDataManager.fetchAssociationDaos( "MKAssociation004", "MKAssociation002" );
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser004" ).getFirst();
+
+        associationsRepository.insert( associations );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+
+        setEmailProducerCountDownLatch( 2 );
+
+        mockMvc.perform( patch( "/associations/MKAssociation004" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        latch.await( 10, TimeUnit.SECONDS );
+
+        Mockito.verify( emailProducer, times( 2 ) ).sendEmail( argThat( comparisonUtils.invitationAndInviteEmailDataMatcher( "luigi@mushroom.kingdom", "Luigi", "bowser@mushroom.kingdom", "Bowser", "Mushroom Kingdom", COMPANY_INVITATIONS_URL ) ), argThat( messageType -> List.of( INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue() ).contains( messageType ) ) );
     }
 
     @Test

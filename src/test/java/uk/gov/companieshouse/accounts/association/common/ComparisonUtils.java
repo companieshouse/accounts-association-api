@@ -13,11 +13,14 @@ import uk.gov.companieshouse.accounts.association.common.Preprocessors.Preproces
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.email.builders.*;
 import uk.gov.companieshouse.accounts.association.models.email.data.AuthorisationRemovedEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.DelegatedRemovalOfMigratedBatchEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.DelegatedRemovalOfMigratedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationCancelledEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InviteCancelledEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InviteEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.RemovalOfOwnMigratedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.YourAuthorisationRemovedEmailData;
 import uk.gov.companieshouse.email_producer.model.EmailData;
 
@@ -199,6 +202,47 @@ public class ComparisonUtils {
                 .build();
 
         return compare( expectedEmail, List.of( "companyName", "to", "subject" ), List.of(), Map.of() );
+    }
+
+    public ArgumentMatcher<EmailData> delegatedRemovalOfMigratedAndBatchEmailMatcher( final String targetUserEmail, final String removedUser, final String confirmedUserEmail, final String removedBy, final String companyName ){
+        final var delegatedRemovalOfMigratedEmail = new DelegatedRemovalOfMigratedEmailBuilder()
+                .setRecipientEmail( targetUserEmail )
+                .setCompanyName( companyName )
+                .setRemovedBy( removedBy )
+                .build();
+
+        final var delegatedRemovalOfMigratedBatchEmail = new DelegatedRemovalOfMigratedBatchEmailBuilder()
+                .setRecipientEmail( confirmedUserEmail )
+                .setCompanyName( companyName )
+                .setRemovedBy( removedBy )
+                .setRemovedUser( removedUser )
+                .build();
+
+        return emailData -> {
+            if ( emailData instanceof DelegatedRemovalOfMigratedEmailData ) return compare( delegatedRemovalOfMigratedEmail, List.of( "removedBy", "companyName", "to", "subject" ), List.of(), Map.of() ).matches( (DelegatedRemovalOfMigratedEmailData) emailData );
+            if ( emailData instanceof DelegatedRemovalOfMigratedBatchEmailData ) return compare( delegatedRemovalOfMigratedBatchEmail, List.of( "removedUser", "removedBy", "companyName", "to", "subject" ), List.of(), Map.of() ).matches( (DelegatedRemovalOfMigratedBatchEmailData) emailData );
+            return false;
+        };
+    }
+
+    public ArgumentMatcher<EmailData> removalOfOwnMigratedEmailAndBatchMatcher( final String targetUserEmail, final String removedUser, final String confirmedUserEmail, final String removedBy, final String companyName ){
+        final var removalOfOwnMigratedEmail = new RemovalOfOwnMigratedEmailBuilder()
+                .setRecipientEmail( targetUserEmail )
+                .setCompanyName( companyName )
+                .build();
+
+        final var delegatedRemovalOfMigratedBatchEmail = new DelegatedRemovalOfMigratedBatchEmailBuilder()
+                .setRecipientEmail( confirmedUserEmail )
+                .setCompanyName( companyName )
+                .setRemovedBy( removedBy )
+                .setRemovedUser( removedUser )
+                .build();
+
+        return emailData -> {
+            if ( emailData instanceof RemovalOfOwnMigratedEmailData ) return compare( removalOfOwnMigratedEmail, List.of( "companyName", "to", "subject" ), List.of(), Map.of() ).matches( (RemovalOfOwnMigratedEmailData) emailData );
+            if ( emailData instanceof DelegatedRemovalOfMigratedBatchEmailData ) return compare( delegatedRemovalOfMigratedBatchEmail, List.of( "removedUser", "removedBy", "companyName", "to", "subject" ), List.of(), Map.of() ).matches( (DelegatedRemovalOfMigratedBatchEmailData) emailData );
+            return false;
+        };
     }
 
     public ArgumentMatcher<Page<AssociationDao>> associationsPageMatches( final int totalElements, final int totalPages, final int numElementsOnPage, final List<String> expectedAssociationIds ){
