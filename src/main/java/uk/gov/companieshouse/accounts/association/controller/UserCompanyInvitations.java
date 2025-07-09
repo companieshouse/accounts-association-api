@@ -100,10 +100,10 @@ public class UserCompanyInvitations implements UserCompanyInvitationsInterface {
                     return associationsService.createAssociationWithInvitationApprovalRoute( companyNumber, userId, userEmail, getEricIdentity() );
                 } );
 
-        emailService.sendInviteEmail( getXRequestId(), companyDetails, mapToDisplayValue( getUser(), getUser().getEmail() ), targetAssociation.getApprovalExpiryAt().toString(), inviteeEmail ).subscribe();
+        emailService.sendInviteEmail( getXRequestId(), companyDetails.getCompanyNumber(), Mono.just( companyDetails.getCompanyName() ), mapToDisplayValue( getUser(), getUser().getEmail() ), targetAssociation.getApprovalExpiryAt().toString(), inviteeEmail ).subscribe();
         Mono.just( companyNumber )
                 .flatMapMany( associationsService::fetchConfirmedUserIds )
-                .flatMap( emailService.sendInvitationEmailToAssociatedUser( getXRequestId(), companyDetails, mapToDisplayValue( getUser(), getUser().getEmail() ), mapToDisplayValue( inviteeUserDetails, inviteeEmail ) ) )
+                .flatMap( emailService.sendInvitationEmailToAssociatedUser( getXRequestId(), companyDetails.getCompanyNumber(), Mono.just( companyDetails.getCompanyName() ), mapToDisplayValue( getUser(), getUser().getEmail() ), mapToDisplayValue( inviteeUserDetails, inviteeEmail ) ) )
                 .subscribe();
 
         return new ResponseEntity<>( new ResponseBodyPost().associationLink( String.format( "/associations/%s", targetAssociation.getId() ) ), CREATED );
