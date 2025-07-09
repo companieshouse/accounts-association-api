@@ -583,7 +583,7 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndPartialCompanyNumberWhereThrowsNullPointerException(){
+    void fetchAssociationsForUserAndPartialCompanyNumberWhereCompanyNumberIsNullThrowsNullPointerException(){
         Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchAssociationsForUserAndPartialCompanyNumber( null, "ICOMP001", 0, 15 ) );
     }
 
