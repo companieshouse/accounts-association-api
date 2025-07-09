@@ -33,7 +33,7 @@ data "aws_iam_role" "ecs_cluster_iam_role" {
 }
 
 data "aws_lb" "service_lb" {
-  name = "${var.environment}-chs-internalapi"
+  name = "${var.environment}-chs-accountchgovuk"
 }
 
 data "aws_lb_listener" "service_lb_listener" {
