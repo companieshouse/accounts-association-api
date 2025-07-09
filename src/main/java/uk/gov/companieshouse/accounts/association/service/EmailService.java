@@ -107,17 +107,17 @@ public class EmailService {
                 .then();
     }
 
-    public Function<String, Mono<Void>> sendInvitationEmailToAssociatedUser( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String inviteeDisplayName ) {
+    public Function<String, Mono<Void>> sendInvitationEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String inviterDisplayName, final String inviteeDisplayName ) {
         return userId -> Mono.just( userId )
                 .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
                 .map( user -> new InvitationEmailBuilder()
-                        .setCompanyName( companyDetails.getCompanyName() )
                         .setInviteeDisplayName( inviteeDisplayName )
                         .setInviterDisplayName( inviterDisplayName )
-                        .setRecipientEmail( user.getEmail() )
-                        .build() )
+                        .setRecipientEmail( user.getEmail() ) )
+                .zipWith( companyName, InvitationEmailBuilder::setCompanyName )
+                .map( InvitationEmailBuilder::build )
                 .doOnNext( emailData -> {
-                    final var logMessageSupplier = new EmailNotification( INVITATION_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyDetails.getCompanyNumber() );
+                    final var logMessageSupplier = new EmailNotification( INVITATION_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber );
                     sendEmail( xRequestId, INVITATION_MESSAGE_TYPE, emailData, logMessageSupplier ); } )
                 .then();
     }
@@ -151,16 +151,16 @@ public class EmailService {
                 .then();
     }
 
-    public Mono<Void> sendInviteEmail( final String xRequestId, final CompanyDetails companyDetails, final String inviterDisplayName, final String invitationExpiryTimestamp, final String inviteeEmail ){
+    public Mono<Void> sendInviteEmail( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String inviterDisplayName, final String invitationExpiryTimestamp, final String inviteeEmail ){
         return Mono.just( new InviteEmailBuilder()
                         .setRecipientEmail( inviteeEmail )
                         .setInviterDisplayName( inviterDisplayName )
-                        .setCompanyName( companyDetails.getCompanyName() )
                         .setInvitationExpiryTimestamp( invitationExpiryTimestamp )
-                        .setInvitationLink( invitationLink )
-                        .build() )
+                        .setInvitationLink( invitationLink ) )
+                .zipWith( companyName, InviteEmailBuilder::setCompanyName )
+                .map( InviteEmailBuilder::build )
                 .doOnNext( emailData -> {
-                    final var logMessageSupplier = new EmailNotification( INVITE_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyDetails.getCompanyNumber() ).setInvitationExpiryTimestamp( invitationExpiryTimestamp );
+                    final var logMessageSupplier = new EmailNotification( INVITE_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber ).setInvitationExpiryTimestamp( invitationExpiryTimestamp );
                     sendEmail( xRequestId, INVITE_MESSAGE_TYPE, emailData, logMessageSupplier ); } )
                 .then();
     }
@@ -182,12 +182,10 @@ public class EmailService {
                     sendEmail( xRequestId, INVITE_CANCELLED_MESSAGE_TYPE, emailData, logMessageSupplier ); } )
                 .then();
     }
-    public Mono<Void> sendDelegatedRemovalOfMigratedEmail( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String removedBy, final String userId ) {
-        return Mono.just( userId )
-                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
-                .map( user -> new DelegatedRemovalOfMigratedEmailBuilder()
+    public Mono<Void> sendDelegatedRemovalOfMigratedEmail( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String removedBy, final String recipientEmail ) {
+        return Mono.just( new DelegatedRemovalOfMigratedEmailBuilder()
                         .setRemovedBy( removedBy )
-                        .setRecipientEmail( user.getEmail() ) )
+                        .setRecipientEmail( recipientEmail ) )
                 .zipWith( companyName, DelegatedRemovalOfMigratedEmailBuilder::setCompanyName )
                 .map( DelegatedRemovalOfMigratedEmailBuilder::build )
                 .doOnNext( emailData -> {
