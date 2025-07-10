@@ -18,9 +18,15 @@ import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.DELEGATED_REMOVAL_OF_MIGRATED;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.DELEGATED_REMOVAL_OF_MIGRATED_BATCH;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_CANCELLED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_CANCELLED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.REMOVAL_OF_OWN_MIGRATED;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.CONFIRMED;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.UNAUTHORISED;
@@ -739,6 +745,9 @@ class UserCompanyAssociationTest {
         Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation001" );
         Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( any(), any() );
 
+        Mockito.lenient().doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( any(), any(), any(), any(), any() );
+        Mockito.lenient().doReturn( sendEmailMock ).when( emailService ).sendDelegatedRemovalOfMigratedBatchEmail( any(), any(), any(), any(), any() );
+
         mockMvc.perform( patch( "/associations/MKAssociation001"  )
                         .header( "X-Request-Id", "theId123" )
                         .header( "Eric-identity", requestingUserId )
@@ -799,6 +808,110 @@ class UserCompanyAssociationTest {
 
         Mockito.verify( emailService ).sendInviteCancelledEmail( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), any( AssociationDao.class ) );
         Mockito.verify( emailService ).sendInvitationCancelledEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), eq( "homer.simpson@springfield.com" ) );
+    }
+
+    @Test
+    void updateAssociationStatusForIdSendsEmailWhenOneUserRemovesAnotherUsersMigratedAssociation() throws Exception {
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
+
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation001" );
+        Mockito.doReturn( Flux.just( "MKUser002" ) ).when( associationsService ).fetchConfirmedUserIds( "MKCOMP001" );
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendDelegatedRemovalOfMigratedEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), eq( "mario@mushroom.kingdom" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendDelegatedRemovalOfMigratedBatchEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), eq( "Mario" ) );
+
+        mockMvc.perform( patch( "/associations/MKAssociation001" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( emailService ).sendDelegatedRemovalOfMigratedEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), eq( "mario@mushroom.kingdom" ) );
+        Mockito.verify( emailService ).sendDelegatedRemovalOfMigratedBatchEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), eq( "Mario" ) );
+    }
+
+    @Test
+    void updateAssociationStatusForIdSendsEmailWhenOneUserRemovesTheirOwnMigratedAssociation() throws Exception {
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
+
+        mockers.mockUsersServiceFetchUserDetails( "MKUser001", "MKUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation001" );
+        Mockito.doReturn( Flux.just( "MKUser002" ) ).when( associationsService ).fetchConfirmedUserIds( "MKCOMP001" );
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendRemoveOfOwnMigratedEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "MKUser001" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendDelegatedRemovalOfMigratedBatchEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Mario" ), eq( "Mario" ) );
+
+        mockMvc.perform( patch( "/associations/MKAssociation001" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "MKUser001" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"removed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( emailService ).sendRemoveOfOwnMigratedEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "MKUser001" ) );
+        Mockito.verify( emailService ).sendDelegatedRemovalOfMigratedBatchEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Mario" ), eq( "Mario" ) );
+    }
+
+    @Test
+    void updateAssociationStatusForIdSendsEmailWhenOneUserConfirmsAnotherUsersMigratedAssociation() throws Exception {
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
+
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation001" );
+        Mockito.doReturn( Flux.just( "MKUser002" ) ).when( associationsService ).fetchConfirmedUserIds( "MKCOMP001" );
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), anyString(), eq( "luigi@mushroom.kingdom" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), eq( "Mario" ) );
+
+        mockMvc.perform( patch( "/associations/MKAssociation001" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), anyString(), eq( "mario@mushroom.kingdom" ) );
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), eq( "Mario" ) );
+    }
+
+    @Test
+    void updateAssociationStatusForIdSendsEmailWhenAPIKeyConfirmsAnUnauthorisedAssociation() throws Exception {
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation004" ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser004" ).getFirst();
+
+        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation004" );
+        Mockito.doReturn( Flux.just( "MKUser002" ) ).when( associationsService ).fetchConfirmedUserIds( "MKCOMP001" );
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), anyString(), eq( "bowser@mushroom.kingdom" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), eq( "Bowser" ) );
+
+        mockMvc.perform( patch( "/associations/MKAssociation004" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "MKUser002" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), anyString(), eq( "bowser@mushroom.kingdom" ) );
+        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), eq( "Bowser" ) );
     }
 
     @Test
@@ -964,6 +1077,7 @@ class UserCompanyAssociationTest {
         Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation004" );
         Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( targetAssociation );
         Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( any(), any(), any(), any(), any() );
 
         mockMvc.perform( patch( "/associations/MKAssociation004" )
                         .header( "X-Request-Id", "theId123" )
