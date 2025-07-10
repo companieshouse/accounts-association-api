@@ -18,6 +18,12 @@ public enum MessageType {
 
     INVITE_MESSAGE_TYPE( "associations_invite" ),
 
+    DELEGATED_REMOVAL_OF_MIGRATED_BATCH( "associations_delegated_removal_of_migrated_batch" ),
+
+    DELEGATED_REMOVAL_OF_MIGRATED( "associations_delegated_removal_of_migrated" ),
+
+    REMOVAL_OF_OWN_MIGRATED( "associations_removal_of_own_migrated" ),
+
     INVITE_CANCELLED_MESSAGE_TYPE( "associations_invite_cancelled" );
 
     private final String value;
