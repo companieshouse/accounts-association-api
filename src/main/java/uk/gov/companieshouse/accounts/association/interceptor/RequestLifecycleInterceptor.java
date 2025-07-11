@@ -1,11 +1,12 @@
 package uk.gov.companieshouse.accounts.association.interceptor;
 
+import static uk.gov.companieshouse.accounts.association.models.Constants.KEY;
 import static uk.gov.companieshouse.accounts.association.models.Constants.X_REQUEST_ID;
 import static uk.gov.companieshouse.accounts.association.models.context.RequestContext.setRequestContext;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY;
+import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY_TYPE;
 import static uk.gov.companieshouse.api.util.security.RequestUtils.getRequestHeader;
-import static org.springframework.http.HttpMethod.PATCH;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,11 +21,11 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.logging.util.RequestLogger;
 
 @Component
-public class OAuth2RequestLifecycleInterceptor implements HandlerInterceptor, RequestLogger {
+public class RequestLifecycleInterceptor implements HandlerInterceptor, RequestLogger {
 
     private final UsersService usersService;
 
-    public OAuth2RequestLifecycleInterceptor( final UsersService usersService ) {
+    public RequestLifecycleInterceptor( final UsersService usersService ) {
         this.usersService = usersService;
     }
 
@@ -40,8 +41,15 @@ public class OAuth2RequestLifecycleInterceptor implements HandlerInterceptor, Re
         setRequestContext( requestContextData );
     }
 
-    protected boolean preHandleOAuth2Request( final HttpServletRequest request, final HttpServletResponse response ){
+    @Override
+    public boolean preHandle( final HttpServletRequest request, final HttpServletResponse response, final Object handler ) {
         logStartRequestProcessing( request, LOGGER );
+
+        if ( KEY.equalsIgnoreCase( getRequestHeader( request, ERIC_IDENTITY_TYPE ) ) ) {
+            setupRequestContext( request, null );
+            return true;
+        }
+
         try {
             final var user = usersService.fetchUserDetails( getRequestHeader( request, ERIC_IDENTITY ), getRequestHeader( request, X_REQUEST_ID ) );
             setupRequestContext( request, user );
@@ -51,14 +59,6 @@ public class OAuth2RequestLifecycleInterceptor implements HandlerInterceptor, Re
             response.setStatus( 403 );
             return false;
         }
-    }
-
-    @Override
-    public boolean preHandle( final HttpServletRequest request, final HttpServletResponse response, final Object handler ) {
-        if ( PATCH.name().equalsIgnoreCase( request.getMethod() ) ){
-            return true;
-        }
-        return preHandleOAuth2Request( request, response );
     }
 
     @Override

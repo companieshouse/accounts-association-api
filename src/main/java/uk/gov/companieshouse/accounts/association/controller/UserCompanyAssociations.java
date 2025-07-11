@@ -42,6 +42,22 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         this.emailService = emailService;
     }
 
+     /**
+     This endpoint is called when a user uses the auth_code to add themselves to a company.
+     For auditing purposes, when a user removes themselves from a company, the API changes the user's
+     association status to "removed" instead of actually deleting it. Thus, even though the association
+     does not exist conceptually, it might actually exist in a removed state. The frontend should not need
+     to be aware of this nuance and so should call this endpoint when a user uses the auth_code to add themselves.
+     To that end, this endpoint implements an upsert.
+
+     Using upsert also allows us to differentiate between various nuanced scenarios. For example, suppose that
+     a user has an association in an awaiting-approval state i.e. they have an invitation. If they change the state
+     to confirmed via PATCH /associations/{id}, then this would be interpreted as accepting an invitation.
+     On the other hand if they change their status to confirmed via this endpoint, then this will be interpreted as
+     using the auth_code to add themselves. This allows us to accurately account for edge cases where the user might
+     have been invited to a company, but decided to use the auth_code to add themselves, instead of accepting the
+     invitation.
+     */
     @Override
     public ResponseEntity<ResponseBodyPost> addAssociation( final RequestBodyPost requestBody ) {
         final var companyNumber = requestBody.getCompanyNumber();

@@ -389,66 +389,6 @@ class AssociationsListForCompanyControllerTest {
     }
 
     @Test
-    void getAssociationsForCompanyWithEmailReturnsData() throws Exception {
-        final var user = testDataManager.fetchUserDtos( "MiUser002" ).getFirst();
-
-        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation001", "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
-
-        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
-        Mockito.doReturn( user ).when( usersService ).retrieveUserDetails( null, "lechuck.monkey.island@inugami-example.com" );
-        mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
-        mockers.mockUsersServiceFetchUserDetails( "MiUser002" );
-
-        final var response = mockMvc
-                .perform( get( "/associations/companies/MICOMP001" )
-                        .header("X-Request-Id", "theId123" )
-                        .header( "ERIC-Identity", "MiUser001" )
-                        .header( "ERIC-Identity-Type", "oauth2" )
-                        .header( "user_email", "lechuck.monkey.island@inugami-example.com" ) )
-                .andExpect( status().isOk() );
-
-        final var associationsList = parseResponseTo( response, AssociationsList.class );
-
-        Assertions.assertEquals( 1, associationsList.getItems().size() );
-        Assertions.assertEquals( "MiAssociation002", associationsList.getItems().getFirst().getId() );
-    }
-
-    @Test
-    void getAssociationsForCompanyWithNonexistentUserReturnsEmptyList() throws Exception {
-        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation001", "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
-
-        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
-        mockers.mockUsersServiceSearchUserDetailsEmptyList( "MiUser002" );
-        mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
-
-        final var response = mockMvc
-                .perform( get( "/associations/companies/MICOMP001" )
-                        .header("X-Request-Id", "theId123" )
-                        .header( "ERIC-Identity", "MiUser001" )
-                        .header( "ERIC-Identity-Type", "oauth2" )
-                        .header( "user_email", "lechuck.monkey.island@inugami-example.com" ) )
-                .andExpect( status().isOk() );
-
-        final var associationsList = parseResponseTo( response, AssociationsList.class );
-
-        Assertions.assertTrue( associationsList.getItems().isEmpty() );
-    }
-
-    @Test
-    void getAssociationsForCompanyWithMalformedEmailReturnsBadRequest() throws Exception {
-        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
-
-        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
-
-        mockMvc.perform( get( "/associations/companies/MICOMP001" )
-                        .header("X-Request-Id", "theId123" )
-                        .header( "ERIC-Identity", "MiUser001" )
-                        .header( "ERIC-Identity-Type", "oauth2" )
-                        .header( "user_email", "$$$@inugami-example.com" ) )
-                .andExpect( status().isBadRequest() );
-    }
-
-    @Test
     void getAssociationsForCompanyWithAPIKeyCanFetchUnauthorised() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation004" ) );
 
@@ -511,7 +451,7 @@ class AssociationsListForCompanyControllerTest {
     void getAssociationsForCompanyWithNonExistentUserIdReturnsNotFound() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation004" ) );
 
-        Mockito.doThrow( new NotFoundRuntimeException( "not found", new Exception() ) ).when( usersService ).retrieveUserDetails( "MKUser2", null );
+        Mockito.doThrow( new NotFoundRuntimeException( "not found", new Exception() ) ).when( usersService ).fetchUserDetails( "MKUser2", "theId123" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
 
         mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser2" )
