@@ -6,6 +6,7 @@ import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToConfirmedUpdate;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToInvitationUpdate;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToRemovedUpdate;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToUnauthorisedUpdate;
 
 import java.util.Set;
 import org.bson.Document;
@@ -103,18 +104,29 @@ class AssociationsUtilTest {
     }
 
     @Test
+    void mapToUnauthorisedUpdateCarriesOutUpdateCorrectly(){
+        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
+        final var update = mapToUnauthorisedUpdate( targetAssociation, targetUser );
+        final var documentSet = update.getUpdateObject().get( "$set", Document.class );
+        Assertions.assertEquals( "unauthorised", documentSet.get( "status" ) );
+        Assertions.assertNotNull( documentSet.get( "unauthorised_at" ) );
+        Assertions.assertEquals( "Companies House", documentSet.get( "unauthorised_by" ) );
+    }
+
+    @Test
     void fetchAllStatusesWithoutWithNullThrowsNullPointerException(){
         Assertions.assertThrows( NullPointerException.class, () -> fetchAllStatusesWithout( null ) );
     }
 
     @Test
     void fetchAllStatusesWithoutWithEmptyListRetrievesAllStatuses(){
-        Assertions.assertEquals( 4, fetchAllStatusesWithout( Set.of() ).size() );
+        Assertions.assertEquals( 5, fetchAllStatusesWithout( Set.of() ).size() );
     }
 
     @Test
     void fetchAllStatusesWithoutRetrievesSpecifiedStatuses(){
-        final var statuses = fetchAllStatusesWithout( Set.of( StatusEnum.CONFIRMED, StatusEnum.REMOVED, StatusEnum.AWAITING_APPROVAL ) );
+        final var statuses = fetchAllStatusesWithout( Set.of( StatusEnum.CONFIRMED, StatusEnum.REMOVED, StatusEnum.AWAITING_APPROVAL, StatusEnum.UNAUTHORISED ) );
         Assertions.assertEquals( 1, statuses.size() );
         Assertions.assertTrue(  statuses.contains( StatusEnum.MIGRATED ) );
     }

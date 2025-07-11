@@ -1,9 +1,11 @@
 package uk.gov.companieshouse.accounts.association.interceptor;
 
+import static uk.gov.companieshouse.accounts.association.models.Constants.KEY;
 import static uk.gov.companieshouse.accounts.association.models.Constants.X_REQUEST_ID;
 import static uk.gov.companieshouse.accounts.association.models.context.RequestContext.setRequestContext;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY;
+import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY_TYPE;
 import static uk.gov.companieshouse.api.util.security.RequestUtils.getRequestHeader;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,7 +29,7 @@ public class RequestLifecycleInterceptor implements HandlerInterceptor, RequestL
         this.usersService = usersService;
     }
 
-    private void setupRequestContext( final HttpServletRequest request, final User user ){
+    protected void setupRequestContext( final HttpServletRequest request, final User user ){
         final var requestContextData = new RequestContextDataBuilder()
                 .setXRequestId( request )
                 .setEricIdentity( request )
@@ -42,6 +44,12 @@ public class RequestLifecycleInterceptor implements HandlerInterceptor, RequestL
     @Override
     public boolean preHandle( final HttpServletRequest request, final HttpServletResponse response, final Object handler ) {
         logStartRequestProcessing( request, LOGGER );
+
+        if ( KEY.equalsIgnoreCase( getRequestHeader( request, ERIC_IDENTITY_TYPE ) ) ) {
+            setupRequestContext( request, null );
+            return true;
+        }
+
         try {
             final var user = usersService.fetchUserDetails( getRequestHeader( request, ERIC_IDENTITY ), getRequestHeader( request, X_REQUEST_ID ) );
             setupRequestContext( request, user );

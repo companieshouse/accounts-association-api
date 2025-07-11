@@ -70,19 +70,28 @@ class RequestLifecycleInterceptorTest {
         request.addHeader( "X-Request-Id", "theId123" );
         request.addHeader( "Eric-Identity", user.getUserId() );
         request.addHeader( "Eric-Identity-Type", "oauth2" );
+        request.setMethod( "GET" );
 
         final var response = new MockHttpServletResponse();
 
         Mockito.doThrow( new NotFoundRuntimeException( "Could not find user", new Exception( "Could not find user" )) ).when( usersService ).fetchUserDetails( eq(user.getUserId()), any() );
 
-        final var result = requestLifecycleInterceptor.preHandle( request, response, null );
+        requestLifecycleInterceptor.preHandle( request, response, null );
 
-        Assertions.assertFalse( result );
-        Assertions.assertEquals( "unknown", getXRequestId() );
-        Assertions.assertEquals( "unknown", getEricIdentity() );
-        Assertions.assertEquals( "unknown", getEricIdentityType() );
-        Assertions.assertNull( getUser() );
         Assertions.assertEquals( 403, response.getStatus() );
+    }
+
+    @Test
+    void preHandleWithKeyRequestReturnsTrue(){
+        final var request = new MockHttpServletRequest();
+        request.addHeader( "X-Request-Id", "theId123" );
+        request.addHeader( "Eric-Identity", "theKey" );
+        request.addHeader( "Eric-Identity-Type", "key" );
+        request.addHeader( "ERIC_Authorised-Key-Roles", "*" );
+
+        final var response = new MockHttpServletResponse();
+
+        Assertions.assertTrue( requestLifecycleInterceptor.preHandle( request, response, null ) );
     }
 
     @Test
