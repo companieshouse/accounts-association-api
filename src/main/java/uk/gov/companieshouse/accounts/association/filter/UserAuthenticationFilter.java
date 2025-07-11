@@ -2,12 +2,14 @@ package uk.gov.companieshouse.accounts.association.filter;
 
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
+import static uk.gov.companieshouse.accounts.association.models.Constants.KEY;
 import static uk.gov.companieshouse.accounts.association.models.Constants.OAUTH2;
 import static uk.gov.companieshouse.accounts.association.models.Constants.UNKNOWN;
 import static uk.gov.companieshouse.accounts.association.models.Constants.X_REQUEST_ID;
 import static uk.gov.companieshouse.accounts.association.models.SpringRole.ADMIN_READ_ROLE;
 import static uk.gov.companieshouse.accounts.association.models.SpringRole.ADMIN_UPDATE_ROLE;
 import static uk.gov.companieshouse.accounts.association.models.SpringRole.BASIC_OAUTH_ROLE;
+import static uk.gov.companieshouse.accounts.association.models.SpringRole.KEY_ROLE;
 import static uk.gov.companieshouse.accounts.association.models.SpringRole.UNKNOWN_ROLE;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.api.util.security.RequestUtils.getRequestHeader;
@@ -33,6 +35,7 @@ public class UserAuthenticationFilter extends OncePerRequestFilter {
                 .setXRequestId( request )
                 .setEricIdentity( request )
                 .setEricIdentityType( request )
+                .setEricAuthorisedKeyRoles( request )
                 .setAdminPrivileges( request )
                 .build();
     }
@@ -41,7 +44,16 @@ public class UserAuthenticationFilter extends OncePerRequestFilter {
         return !requestContextData.getEricIdentity().equals( UNKNOWN ) && requestContextData.getEricIdentityType().equals( OAUTH2 );
     }
 
+    private boolean isValidAPIKeyRequest( final RequestContextData requestContextData ) {
+        return !requestContextData.getEricIdentity().equals( UNKNOWN ) && requestContextData.getEricIdentityType().equals( KEY ) && requestContextData.getEricAuthorisedKeyRoles().equals( "*" );
+    }
+
     private Set<SpringRole> computeSpringRole( final RequestContextData requestContextData ){
+        LOGGER.debugContext( requestContextData.getXRequestId(), "Checking if this is a valid API Key Request...", null );
+        if ( isValidAPIKeyRequest( requestContextData ) ) {
+            return Set.of( KEY_ROLE );
+        }
+
         LOGGER.debugContext( requestContextData.getXRequestId(), "Checking if this is a valid OAuth2 Request...", null );
         if ( !isValidOAuth2Request( requestContextData ) ) {
             return Set.of( UNKNOWN_ROLE );

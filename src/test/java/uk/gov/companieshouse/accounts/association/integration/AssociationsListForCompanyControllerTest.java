@@ -1,6 +1,5 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
-import java.io.IOException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -13,7 +12,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
-import uk.gov.companieshouse.accounts.association.configuration.InterceptorConfig;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
@@ -34,6 +33,7 @@ import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.loc
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.UNAUTHORISED;
 
 @AutoConfigureMockMvc
 @SpringBootTest
@@ -389,61 +389,77 @@ class AssociationsListForCompanyControllerTest {
     }
 
     @Test
-    void getAssociationsForCompanyWithEmailReturnsData() throws Exception {
-        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation001", "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
+    void getAssociationsForCompanyWithAPIKeyCanFetchUnauthorised() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation004" ) );
 
-        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
-        mockers.mockUsersServiceSearchUserDetails( "MiUser002" );
-        mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
-        mockers.mockUsersServiceFetchUserDetails( "MiUser002" );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser004" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
 
-        final var response = mockMvc
-                .perform( get( "/associations/companies/MICOMP001" )
+        final var response = mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser004" )
                         .header("X-Request-Id", "theId123" )
                         .header( "ERIC-Identity", "MiUser001" )
-                        .header( "ERIC-Identity-Type", "oauth2" )
-                        .header( "user_email", "lechuck.monkey.island@inugami-example.com" ) )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" ) )
                 .andExpect( status().isOk() );
 
-        final var associationsList = parseResponseTo( response, AssociationsList.class );
+        final var association = parseResponseTo( response, AssociationsList.class ).getItems().getFirst();
 
-        Assertions.assertEquals( 1, associationsList.getItems().size() );
-        Assertions.assertEquals( "MiAssociation002", associationsList.getItems().getFirst().getId() );
+        Assertions.assertEquals( UNAUTHORISED.getValue(), association.getStatus().getValue() );
+        Assertions.assertEquals( "MKAssociation004", association.getId() );
+        Assertions.assertNotNull( association.getUnauthorisedAt() );
     }
 
     @Test
-    void getAssociationsForCompanyWithNonexistentUserReturnsEmptyList() throws Exception {
-        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation001", "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
+    void getAssociationsForCompanyWithAPIKeyAndUserEmailCanFetchUnauthorised() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation004" ) );
 
-        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
-        mockers.mockUsersServiceSearchUserDetailsEmptyList( "MiUser002" );
-        mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser004" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
 
-        final var response = mockMvc
-                .perform( get( "/associations/companies/MICOMP001" )
+        final var response = mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser004" )
                         .header("X-Request-Id", "theId123" )
                         .header( "ERIC-Identity", "MiUser001" )
-                        .header( "ERIC-Identity-Type", "oauth2" )
-                        .header( "user_email", "lechuck.monkey.island@inugami-example.com" ) )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "user_email", "bowser@mushroom.kingdom" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" ) )
                 .andExpect( status().isOk() );
 
-        final var associationsList = parseResponseTo( response, AssociationsList.class );
+        final var association = parseResponseTo( response, AssociationsList.class ).getItems().getFirst();
 
-        Assertions.assertTrue( associationsList.getItems().isEmpty() );
+        Assertions.assertEquals( UNAUTHORISED.getValue(), association.getStatus().getValue() );
+        Assertions.assertEquals( "MKAssociation004", association.getId() );
+        Assertions.assertNotNull( association.getUnauthorisedAt() );
     }
 
     @Test
-    void getAssociationsForCompanyWithMalformedEmailReturnsBadRequest() throws Exception {
-        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation004", "MiAssociation006", "MiAssociation009", "MiAssociation033" ) );
+    void getAssociationsForCompanyWithMalformedUserId() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation004" ) );
 
-        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser004" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
 
-        mockMvc.perform( get( "/associations/companies/MICOMP001" )
+       mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=???" )
                         .header("X-Request-Id", "theId123" )
                         .header( "ERIC-Identity", "MiUser001" )
-                        .header( "ERIC-Identity-Type", "oauth2" )
-                        .header( "user_email", "$$$@inugami-example.com" ) )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "user_email", "bowser@mushroom.kingdom" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" ) )
                 .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void getAssociationsForCompanyWithNonExistentUserIdReturnsNotFound() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation004" ) );
+
+        Mockito.doThrow( new NotFoundRuntimeException( "not found", new Exception() ) ).when( usersService ).fetchUserDetails( "MKUser2", "theId123" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+
+        mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser2" )
+                        .header("X-Request-Id", "theId123" )
+                        .header( "ERIC-Identity", "MiUser001" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" ) )
+                .andExpect( status().isNotFound() );
     }
 
     @AfterEach

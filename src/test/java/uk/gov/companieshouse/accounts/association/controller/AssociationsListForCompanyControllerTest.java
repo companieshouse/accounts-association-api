@@ -22,6 +22,7 @@ import org.springframework.web.context.WebApplicationContext;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfig;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -45,6 +46,7 @@ import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.CONFIRMED;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.UNAUTHORISED;
 
 @AutoConfigureMockMvc
 @WebMvcTest(AssociationsListForCompanyController.class)
@@ -411,68 +413,57 @@ class AssociationsListForCompanyControllerTest {
     }
 
     @Test
-    void getAssociationsForCompanyWithEmailReturnsData() throws Exception {
-        final var companyProfile = testDataManager.fetchCompanyDetailsDtos( "MICOMP001" ).getFirst();
-        final var user = testDataManager.fetchUserDtos( "MiUser002" ).getFirst();
-        final var association = testDataManager.fetchAssociationDto( "MiAssociation002", user );
+    void getAssociationsForCompanyWithAPIKeyCanFetchUnauthorised() throws Exception {
+        final var companyProfile = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+        final var user = testDataManager.fetchUserDtos( "MKUser004" ).getFirst();
+        final var association = testDataManager.fetchAssociationDto( "MKAssociation004", user );
         final var expectedList = new AssociationsList();
         expectedList.addItemsItem( association );
 
-        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
-        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MICOMP001", "MiUser001" );
-        mockers.mockUsersServiceSearchUserDetails( "MiUser002" );
-        mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
-        Mockito.doReturn( expectedList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED ), "MiUser002", "lechuck.monkey.island@inugami-example.com", 0, 15 );
+        Mockito.doReturn( false ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MiUser001" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( expectedList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED, UNAUTHORISED ), "MKUser004", null, 0, 15 );
 
-        final var response = mockMvc
-                .perform( get( "/associations/companies/MICOMP001" )
+        final var response = mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser004" )
                         .header("X-Request-Id", "theId123" )
                         .header( "ERIC-Identity", "MiUser001" )
-                        .header( "ERIC-Identity-Type", "oauth2" )
-                        .header( "user_email", "lechuck.monkey.island@inugami-example.com" ) )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" ) )
                 .andExpect( status().isOk() );
 
-        final var associationsList = parseResponseTo( response, AssociationsList.class );
+        final var result = parseResponseTo( response, AssociationsList.class ).getItems().getFirst();
 
-        Assertions.assertEquals( 1, associationsList.getItems().size() );
-        Assertions.assertEquals( "MiAssociation002", associationsList.getItems().getFirst().getId() );
+        Assertions.assertEquals( PreviousState.StatusEnum.UNAUTHORISED.getValue(), result.getStatus().getValue() );
+        Assertions.assertEquals( "MKAssociation004", result.getId() );
+        Assertions.assertNotNull( result.getUnauthorisedAt() );
     }
 
     @Test
-    void getAssociationsForCompanyWithNonexistentUserReturnsEmptyList() throws Exception {
-        final var companyProfile = testDataManager.fetchCompanyDetailsDtos( "MICOMP001" ).getFirst();
-        final var expectedList = new AssociationsList();
-        expectedList.setItems( List.of() );
-
-        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
-        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MICOMP001", "MiUser001" );
-        mockers.mockUsersServiceSearchUserDetailsEmptyList( "MiUser002" );
-        mockers.mockCompanyServiceFetchCompanyProfile( "MICOMP001" );
-        Mockito.doReturn( expectedList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED ), null, "lechuck.monkey.island@inugami-example.com", 0, 15 );
-
-        final var response = mockMvc
-                .perform( get( "/associations/companies/MICOMP001" )
+    void getAssociationsForCompanyWithMalformedUserId() throws Exception {
+        mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=???" )
                         .header("X-Request-Id", "theId123" )
                         .header( "ERIC-Identity", "MiUser001" )
-                        .header( "ERIC-Identity-Type", "oauth2" )
-                        .header( "user_email", "lechuck.monkey.island@inugami-example.com" ) )
-                .andExpect( status().isOk() );
-
-        final var associationsList = parseResponseTo( response, AssociationsList.class );
-
-        Assertions.assertTrue( associationsList.getItems().isEmpty() );
-    }
-
-    @Test
-    void getAssociationsForCompanyWithMalformedEmailReturnsBadRequest() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails( "MiUser001" );
-
-        mockMvc.perform( get( "/associations/companies/MICOMP001" )
-                        .header("X-Request-Id", "theId123" )
-                        .header( "ERIC-Identity", "MiUser001" )
-                        .header( "ERIC-Identity-Type", "oauth2" )
-                        .header( "user_email", "$$$@inugami-example.com" ) )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "user_email", "bowser@mushroom.kingdom" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" ) )
                 .andExpect( status().isBadRequest() );
+    }
+
+    @Test
+    void getAssociationsForCompanyWithNonExistentUserIdReturnsNotFound() throws Exception {
+        final var companyProfile = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+
+        Mockito.doReturn( false ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MiUser001" );
+        Mockito.doThrow( new NotFoundRuntimeException( "not found", new Exception() ) ).when( usersService ).fetchUserDetails( "MKUser2", "theId123" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( new AssociationsList().items( List.of() ) ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, Set.of( CONFIRMED, AWAITING_APPROVAL, MIGRATED, UNAUTHORISED ), "MKUser2", null, 0, 15 );
+
+        mockMvc.perform( get( "/associations/companies/MKCOMP001?user_id=MKUser2" )
+                        .header("X-Request-Id", "theId123" )
+                        .header( "ERIC-Identity", "MiUser001" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" ) )
+                .andExpect( status().isNotFound() );
     }
 
 }
