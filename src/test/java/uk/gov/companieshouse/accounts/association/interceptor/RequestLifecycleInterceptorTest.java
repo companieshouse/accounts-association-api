@@ -33,7 +33,7 @@ class RequestLifecycleInterceptorTest {
     private UsersService usersService;
 
     @InjectMocks
-    private OAuth2RequestLifecycleInterceptor requestLifecycleInterceptor;
+    private RequestLifecycleInterceptor requestLifecycleInterceptor;
 
     private final TestDataManager testDataManager = TestDataManager.getInstance();
 
@@ -79,6 +79,19 @@ class RequestLifecycleInterceptorTest {
         requestLifecycleInterceptor.preHandle( request, response, null );
 
         Assertions.assertEquals( 403, response.getStatus() );
+    }
+
+    @Test
+    void preHandleWithKeyRequestReturnsTrue(){
+        final var request = new MockHttpServletRequest();
+        request.addHeader( "X-Request-Id", "theId123" );
+        request.addHeader( "Eric-Identity", "theKey" );
+        request.addHeader( "Eric-Identity-Type", "key" );
+        request.addHeader( "ERIC_Authorised-Key-Roles", "*" );
+
+        final var response = new MockHttpServletResponse();
+
+        Assertions.assertTrue( requestLifecycleInterceptor.preHandle( request, response, null ) );
     }
 
     @Test

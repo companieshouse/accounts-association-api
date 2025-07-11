@@ -43,6 +43,7 @@ import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.FetchRequestBodyPost;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
@@ -70,6 +71,24 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
         return associationsService.fetchAssociationDto( associationId )
                 .map( association -> new ResponseEntity<>( association, OK ) )
                 .orElseThrow( () -> new NotFoundRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Cannot find Association for the id: %s" ) ) );
+    }
+
+    @Override
+    public ResponseEntity<Association> getAssociationsForCompanyAndUserEmail( final String companyNumber, final FetchRequestBodyPost requestBody ) {
+        // TODO: will be implemented in ticket SIV-456
+
+        /*
+        1. Add new entry to WebSecurityConfig. This endpoint will support OAUTH2 and KEY
+        2. The basic validation checks (company_number is provided and wellformed, and user_email is provided and wellformed) are already implemented in the interface
+        3. If this is an OAUTH2 request -> check if a confirmed association exists between the requesting user and companyNumber. Return 403 if it does not exist
+        4. Call accounts-user-api to fetch user for user_email.
+        5. If the user was found by the accounts-user-api, then we will use the user_id of this user in the query. Otherwise we will use null.
+        6. Query MongoDB to fetch associations for user_id/user_email and company_number i.e. where (the userId OR userEmail match) AND companyNumber matches
+        7. Apply Mapper
+        8. Return
+         */
+
+        return null;
     }
 
     @Override
@@ -179,24 +198,32 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
                 .map( user -> Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() ) )
                 .cache();
 
+        final var isRejectingInvitation = isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
+        final var authorisationIsBeingRemoved = oldStatus.equals( CONFIRMED.getValue() ) && newStatus.equals( REMOVED );
+        final var isAcceptingInvitation = isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( CONFIRMED );
+        final var isCancellingAnotherUsersInvitation = !isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
+        final var isRemovingAnotherUsersMigratedAssociation = !isRequestingUser( targetAssociation ) && oldStatus.equals( MIGRATED.getValue() ) && newStatus.equals( REMOVED );
+        final var isRemovingOwnMigratedAssociation = isRequestingUser( targetAssociation ) && oldStatus.equals( MIGRATED.getValue() ) && newStatus.equals( REMOVED );
+        final var isInvitingUser = !isRequestingUser( targetAssociation ) && ( oldStatus.equals( MIGRATED.getValue() ) || oldStatus.equals( UNAUTHORISED.getValue() ) && newStatus.equals( CONFIRMED ) );
+
         var emails = Flux.empty();
-        if ( isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED ) ) {
+        if ( isRejectingInvitation ) {
             emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationRejectedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue ) ) );
-        } else if ( oldStatus.equals( CONFIRMED.getValue() ) && newStatus.equals( REMOVED ) ) {
+        } else if ( authorisationIsBeingRemoved ) {
             emails = emails.concatWith( emailService.sendAuthorisationRemovedEmailToRemovedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation.getUserId() ) );
             emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendAuthorisationRemovedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-        } else if ( isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( CONFIRMED ) ) {
+        } else if ( isAcceptingInvitation ) {
             emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationAcceptedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, cachedInvitedByDisplayName, requestingUserDisplayValue ) ) );
-        } else if ( !isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED ) ) {
+        } else if ( isCancellingAnotherUsersInvitation ) {
             emails = emails.concatWith( emailService.sendInviteCancelledEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation ) );
             emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationCancelledEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-        } else if ( !isRequestingUser( targetAssociation ) && oldStatus.equals( MIGRATED.getValue() ) && newStatus.equals( REMOVED ) ) {
+        } else if ( isRemovingAnotherUsersMigratedAssociation ) {
             emails = emails.concatWith( emailService.sendDelegatedRemovalOfMigratedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserEmail ) );
             emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendDelegatedRemovalOfMigratedBatchEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-        } else if ( isRequestingUser( targetAssociation ) && oldStatus.equals( MIGRATED.getValue() ) && newStatus.equals( REMOVED ) ) {
+        } else if ( isRemovingOwnMigratedAssociation ) {
             emails = emails.concatWith( emailService.sendRemoveOfOwnMigratedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, getEricIdentity() ) );
             emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendDelegatedRemovalOfMigratedBatchEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-        } else if ( !isRequestingUser( targetAssociation ) && ( oldStatus.equals( MIGRATED.getValue() ) || oldStatus.equals( UNAUTHORISED.getValue() ) && newStatus.equals( CONFIRMED ) ) ) {
+        } else if ( isInvitingUser ) {
             final var invitationExpiryTimestamp = LocalDateTime.now().plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ).toString();
             emails = emails.concatWith( emailService.sendInviteEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, invitationExpiryTimestamp, targetUserEmail ) );
             emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
