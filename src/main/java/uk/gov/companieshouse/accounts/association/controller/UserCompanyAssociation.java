@@ -43,7 +43,6 @@ import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.FetchRequestBodyPost;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
@@ -71,24 +70,6 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
         return associationsService.fetchAssociationDto( associationId )
                 .map( association -> new ResponseEntity<>( association, OK ) )
                 .orElseThrow( () -> new NotFoundRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Cannot find Association for the id: %s" ) ) );
-    }
-
-    @Override
-    public ResponseEntity<Association> getAssociationsForCompanyAndUserEmail( final String companyNumber, final FetchRequestBodyPost requestBody ) {
-        // TODO: will be implemented in ticket SIV-456
-
-        /*
-        1. Add new entry to WebSecurityConfig. This endpoint will support OAUTH2 and KEY
-        2. The basic validation checks (company_number is provided and wellformed, and user_email is provided and wellformed) are already implemented in the interface
-        3. If this is an OAUTH2 request -> check if a confirmed association exists between the requesting user and companyNumber. Return 403 if it does not exist
-        4. Call accounts-user-api to fetch user for user_email.
-        5. If the user was found by the accounts-user-api, then we will use the user_id of this user in the query. Otherwise we will use null.
-        6. Query MongoDB to fetch associations for user_id/user_email and company_number i.e. where (the userId OR userEmail match) AND companyNumber matches
-        7. Apply Mapper
-        8. Return
-         */
-
-        return null;
     }
 
     @Override

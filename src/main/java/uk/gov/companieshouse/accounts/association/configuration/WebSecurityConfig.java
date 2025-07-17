@@ -2,6 +2,7 @@ package uk.gov.companieshouse.accounts.association.configuration;
 
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.PATCH;
+import static org.springframework.http.HttpMethod.POST;
 import static uk.gov.companieshouse.accounts.association.models.SpringRole.ADMIN_READ_ROLE;
 import static uk.gov.companieshouse.accounts.association.models.SpringRole.ADMIN_UPDATE_ROLE;
 import static uk.gov.companieshouse.accounts.association.models.SpringRole.BASIC_OAUTH_ROLE;
@@ -36,11 +37,12 @@ public class WebSecurityConfig {
                 .addFilterAfter( new UserAuthenticationFilter(), CsrfFilter.class )
                 .authorizeHttpRequests( request -> request
                         .requestMatchers( GET, "/associations-api/healthcheck" ).permitAll()
-                        .requestMatchers("/associations" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE ) )
+                        .requestMatchers( GET,"/associations" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE ) )
+                        .requestMatchers( POST,"/associations" ).hasAnyRole( getValues( KEY_ROLE ) )
                         .requestMatchers("/associations/invitations" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE ) )
                         .requestMatchers( GET,"/associations/*/invitations" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE ) )
                         .requestMatchers( GET,"/associations/*" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_READ_ROLE ) )
-                        .requestMatchers( GET,"/associations/companies/*" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_READ_ROLE, KEY_ROLE ) )
+                        .requestMatchers( GET,"/associations/companies/*" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE ) )
                         .requestMatchers( GET,"/associations/*/previous-states" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_READ_ROLE ) )
                         .requestMatchers( PATCH,"/associations/*" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_UPDATE_ROLE, KEY_ROLE ) )
                         .anyRequest().denyAll()
