@@ -1,12 +1,10 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
 import static org.springframework.http.HttpStatus.OK;
-import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 
-import java.util.Optional;
 import java.util.Set;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,50 +12,49 @@ import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeEx
 import uk.gov.companieshouse.accounts.association.exceptions.ForbiddenRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
-import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.api.accounts.associations.api.AssociationsListForCompanyInterface;
+import uk.gov.companieshouse.api.accounts.associations.api.AssociationDataForCompanyInterface;
+import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
-import uk.gov.companieshouse.api.accounts.user.model.User;
+import uk.gov.companieshouse.api.accounts.associations.model.FetchRequestBodyPost;
 
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.*;
 
 @RestController
-public class AssociationsListForCompanyController implements AssociationsListForCompanyInterface {
+public class AssociationsListForCompanyController implements AssociationDataForCompanyInterface {
 
     private final CompanyService companyService;
     private final AssociationsService associationsService;
-    private final UsersService usersService;
 
-    public AssociationsListForCompanyController(final CompanyService companyService, final AssociationsService associationsService, final UsersService usersService) {
+    public AssociationsListForCompanyController( final CompanyService companyService, final AssociationsService associationsService ) {
         this.companyService = companyService;
         this.associationsService = associationsService;
-        this.usersService = usersService;
     }
 
     @Override
-    public ResponseEntity<AssociationsList> getAssociationsForCompany( final String companyNumber, final Boolean includeRemoved, final String userId, final Integer pageIndex, final Integer itemsPerPage ) {
+    public ResponseEntity<AssociationsList> getAssociationsForCompany( final String companyNumber, final Boolean includeRemoved, final Integer pageIndex, final Integer itemsPerPage ) {
         LOGGER.infoContext( getXRequestId(), String.format( "Received request with company_number=%s, includeRemoved=%b, itemsPerPage=%d, pageIndex=%d.", companyNumber, includeRemoved, itemsPerPage, pageIndex ),null );
 
         if ( pageIndex < 0 || itemsPerPage <= 0 ){
             throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
         }
 
-        if ( isOAuth2Request() && !associationsService.confirmedAssociationExists( companyNumber, getEricIdentity() ) && !hasAdminPrivilege( ADMIN_READ_PERMISSION ) ){
+        if ( !associationsService.confirmedAssociationExists( companyNumber, getEricIdentity() ) ){
             throw new ForbiddenRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user is not permitted to retrieve data." ) );
         }
 
-        final var userEmail = Optional.ofNullable( userId )
-                .map( user -> usersService.fetchUserDetails( user, getXRequestId() ) )
-                .map( User::getEmail )
-                .orElse( null );
-
         final var companyProfile = companyService.fetchCompanyProfile( companyNumber );
         final var statuses = includeRemoved ? fetchAllStatusesWithout( Set.of() ) : fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) );
-        final var associationsList = associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, statuses, userId, userEmail, pageIndex, itemsPerPage );
+        final var associationsList = associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, statuses, null, null, pageIndex, itemsPerPage );
 
         return new ResponseEntity<>( associationsList, OK );
+    }
+
+    @Override
+    public ResponseEntity<Association> getAssociationsForCompanyUserAndStatus( final String companyNumber, final FetchRequestBodyPost requestBodyPost ) {
+        // TODO: will implement in Ticket SIV-473
+        return null;
     }
 
 }
