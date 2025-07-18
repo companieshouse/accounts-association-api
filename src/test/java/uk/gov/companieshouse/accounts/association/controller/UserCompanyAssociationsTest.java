@@ -471,18 +471,18 @@ class UserCompanyAssociationsTest {
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "000")
                         .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Identity-Type", "key")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void addAssociationWithoutCompanyNumberReturnsBadRequest() throws Exception {
+    void addAssociationWithEmptyRequestBodyReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "000")
                         .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Identity-Type", "key")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -494,11 +494,23 @@ class UserCompanyAssociationsTest {
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "000")
                         .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Identity-Type", "key")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"company_number\":\"$$$$$$\"}"))
+                        .content("{\"company_number\":\"$$$$$$\", \"user_id\":\"000\"}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void addAssociationWithMalformedUserIdReturnsBadRequest() throws Exception {
+        mockMvc.perform(post( "/associations" )
+                        .header("Eric-identity", "9999")
+                        .header("X-Request-Id", "theId123")
+                        .header("ERIC-Identity-Type", "key")
+                        .header("ERIC-Authorised-Key-Roles", "*")
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"company_number\":\"333333\", \"user_id\":\"$$$$\"}" ) )
+                .andExpect( status().isBadRequest() );
     }
 
     @Test
@@ -513,10 +525,10 @@ class UserCompanyAssociationsTest {
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "9999")
                         .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Identity-Type", "key")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"company_number\":\"111111\"}"))
+                        .content("{\"company_number\":\"111111\", \"user_id\":\"9999\"}"))
                 .andExpect(status().isBadRequest());
     }
     
@@ -528,10 +540,10 @@ class UserCompanyAssociationsTest {
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "000")
                         .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Identity-Type", "key")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"company_number\":\"919191\"}"))
+                        .content("{\"company_number\":\"919191\", \"user_id\":\"000\"}"))
                 .andExpect(status().isNotFound());
     }
 
@@ -549,10 +561,10 @@ class UserCompanyAssociationsTest {
         final var response = mockMvc.perform(post("/associations")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "111")
-                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Identity-Type", "key")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"company_number\":\"111111\"}"))
+                        .content("{\"company_number\":\"111111\", \"user_id\":\"111\"}"))
                 .andExpect(status().isCreated());
         final var responseBodyPost = parseResponseTo( response, ResponseBodyPost.class );
 
@@ -560,17 +572,17 @@ class UserCompanyAssociationsTest {
     }
 
     @Test
-    void addAssociationWithNonExistentUserReturnsForbidden() throws Exception {
+    void addAssociationWithNonExistentUserReturnsNotFound() throws Exception {
         mockers.mockUsersServiceFetchUserDetailsNotFound( "9191" );
 
         mockMvc.perform(post("/associations")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9191")
-                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Identity-Type", "key")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"company_number\":\"111111\"}"))
-                .andExpect(status().isForbidden());
+                        .content("{\"company_number\":\"111111\", \"user_id\":\"9191\"}"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -588,10 +600,10 @@ class UserCompanyAssociationsTest {
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "666")
-                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Identity-Type", "key")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"company_number\":\"333333\"}" ) )
+                        .content( "{\"company_number\":\"333333\", \"user_id\":\"666\"}" ) )
                 .andExpect( status().isCreated() );
 
         Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "homer.simpson@springfield.com" ) );
@@ -612,10 +624,10 @@ class UserCompanyAssociationsTest {
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "666")
                         .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Identity-Type", "key")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"company_number\":\"111111\"}"))
+                        .content("{\"company_number\":\"111111\", \"user_id\":\"666\"}"))
                 .andExpect(status().isCreated());
 
         Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "homer.simpson@springfield.com" ) );
@@ -636,10 +648,10 @@ class UserCompanyAssociationsTest {
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "5555")
                         .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Identity-Type", "key")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"company_number\":\"111111\"}"))
+                        .content("{\"company_number\":\"111111\", \"user_id\":\"5555\"}"))
                 .andExpect(status().isCreated());
 
         Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "ross@friends.com" ) );
@@ -660,10 +672,10 @@ class UserCompanyAssociationsTest {
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Identity-Type", "key")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"company_number\":\"333333\"}" ) )
+                        .content( "{\"company_number\":\"333333\", \"user_id\":\"9999\"}" ) )
                 .andExpect( status().isCreated() );
 
         Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "Scrooge McDuck" ) );
@@ -688,9 +700,10 @@ class UserCompanyAssociationsTest {
         mockMvc.perform( post( "/associations" )
                         .header( "X-Request-Id", "theId123" )
                         .header( "Eric-Identity", "MKUser001" )
-                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" )
                         .contentType( MediaType.APPLICATION_JSON )
-                        .content( "{\"company_number\":\"MKCOMP001\"}" ) )
+                        .content( "{\"company_number\":\"MKCOMP001\", \"user_id\":\"MKUser001\"}" ) )
                 .andExpect( status().isCreated() );
 
         Assertions.assertEquals( "confirmed", updatedAssociation.getStatus() );

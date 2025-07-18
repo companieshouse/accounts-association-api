@@ -10,6 +10,7 @@ import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeEx
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
+import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.*;
 
@@ -18,6 +19,7 @@ import java.util.Optional;
 
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
+import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToAuthCodeConfirmedUpdated;
@@ -33,12 +35,14 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
     private final CompanyService companyService;
     private final AssociationsService associationsService;
+    private final UsersService usersService;
     private final EmailService emailService;
 
     @Autowired
-    public UserCompanyAssociations( final CompanyService companyService, final AssociationsService associationsService, final EmailService emailService ) {
+    public UserCompanyAssociations( final CompanyService companyService, final AssociationsService associationsService, final UsersService usersService, final EmailService emailService ) {
         this.companyService = companyService;
         this.associationsService = associationsService;
+        this.usersService = usersService;
         this.emailService = emailService;
     }
 
@@ -60,28 +64,30 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
      */
     @Override
     public ResponseEntity<ResponseBodyPost> addAssociation( final RequestBodyPost requestBody ) {
+        final var userId = requestBody.getUserId();
         final var companyNumber = requestBody.getCompanyNumber();
 
-        LOGGER.infoContext( getXRequestId(), String.format( "Received request with user_id=%s, company_number=%s.", getEricIdentity(), companyNumber ),null );
+        LOGGER.infoContext( getXRequestId(), String.format( "Received request with user_id=%s, company_number=%s.", userId, companyNumber ),null );
 
+        final var targetUser = usersService.fetchUserDetails( userId, getXRequestId() );
         final var companyDetails = companyService.fetchCompanyProfile( companyNumber );
 
-        final var targetAssociationId = Optional.of( associationsService.fetchAssociationsForUserAndPartialCompanyNumber( getUser(), companyNumber, 0, 15 ) )
+        final var targetAssociationId = Optional.of( associationsService.fetchAssociationsForUserAndPartialCompanyNumber( targetUser, companyNumber, 0, 15 ) )
                 .filter( Page::hasContent )
                 .map( Page::getContent )
                 .map( List::getFirst )
                 .map( targetAssociation -> {
                     if ( CONFIRMED.getValue().equals( targetAssociation.getStatus() ) ){
-                        throw new BadRequestRuntimeException( "Association already exists.", new Exception( String.format( "Association between user_id %s and company_number %s already exists.", getEricIdentity(), companyNumber ) ) );
+                        throw new BadRequestRuntimeException( "Association already exists.", new Exception( String.format( "Association between user_id %s and company_number %s already exists.", userId, companyNumber ) ) );
                     }
-                    associationsService.updateAssociation( targetAssociation.getId(), mapToAuthCodeConfirmedUpdated( targetAssociation, getUser(), getEricIdentity() ) );
+                    associationsService.updateAssociation( targetAssociation.getId(), mapToAuthCodeConfirmedUpdated( targetAssociation, targetUser, COMPANIES_HOUSE ) );
                     return targetAssociation.getId();
                 } )
-                .orElseGet( () -> associationsService.createAssociationWithAuthCodeApprovalRoute( companyNumber, getEricIdentity() ).getId() );
+                .orElseGet( () -> associationsService.createAssociationWithAuthCodeApprovalRoute( companyNumber, userId ).getId() );
 
         Mono.just( companyNumber )
                 .flatMapMany( associationsService::fetchConfirmedUserIds )
-                .flatMap( emailService.sendAuthCodeConfirmationEmailToAssociatedUser( getXRequestId(), companyDetails, mapToDisplayValue( getUser(), getUser().getEmail() ) ) )
+                .flatMap( emailService.sendAuthCodeConfirmationEmailToAssociatedUser( getXRequestId(), companyDetails, mapToDisplayValue( targetUser, targetUser.getEmail() ) ) )
                 .subscribe();
 
         return new ResponseEntity<>( new ResponseBodyPost().associationLink( String.format( "/associations/%s", targetAssociationId ) ), CREATED );
