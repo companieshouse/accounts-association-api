@@ -3,9 +3,7 @@ package uk.gov.companieshouse.accounts.association.service;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonTo;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.*;
 
 import java.time.Duration;
 import java.util.List;
@@ -83,7 +81,7 @@ public class UsersService {
     public User retrieveUserDetails( final String targetUserId, final String targetUserEmail ){
         final var fetchedByUserId = Optional.ofNullable( targetUserId )
                 .map( userId -> {
-                    if ( userId.equals( getEricIdentity() ) ){
+                    if ( isOAuth2Request() && userId.equals( getEricIdentity() ) ){
                         return getUser();
                     }
                     return fetchUserDetails( userId, getXRequestId() );
@@ -96,7 +94,7 @@ public class UsersService {
 
         return Optional.ofNullable( targetUserEmail )
                 .map( userEmail -> {
-                    if ( userEmail.equals( getUser().getEmail() ) ){
+                    if ( isOAuth2Request() && userEmail.equals( getUser().getEmail() ) ){
                         return getUser();
                     }
                     return Optional.of( userEmail )
