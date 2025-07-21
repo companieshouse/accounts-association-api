@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -106,6 +107,20 @@ public class AssociationsService {
         final var associations = associationsListCompanyMapper.daoToDto( associationDaos, companyDetails );
         LOGGER.debugContext( getXRequestId(), "Successfully fetched unexpired associations for company and statuses" ,null );
         return associations;
+    }
+
+    @Transactional( readOnly = true )
+    public Optional<Association> fetchUnexpiredAssociationsForCompanyUserAndStatuses(final CompanyDetails companyDetails, final Set<StatusEnum> statuses, final User user, final String userEmail ) {
+        LOGGER.debugContext( getXRequestId(), "Attempting to fetch unexpired associations for company, user and statuses", null );
+        final var userId = Optional.ofNullable( user ).map( User::getUserId ).orElse( null );
+        final var parsedStatuses = statuses.stream().map( StatusEnum::getValue ).collect( Collectors.toSet() );
+        final var association = Optional.of( associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatusesAndUser( companyDetails.getCompanyNumber(), parsedStatuses, userId, userEmail, LocalDateTime.now(),  null ) )
+                .filter( Slice::hasContent )
+                .map( Slice::getContent )
+                .map( List::getFirst )
+                .map( associationDao -> associationsListCompanyMapper.daoToDto( associationDao, user, companyDetails ) );
+        LOGGER.debugContext( getXRequestId(), "Successfully fetched unexpired associations for company, user and statuses" ,null );
+        return association;
     }
 
     @Transactional( readOnly = true )
