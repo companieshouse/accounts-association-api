@@ -179,7 +179,8 @@ class UsersServiceTest {
 
         final var request = new MockHttpServletRequest();
         request.addHeader( ERIC_IDENTITY, targetUser.getUserId() );
-        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( targetUser ).build() );
+        request.addHeader( ERIC_IDENTITY_TYPE, OAUTH2 );
+        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setEricIdentityType( request ).setUser( targetUser ).build() );
 
         Assertions.assertEquals( targetUser, usersService.fetchUserDetails( targetAssociation ) );
     }
