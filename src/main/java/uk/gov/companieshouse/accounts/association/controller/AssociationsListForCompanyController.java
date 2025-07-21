@@ -1,6 +1,5 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
-import static java.lang.Enum.valueOf;
 import static org.springframework.http.HttpStatus.OK;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
@@ -36,7 +35,7 @@ public class AssociationsListForCompanyController implements AssociationDataForC
     private final AssociationsService associationsService;
     private final UsersService usersService;
 
-    public AssociationsListForCompanyController(final CompanyService companyService, final AssociationsService associationsService, UsersService usersService) {
+    public AssociationsListForCompanyController(final CompanyService companyService, final AssociationsService associationsService, final UsersService usersService) {
         this.companyService = companyService;
         this.associationsService = associationsService;
         this.usersService = usersService;
