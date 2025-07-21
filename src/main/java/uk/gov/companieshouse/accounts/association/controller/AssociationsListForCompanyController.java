@@ -62,7 +62,7 @@ public class AssociationsListForCompanyController implements AssociationDataForC
 
     @Override
     public ResponseEntity<Association> getAssociationsForCompanyUserAndStatus( final String companyNumber, final FetchRequestBodyPost requestBodyPost ) {
-        LOGGER.infoContext( getXRequestId(), String.format( "Received request with company_number=%s, user_email=%s, user_id=%s .", companyNumber, requestBodyPost.getUserEmail(), requestBodyPost.getUserId() ),null );
+        LOGGER.infoContext( getXRequestId(), String.format( "Received request with company_number=%s and user_id=%s. user_email was provided: %b .", companyNumber, requestBodyPost.getUserId(), Objects.nonNull( requestBodyPost.getUserEmail() ) ),null );
 
         final var userId = requestBodyPost.getUserId();
         final var userEmail = requestBodyPost.getUserEmail();
