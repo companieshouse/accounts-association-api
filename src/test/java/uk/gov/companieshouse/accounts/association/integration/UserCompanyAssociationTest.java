@@ -185,6 +185,20 @@ class UserCompanyAssociationTest {
     }
 
     @Test
+    void getAssociationForIdWithAPIKeyRequest() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001" ) );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser001", "111" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+
+        mockMvc.perform( get( "/associations/MKAssociation001" )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "Eric-identity", "111" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isOk() );
+    }
+
+    @Test
     void getAssociationForIdCanBeCalledByAdmin() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001" ) );
         mockers.mockUsersServiceFetchUserDetails( "MKUser001", "111" );
