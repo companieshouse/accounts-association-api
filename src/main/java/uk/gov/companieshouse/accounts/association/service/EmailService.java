@@ -12,7 +12,6 @@ import uk.gov.companieshouse.accounts.association.models.email.EmailNotification
 import uk.gov.companieshouse.accounts.association.models.email.builders.*;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
 import uk.gov.companieshouse.api.accounts.user.model.User;
-import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.model.EmailData;
 import uk.gov.companieshouse.logging.Logger;
@@ -49,16 +48,16 @@ public class EmailService {
         }
     }
 
-    public Function<String, Mono<Void>> sendAuthCodeConfirmationEmailToAssociatedUser( final String xRequestId, final CompanyDetails companyDetails, final String displayName ) {
+    public Function<String, Mono<Void>> sendAuthCodeConfirmationEmailToAssociatedUser( final String xRequestId, final String companyNumber, Mono<String> companyName, final String displayName ) {
         return userId -> Mono.just( userId )
                 .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
                 .map( user -> new AuthCodeConfirmationEmailBuilder()
                         .setRecipientEmail( user.getEmail() )
-                        .setDisplayName( displayName )
-                        .setCompanyName( companyDetails.getCompanyName() )
-                        .build() )
+                        .setDisplayName( displayName ) )
+                .zipWith( companyName, AuthCodeConfirmationEmailBuilder::setCompanyName )
+                .map( AuthCodeConfirmationEmailBuilder::build )
                 .doOnNext( emailData -> {
-                    final var logMessageSupplier = new EmailNotification( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyDetails.getCompanyNumber() );
+                    final var logMessageSupplier = new EmailNotification( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber );
                     sendEmail( xRequestId, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE, emailData, logMessageSupplier ); } )
                 .then();
     }
