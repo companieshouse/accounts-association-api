@@ -188,12 +188,16 @@ class UserCompanyAssociationTest {
         final var association = testDataManager.fetchAssociationDto( "MKAssociation001", user );
         Mockito.doReturn( Optional.of( association ) ).when( associationsService ).fetchAssociationDto( "MKAssociation001" );
 
-        mockMvc.perform( get( "/associations/MKAssociation001" )
+        final var response = mockMvc.perform( get( "/associations/MKAssociation001" )
                         .header( "X-Request-Id", "theId123" )
                         .header( "Eric-identity", "111" )
                         .header( "ERIC-Identity-Type", "key" )
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isOk() );
+
+        final var responseAssociation = parseResponseTo( response, Association.class );
+
+        Assertions.assertEquals( "MKAssociation001", responseAssociation.getId() );
     }
 
     @Test
