@@ -87,7 +87,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         Mono.just( companyNumber )
                 .flatMapMany( associationsService::fetchConfirmedUserIds )
-                .flatMap( emailService.sendAuthCodeConfirmationEmailToAssociatedUser( getXRequestId(), companyDetails, mapToDisplayValue( targetUser, targetUser.getEmail() ) ) )
+                .flatMap( emailService.sendAuthCodeConfirmationEmailToAssociatedUser( getXRequestId(), companyDetails.getCompanyNumber(), Mono.just( companyDetails.getCompanyName() ), mapToDisplayValue( targetUser, targetUser.getEmail() ) ) )
                 .subscribe();
 
         return new ResponseEntity<>( new ResponseBodyPost().associationLink( String.format( "/associations/%s", targetAssociationId ) ), CREATED );

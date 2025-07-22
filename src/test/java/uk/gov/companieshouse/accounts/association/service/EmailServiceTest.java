@@ -54,30 +54,25 @@ class EmailServiceTest {
 
     @Test
     void sendAuthCodeConfirmationEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNameOrNullUsersThrowsNullPointerException(){
-        final var emptyCompanyDetails = new CompanyDetails();
-        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
         mockers.mockUsersServiceFetchUserDetails( "333" );
 
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", null, "Harleen Quinzel" ).apply( "333" ).block() );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", emptyCompanyDetails, "Harleen Quinzel" ).apply( "333" ).block() );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", companyDetails, null ).apply( "333" ).block() );
-        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", companyDetails, "Harleen Quinzel" ).apply( null ).block() );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", "111111",null, "Harleen Quinzel" ).apply( "333" ).block() );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), null ).apply( "333" ).block() );
+        Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel" ).apply( null ).block() );
     }
 
     @Test
     void sendAuthCodeConfirmationEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
-        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
         mockers.mockUsersServiceFetchUserDetails( "333" );
-        emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", companyDetails, "Harleen Quinzel" ).apply( "333" ).block();
+        emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel" ).apply( "333" ).block();
         Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.authCodeConfirmationEmailMatcher( "harley.quinn@gotham.city", "Wayne Enterprises", "Harleen Quinzel" ) ), eq( MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendAuthCodeConfirmationEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
-        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
         mockers.mockUsersServiceFetchUserDetails( "333" );
         mockers.mockEmailSendingFailure( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() );
-        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", companyDetails, "Harleen Quinzel" ).apply( "333" ).block() );
+        Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel" ).apply( "333" ).block() );
     }
 
     @Test
