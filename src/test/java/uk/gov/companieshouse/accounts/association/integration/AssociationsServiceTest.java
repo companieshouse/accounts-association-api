@@ -29,6 +29,7 @@ import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.user.model.User;
+import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
@@ -36,9 +37,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.*;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
@@ -408,6 +407,44 @@ class AssociationsServiceTest {
         Assertions.assertEquals( "222", invitations.getInvitedBy() );
         Assertions.assertEquals( localDateTimeToNormalisedString( LocalDateTime.now() ), localDateTimeToNormalisedString( invitations.getInvitedAt() ) );
         Assertions.assertNotNull( association.getEtag() );
+    }
+
+    @Test
+    void fetchUnexpiredAssociationsForCompanyUserAndStatusesRetrievesAssociation(){
+        final var company = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+        final var user = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
+        final var associationDao = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
+        final var association = testDataManager.fetchAssociationDto( "MKAssociation002", user );
+        associationsRepository.insert( associationDao );
+        Mockito.doReturn( association ).when( associationsListCompanyMapper ).daoToDto( any(), eq( user ), eq( company ) );
+        Assertions.assertEquals("MKAssociation002" , associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( company, Set.of( StatusEnum.CONFIRMED ), user, user.getEmail() ).get().getId() );
+    }
+
+    private static Stream<Arguments> fetchUnexpiredAssociationsForCompanyUserAndStatusesRetrievesEmptyOptionalScenarios(){
+        final var user = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
+        return Stream.of(
+                Arguments.of( new CompanyDetails() , Set.of( StatusEnum.CONFIRMED ), user, user.getEmail() ),
+                Arguments.of( new CompanyDetails().companyNumber( "404CompanyId") , Set.of( StatusEnum.CONFIRMED ), user, user.getEmail() ),
+                Arguments.of( new CompanyDetails().companyNumber( "MKAssociation002" ), Set.of(), user, user.getEmail() ),
+                Arguments.of( new CompanyDetails().companyNumber( "MKAssociation002" ) , Set.of( StatusEnum.CONFIRMED ), null, "404User@Email.com" ),
+                Arguments.of( new CompanyDetails().companyNumber( "MKAssociation002" ) , Set.of( StatusEnum.CONFIRMED ), null, null )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource( "fetchUnexpiredAssociationsForCompanyUserAndStatusesRetrievesEmptyOptionalScenarios" )
+    void fetchUnexpiredAssociationsForCompanyUserAndStatusesRetrievesEmptyOptional( final CompanyDetails company, final Set<StatusEnum> status, final User user, final String userEmail ){
+        final var associationDao = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
+        associationsRepository.insert( associationDao );
+        Assertions.assertTrue( associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( company, status, user, userEmail ).isEmpty() );
+    }
+
+
+    @Test
+    void fetchUnexpiredAssociationsForCompanyWithNullInputsThrowsNullPointerException(){
+        final var company = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( null, Set.of( StatusEnum.CONFIRMED ), null, "null@null.com" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( company, null, null, "null@null.com" ) );
     }
 
     @AfterEach

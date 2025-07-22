@@ -5,13 +5,20 @@ import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINA
 import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.ForbiddenRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
+import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.api.AssociationDataForCompanyInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
@@ -26,10 +33,12 @@ public class AssociationsListForCompanyController implements AssociationDataForC
 
     private final CompanyService companyService;
     private final AssociationsService associationsService;
+    private final UsersService usersService;
 
-    public AssociationsListForCompanyController( final CompanyService companyService, final AssociationsService associationsService ) {
+    public AssociationsListForCompanyController(final CompanyService companyService, final AssociationsService associationsService, final UsersService usersService) {
         this.companyService = companyService;
         this.associationsService = associationsService;
+        this.usersService = usersService;
     }
 
     @Override
@@ -53,8 +62,30 @@ public class AssociationsListForCompanyController implements AssociationDataForC
 
     @Override
     public ResponseEntity<Association> getAssociationsForCompanyUserAndStatus( final String companyNumber, final FetchRequestBodyPost requestBodyPost ) {
-        // TODO: will implement in Ticket SIV-473
-        return null;
+        LOGGER.infoContext( getXRequestId(), String.format( "Received request with company_number=%s and user_id=%s. user_email was provided: %b.", companyNumber, requestBodyPost.getUserId(), Objects.nonNull( requestBodyPost.getUserEmail() ) ),null );
+
+        final var userId = requestBodyPost.getUserId();
+        final var userEmail = requestBodyPost.getUserEmail();
+        final var statuses =  Optional.ofNullable( requestBodyPost.getStatus() )
+                .filter( statusEnums -> !statusEnums.isEmpty() )
+                .orElse( List.of( FetchRequestBodyPost.StatusEnum.CONFIRMED ) )
+                .stream()
+                .map( FetchRequestBodyPost.StatusEnum::getValue )
+                .map( StatusEnum::fromValue )
+                .collect(Collectors.toSet());
+
+        if ( Objects.nonNull( userId ) == Objects.nonNull( userEmail ) ){
+            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN,  new Exception( "Only one of user_id or user_email must be present" ) );
+        }
+
+        final var companyProfile = companyService.fetchCompanyProfile( companyNumber );
+        final var user = usersService.retrieveUserDetails( userId, userEmail );
+        final var targetUserEmail =  Objects.nonNull( user ) ? user.getEmail() : userEmail;
+
+        return associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( companyProfile, statuses, user, targetUserEmail )
+                .map( association -> new ResponseEntity<>( association, OK ) )
+                .orElseThrow( () -> new NotFoundRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Association not found") ) );
+
     }
 
 }

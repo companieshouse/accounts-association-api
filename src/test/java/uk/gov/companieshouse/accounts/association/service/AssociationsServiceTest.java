@@ -35,6 +35,7 @@ import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.user.model.User;
+import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 
@@ -560,4 +561,45 @@ class AssociationsServiceTest {
         Mockito.verify( associationsRepository ).insert( argThat( comparisonUtils.compare( expectedAssociation, List.of( "companyNumber", "userId", "userEmail", "status", "approvalRoute", "approvalExpiryAt" ), List.of(), Map.of( "approvalExpiryAt", new ReduceTimeStampResolutionPreprocessor() ) ) ) );
     }
 
+    @Test
+    void fetchUnexpiredAssociationsForCompanyUserAndStatusesRetrievesAssociation(){
+        final var company = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+        final var user = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
+        final var association = testDataManager.fetchAssociationDto( "MKAssociation002", user );
+        final var content = testDataManager.fetchAssociationDaos( "MKAssociation002" );
+        final var pageRequest = PageRequest.of(0, 15 );
+        final var page = new PageImpl<>(content, pageRequest, 1 );
+
+        Mockito.doReturn(page).when(associationsRepository).fetchUnexpiredAssociationsForCompanyAndStatusesAndUser(any(), any(), any(), any(), any(), any());
+        Mockito.doReturn( association ).when( associationsListCompanyMapper ).daoToDto( any(), eq( user ), eq( company ) );
+        Assertions.assertEquals("MKAssociation002" , associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( company, Set.of( StatusEnum.CONFIRMED ), user, user.getEmail() ).get().getId() );
+    }
+
+    private static Stream<Arguments> fetchUnexpiredAssociationsForCompanyUserAndStatusesRetrievesEmptyOptionalScenarios(){
+        final var user = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
+        return Stream.of(
+                Arguments.of( new CompanyDetails() , Set.of( StatusEnum.CONFIRMED ), user, user.getEmail() ),
+                Arguments.of( new CompanyDetails().companyNumber( "404CompanyId") , Set.of( StatusEnum.CONFIRMED ), user, user.getEmail() ),
+                Arguments.of( new CompanyDetails().companyNumber( "MKAssociation002" ), Set.of(), user, user.getEmail() ),
+                Arguments.of( new CompanyDetails().companyNumber( "MKAssociation002" ) , Set.of( StatusEnum.CONFIRMED ), null, "404User@Email.com" ),
+                Arguments.of( new CompanyDetails().companyNumber( "MKAssociation002" ) , Set.of( StatusEnum.CONFIRMED ), null, null )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource( "fetchUnexpiredAssociationsForCompanyUserAndStatusesRetrievesEmptyOptionalScenarios" )
+    void fetchUnexpiredAssociationsForCompanyUserAndStatusesRetrievesEmptyOptional( final CompanyDetails company, final Set<StatusEnum> status, final User user, final String userEmail ){
+        final var pageRequest = PageRequest.of(0, 15 );
+        final var page = new PageImpl<>(List.of(), pageRequest, 0 );
+
+        Mockito.doReturn(page).when(associationsRepository).fetchUnexpiredAssociationsForCompanyAndStatusesAndUser(any(), any(), any(), any(), any(), any());
+        Assertions.assertTrue( associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( company, status, user, userEmail ).isEmpty() );
+    }
+
+    @Test
+    void fetchUnexpiredAssociationsForCompanyWithNullInputsThrowsNullPointerException(){
+        final var company = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( null, Set.of( StatusEnum.CONFIRMED ), null, "null@null.com" ) );
+        Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( company, null, null, "null@null.com" ) );
+    }
 }
