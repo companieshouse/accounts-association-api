@@ -18,6 +18,7 @@ import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.DELEGATED_REMOVAL_OF_MIGRATED;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.DELEGATED_REMOVAL_OF_MIGRATED_BATCH;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_CANCELLED_MESSAGE_TYPE;
@@ -1041,6 +1042,38 @@ class UserCompanyAssociationTest {
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( String.format( "{\"status\":\"%s\"}", status ) ) )
                 .andExpect( status().isBadRequest() );
+    }
+
+    private static Stream<Arguments> updateAssociationStatusForIdAPIRequestsThatChangeUnauthorisedOrMigratedAssociationsToConfirmedScenarios(){
+        return Stream.of(
+                Arguments.of( "MKAssociation004", "MKUser004" ),
+                Arguments.of( "MKAssociation001", "MKUser001" )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource( "updateAssociationStatusForIdAPIRequestsThatChangeUnauthorisedOrMigratedAssociationsToConfirmedScenarios" )
+    void updateAssociationStatusForIdSupportsAPIRequestsThatChangeUnauthorisedOrMigratedAssociationsToConfirmed( final String targetAssociationId, final String targetUserId ) throws Exception {
+        final var associations = testDataManager.fetchAssociationDaos( targetAssociationId ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( targetUserId ).getFirst();
+
+        Mockito.doReturn( Optional.of( associations ) ).when( associationsService ).fetchAssociationDao( targetAssociationId );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        mockers.mockCompanyServiceFetchCompanyProfile( associations.getCompanyNumber() );
+        mockers.mockUsersServiceFetchUserDetails( targetUserId );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( associations.getCompanyNumber() ), any( Mono.class ), eq( targetUser.getDisplayName() ) );
+
+        mockMvc.perform( patch( String.format( "/associations/%s", targetAssociationId ) )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "9999" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        Mockito.verify( associationsService ).updateAssociation( eq( associations.getId() ), any( Update.class ) );
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( associations.getCompanyNumber() ), any( Mono.class ), eq( targetUser.getDisplayName() ) );
     }
 
     private static Stream<Arguments> updateAssociationStatusForIdSameUserUnauthorisedBadRequestScenarios(){

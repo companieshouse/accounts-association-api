@@ -556,7 +556,7 @@ class UserCompanyAssociationsTest {
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(associationDao).when(associationsService).createAssociationWithAuthCodeApprovalRoute("111111", "111");
         Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
-        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( company ), eq( "Batman" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Batman" ) );
 
         final var response = mockMvc.perform(post("/associations")
                         .header("X-Request-Id", "theId123")
@@ -595,7 +595,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(associationDao).when(associationsService).createAssociationWithAuthCodeApprovalRoute("333333", "666");
         Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
         Mockito.doReturn( Flux.just( "666" ) ).when( associationsService ).fetchConfirmedUserIds( "333333" );
-        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( company ), eq( "homer.simpson@springfield.com" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "333333" ), any( Mono.class ), eq( "homer.simpson@springfield.com" ) );
 
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
@@ -606,7 +606,7 @@ class UserCompanyAssociationsTest {
                         .content( "{\"company_number\":\"333333\", \"user_id\":\"666\"}" ) )
                 .andExpect( status().isCreated() );
 
-        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "homer.simpson@springfield.com" ) );
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "333333" ), argThat( companyName -> "Tesco".equals( companyName.block() ) ), eq( "homer.simpson@springfield.com" ) );
     }
 
     @Test
@@ -619,7 +619,7 @@ class UserCompanyAssociationsTest {
         mockers.mockUsersServiceFetchUserDetails( "666" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(page).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(user, "111111",0,15);
-        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( company ), eq( "homer.simpson@springfield.com" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "homer.simpson@springfield.com" ) );
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "666")
@@ -630,7 +630,7 @@ class UserCompanyAssociationsTest {
                         .content("{\"company_number\":\"111111\", \"user_id\":\"666\"}"))
                 .andExpect(status().isCreated());
 
-        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "homer.simpson@springfield.com" ) );
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), argThat( companyName -> "Wayne Enterprises".equals( companyName.block() ) ), eq( "homer.simpson@springfield.com" ) );
     }
 
     @Test
@@ -643,7 +643,7 @@ class UserCompanyAssociationsTest {
         mockers.mockUsersServiceFetchUserDetails( "5555" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(page).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(user,"111111",0,15);
-        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( company ), eq( "ross@friends.com" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "ross@friends.com" ) );
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "5555")
@@ -654,7 +654,7 @@ class UserCompanyAssociationsTest {
                         .content("{\"company_number\":\"111111\", \"user_id\":\"5555\"}"))
                 .andExpect(status().isCreated());
 
-        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "ross@friends.com" ) );
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), argThat( companyName -> "Wayne Enterprises".equals( companyName.block() ) ), eq( "ross@friends.com" ) );
     }
 
     @Test
@@ -667,7 +667,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
         Mockito.doReturn( Flux.just( "000" ) ).when( associationsService ).fetchConfirmedUserIds( "333333" );
         Mockito.doReturn(associationDao).when(associationsService).createAssociationWithAuthCodeApprovalRoute("333333", "9999");
-        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( company ), eq( "Scrooge McDuck" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "333333" ), any( Mono.class ), eq( "Scrooge McDuck" ) );
 
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
@@ -678,7 +678,7 @@ class UserCompanyAssociationsTest {
                         .content( "{\"company_number\":\"333333\", \"user_id\":\"9999\"}" ) )
                 .andExpect( status().isCreated() );
 
-        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "Scrooge McDuck" ) );
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "333333" ), argThat( companyName -> "Tesco".equals( companyName.block() ) ), eq( "Scrooge McDuck" ) );
     }
 
     @Test
@@ -695,7 +695,7 @@ class UserCompanyAssociationsTest {
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         Mockito.doReturn( new PageImpl<>( new ArrayList<>( List.of( originalAssociationDao ) ) ) ).when( associationsService ).fetchAssociationsForUserAndPartialCompanyNumber( any(), anyString(),anyInt(),anyInt() );
         Mockito.doReturn( Flux.just( "MKUser002" ) ).when( associationsService ).fetchConfirmedUserIds( "MKCOMP001" );
-        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( company ), eq( "Mario" ) );
+        Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Mario" ) );
 
         mockMvc.perform( post( "/associations" )
                         .header( "X-Request-Id", "theId123" )
@@ -714,7 +714,7 @@ class UserCompanyAssociationsTest {
         Assertions.assertEquals( "MKUser001", updatedAssociation.getPreviousStates().getFirst().getChangedBy() );
         Assertions.assertNotNull( updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
 
-        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), argThat( comparisonUtils.compare( company, List.of( "companyNumber", "companyName" ), List.of(), Map.of() ) ), eq( "Mario" ) );
+        Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "MKCOMP001" ), argThat( companyName -> "Mushroom Kingdom".equals( companyName.block() ) ), eq( "Mario" ) );
     }
 
 }
