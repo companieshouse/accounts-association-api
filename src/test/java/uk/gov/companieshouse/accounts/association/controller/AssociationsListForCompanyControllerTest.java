@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.*;
 
@@ -140,6 +141,27 @@ class AssociationsListForCompanyControllerTest {
                 .andExpect(status().isOk());
 
         Mockito.verify( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( eq( companyDetails ) ,  eq( fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ) ),  isNull(), isNull(), eq( 0 ), eq(15 ) );
+    }
+
+    @Test
+    void getAssociationsForCompanySupportsRequestsFromAdminUsers() throws Exception {
+        final var marioUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
+        final var marioAssociation = testDataManager.fetchAssociationDto( "MKAssociation001", marioUser );
+        final var associationsList = new AssociationsList()
+                .totalResults( 1 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
+                .links( new Links().self( String.format( "%s/associations", internalApiUrl ) ).next("") )
+                .items( List.of( marioAssociation ) );
+
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "111" );
+        Mockito.doReturn(associationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ) ),  isNull(), isNull(), eq( 0 ), eq( 15 ) );
+
+        mockMvc.perform( get( "/associations/companies/MKCOMP001" )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .header( "ERIC-Authorised-Roles", ADMIN_READ_PERMISSION ) )
+                .andExpect( status().isOk() );
     }
 
     @Test
