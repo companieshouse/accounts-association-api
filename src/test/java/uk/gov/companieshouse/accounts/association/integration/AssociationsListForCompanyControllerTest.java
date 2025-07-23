@@ -38,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
 
 @AutoConfigureMockMvc
 @SpringBootTest
@@ -127,6 +128,20 @@ class AssociationsListForCompanyControllerTest {
         Assertions.assertEquals( 15, associationsList.getItemsPerPage() );
         Assertions.assertEquals( 13, associationsList.getTotalResults() );
         Assertions.assertEquals( 1, associationsList.getTotalPages() );
+    }
+
+    @Test
+    void getAssociationsForCompanySupportsRequestsFromAdminUsers() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001" ) );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser001" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+
+        mockMvc.perform( get( "/associations/companies/MKCOMP001" )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "oauth2" )
+                        .header( "ERIC-Authorised-Roles", ADMIN_READ_PERMISSION ) )
+                .andExpect( status().isOk() );
     }
 
     @Test
