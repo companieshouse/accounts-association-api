@@ -41,7 +41,7 @@ public class WebSecurityConfig {
                         .requestMatchers( POST,"/associations" ).hasAnyRole( getValues( KEY_ROLE ) )
                         .requestMatchers("/associations/invitations" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE ) )
                         .requestMatchers( GET,"/associations/*/invitations" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE ) )
-                        .requestMatchers( GET,"/associations/*" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_READ_ROLE ) )
+                        .requestMatchers( GET,"/associations/*" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_READ_ROLE, KEY_ROLE ) )
                         .requestMatchers( GET,"/associations/companies/*" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_READ_ROLE ) )
                         .requestMatchers( POST,"/associations/companies/*/search" ).hasAnyRole( getValues( KEY_ROLE ) )
                         .requestMatchers( GET,"/associations/*/previous-states" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_READ_ROLE ) )
