@@ -614,7 +614,7 @@ class AssociationsServiceTest {
     void fetchAssociationsForUserAndPartialCompanyNumberFiltersWorkingCorrectly(){
         final var user = testDataManager.fetchUserDtos( "MiUser002" ).getFirst();
         associationsService.fetchAssociationsForUserAndPartialCompanyNumber( user, "ICOMP001", 0, 15 );
-        Mockito.verify( associationsRepository ).fetchAssociationsForUserAndStatusesAndPartialCompanyNumber( user.getUserId(), user.getEmail(), Set.of( "confirmed", "awaiting-approval", "removed", "migrated" ),"ICOMP001", PageRequest.of(0,15 ) );
+        Mockito.verify( associationsRepository ).fetchAssociationsForUserAndStatusesAndPartialCompanyNumber( user.getUserId(), user.getEmail(), Set.of( "confirmed", "awaiting-approval", "removed", "migrated", "unauthorised" ),"ICOMP001", PageRequest.of(0,15 ) );
     }
 
 
