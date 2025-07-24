@@ -73,8 +73,8 @@ public class UsersService {
                 .onErrorMap( throwable -> {
                     throw new InternalServerErrorRuntimeException( "Failed to retrieve user details", (Exception) throwable );
                 } )
-                .doOnSubscribe( onSubscribe -> LOGGER.infoContext( xRequestId, String.format( "Sending request to accounts-user-api: GET /users/search. Attempting to retrieve users: %s", String.join( ", ", emails ) ), null ) )
-                .doFinally( signalType -> LOGGER.infoContext( xRequestId, String.format( "Finished request to accounts-user-api for users: %s", String.join( ", ", emails ) ), null ) )
+                .doOnSubscribe( onSubscribe -> LOGGER.infoContext( xRequestId,  "Sending request to accounts-user-api: GET /users/search. Attempting to retrieve users" , null ) )
+                .doFinally( signalType -> LOGGER.infoContext( xRequestId, "Finished request to accounts-user-api for users",  null ) )
                 .block( Duration.ofSeconds( 20L ) );
     }
 
