@@ -62,7 +62,7 @@ public class UserCompanyInvitations implements UserCompanyInvitationsInterface {
 
     @Override
     public ResponseEntity<ResponseBodyPost> inviteUser( final InvitationRequestBodyPost requestBody ) {
-        LOGGER.infoContext( getXRequestId(), String.format( "Received request with user_id=%s, company_number=%s, invitee_email_id=%s.", getEricIdentity(), requestBody.getCompanyNumber(), requestBody.getInviteeEmailId()  ),null );
+        LOGGER.infoContext( getXRequestId(), String.format( "Received request with user_id=%s, company_number=%s.", getEricIdentity(), requestBody.getCompanyNumber() ),null );
 
         final var inviteeEmail = Optional.of( requestBody )
                 .map( InvitationRequestBodyPost::getInviteeEmailId )
@@ -89,7 +89,7 @@ public class UserCompanyInvitations implements UserCompanyInvitationsInterface {
         final var targetAssociation = associationsService.fetchAssociationDao( companyNumber, Objects.nonNull( inviteeUserDetails ) ? inviteeUserDetails.getUserId() : null, inviteeEmail )
                 .map( association -> {
                     if( CONFIRMED.getValue().equals( association.getStatus() ) ) {
-                        throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "%s already has a confirmed association at company %s", inviteeEmail, companyNumber ) ) );
+                        throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "This invitee email address already has a confirmed association at company %s", companyNumber ) ) );
                     }
                     associationsService.updateAssociation( association.getId(), mapToInvitationUpdate( association, inviteeUserDetails, getEricIdentity(), now() ) );
                     return association.approvalExpiryAt( now().plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ) );
