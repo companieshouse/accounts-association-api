@@ -29,6 +29,7 @@ import static uk.gov.companieshouse.api.accounts.associations.model.Association.
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -100,45 +101,6 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
                 .orElseThrow( () -> new NotFoundRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Association %s was not found", associationId ) ) ) );
     }
 
-
-    private Update mapToAPIKeyUpdate( final RequestBodyPut.StatusEnum proposedStatus, final AssociationDao targetAssociation, final User targetUser ){
-        final var oldStatus = StatusEnum.fromValue( targetAssociation.getStatus() );
-        return switch ( proposedStatus ){
-            case CONFIRMED -> Optional.of( CONFIRMED )
-                    .filter( status -> MIGRATED.equals( oldStatus ) || UNAUTHORISED.equals( oldStatus ) )
-                    .map( status -> mapToAuthCodeConfirmedUpdated( targetAssociation, targetUser, COMPANIES_HOUSE ) )
-                    .orElseThrow( () -> new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "API Key cannot change a %s association to confirmed", oldStatus.getValue() ) ) ) );
-            case REMOVED -> throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Unable to change the association status to removed with API Key" ) );
-            case UNAUTHORISED -> mapToUnauthorisedUpdate( targetAssociation, targetUser );
-        };
-    }
-
-    private Update mapToOAuth2Update( final RequestBodyPut.StatusEnum proposedStatus, final AssociationDao targetAssociation, final User targetUser ){
-        final var oldStatus = StatusEnum.fromValue( targetAssociation.getStatus() );
-        if ( isRequestingUser( targetAssociation ) ){
-            return switch( proposedStatus ){
-                case CONFIRMED -> Optional.of( CONFIRMED )
-                        .filter( status -> !( MIGRATED.equals( oldStatus ) || UNAUTHORISED.equals( oldStatus ) ) )
-                        .map( status -> mapToConfirmedUpdate( targetAssociation, targetUser, getEricIdentity() ) )
-                        .orElseThrow( () -> new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user cannot change their status from migrated to confirmed" ) ) );
-                case REMOVED -> mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() );
-                case UNAUTHORISED -> throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user cannot change their status to unauthorised" ) );
-            };
-        }
-        return switch ( proposedStatus ){
-            case CONFIRMED -> Optional.of( CONFIRMED )
-                    .filter( status -> MIGRATED.equals( oldStatus ) || UNAUTHORISED.equals( oldStatus ) )
-                    .filter( status -> associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) )
-                    .map( status -> mapToInvitationUpdate( targetAssociation, targetUser, getEricIdentity(), now() ) )
-                    .orElseThrow( () -> new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) );
-            case REMOVED -> Optional.of( REMOVED )
-                    .filter( status -> associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) || hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) )
-                    .map( status -> mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() ) )
-                    .orElseThrow( () -> new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) );
-            case UNAUTHORISED -> throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Requesting %s user cannot change another user to unauthorised", getEricIdentity() ) ) );
-        };
-    }
-
     @Override
     public ResponseEntity<Void> updateAssociationStatusForId( final String associationId, final RequestBodyPut requestBody ) {
         LOGGER.infoContext( getXRequestId(), String.format( "Received request with id=%s, user_id=%s, status=%s.", associationId, getEricIdentity(), requestBody.getStatus() ),null );
@@ -149,8 +111,77 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
 
         final var targetUser = usersService.fetchUserDetails( targetAssociation );
 
-        final var update = isAPIKeyRequest() ? mapToAPIKeyUpdate( requestBody.getStatus(), targetAssociation, targetUser ) : mapToOAuth2Update( requestBody.getStatus(), targetAssociation, targetUser );
-        associationsService.updateAssociation( targetAssociation.getId(), update );
+
+
+
+        final var oldStatus = StatusEnum.fromValue( targetAssociation.getStatus() );
+        final var proposedStatus = requestBody.getStatus();
+
+
+
+
+        // TODO: take care of variables on other threads
+
+        final var apiKeyUnauthorisesAssociation = Mono.just( proposedStatus )
+                .filter( newStatus -> isAPIKeyRequest() )
+                .filter( RequestBodyPut.StatusEnum.UNAUTHORISED::equals )
+                .doOnNext( newStatus -> {
+                    final var update = mapToUnauthorisedUpdate( targetAssociation, targetUser );
+                    associationsService.updateAssociation( targetAssociation.getId(), update );
+                    // Send Emails
+                } );
+
+        final var apiKeyConfirmsAssociation = Mono.just( proposedStatus )
+                .filter( newStatus -> isAPIKeyRequest() )
+                .filter( RequestBodyPut.StatusEnum.CONFIRMED::equals )
+                .filter( newStatus -> MIGRATED.equals( oldStatus ) || UNAUTHORISED.equals( oldStatus ) )
+                .doOnNext( newStatus -> {
+                    final var update = mapToAuthCodeConfirmedUpdated( targetAssociation, targetUser, COMPANIES_HOUSE );
+                    associationsService.updateAssociation( targetAssociation.getId(), update );
+                    // send emails
+                } );
+
+        final var canUpdateOwnAssociation = isRequestingUser( targetAssociation );
+        final var canUpdateAnotherUsersAssociation = !isRequestingUser( targetAssociation ) && ( associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) || hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) );
+        final var userRemovesAssociation = Mono.just( proposedStatus )
+                .filter( newStatus -> isOAuth2Request() )
+                .filter( RequestBodyPut.StatusEnum.REMOVED::equals )
+                .filter( newStatus -> canUpdateOwnAssociation || canUpdateAnotherUsersAssociation )
+                .doOnNext( newStatus -> {
+                    final var update = mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() );
+                    associationsService.updateAssociation( targetAssociation.getId(), update );
+                    // send emails
+                } );
+
+        final var userAcceptsInvitation = Mono.just( proposedStatus )
+                .filter( newStatus -> isOAuth2Request() )
+                .filter( newStatus -> isRequestingUser( targetAssociation ) )
+                .filter( RequestBodyPut.StatusEnum.CONFIRMED::equals )
+                .filter( newStatus -> AWAITING_APPROVAL.equals( oldStatus ) )
+                .doOnNext( newStatus -> {
+                    final var update = mapToConfirmedUpdate( targetAssociation, targetUser, getEricIdentity() );
+                    associationsService.updateAssociation( targetAssociation.getId(), update );
+                    // send emails
+                } );
+
+        final var userSendsInvitation = Mono.just( proposedStatus )
+                .filter( newStatus -> isOAuth2Request() )
+                .filter( newStatus -> !isRequestingUser( targetAssociation ) )
+                .filter( RequestBodyPut.StatusEnum.CONFIRMED::equals )
+                .filter( newStatus -> MIGRATED.equals( oldStatus ) || UNAUTHORISED.equals( oldStatus ) )
+                .filter( newStatus -> associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) )
+                .doOnNext( newStatus -> {
+                    final var update = mapToInvitationUpdate( targetAssociation, targetUser, getEricIdentity(), now() );
+                    associationsService.updateAssociation( targetAssociation.getId(), update );
+                    // send emails
+                } );
+
+        Flux.concat( apiKeyUnauthorisesAssociation, apiKeyConfirmsAssociation, userRemovesAssociation, userAcceptsInvitation, userSendsInvitation )
+                .switchIfEmpty( Mono.error( new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Caller not permitted to perform action", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) ) )
+                .blockFirst();
+
+
+
 
         final var newStatus = StatusEnum.fromValue( requestBody.getStatus().getValue() );
         sendStatusUpdateEmails( targetAssociation, targetUser, newStatus );
