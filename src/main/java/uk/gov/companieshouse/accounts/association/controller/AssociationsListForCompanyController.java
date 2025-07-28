@@ -50,7 +50,7 @@ public class AssociationsListForCompanyController implements AssociationDataForC
             throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
         }
 
-        if ( !associationsService.confirmedAssociationExists( companyNumber, getEricIdentity() ) && !hasAdminPrivilege( ADMIN_READ_PERMISSION ) ){
+        if ( !associationsService.confirmedAssociationExists( companyNumber, getEricIdentity() ) && !hasAdminPrivilege( ADMIN_READ_PERMISSION ) && isOAuth2Request() ){
             throw new ForbiddenRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user is not permitted to retrieve data." ) );
         }
 
