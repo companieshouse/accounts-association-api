@@ -62,7 +62,7 @@ public class UserCompanyInvitations implements UserCompanyInvitationsInterface {
 
     @Override
     public ResponseEntity<ResponseBodyPost> inviteUser( final InvitationRequestBodyPost requestBody ) {
-        LOGGER.infoContext( getXRequestId(), String.format( "Received request with user_id=%s, company_number=%s.", getEricIdentity(), requestBody.getCompanyNumber() ),null );
+        LOGGER.infoContext( getXRequestId(), String.format( "Received request with requesting user_id=%s, company_number=%s.", getEricIdentity(), requestBody.getCompanyNumber() ),null );
 
         final var inviteeEmail = Optional.of( requestBody )
                 .map( InvitationRequestBodyPost::getInviteeEmailId )
