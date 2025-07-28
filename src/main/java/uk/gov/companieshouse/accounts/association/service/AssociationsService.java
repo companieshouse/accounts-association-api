@@ -80,9 +80,9 @@ public class AssociationsService {
 
     @Transactional( readOnly = true )
     public Optional<AssociationDao> fetchAssociationDao( final String companyNumber, final String userId, final String userEmail ) {
-        LOGGER.debugContext( getXRequestId(), String.format( "Attempting to fetch association for user_id=%s and company_number=%s", userId, companyNumber ), null );
+        LOGGER.debugContext( getXRequestId(), String.format( "Attempting to fetch association for user_id=%s and company_number=%s. user_email was provided: %b.", userId, companyNumber, Objects.nonNull( userEmail ) ), null );
         final var association = associationsRepository.fetchAssociation( companyNumber, userId, userEmail );
-        LOGGER.debugContext( getXRequestId(), String.format( "Successfully fetched association for user_id=%s and company_number=%s", userId, companyNumber ), null );
+        LOGGER.debugContext( getXRequestId(), String.format( "Successfully fetched association for user_id=%s and company_number=%s. user_email was provided: %b.", userId, companyNumber, Objects.nonNull( userEmail ) ), null );
         return association;
     }
 
@@ -192,7 +192,7 @@ public class AssociationsService {
 
     @Transactional
     public AssociationDao createAssociationWithInvitationApprovalRoute( final String companyNumber, final String userId, final String userEmail, final String invitedByUserId ){
-        LOGGER.debugContext( getXRequestId(), String.format( "Attempting to create new invitation for user_id=%s and company_number=%s", userId, companyNumber ), null );
+        LOGGER.debugContext( getXRequestId(), String.format( "Attempting to create new invitation for user_id=%s and company_number=%s. user_email was provided: %b.", userId, companyNumber, Objects.nonNull( userEmail ) ), null );
         if ( Objects.isNull( companyNumber ) || ( Objects.isNull( userId ) && Objects.isNull( userEmail ) ) || Objects.isNull( invitedByUserId ) ) {
             LOGGER.errorContext( getXRequestId(), new Exception( "companyNumber, user, or invitedByUserId is null" ), null );
             throw new NullPointerException( "companyNumber, user, and invitedByUserId must not be null" );
@@ -209,7 +209,7 @@ public class AssociationsService {
                 .etag( generateEtag() );
 
         final var createdAssociation = associationsRepository.insert( proposedAssociation );
-        LOGGER.debugContext( getXRequestId(), String.format( "Successfully created new invitation for user_id=%s and company_number=%s", userId, companyNumber ), null );
+        LOGGER.debugContext( getXRequestId(), String.format( "Successfully created new invitation for user_id=%s and company_number=%s. user_email was provided: %b.", userId, companyNumber,  Objects.nonNull( userEmail ) ), null );
         return createdAssociation;
     }
 
