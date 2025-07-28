@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -15,6 +16,7 @@ import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.DELEGATED_REMOVAL_OF_MIGRATED;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.DELEGATED_REMOVAL_OF_MIGRATED_BATCH;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE;
@@ -827,6 +829,42 @@ class UserCompanyAssociationTest {
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( String.format( "{\"status\":\"%s\"}", status ) ) )
                 .andExpect( status().isBadRequest() );
+    }
+
+    private static Stream<Arguments> updateAssociationStatusForIdAPIRequestsThatChangeUnauthorisedOrMigratedAssociationsToConfirmedScenarios(){
+        return Stream.of(
+                Arguments.of( "MKAssociation004", "MKUser004" ),
+                Arguments.of( "MKAssociation001", "MKUser001" )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource( "updateAssociationStatusForIdAPIRequestsThatChangeUnauthorisedOrMigratedAssociationsToConfirmedScenarios" )
+    void updateAssociationStatusForIdSupportsAPIRequestsThatChangeUnauthorisedOrMigratedAssociationsToConfirmed( final String targetAssociationId, final String targetUserId ) throws Exception {
+        final var associations = testDataManager.fetchAssociationDaos( targetAssociationId ).getFirst();
+        final var targetUser = testDataManager.fetchUserDtos( targetUserId ).getFirst();
+
+        associationsRepository.insert( associations );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        mockers.mockCompanyServiceFetchCompanyProfile( associations.getCompanyNumber() );
+        mockers.mockUsersServiceFetchUserDetails( targetUserId );
+
+        setEmailProducerCountDownLatch( 1 );
+
+        mockMvc.perform( patch( String.format( "/associations/%s", targetAssociationId ) )
+                        .header( "X-Request-Id", "theId123" )
+                        .header( "ERIC-identity", "9999" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header( "ERIC-Authorised-Key-Roles", "*" )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .content( "{\"status\":\"confirmed\"}" ) )
+                .andExpect( status().isOk() );
+
+        latch.await( 10, TimeUnit.SECONDS );
+
+        Assertions.assertEquals( CONFIRMED.getValue(), associationsRepository.findById( targetAssociationId ).get().getStatus() );
+
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.authCodeConfirmationEmailMatcher( targetUser.getEmail(), "Mushroom Kingdom", targetUser.getDisplayName() ) ), argThat( messageType -> List.of( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue(), AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() ).contains( messageType ) ) );
     }
 
     private static Stream<Arguments> updateAssociationStatusForIdSameUserUnauthorisedBadRequestScenarios(){
