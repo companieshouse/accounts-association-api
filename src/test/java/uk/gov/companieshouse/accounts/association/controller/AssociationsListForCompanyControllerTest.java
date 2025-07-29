@@ -165,6 +165,37 @@ class AssociationsListForCompanyControllerTest {
     }
 
     @Test
+    void getAssociationsForCompanySupportsRequestsFromAPIKey() throws Exception {
+        final var marioUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
+        final var marioAssociation = testDataManager.fetchAssociationDto( "MKAssociation001", marioUser );
+        final var associationsList = new AssociationsList()
+                .totalResults( 1 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
+                .links( new Links().self( String.format( "%s/associations", internalApiUrl ) ).next("") )
+                .items( List.of( marioAssociation ) );
+
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "111" );
+        Mockito.doReturn(associationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ) ),  isNull(), isNull(), eq( 0 ), eq( 15 ) );
+
+        final var response = mockMvc.perform( get( "/associations/companies/MKCOMP001" )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isOk() );
+
+        final var associations = parseResponseTo( response, AssociationsList.class );
+
+        final var items =
+                associations.getItems()
+                        .stream()
+                        .map( uk.gov.companieshouse.api.accounts.associations.model.Association::getId )
+                        .toList();
+
+        Assertions.assertTrue( items.contains(  "MKAssociation001" ) );
+    }
+
+    @Test
     void getAssociationsForCompanyWithIncludeRemovedFalseAppliesFilter() throws Exception {
         final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
         final var batmanAssociation = testDataManager.fetchAssociationDto( "1", batmanUser );

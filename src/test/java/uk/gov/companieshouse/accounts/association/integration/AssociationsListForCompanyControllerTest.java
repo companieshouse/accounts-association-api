@@ -145,6 +145,30 @@ class AssociationsListForCompanyControllerTest {
     }
 
     @Test
+    void getAssociationsForCompanySupportsRequestsFromAPIKey() throws Exception {
+        associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001" ) );
+        mockers.mockUsersServiceFetchUserDetails( "MKUser001" );
+        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+
+        final var response = mockMvc.perform( get( "/associations/companies/MKCOMP001" )
+                        .header("X-Request-Id", "theId123")
+                        .header( "ERIC-Identity", "111" )
+                        .header( "ERIC-Identity-Type", "key" )
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isOk() );
+
+        final var associationsList = parseResponseTo( response, AssociationsList.class );
+
+        final var items =
+                associationsList.getItems()
+                        .stream()
+                        .map( uk.gov.companieshouse.api.accounts.associations.model.Association::getId )
+                        .toList();
+
+        Assertions.assertTrue( items.contains(  "MKAssociation001" ) );
+    }
+
+    @Test
     void getAssociationsForCompanyWithIncludeRemovedFalseAppliesFilter() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17" ) );
         mockers.mockUsersServiceFetchUserDetails( "111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777" );
