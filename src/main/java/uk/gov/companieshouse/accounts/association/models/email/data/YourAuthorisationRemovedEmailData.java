@@ -13,15 +13,26 @@ public class YourAuthorisationRemovedEmailData extends EmailData {
 
     public YourAuthorisationRemovedEmailData(){}
 
-    public YourAuthorisationRemovedEmailData(String companyName, String personWhoRemovedAuthorisation) {
-        this.companyName = companyName;
-        this.personWhoRemovedAuthorisation = personWhoRemovedAuthorisation;
+    public YourAuthorisationRemovedEmailData( final String to, final String companyName, final String personWhoRemovedAuthorisation) {
+        setTo( to );
+        setCompanyName( companyName );
+        setPersonWhoRemovedAuthorisation( personWhoRemovedAuthorisation );
+        setSubject();
+    }
+
+    public YourAuthorisationRemovedEmailData to( final String to ){
+        setTo( to );
+        return this;
     }
 
     public void setCompanyName(String companyName) {
         this.companyName = companyName;
     }
 
+    public YourAuthorisationRemovedEmailData companyName( final String companyName ){
+        setCompanyName( companyName );
+        return this;
+    }
     public String getCompanyName() {
         return companyName;
     }
@@ -30,8 +41,22 @@ public class YourAuthorisationRemovedEmailData extends EmailData {
         this.personWhoRemovedAuthorisation = personWhoRemovedAuthorisation;
     }
 
+    public YourAuthorisationRemovedEmailData personWhoRemovedAuthorisation( final String personWhoRemovedAuthorisation ){
+        setPersonWhoRemovedAuthorisation( personWhoRemovedAuthorisation );
+        return this;
+    }
+
     public String getPersonWhoRemovedAuthorisation() {
         return personWhoRemovedAuthorisation;
+    }
+
+    public void setSubject(){
+        setSubject( String.format("Companies House: Authorisation removed to file online for %s", companyName ) );
+    }
+
+    public YourAuthorisationRemovedEmailData subject(){
+        setSubject();
+        return this;
     }
 
     @Override

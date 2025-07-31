@@ -14,34 +14,65 @@ public class InvitationCancelledEmailData extends EmailData {
 
     public InvitationCancelledEmailData(){}
 
-    public InvitationCancelledEmailData(String personWhoWasCancelled, String companyName, String personWhoCancelledInvite) {
-        this.personWhoWasCancelled = personWhoWasCancelled;
-        this.companyName = companyName;
-        this.personWhoCancelledInvite = personWhoCancelledInvite;
+    public InvitationCancelledEmailData( final String to, final String personWhoWasCancelled, final String companyName, final String personWhoCancelledInvite) {
+        setTo( to );
+        setPersonWhoWasCancelled( personWhoWasCancelled );
+        setCompanyName( companyName );
+        setPersonWhoCancelledInvite( personWhoCancelledInvite );
+        setSubject();
     }
 
-    public void setPersonWhoWasCancelled(String personWhoWasCancelled) {
+    public InvitationCancelledEmailData to( final String to ){
+        setTo( to );
+        return this;
+    }
+
+    public void setPersonWhoWasCancelled( final String personWhoWasCancelled ) {
         this.personWhoWasCancelled = personWhoWasCancelled;
+    }
+
+    public InvitationCancelledEmailData personWhoWasCancelled( final String personWhoWasCancelled ){
+        setPersonWhoWasCancelled( personWhoWasCancelled );
+        return this;
     }
 
     public String getPersonWhoWasCancelled() {
         return personWhoWasCancelled;
     }
 
-    public void setCompanyName(String companyName) {
+    public void setCompanyName( final String companyName ) {
         this.companyName = companyName;
+    }
+
+    public InvitationCancelledEmailData companyName( final String companyName ){
+        setCompanyName( companyName );
+        return this;
     }
 
     public String getCompanyName() {
         return companyName;
     }
 
-    public void setPersonWhoCancelledInvite(String personWhoCancelledInvite) {
+    public void setPersonWhoCancelledInvite( final String personWhoCancelledInvite ) {
         this.personWhoCancelledInvite = personWhoCancelledInvite;
+    }
+
+    public InvitationCancelledEmailData personWhoCancelledInvite( final String personWhoCancelledInvite ){
+        setPersonWhoCancelledInvite( personWhoCancelledInvite );
+        return this;
     }
 
     public String getPersonWhoCancelledInvite() {
         return personWhoCancelledInvite;
+    }
+
+    public void setSubject(){
+        setSubject( String.format( "Companies House: authorisation to file online for %s cancelled", companyName ) );
+    }
+
+    public InvitationCancelledEmailData subject(){
+        setSubject();
+        return this;
     }
 
     @Override

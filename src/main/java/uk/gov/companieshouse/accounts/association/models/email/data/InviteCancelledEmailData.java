@@ -12,16 +12,28 @@ public class InviteCancelledEmailData extends EmailData {
 
     public InviteCancelledEmailData(){}
 
-    public InviteCancelledEmailData(String companyName, String cancelledBy) {
-        this.companyName = companyName;
-        this.cancelledBy = cancelledBy;
+    public InviteCancelledEmailData( final String to, final String companyName, final String cancelledBy) {
+        setTo( to );
+        setCompanyName( companyName );
+        setCancelledBy( cancelledBy );
+        setSubject();
+    }
+
+    public InviteCancelledEmailData to( final String to ){
+        setTo( to );
+        return this;
     }
 
     public String getCompanyName() {
         return companyName;
     }
 
-    public void setCompanyName(String companyName) {
+    public InviteCancelledEmailData companyName( final String companyName ){
+        setCompanyName( companyName );
+        return this;
+    }
+
+    public void setCompanyName(final String companyName ) {
         this.companyName = companyName;
     }
 
@@ -29,8 +41,22 @@ public class InviteCancelledEmailData extends EmailData {
         return cancelledBy;
     }
 
-    public void setCancelledBy(String cancelledBy) {
+    public InviteCancelledEmailData cancelledBy( final String cancelledBy ){
+        setCancelledBy( cancelledBy );
+        return this;
+    }
+
+    public void setCancelledBy(final String cancelledBy ) {
         this.cancelledBy = cancelledBy;
+    }
+
+    public void setSubject(){
+        setSubject( String.format("Companies House: Invitation cancelled for %s to be authorised to file online for %s", cancelledBy, companyName) );
+    }
+
+    public InviteCancelledEmailData subject(){
+        setSubject();
+        return this;
     }
 
     @Override

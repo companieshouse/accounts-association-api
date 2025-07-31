@@ -11,17 +11,7 @@ import org.mockito.ArgumentMatcher;
 import org.springframework.data.domain.Page;
 import uk.gov.companieshouse.accounts.association.common.Preprocessors.Preprocessor;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.models.email.builders.*;
-import uk.gov.companieshouse.accounts.association.models.email.data.AuthorisationRemovedEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.DelegatedRemovalOfMigratedBatchEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.DelegatedRemovalOfMigratedEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationCancelledEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InviteCancelledEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.InviteEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.RemovalOfOwnMigratedEmailData;
-import uk.gov.companieshouse.accounts.association.models.email.data.YourAuthorisationRemovedEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.*;
 import uk.gov.companieshouse.email_producer.model.EmailData;
 
 public class ComparisonUtils {
@@ -79,31 +69,31 @@ public class ComparisonUtils {
         };
     }
 
-    public ArgumentMatcher<InvitationAcceptedEmailData> invitationAcceptedEmailDataMatcher( final List<String> to, final InvitationAcceptedEmailBuilder expectedBaseEmail ){
+    public ArgumentMatcher<InvitationAcceptedEmailData> invitationAcceptedEmailDataMatcher( final List<String> to, final InvitationAcceptedEmailData expectedBaseEmail ){
         return emailData -> to.stream()
-                .map( expectedBaseEmail::setRecipientEmail )
-                .map( InvitationAcceptedEmailBuilder::build )
+                .map( expectedBaseEmail::personWhoCreatedInvite )
+                .map( InvitationAcceptedEmailData::subject )
                 .map( expectEmail -> compare( expectEmail, List.of( "authorisedPerson", "personWhoCreatedInvite", "companyName", "to", "subject" ), List.of(), Map.of() ) )
                 .map( matcher -> matcher.matches( emailData ) )
                 .reduce( (first, second) -> first || second )
                 .get();
     }
 
-    public ArgumentMatcher<EmailData> invitationAndInviteEmailDataMatcher( final String inviterEmail, final String inviterDisplayName, final String inviteeEmail, final String inviteeDisplayName, final String companyName, final String companyInvitationsUrl ){
-        final var expectedInvitationEmail = new InvitationEmailBuilder()
-                .setInviterDisplayName( inviterDisplayName )
-                .setInviteeDisplayName( inviteeDisplayName )
-                .setCompanyName( companyName )
-                .setRecipientEmail( inviterEmail )
-                .build();
+    public ArgumentMatcher<EmailData> invitationAndInviteEmailDataMatcher( final String inviterEmail, final String inviterDisplayName, final String inviteeEmail, final String inviteeDisplayName, final String companyName, final String invitationLink ){
+        final var expectedInvitationEmail = new InvitationEmailData()
+                .personWhoCreatedInvite( inviterDisplayName )
+                .invitee( inviteeDisplayName )
+                .companyName( companyName )
+                .to( inviterEmail )
+                .subject();
 
-        final var expectedInviteEmail = new InviteEmailBuilder()
-                .setInviterDisplayName( inviterDisplayName )
-                .setCompanyName( companyName )
-                .setInvitationLink( companyInvitationsUrl )
-                .setRecipientEmail( inviteeEmail )
-                .setInvitationExpiryTimestamp( now.plusDays( 7 ).toString() )
-                .build();
+        final var expectedInviteEmail = new InviteEmailData()
+                .inviterDisplayName( inviterDisplayName )
+                .companyName( companyName )
+                .invitationLink( invitationLink )
+                .to( inviteeEmail )
+                .subject()
+                .invitationExpiryTimestamp( now.plusDays( 7 ).toString() );
 
         return emailData -> {
             if ( emailData instanceof InvitationEmailData) return compare( expectedInvitationEmail, List.of( "personWhoCreatedInvite", "invitee", "companyName", "to", "subject" ), List.of(), Map.of() ).matches( (InvitationEmailData) emailData );
@@ -113,28 +103,27 @@ public class ComparisonUtils {
     }
 
     public ArgumentMatcher<EmailData> authCodeConfirmationEmailMatcher( final String recipientEmail, final String companyName, final String displayName ){
-        final var expectedEmail = new AuthCodeConfirmationEmailBuilder()
-                .setRecipientEmail( recipientEmail )
-                .setCompanyName( companyName )
-                .setDisplayName( displayName )
-                .build();
+        final var expectedEmail = new AuthCodeConfirmationEmailData()
+                .to( recipientEmail )
+                .companyName( companyName )
+                .authorisedPerson( displayName );
 
         return compare( expectedEmail, List.of( "authorisedPerson", "companyName", "to", "subject" ), List.of(), Map.of() );
     }
 
-    public ArgumentMatcher<EmailData> authorisationRemovedAndYourAuthorisationRemovedEmailMatcher( final String removedByDisplayName, final String removedUserDisplayName, final String companyName, final String authorisationRemovedRecipientEmail, final String yourAuthorisationRemovedRecipientEmail ){
-        final var expectedAuthorisationRemovedEmail = new AuthorisationRemovedEmailBuilder()
-                .setRemovedByDisplayName( removedByDisplayName )
-                .setRemovedUserDisplayName( removedUserDisplayName )
-                .setCompanyName( companyName )
-                .setRecipientEmail( authorisationRemovedRecipientEmail )
-                .build();
+    public ArgumentMatcher<EmailData> authorisationRemovedAndYourAuthorisationRemovedEmailMatcher( final String personWhoRemovedAuthorisation, final String personWhoWasRemoved, final String companyName, final String authorisationRemovedRecipientEmail, final String to ){
+        final var expectedAuthorisationRemovedEmail = new AuthorisationRemovedEmailData()
+                .personWhoRemovedAuthorisation( personWhoRemovedAuthorisation )
+                .personWhoWasRemoved( personWhoWasRemoved )
+                .companyName( companyName )
+                .to( authorisationRemovedRecipientEmail )
+                .subject();
 
-        final var expectedYourAuthorisationRemovedEmail = new YourAuthorisationRemovedEmailBuilder()
-                .setRemovedByDisplayName( removedByDisplayName )
-                .setCompanyName( companyName )
-                .setRecipientEmail( yourAuthorisationRemovedRecipientEmail )
-                .build();
+        final var expectedYourAuthorisationRemovedEmail = new YourAuthorisationRemovedEmailData()
+                .personWhoRemovedAuthorisation( personWhoRemovedAuthorisation )
+                .companyName( companyName )
+                .to( to )
+                .subject();
 
         return emailData -> {
             if ( emailData instanceof AuthorisationRemovedEmailData ) return compare( expectedAuthorisationRemovedEmail, List.of( "personWhoWasRemoved", "personWhoRemovedAuthorisation", "companyName", "to", "subject" ), List.of(), Map.of() ).matches( (AuthorisationRemovedEmailData) emailData );
@@ -143,80 +132,82 @@ public class ComparisonUtils {
         };
     }
 
-    public ArgumentMatcher<EmailData> invitationCancelledAndInviteCancelledEmailMatcher( final String invitationCancelledRecipientEmail, final String cancelledByDisplayName, final String cancelledUserDisplayName, final String companyName, final String inviteCancelledRecipientEmail ){
-        final var expectedInvitationCancelledEmail = new InvitationCancelledEmailBuilder()
-                .setRecipientEmail( invitationCancelledRecipientEmail )
-                .setCancelledByDisplayName( cancelledByDisplayName )
-                .setCancelledUserDisplayName( cancelledUserDisplayName )
-                .setCompanyName( companyName )
-                .build();
+    public ArgumentMatcher<EmailData> invitationCancelledAndInviteCancelledEmailMatcher( final String to, final String personWhoCancelledInvite, final String personWhoWasCancelled, final String companyName, final String cancelledByEmail ){
+        final var expectedInvitationCancelledEmail = new InvitationCancelledEmailData()
+                .to( to )
+                .personWhoCancelledInvite( personWhoCancelledInvite )
+                .personWhoWasCancelled( personWhoWasCancelled )
+                .companyName( companyName )
+                .subject();
 
-        final var expectedCancelledInviteEmail = new InviteCancelledEmailBuilder()
-                .setRecipientEmail( inviteCancelledRecipientEmail )
-                .setCompanyName( companyName )
-                .setCancelledBy( cancelledByDisplayName )
-                .build();
+        final var expectedCancelledInviteEmail = new InviteCancelledEmailData()
+                .to( cancelledByEmail )
+                .companyName( companyName )
+                .cancelledBy( personWhoCancelledInvite )
+                .subject();
 
         return emailData -> {
-            if ( emailData instanceof InvitationCancelledEmailData ) return compare( expectedInvitationCancelledEmail, List.of( "personWhoWasCancelled", "companyName", "personWhoCancelledInvite", "to", "subject" ), List.of(), Map.of() ).matches( (InvitationCancelledEmailData) emailData );
+            if ( emailData instanceof InvitationCancelledEmailData ) return compare( expectedInvitationCancelledEmail, List.of(  "personWhoWasCancelled", "companyName", "personWhoCancelledInvite", "to", "subject" ), List.of(), Map.of() ).matches( (InvitationCancelledEmailData) emailData );
             if ( emailData instanceof InviteCancelledEmailData ) return compare( expectedCancelledInviteEmail, List.of( "cancelledBy", "companyName", "to", "subject" ), List.of(), Map.of() ).matches( (InviteCancelledEmailData) emailData );
             return false;
         };
     }
 
-    public ArgumentMatcher<EmailData> invitationRejectedEmailMatcher( final String recipientEmail, final String inviteeDisplayName, final String companyName ){
-        final var expectedEmail = new InvitationRejectedEmailBuilder()
-                .setRecipientEmail( recipientEmail )
-                .setInviteeDisplayName( inviteeDisplayName )
-                .setCompanyName( companyName )
-                .build();
+    public ArgumentMatcher<EmailData> invitationRejectedEmailMatcher( final String to, final String personWhoDeclined, final String companyName ){
+        final var expectedEmail = new InvitationRejectedEmailData()
+                .to( to )
+                .personWhoDeclined( personWhoDeclined )
+                .companyName( companyName )
+                .subject();
 
         return compare( expectedEmail, List.of( "personWhoDeclined", "companyName", "to", "subject" ), List.of(), Map.of() );
     }
 
-    public ArgumentMatcher<EmailData> delegatedRemovalOfMigratedBatchMatcher( final String recipientEmail, final String companyName, final String removedBy, final String removedUser ){
-        final var expectedEmail = new DelegatedRemovalOfMigratedBatchEmailBuilder()
-                .setRemovedBy( removedBy )
-                .setRemovedUser( removedUser )
-                .setRecipientEmail( recipientEmail )
-                .setCompanyName( companyName )
-                .build();
+    public ArgumentMatcher<EmailData> delegatedRemovalOfMigratedBatchMatcher( final String recipientEmail,  final String companyName, final String removedBy, final String removedUser ){
+       // final var subject = String.format("Companies House: %s's digital authorisation not restored for %s", removedUser, companyName);
+
+        final var expectedEmail = new DelegatedRemovalOfMigratedBatchEmailData()
+                .removedBy( removedBy )
+                .removedUser( removedUser )
+                .to( recipientEmail )
+                .companyName( companyName )
+                .subject();
 
         return compare( expectedEmail, List.of( "removedBy", "removedUser", "companyName", "to", "subject" ), List.of(), Map.of() );
     }
 
-    public ArgumentMatcher<EmailData> delegatedRemovalOfMigratedMatcher( final String recipientEmail, final String companyName, final String removedBy ){
-        final var expectedEmail = new DelegatedRemovalOfMigratedEmailBuilder()
-                .setRemovedBy( removedBy )
-                .setRecipientEmail( recipientEmail )
-                .setCompanyName( companyName )
-                .build();
+    public ArgumentMatcher<EmailData> delegatedRemovalOfMigratedMatcher( final String to, final String companyName, final String removedBy ){
+        final var expectedEmail = new DelegatedRemovalOfMigratedEmailData()
+                .removedBy( removedBy )
+                .to( to )
+                .companyName( companyName )
+                .subject();
 
         return compare( expectedEmail, List.of( "removedBy", "companyName", "to", "subject" ), List.of(), Map.of() );
     }
 
-    public ArgumentMatcher<EmailData> removalOfOwnMigratedMatcher( final String recipientEmail, final String companyName ){
-        final var expectedEmail = new RemovalOfOwnMigratedEmailBuilder()
-                .setRecipientEmail( recipientEmail )
-                .setCompanyName( companyName )
-                .build();
+    public ArgumentMatcher<EmailData> removalOfOwnMigratedMatcher( final String to, final String companyName ){
+        final var expectedEmail = new RemovalOfOwnMigratedEmailData()
+                .to( to )
+                .companyName( companyName )
+                .subject();
 
         return compare( expectedEmail, List.of( "companyName", "to", "subject" ), List.of(), Map.of() );
     }
 
-    public ArgumentMatcher<EmailData> delegatedRemovalOfMigratedAndBatchEmailMatcher( final String targetUserEmail, final String removedUser, final String confirmedUserEmail, final String removedBy, final String companyName ){
-        final var delegatedRemovalOfMigratedEmail = new DelegatedRemovalOfMigratedEmailBuilder()
-                .setRecipientEmail( targetUserEmail )
-                .setCompanyName( companyName )
-                .setRemovedBy( removedBy )
-                .build();
+    public ArgumentMatcher<EmailData> delegatedRemovalOfMigratedAndBatchEmailMatcher( final String to, final String removedUser, final String confirmedUserEmail, final String removedBy, final String companyName ){
+        final var delegatedRemovalOfMigratedEmail = new DelegatedRemovalOfMigratedEmailData()
+                .to( to )
+                .companyName( companyName )
+                .removedBy( removedBy )
+                .subject();
 
-        final var delegatedRemovalOfMigratedBatchEmail = new DelegatedRemovalOfMigratedBatchEmailBuilder()
-                .setRecipientEmail( confirmedUserEmail )
-                .setCompanyName( companyName )
-                .setRemovedBy( removedBy )
-                .setRemovedUser( removedUser )
-                .build();
+        final var delegatedRemovalOfMigratedBatchEmail = new DelegatedRemovalOfMigratedBatchEmailData()
+                .to( to )
+                .companyName( companyName )
+                .removedBy( removedBy )
+                .removedUser( removedUser )
+                .subject();
 
         return emailData -> {
             if ( emailData instanceof DelegatedRemovalOfMigratedEmailData ) return compare( delegatedRemovalOfMigratedEmail, List.of( "removedBy", "companyName", "to", "subject" ), List.of(), Map.of() ).matches( (DelegatedRemovalOfMigratedEmailData) emailData );
@@ -225,18 +216,18 @@ public class ComparisonUtils {
         };
     }
 
-    public ArgumentMatcher<EmailData> removalOfOwnMigratedEmailAndBatchMatcher( final String targetUserEmail, final String removedUser, final String confirmedUserEmail, final String removedBy, final String companyName ){
-        final var removalOfOwnMigratedEmail = new RemovalOfOwnMigratedEmailBuilder()
-                .setRecipientEmail( targetUserEmail )
-                .setCompanyName( companyName )
-                .build();
+    public ArgumentMatcher<EmailData> removalOfOwnMigratedEmailAndBatchMatcher( final String to, final String removedUser, final String confirmedUserEmail, final String removedBy, final String companyName ){
+        final var removalOfOwnMigratedEmail = new RemovalOfOwnMigratedEmailData()
+                .to( to )
+                .companyName( companyName )
+                .subject();
 
-        final var delegatedRemovalOfMigratedBatchEmail = new DelegatedRemovalOfMigratedBatchEmailBuilder()
-                .setRecipientEmail( confirmedUserEmail )
-                .setCompanyName( companyName )
-                .setRemovedBy( removedBy )
-                .setRemovedUser( removedUser )
-                .build();
+        final var delegatedRemovalOfMigratedBatchEmail = new DelegatedRemovalOfMigratedBatchEmailData()
+                .to( confirmedUserEmail ) //TODO: check this is the correct email, as its above
+                .companyName( companyName )
+                .removedBy( removedBy )
+                .removedUser( removedUser )
+                .subject();
 
         return emailData -> {
             if ( emailData instanceof RemovalOfOwnMigratedEmailData ) return compare( removalOfOwnMigratedEmail, List.of( "companyName", "to", "subject" ), List.of(), Map.of() ).matches( (RemovalOfOwnMigratedEmailData) emailData );

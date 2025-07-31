@@ -14,34 +14,71 @@ public class InvitationAcceptedEmailData extends EmailData {
 
     public InvitationAcceptedEmailData(){}
 
-    public InvitationAcceptedEmailData(String authorisedPerson, String companyName, String personWhoCreatedInvite) {
-        this.authorisedPerson = authorisedPerson;
-        this.companyName = companyName;
-        this.personWhoCreatedInvite = personWhoCreatedInvite;
+    public InvitationAcceptedEmailData( final String to, final String inviteeDisplayName, final String companyName, final String personWhoCreatedInvite) {
+        setTo( to );
+        setAuthorisedPerson( inviteeDisplayName );
+        setCompanyName( companyName );
+        setPersonWhoCreatedInvite( personWhoCreatedInvite );
+        setSubject();
+
+        //emailData.setTo(recipientEmail);
+        //emailData.setAuthorisedPerson(inviteeDisplayName);
+        //emailData.setCompanyName(companyName);
+        //emailData.setPersonWhoCreatedInvite(inviterDisplayName);
+        //emailData.setSubject(subject);
     }
 
-    public void setAuthorisedPerson(String authorisedPerson) {
+    public InvitationAcceptedEmailData to( final String inviteeEmail ){
+        setTo( inviteeEmail );
+        return this;
+    }
+
+    public void setAuthorisedPerson( final String authorisedPerson ) {
         this.authorisedPerson = authorisedPerson;
+    }
+
+    public InvitationAcceptedEmailData authorisedPerson( final String authorisedPerson ){
+        setAuthorisedPerson( authorisedPerson );
+        return this;
     }
 
     public String getAuthorisedPerson() {
         return authorisedPerson;
     }
 
-    public void setCompanyName(String companyName) {
+    public void setCompanyName( final String companyName ) {
         this.companyName = companyName;
+    }
+
+    public InvitationAcceptedEmailData companyName( final String companyName ){
+        setCompanyName( companyName );
+        return this;
     }
 
     public String getCompanyName() {
         return companyName;
     }
 
-    public void setPersonWhoCreatedInvite(String personWhoCreatedInvite) {
+    public void setPersonWhoCreatedInvite( final String personWhoCreatedInvite ) {
         this.personWhoCreatedInvite = personWhoCreatedInvite;
+    }
+
+    public InvitationAcceptedEmailData personWhoCreatedInvite( final String personWhoCreatedInvite ){
+        setPersonWhoCreatedInvite( personWhoCreatedInvite );
+        return this;
     }
 
     public String getPersonWhoCreatedInvite() {
         return personWhoCreatedInvite;
+    }
+
+    public void setSubject(){
+        setSubject( String.format("Companies House: %s is now authorised to file online for %s", personWhoCreatedInvite, companyName) );
+    }
+
+    public InvitationAcceptedEmailData subject(){
+        setSubject();
+        return this;
     }
 
     @Override

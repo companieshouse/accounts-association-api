@@ -4,6 +4,8 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import uk.gov.companieshouse.email_producer.model.EmailData;
 
+import java.util.Objects;
+
 public class InviteEmailData extends EmailData {
 
     private String inviterDisplayName;
@@ -16,43 +18,85 @@ public class InviteEmailData extends EmailData {
 
     public InviteEmailData(){}
 
-    public InviteEmailData(String inviterDisplayName, String companyName, String invitationExpiryTimestamp, String invitationLink) {
+    public InviteEmailData( final String to, final String inviterDisplayName, final String companyName, final String invitationExpiryTimestamp, final String invitationLink) {
+        setTo( to );
+        setInviterDisplayName( inviterDisplayName );
+        setCompanyName( companyName );
+        setInvitationExpiryTimestamp( invitationExpiryTimestamp );
+        setInvitationLink( invitationLink );
+        setSubject();
+    }
+
+    public InviteEmailData to( final String to ){
+        setTo( to );
+        return this;
+    }
+
+    public void setInviterDisplayName( final String inviterDisplayName ) {
         this.inviterDisplayName = inviterDisplayName;
-        this.companyName = companyName;
-        this.invitationExpiryTimestamp = invitationExpiryTimestamp;
-        this.invitationLink = invitationLink;
     }
 
-    public void setInviterDisplayName(String inviterDisplayName) {
-        this.inviterDisplayName = inviterDisplayName;
-    }
-
-    public void setCompanyName(String companyName) {
-        this.companyName = companyName;
-    }
-
-    public void setInvitationExpiryTimestamp(String invitationExpiryTimestamp) {
-        this.invitationExpiryTimestamp = invitationExpiryTimestamp;
-    }
-
-    public void setInvitationLink(String invitationLink) {
-        this.invitationLink = invitationLink;
+    public InviteEmailData inviterDisplayName( final String inviterDisplayName ){
+//        if ( Objects.isNull(inviterDisplayName) ) {
+//            throw new NullPointerException("inviteeDisplayName cannot be null");
+//        }
+        setInviterDisplayName( inviterDisplayName );
+        return this;
     }
 
     public String getInviterDisplayName() {
         return inviterDisplayName;
     }
 
+    public void setCompanyName( final String companyName ) {
+        this.companyName = companyName;
+    }
+
+    public InviteEmailData companyName( final String companyName ){
+        if ( Objects.isNull(companyName) ) {
+            throw new NullPointerException("companyName cannot be null");
+        }
+        setCompanyName( companyName );
+        return this;
+    }
+
     public String getCompanyName() {
         return companyName;
+    }
+
+    public void setInvitationExpiryTimestamp( final String invitationExpiryTimestamp ) {
+        this.invitationExpiryTimestamp = invitationExpiryTimestamp;
+    }
+
+    public InviteEmailData invitationExpiryTimestamp( final String invitationExpiryTimestamp ){
+        setInvitationExpiryTimestamp( invitationExpiryTimestamp );
+        return this;
     }
 
     public String getInvitationExpiryTimestamp() {
         return invitationExpiryTimestamp;
     }
 
+    public void setInvitationLink( final String invitationLink ) {
+        this.invitationLink = invitationLink;
+    }
+
+    public InviteEmailData invitationLink( final String invitationLink ){
+        setInvitationLink( invitationLink );
+        return this;
+    }
+
     public String getInvitationLink() {
         return invitationLink;
+    }
+
+    public void setSubject(){
+        setSubject( String.format("Companies House: %s invited to be authorised to file online for %s", inviterDisplayName, companyName) );
+    }
+
+    public InviteEmailData subject(){
+        setSubject();
+        return this;
     }
 
     @Override
