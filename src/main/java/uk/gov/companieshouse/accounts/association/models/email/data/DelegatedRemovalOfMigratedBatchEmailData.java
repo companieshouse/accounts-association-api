@@ -15,21 +15,53 @@ public class DelegatedRemovalOfMigratedBatchEmailData extends EmailData {
 
     public DelegatedRemovalOfMigratedBatchEmailData(){}
 
-    public DelegatedRemovalOfMigratedBatchEmailData( String removedBy, String removedUser, String companyName ) {
-        this.removedBy = removedBy;
-        this.removedUser = removedUser;
-        this.companyName = companyName;
+    public DelegatedRemovalOfMigratedBatchEmailData( final String to, final String removedBy, final String removedUser, final String companyName ) {
+        setTo( to );
+        setRemovedBy( removedBy );
+        setRemovedUser( removedUser );
+        setCompanyName( companyName );
+        setSubject();
     }
 
-    public void setRemovedBy(String removedBy) { this.removedBy = removedBy; }
+
+    public DelegatedRemovalOfMigratedBatchEmailData to( final String to ){
+        setTo( to );
+        return this;
+    }
+
+    public void setRemovedBy( final String removedBy ) { this.removedBy = removedBy; }
+
+    public DelegatedRemovalOfMigratedBatchEmailData removedBy( final String removedBy ){
+        setRemovedBy( removedBy );
+        return this;
+    }
 
     public String getRemovedBy() { return removedBy; }
 
-    public void setRemovedUser(String removedUser) { this.removedUser = removedUser; }
+    public void setRemovedUser(final String removedUser ) { this.removedUser = removedUser; }
+
+    public DelegatedRemovalOfMigratedBatchEmailData removedUser( final String removedUser ){
+        setRemovedUser( removedUser );
+        return this;
+    }
 
     public String getRemovedUser() { return removedUser; }
 
-    public void setCompanyName(String companyName) { this.companyName = companyName; }
+    public void setCompanyName( final String companyName ) { this.companyName = companyName; }
+
+    public DelegatedRemovalOfMigratedBatchEmailData companyName( final String companyName ){
+        setCompanyName( companyName );
+        return this;
+    }
+
+    public void setSubject(){
+        setSubject( String.format("Companies House: %s's digital authorisation not restored for %s", removedUser, companyName) );
+    }
+
+    public DelegatedRemovalOfMigratedBatchEmailData subject(){
+        setSubject();
+        return this;
+    }
 
     public String getCompanyName() { return companyName; }
 

@@ -14,22 +14,39 @@ public class InvitationEmailData extends EmailData {
 
     public InvitationEmailData(){}
 
-    public InvitationEmailData(String invitee, String companyName, String personWhoCreatedInvite) {
-        this.invitee = invitee;
-        this.companyName = companyName;
-        this.personWhoCreatedInvite = personWhoCreatedInvite;
+    public InvitationEmailData( final String to, final String invitee, final String companyName, final String personWhoCreatedInvite) {
+        setTo( to );
+        setInvitee( invitee );
+        setCompanyName( companyName );
+        setPersonWhoCreatedInvite( personWhoCreatedInvite);
+        setSubject();
     }
 
-    public void setInvitee(String invitee) {
+    public InvitationEmailData to( final String to ){
+        setTo( to );
+        return this;
+    }
+
+    public void setInvitee(final String invitee ) {
         this.invitee = invitee;
+    }
+
+    public InvitationEmailData invitee( final String invitee ){
+        setInvitee( invitee );
+        return this;
     }
 
     public String getInvitee() {
         return invitee;
     }
 
-    public void setCompanyName(String companyName) {
+    public void setCompanyName( final String companyName ) {
         this.companyName = companyName;
+    }
+
+    public InvitationEmailData companyName( final String companyName ){
+        setCompanyName( companyName );
+        return this;
     }
 
     public String getCompanyName() {
@@ -40,8 +57,22 @@ public class InvitationEmailData extends EmailData {
         this.personWhoCreatedInvite = personWhoCreatedInvite;
     }
 
+    public InvitationEmailData personWhoCreatedInvite( final String personWhoCreatedInvite ){
+        setPersonWhoCreatedInvite( personWhoCreatedInvite );
+        return this;
+    }
+
     public String getPersonWhoCreatedInvite() {
         return personWhoCreatedInvite;
+    }
+
+    public void setSubject(){
+        setSubject( String.format( "Companies House: invitation to be authorised to file online for %s", companyName ) );
+    }
+
+    public InvitationEmailData subject(){
+        setSubject();
+        return this;
     }
 
     @Override

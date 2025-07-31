@@ -57,7 +57,7 @@ import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationAcceptedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -455,7 +455,7 @@ class UserCompanyAssociationTest {
 
         latch.await( 10, TimeUnit.SECONDS );
 
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "null", "Batman", "null", "Wayne Enterprises", "light.yagami@death.note"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "null", "Batman", "light.yagami@death.note", "Wayne Enterprises", "bruce.wayne@gotham.city"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
@@ -479,7 +479,7 @@ class UserCompanyAssociationTest {
                 .andExpect( status().isOk() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "null", "Batman", "null", "Wayne Enterprises",  "light.yagami@death.note"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "light.yagami@death.note", "Batman", "light.yagami@death.note", "Wayne Enterprises",  "Batman"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
@@ -536,10 +536,10 @@ class UserCompanyAssociationTest {
 
         latch.await( 10, TimeUnit.SECONDS );
 
-        final var expectedBaseEmail = new InvitationAcceptedEmailBuilder()
-                .setInviterDisplayName( "the.joker@gotham.city" )
-                .setInviteeDisplayName( "homer.simpson@springfield.com" )
-                .setCompanyName( "Wayne Enterprises" );
+        final var expectedBaseEmail = new InvitationAcceptedEmailData()
+                .authorisedPerson( "the.joker@gotham.city" )
+                .personWhoCreatedInvite( "homer.simpson@springfield.com" )
+                .companyName( "Wayne Enterprises" );
 
         Mockito.verify( emailProducer, times( 3 ) ).sendEmail( argThat( comparisonUtils.invitationAcceptedEmailDataMatcher( List.of( "the.joker@gotham.city", "robin@gotham.city", "homer.simpson@springfield.com" ), expectedBaseEmail ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() ) );
     }

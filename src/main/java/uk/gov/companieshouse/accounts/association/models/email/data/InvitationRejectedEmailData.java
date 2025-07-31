@@ -4,6 +4,8 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import uk.gov.companieshouse.email_producer.model.EmailData;
 
+import java.util.Objects;
+
 public class InvitationRejectedEmailData extends EmailData {
 
     private String personWhoDeclined;
@@ -12,26 +14,57 @@ public class InvitationRejectedEmailData extends EmailData {
 
     public InvitationRejectedEmailData(){}
 
-    public InvitationRejectedEmailData(String personWhoDeclined, String companyName) {
-        this.personWhoDeclined = personWhoDeclined;
-        this.companyName = companyName;
+    public InvitationRejectedEmailData( final String to, final String personWhoDeclined, final String companyName) {
+        setTo( to );
+        setPersonWhoDeclined( personWhoDeclined );
+        setCompanyName( companyName );
+        setSubject();
     }
 
+    public InvitationRejectedEmailData to( final String to ){
+        setTo( to );
+        return this;
+    }
 
-    public void setPersonWhoDeclined(String personWhoDeclined) {
+    public void setPersonWhoDeclined( final String personWhoDeclined ) {
         this.personWhoDeclined = personWhoDeclined;
+    }
+
+    public InvitationRejectedEmailData personWhoDeclined( final String personWhoDeclined ){
+//        if ( Objects.isNull(personWhoDeclined) ) {
+//            throw new NullPointerException("inviteeDisplayName cannot be null");
+//        }
+        setPersonWhoDeclined( personWhoDeclined );
+        return this;
+    }
+
+    public String getPersonWhoDeclined() {
+        return personWhoDeclined;
     }
 
     public void setCompanyName(String companyName) {
         this.companyName = companyName;
     }
 
+    public InvitationRejectedEmailData companyName( final String companyName ){
+//        if ( Objects.isNull(companyName) ) {
+//            throw new NullPointerException("companyName cannot be null");
+//        }
+        setCompanyName( companyName );
+        return this;
+    }
+
     public String getCompanyName() {
         return companyName;
     }
 
-    public String getPersonWhoDeclined() {
-        return personWhoDeclined;
+    public void setSubject(){
+        setSubject( String.format("Companies House: %s has declined to be digitally authorised to file online for %s", personWhoDeclined, companyName) );
+    }
+
+    public InvitationRejectedEmailData subject(){
+        setSubject();
+        return this;
     }
 
     @Override

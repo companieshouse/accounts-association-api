@@ -14,36 +14,66 @@ public class AuthorisationRemovedEmailData extends EmailData {
 
     public AuthorisationRemovedEmailData(){}
 
-    public AuthorisationRemovedEmailData(String personWhoWasRemoved, String companyName, String personWhoRemovedAuthorisation) {
-        this.personWhoWasRemoved = personWhoWasRemoved;
-        this.companyName = companyName;
-        this.personWhoRemovedAuthorisation = personWhoRemovedAuthorisation;
+    public AuthorisationRemovedEmailData(final String to, final String personWhoWasRemoved, final String companyName, final String personWhoRemovedAuthorisation) {
+        setTo( to );
+        setPersonWhoWasRemoved( personWhoWasRemoved );
+        setCompanyName( companyName );
+        setPersonWhoRemovedAuthorisation( personWhoRemovedAuthorisation );
+        setSubject();
     }
 
-    public void setPersonWhoWasRemoved(String personWhoWasRemoved) {
+    public AuthorisationRemovedEmailData to( final String to ){
+        setTo( to );
+        return this;
+    }
+
+    public void setPersonWhoWasRemoved( final String personWhoWasRemoved ) {
         this.personWhoWasRemoved = personWhoWasRemoved;
+    }
+
+    public AuthorisationRemovedEmailData personWhoWasRemoved( final String personWhoWasRemoved ){
+        setPersonWhoWasRemoved( personWhoWasRemoved );
+        return this;
     }
 
     public String getPersonWhoWasRemoved() {
         return personWhoWasRemoved;
     }
 
-    public void setCompanyName(String companyName) {
+    public void setCompanyName( final String companyName ) {
         this.companyName = companyName;
+    }
+
+    public AuthorisationRemovedEmailData companyName( final String companyName ){
+        setCompanyName( companyName );
+        return this;
     }
 
     public String getCompanyName() {
         return companyName;
     }
 
-    public void setPersonWhoRemovedAuthorisation(String personWhoRemovedAuthorisation) {
+    public void setPersonWhoRemovedAuthorisation( final String personWhoRemovedAuthorisation ) {
         this.personWhoRemovedAuthorisation = personWhoRemovedAuthorisation;
+    }
+
+    public AuthorisationRemovedEmailData personWhoRemovedAuthorisation( final String personWhoRemovedAuthorisation ){
+        setPersonWhoRemovedAuthorisation( personWhoRemovedAuthorisation );
+        return this;
     }
 
     public String getPersonWhoRemovedAuthorisation() {
         return personWhoRemovedAuthorisation;
     }
 
+    public void setSubject(){
+        setSubject( String.format("Companies House: %s's authorisation removed to file online for %s", personWhoWasRemoved, companyName) );
+    }
+
+    public AuthorisationRemovedEmailData subject(){
+        setSubject();
+        return this;
+    }
     @Override
     public boolean equals(Object o) {
         if (this == o) {

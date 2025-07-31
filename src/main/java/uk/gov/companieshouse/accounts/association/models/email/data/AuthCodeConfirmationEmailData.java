@@ -11,25 +11,51 @@ public class AuthCodeConfirmationEmailData extends EmailData {
 
     public AuthCodeConfirmationEmailData(){}
 
-    public AuthCodeConfirmationEmailData(String authorisedPerson, String companyName) {
-        this.authorisedPerson = authorisedPerson;
-        this.companyName = companyName;
+    public AuthCodeConfirmationEmailData( final String to, final String authorisedPerson, final String companyName) {
+        setTo( to );
+        setAuthorisedPerson( authorisedPerson );
+        setCompanyName( companyName );
+        setSubject();
     }
 
-    public void setAuthorisedPerson(String authorisedPerson) {
+    public AuthCodeConfirmationEmailData to( final String to ){
+        setTo( to );
+        return this;
+    }
+
+    public void setAuthorisedPerson( final String authorisedPerson) {
         this.authorisedPerson = authorisedPerson;
+    }
+
+    public AuthCodeConfirmationEmailData authorisedPerson( final String authorisedPerson ){
+        setAuthorisedPerson( authorisedPerson );
+        return this;
     }
 
     public String getAuthorisedPerson() {
         return authorisedPerson;
     }
 
-    public void setCompanyName(String companyName) {
+    public void setCompanyName( final String companyName) {
         this.companyName = companyName;
+    }
+
+    public AuthCodeConfirmationEmailData companyName( final String companyName ){
+        setCompanyName( companyName );
+        return this;
     }
 
     public String getCompanyName() {
         return companyName;
+    }
+
+    public void setSubject(){
+        setSubject( String.format("Companies House: %s is now authorised to file online for %s", authorisedPerson, companyName) );
+    }
+
+    public AuthCodeConfirmationEmailData subject(){
+        setSubject();
+        return this;
     }
 
     @Override

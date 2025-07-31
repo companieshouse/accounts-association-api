@@ -10,13 +10,34 @@ public class RemovalOfOwnMigratedEmailData extends EmailData {
 
     public RemovalOfOwnMigratedEmailData(){}
 
-    public RemovalOfOwnMigratedEmailData( String companyName ) {
-        this.companyName = companyName;
+    public RemovalOfOwnMigratedEmailData( final String to, final String companyName ) {
+        setTo( to );
+        setCompanyName( companyName );
+        setSubject();
     }
 
-    public void setCompanyName(String companyName) { this.companyName = companyName; }
+    public RemovalOfOwnMigratedEmailData to( final String to ){
+        setTo( to );
+        return this;
+    }
+
+    public void setCompanyName( final String companyName ) { this.companyName = companyName; }
+
+    public RemovalOfOwnMigratedEmailData companyName( final String companyName ){
+        setCompanyName( companyName );
+        return this;
+    }
 
     public String getCompanyName() { return companyName; }
+
+    public void setSubject(){
+        setSubject( String.format("Companies House: authorisation to file online for %s not restored", companyName) );
+    }
+
+    public RemovalOfOwnMigratedEmailData subject(){
+        setSubject();
+        return this;
+    }
 
     @Override
     public boolean equals(Object o) {
