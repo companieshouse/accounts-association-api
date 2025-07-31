@@ -50,7 +50,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendAuthCodeConfirmationEmailToAssociatedUser( final String xRequestId, final String companyNumber, Mono<String> companyName, final String displayName ) {
         return userId -> Mono.just( userId )
-                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
+                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
                 .map( user -> new AuthCodeConfirmationEmailBuilder()
                         .setRecipientEmail( user.getEmail() )
                         .setDisplayName( displayName ) )
@@ -64,7 +64,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendAuthorisationRemovedEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String removedByDisplayName, final String removedUserDisplayName ) {
         return userId -> Mono.just( userId )
-                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
+                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
                 .map( user -> new AuthorisationRemovedEmailBuilder()
                         .setRemovedByDisplayName( removedByDisplayName )
                         .setRemovedUserDisplayName( removedUserDisplayName )
@@ -79,7 +79,7 @@ public class EmailService {
 
     public Mono<Void> sendAuthorisationRemovedEmailToRemovedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String removedByDisplayName, final String userId ) {
        return Mono.just( userId )
-               .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
+               .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
                .map( user -> new YourAuthorisationRemovedEmailBuilder()
                        .setRemovedByDisplayName( removedByDisplayName )
                        .setRecipientEmail( user.getEmail() ) )
@@ -93,7 +93,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendInvitationCancelledEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String cancelledByDisplayName, final String cancelledUserDisplayName ) {
         return userId -> Mono.just( userId )
-                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
+                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
                 .map( user -> new InvitationCancelledEmailBuilder()
                         .setCancelledByDisplayName( cancelledByDisplayName )
                         .setCancelledUserDisplayName( cancelledUserDisplayName )
@@ -108,7 +108,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendInvitationEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String inviterDisplayName, final String inviteeDisplayName ) {
         return userId -> Mono.just( userId )
-                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
+                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
                 .map( user -> new InvitationEmailBuilder()
                         .setInviteeDisplayName( inviteeDisplayName )
                         .setInviterDisplayName( inviterDisplayName )
@@ -123,7 +123,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendInvitationAcceptedEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final Mono<String> invitedByDisplayName, final String inviteeDisplayName ) {
         return userId -> Mono.just( userId )
-                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
+                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
                 .map( user -> new InvitationAcceptedEmailBuilder()
                                 .setInviteeDisplayName( inviteeDisplayName )
                                 .setRecipientEmail( user.getEmail() ) )
@@ -138,7 +138,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendInvitationRejectedEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String inviteeDisplayName ) {
         return userId -> Mono.just( userId )
-                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
+                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
                 .map( user -> new InvitationRejectedEmailBuilder()
                                 .setInviteeDisplayName( inviteeDisplayName )
                                 .setRecipientEmail( user.getEmail() ) )
@@ -168,7 +168,7 @@ public class EmailService {
         return Mono.just( associationDao )
                 .filter( dao -> Objects.nonNull( dao.getUserId() ) )
                 .map( AssociationDao::getUserId )
-                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
+                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
                 .map( User::getEmail )
                 .switchIfEmpty( Mono.just( associationDao ).map( AssociationDao::getUserEmail ) )
                 .map( inviteeEmail -> new InviteCancelledEmailBuilder()
@@ -195,7 +195,7 @@ public class EmailService {
 
     public Mono<Void> sendRemoveOfOwnMigratedEmail( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String userId ) {
         return Mono.just( userId )
-                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
+                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
                 .map( user -> new RemovalOfOwnMigratedEmailBuilder()
                         .setRecipientEmail( user.getEmail() ) )
                 .zipWith( companyName, RemovalOfOwnMigratedEmailBuilder::setCompanyName )
@@ -208,7 +208,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendDelegatedRemovalOfMigratedBatchEmail(final String xRequestId, final String companyNumber, final Mono<String> companyName, final String removedBy, final String removedUser ) {
         return userId -> Mono.just( userId )
-                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
+                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
                 .map( user -> new DelegatedRemovalOfMigratedBatchEmailBuilder()
                         .setRemovedBy( removedBy )
                         .setRemovedUser( removedUser )

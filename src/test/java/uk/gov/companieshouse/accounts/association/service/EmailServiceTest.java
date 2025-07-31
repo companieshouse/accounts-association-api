@@ -54,7 +54,7 @@ class EmailServiceTest {
 
     @Test
     void sendAuthCodeConfirmationEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNameOrNullUsersThrowsNullPointerException(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", "111111",null, "Harleen Quinzel" ).apply( "333" ).block() );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), null ).apply( "333" ).block() );
@@ -63,21 +63,21 @@ class EmailServiceTest {
 
     @Test
     void sendAuthCodeConfirmationEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel" ).apply( "333" ).block();
         Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.authCodeConfirmationEmailMatcher( "harley.quinn@gotham.city", "Wayne Enterprises", "Harleen Quinzel" ) ), eq( MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendAuthCodeConfirmationEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         mockers.mockEmailSendingFailure( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue() );
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel" ).apply( "333" ).block() );
     }
 
     @Test
     void sendAuthorisationRemovedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUser( "theId12345", "111111", null,"Harleen Quinzel", "Batman" ).apply( "333" ).block() );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), null, "Batman" ).apply( "333" ).block() );
@@ -87,21 +87,21 @@ class EmailServiceTest {
 
     @Test
     void sendAuthorisationRemovedEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         emailService.sendAuthorisationRemovedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel", "Batman" ).apply( "333" ).block();
         Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.authorisationRemovedAndYourAuthorisationRemovedEmailMatcher( "Harleen Quinzel", "Batman", "Wayne Enterprises", "harley.quinn@gotham.city", "null" ) ), eq( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendAuthorisationRemovedEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         mockers.mockEmailSendingFailure( AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue() );
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel", "Batman").apply( "333" ).block() );
     }
 
     @Test
     void sendInvitationCancelledEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUser( "theId12345", "111111", null, "Harleen Quinzel", "Batman" ).apply( "333" ).block() );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), null, "Batman" ).apply( "333" ).block() );
@@ -111,21 +111,21 @@ class EmailServiceTest {
 
     @Test
     void sendInvitationCancelledEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         emailService.sendInvitationCancelledEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel", "Batman" ).apply( "333" ).block();
         Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "harley.quinn@gotham.city", "Harleen Quinzel", "Batman", "Wayne Enterprises", "null" ) ), eq( INVITATION_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendInvitationCancelledEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         mockers.mockEmailSendingFailure( INVITATION_CANCELLED_MESSAGE_TYPE.getValue() );
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUser( "theId12345", "111111", Mono.just(  "Wayne Enterprises"), "Harleen Quinzel", "Batman" ).apply( "333" ).block() );
     }
 
     @Test
     void sendInvitationEmailToAssociatedUsersNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUser( "theId12345", "111111", null,"Harleen Quinzel", "Batman" ).apply( "333" ).block() );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ),null, "Batman" ).apply( "333" ).block() );
@@ -135,21 +135,21 @@ class EmailServiceTest {
 
     @Test
     void sendInvitationEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         emailService.sendInvitationEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel", "Batman" ).apply( "333" ).block();
         Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationAndInviteEmailDataMatcher( "harley.quinn@gotham.city", "Harleen Quinzel", "bruce.wayne@gotham.city", "Batman", "Wayne Enterprises", COMPANY_INVITATIONS_URL ) ), eq( INVITATION_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendInvitationEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         mockers.mockEmailSendingFailure( INVITATION_MESSAGE_TYPE.getValue() );
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel", "Elon Musk" ).apply( "333" ).block() );
     }
 
     @Test
     void sendInvitationAcceptedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUser( "theId12345", "111111", null, Mono.just( "Harleen Quinzel" ), "Batman" ).apply( "333" ).block() );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), null, "Batman" ).apply( "333" ).block() );
@@ -163,7 +163,7 @@ class EmailServiceTest {
                 .setInviterDisplayName( "Harleen Quinzel" )
                 .setInviteeDisplayName( "Batman" )
                 .setCompanyName( "Wayne Enterprises" );
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
 
         emailService.sendInvitationAcceptedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), Mono.just( "Harleen Quinzel" ), "Batman" ).apply( "333" ).block();
 
@@ -172,14 +172,14 @@ class EmailServiceTest {
 
     @Test
     void sendInvitationAcceptedEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         mockers.mockEmailSendingFailure( INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() );
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), Mono.just( "Harleen Quinzel" ), "Batman" ).apply( "333" ).block() );
     }
 
     @Test
     void sendInvitationRejectedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNameOrNullRequestsThrowsNullPointerException(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUser( "theId12345", "111111", null, "Batman" ).apply( "333" ).block() );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), null ).apply( "333" ).block() );
@@ -187,14 +187,14 @@ class EmailServiceTest {
 
     @Test
     void sendInvitationRejectedEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         emailService.sendInvitationRejectedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Batman" ).apply( "333" ).block();
         Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationRejectedEmailMatcher( "harley.quinn@gotham.city", "Batman", "Wayne Enterprises" ) ), eq( INVITATION_REJECTED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
     void sendInvitationRejectedEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         mockers.mockEmailSendingFailure( INVITATION_REJECTED_MESSAGE_TYPE.getValue() );
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Batman" ).apply( "333" ).block() );
     }
@@ -238,7 +238,7 @@ class EmailServiceTest {
 
     @Test
     void sendDelegatedRemovalOfMigratedBatchWithNullCompanyNameOrNullRemovedByOrNullRemovedUsersThrowsNullPointerException(){
-        mockers.mockUsersServiceFetchUserDetails( "111" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "111" );
 
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedBatchEmail( "theId12345", "111111", null, "Batman", "Ronald" ).apply("111").block() );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedBatchEmail( "theId12345", "111111", Mono.just("McDonalds"), null, "Ronald" ).apply("111").block() );
@@ -247,14 +247,14 @@ class EmailServiceTest {
 
     @Test
     void sendDelegatedRemovalOfMigratedBatchThrowsEmailOnKafkaQueue(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         emailService.sendDelegatedRemovalOfMigratedBatchEmail( "theId12345", "111111", Mono.just("McDonalds"), "Batman", "Harleen Quinzel" ).apply("333").block();
         Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.delegatedRemovalOfMigratedBatchMatcher( "harley.quinn@gotham.city", "McDonalds", "Batman" , "Harleen Quinzel") ), eq( DELEGATED_REMOVAL_OF_MIGRATED_BATCH.getValue() ) );
     }
 
     @Test
     void sendDelegatedRemovalOfMigratedBatchWithUnexpectedIssueThrowsEmailSendingException(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         mockers.mockEmailSendingFailure( DELEGATED_REMOVAL_OF_MIGRATED_BATCH.getValue() );
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendDelegatedRemovalOfMigratedBatchEmail( "theId12345", "111111", Mono.just("McDonalds"), "Batman", "Ronald" ).apply( "333" ).block() );
     }
@@ -284,14 +284,14 @@ class EmailServiceTest {
 
     @Test
     void sendRemovalOfOwnMigratedThrowsEmailOnKafkaQueue(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         emailService.sendRemoveOfOwnMigratedEmail( "theId12345", "111111", Mono.just("McDonalds"), "333" ).block();
         Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.removalOfOwnMigratedMatcher( "harley.quinn@gotham.city", "McDonalds" ) ), eq( REMOVAL_OF_OWN_MIGRATED.getValue() ) );
     }
 
     @Test
     void sendRemovalOfOwnMigratedWithUnexpectedIssueThrowsEmailSendingException(){
-        mockers.mockUsersServiceFetchUserDetails( "333" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         mockers.mockEmailSendingFailure( REMOVAL_OF_OWN_MIGRATED.getValue() );
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendRemoveOfOwnMigratedEmail( "theId12345", "111111", Mono.just("McDonalds"),  "333" ).block() );
     }

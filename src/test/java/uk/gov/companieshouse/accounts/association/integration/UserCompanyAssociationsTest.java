@@ -578,6 +578,7 @@ class UserCompanyAssociationsTest {
     void addAssociationWithUserThatHasDisplayNameUsesDisplayName() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "19" ) );
         mockers.mockUsersServiceFetchUserDetails( "111", "9999" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "9999" );
         mockers.mockCompanyServiceFetchCompanyProfile( "444444" );
 
         setEmailProducerCountDownLatch( 1 );
@@ -616,6 +617,7 @@ class UserCompanyAssociationsTest {
     void addAssociationCanBeAppliedToMigratedAssociation() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ) );
         mockers.mockUsersServiceFetchUserDetails( "MKUser001", "MKUser002" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "MKUser001", "MKUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
 
         setEmailProducerCountDownLatch( 1 );

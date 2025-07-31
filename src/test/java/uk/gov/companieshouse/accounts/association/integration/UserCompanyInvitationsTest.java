@@ -343,6 +343,7 @@ class UserCompanyInvitationsTest {
     void inviteUserWhereAssociationBetweenInviteeEmailAndCompanyNumberExistsAndInviteeUserIsNotFoundDoesNotPerformSwapButDoesPerformUpdateOperation() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "19", "36" ) );
         mockers.mockUsersServiceFetchUserDetails( "9999" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "9999" );
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "light.yagami@death.note" );
         mockers.mockCompanyServiceFetchCompanyProfile( "444444" );
 
@@ -379,6 +380,7 @@ class UserCompanyInvitationsTest {
     void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberExistsDoesNotPerformSwapButDoesPerformUpdateOperation() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "19", "36" ) );
         mockers.mockUsersServiceFetchUserDetails( "9999" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "9999" );
         mockers.mockUsersServiceSearchUserDetails( "000" );
         mockers.mockCompanyServiceFetchCompanyProfile( "444444" );
 
@@ -445,6 +447,7 @@ class UserCompanyInvitationsTest {
     void inviteUserWhereAssociationBetweenInviteeUserEmailAndCompanyNumberDoesNotExistAndInviteeUserIsNotFoundCreatesNewAssociation() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "19" ) );
         mockers.mockUsersServiceFetchUserDetails( "9999" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "9999" );
         mockers.mockUsersServiceSearchUserDetailsEmptyList( "light.yagami@death.note" );
         mockers.mockCompanyServiceFetchCompanyProfile( "444444" );
 
@@ -498,6 +501,7 @@ class UserCompanyInvitationsTest {
 
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "19" ) );
         mockers.mockUsersServiceFetchUserDetails( "9999" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "9999" );
         mockers.mockUsersServiceSearchUserDetails( "111" );
         mockers.mockCompanyServiceFetchCompanyProfile( "444444" );
 
