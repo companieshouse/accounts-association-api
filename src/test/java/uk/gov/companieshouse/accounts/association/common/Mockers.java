@@ -164,6 +164,13 @@ public class Mockers {
         }
     }
 
+    public void mockUsersServiceToFetchUserDetailsRequest( final String... userIds ){
+        for ( final String userId: userIds ){
+            final var userDetails = testDataManager.fetchUserDtos( userId ).getFirst();
+            Mockito.doReturn( Mono.just( userDetails ) ).when( usersService ).toFetchUserDetailsRequest( eq(userId), any() );
+        }
+    }
+
     public void mockUsersServiceSearchUserDetails( final String... userIds ){
         for ( final String userId: userIds ){
             final var userDetails = testDataManager.fetchUserDtos( userId ).getFirst();
