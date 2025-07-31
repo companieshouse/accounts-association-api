@@ -32,7 +32,7 @@ public class UsersService {
         this.usersWebClient = usersWebClient;
     }
 
-    private Mono<User> toFetchUserDetailsRequest( final String userId, final String xRequestId ) {
+    public Mono<User> toFetchUserDetailsRequest( final String userId, final String xRequestId ) {
         return usersWebClient.get()
                 .uri( String.format( "/users/%s", userId ) )
                 .retrieve()

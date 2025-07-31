@@ -4,7 +4,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -540,7 +539,8 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdUserAcceptedInvitationNotificationsSendsNotification() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "2", "4", "6" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        mockers.mockUsersServiceFetchUserDetails( "222", "444", "666" );
+        mockers.mockUsersServiceFetchUserDetails( "222", "666" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "222", "444", "666" );
         Mockito.doReturn( testDataManager.fetchUserDtos( "666" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
         setEmailProducerCountDownLatch( 3 );
@@ -730,7 +730,8 @@ class UserCompanyAssociationTest {
     @Test
     void updateAssociationStatusForIdAllowsAdminUserToRemoveAuthorisation() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "2" ) );
-        mockers.mockUsersServiceFetchUserDetails( "9999", "111", "222" );
+        mockers.mockUsersServiceFetchUserDetails( "9999" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "9999", "111", "222" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn( testDataManager.fetchUserDtos( "111" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
@@ -757,7 +758,8 @@ class UserCompanyAssociationTest {
     @Test
     void updateAssociationStatusForIdAllowsAdminUserToCancelInvitation() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "6", "2" ) );
-        mockers.mockUsersServiceFetchUserDetails( "9999", "666", "222" );
+        mockers.mockUsersServiceFetchUserDetails( "9999", "666" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "9999", "666", "222" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn( testDataManager.fetchUserDtos( "666" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
@@ -848,6 +850,7 @@ class UserCompanyAssociationTest {
         Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
         mockers.mockCompanyServiceFetchCompanyProfile( associations.getCompanyNumber() );
         mockers.mockUsersServiceFetchUserDetails( targetUserId );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( targetUserId );
 
         setEmailProducerCountDownLatch( 1 );
 
@@ -938,6 +941,7 @@ class UserCompanyAssociationTest {
 
         associationsRepository.insert( associations );
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "MKUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
@@ -963,6 +967,7 @@ class UserCompanyAssociationTest {
 
         associationsRepository.insert( associations );
         mockers.mockUsersServiceFetchUserDetails( "MKUser001", "MKUser002" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "MKUser001", "MKUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
@@ -988,6 +993,7 @@ class UserCompanyAssociationTest {
 
         associationsRepository.insert( associations );
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "MKUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 
@@ -1013,6 +1019,7 @@ class UserCompanyAssociationTest {
 
         associationsRepository.insert( associations );
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "MKUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
 

@@ -35,7 +35,7 @@
         <email-producer-java.version>3.0.4</email-producer-java.version>
         <flapdoodle.version>4.20.0</flapdoodle.version>
         <logback-classic.version>1.5.16</logback-classic.version>
-        <tomcat-core-and-websocket.version>11.0.8</tomcat-core-and-websocket.version>
+        <tomcat-core-and-websocket.version>11.0.9</tomcat-core-and-websocket.version>
         <grpc.version>1.73.0</grpc.version>
 
         <sonar-maven-plugin.version>4.0.0.4121</sonar-maven-plugin.version>
