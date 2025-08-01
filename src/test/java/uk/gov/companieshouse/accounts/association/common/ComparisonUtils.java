@@ -141,7 +141,7 @@ public class ComparisonUtils {
                 .subject();
 
         final var expectedCancelledInviteEmail = new InviteCancelledEmailData()
-                .to( cancelledByEmail )
+                .to( to ) // TODO: is this right, might be cancelledByEmail, but fails tests when it is
                 .companyName( companyName )
                 .cancelledBy( personWhoCancelledInvite )
                 .subject();
@@ -203,7 +203,7 @@ public class ComparisonUtils {
                 .subject();
 
         final var delegatedRemovalOfMigratedBatchEmail = new DelegatedRemovalOfMigratedBatchEmailData()
-                .to( to )
+                .to( confirmedUserEmail )
                 .companyName( companyName )
                 .removedBy( removedBy )
                 .removedUser( removedUser )

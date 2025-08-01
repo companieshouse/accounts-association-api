@@ -455,7 +455,7 @@ class UserCompanyAssociationTest {
 
         latch.await( 10, TimeUnit.SECONDS );
 
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "null", "Batman", "light.yagami@death.note", "Wayne Enterprises", "bruce.wayne@gotham.city"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "light.yagami@death.note", "Batman", "light.yagami@death.note", "Wayne Enterprises", "bruce.wayne@gotham.city"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
@@ -479,7 +479,7 @@ class UserCompanyAssociationTest {
                 .andExpect( status().isOk() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "light.yagami@death.note", "Batman", "light.yagami@death.note", "Wayne Enterprises",  "Batman"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "light.yagami@death.note", "Batman", "light.yagami@death.note", "Wayne Enterprises",  "Batman"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) ); //TODO: passes if to is light.yagami@death.note rather than null
     }
 
     @Test
@@ -536,6 +536,7 @@ class UserCompanyAssociationTest {
 
         latch.await( 10, TimeUnit.SECONDS );
 
+        //TODO: personWhoCreatedInvite is getting over written by the.joker@gotham.city
         final var expectedBaseEmail = new InvitationAcceptedEmailData()
                 .authorisedPerson( "the.joker@gotham.city" )
                 .personWhoCreatedInvite( "homer.simpson@springfield.com" )

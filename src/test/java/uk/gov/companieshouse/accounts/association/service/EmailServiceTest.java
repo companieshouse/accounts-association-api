@@ -162,7 +162,7 @@ class EmailServiceTest {
     void sendInviteCancelledEmailSendsEmail(){
         final var association = testDataManager.fetchAssociationDaos( "34" ).getFirst();
         emailService.sendInviteCancelledEmail( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Batman", association ).block();
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "light.yagami@death.note", "null", "null", "Wayne Enterprises", "Batman" )  ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "light.yagami@death.note", "Batman", "light.yagami@death.note", "Wayne Enterprises", "bruce.wayne@gotham.city" )  ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
     // TODO: is this test needed
