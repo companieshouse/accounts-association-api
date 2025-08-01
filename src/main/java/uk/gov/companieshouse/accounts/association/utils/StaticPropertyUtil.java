@@ -12,7 +12,7 @@ public class StaticPropertyUtil {
 
     public static String APPLICATION_NAMESPACE;
 
-    public static final int DAYS_SINCE_INVITE_TILL_EXPIRES = 7;
+    public static final int DAYS_SINCE_INVITE_TILL_EXPIRES = 30;
 
     @PostConstruct
     public void init(){

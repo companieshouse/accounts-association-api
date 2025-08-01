@@ -501,7 +501,7 @@ class AssociationsServiceTest {
         Assertions.assertEquals( userEmail, association.getUserEmail() );
         Assertions.assertEquals( AWAITING_APPROVAL.getValue(), association.getStatus() );
         Assertions.assertEquals( INVITATION.getValue(), association.getApprovalRoute() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( LocalDateTime.now().plusDays( 7 ) ), localDateTimeToNormalisedString( association.getApprovalExpiryAt() ) );
+        Assertions.assertEquals( localDateTimeToNormalisedString( LocalDateTime.now().plusDays( 30 ) ), localDateTimeToNormalisedString( association.getApprovalExpiryAt() ) );
         Assertions.assertEquals( "222", invitations.getInvitedBy() );
         Assertions.assertEquals( localDateTimeToNormalisedString( LocalDateTime.now() ), localDateTimeToNormalisedString( invitations.getInvitedAt() ) );
         Assertions.assertNotNull( association.getEtag() );
