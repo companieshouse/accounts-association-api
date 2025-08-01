@@ -130,7 +130,7 @@ class InvitationsCollectionMappersTest {
         Assertions.assertTrue( invitations.getItems().isEmpty() );
     }
 
-    @Test //TODO: check
+    @Test
     void daoToDtoCorrectlyMapsAssociationsToInvitationsList(){
         final var associations = testDataManager.fetchAssociationDaos( "36", "38" );
         associations.getFirst().approvalExpiryAt( LocalDateTime.now().plusDays( 30 ) );
