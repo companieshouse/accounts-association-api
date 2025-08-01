@@ -81,7 +81,7 @@ public class TestDataManager {
             association.setApprovedAt( now.plusDays(5) );
             association.setRemovedAt( now.plusDays(6) );
             association.setApprovalRoute(ApprovalRouteEnum.AUTH_CODE.getValue());
-            association.setApprovalExpiryAt( now.plusDays(7) );
+            association.setApprovalExpiryAt( now.plusDays(30) );
             association.setInvitations( List.of( invitation ) );
             association.setEtag("b");
 
