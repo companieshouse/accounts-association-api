@@ -547,7 +547,7 @@ class AssociationsServiceTest {
                 .userEmail( userEmail )
                 .status( AWAITING_APPROVAL.getValue() )
                 .approvalRoute( INVITATION.getValue() )
-                .approvalExpiryAt( LocalDateTime.now().plusDays( 7 ) )
+                .approvalExpiryAt( LocalDateTime.now().plusDays( 30 ) )
                 .invitations( List.of( new InvitationDao()
                         .invitedBy( "222" )
                         .invitedAt( LocalDateTime.now() )
