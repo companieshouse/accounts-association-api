@@ -20,12 +20,6 @@ public class InvitationAcceptedEmailData extends EmailData {
         setCompanyName( companyName );
         setPersonWhoCreatedInvite( personWhoCreatedInvite );
         setSubject();
-
-        //emailData.setTo(recipientEmail);
-        //emailData.setAuthorisedPerson(inviteeDisplayName);
-        //emailData.setCompanyName(companyName);
-        //emailData.setPersonWhoCreatedInvite(inviterDisplayName);
-        //emailData.setSubject(subject);
     }
 
     public InvitationAcceptedEmailData to( final String inviteeEmail ){

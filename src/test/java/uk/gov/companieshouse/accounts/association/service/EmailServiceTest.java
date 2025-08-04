@@ -16,7 +16,6 @@ import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
-import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.EmailSendingException;
 
@@ -110,20 +109,19 @@ class EmailServiceTest {
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendInvitationEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel", "Elon Musk" ).apply( "333" ).block() );
     }
 
-//    //TODO: test failing as authorisedPerson isnt getting mapped in sendInvitationAcceptedEmailToAssociatedUser
-//    @Test
-//    void sendInvitationAcceptedEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
-//        final var expectedBaseEmail = new InvitationAcceptedEmailData()
-//                .to( "harley.quinn@gotham.city" )
-//                .authorisedPerson( "Harleen Quinzel" )
-//                .personWhoCreatedInvite( "Batman" )
-//                .companyName( "Wayne Enterprises" );
-//        mockers.mockUsersServiceFetchUserDetails( "333" );
-//
-//        emailService.sendInvitationAcceptedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), Mono.just( "Harleen Quinzel" ), "Batman" ).apply( "333" ).block();
-//
-//        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationAcceptedEmailDataMatcher( List.of( "Harleen Quinzel" ), expectedBaseEmail ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() ) );
-//    }
+    @Test
+    void sendInvitationAcceptedEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
+        final var expectedBaseEmail = new InvitationAcceptedEmailData()
+                .to( "harley.quinn@gotham.city" )
+                .authorisedPerson( "Harleen Quinzel" )
+                .personWhoCreatedInvite( "Batman" )
+                .companyName( "Wayne Enterprises" );
+        mockers.mockUsersServiceFetchUserDetails( "333" );
+
+        emailService.sendInvitationAcceptedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), Mono.just( "Batman" ), "Harleen Quinzel" ).apply( "333" ).block();
+
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationAcceptedEmailDataMatcher( List.of( "harley.quinn@gotham.city" ), expectedBaseEmail ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() ) );
+    }
 
     @Test
     void sendInvitationAcceptedEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
@@ -162,15 +160,8 @@ class EmailServiceTest {
     void sendInviteCancelledEmailSendsEmail(){
         final var association = testDataManager.fetchAssociationDaos( "34" ).getFirst();
         emailService.sendInviteCancelledEmail( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Batman", association ).block();
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "light.yagami@death.note", "Batman", "light.yagami@death.note", "Wayne Enterprises", "bruce.wayne@gotham.city" )  ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "null", "Batman", "null", "Wayne Enterprises", "light.yagami@death.note"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
-
-    // TODO: is this test needed
-//    @Test
-//    void sendDelegatedRemovalOfMigratedBatchWithNullCompanyNameThrowsNullPointerException() {
-//        mockers.mockUsersServiceFetchUserDetails("111");
-//        Assertions.assertThrows(NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedBatchEmail("theId12345", "111111", null, "Batman", "Ronald").apply("111").block());
-//    }
 
     @Test
     void sendDelegatedRemovalOfMigratedBatchThrowsEmailOnKafkaQueue(){

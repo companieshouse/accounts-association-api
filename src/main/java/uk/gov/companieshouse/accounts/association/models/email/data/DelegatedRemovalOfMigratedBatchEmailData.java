@@ -23,7 +23,6 @@ public class DelegatedRemovalOfMigratedBatchEmailData extends EmailData {
         setSubject();
     }
 
-
     public DelegatedRemovalOfMigratedBatchEmailData to( final String to ){
         setTo( to );
         return this;
@@ -54,6 +53,8 @@ public class DelegatedRemovalOfMigratedBatchEmailData extends EmailData {
         return this;
     }
 
+    public String getCompanyName() { return companyName; }
+    
     public void setSubject(){
         setSubject( String.format("Companies House: %s's digital authorisation not restored for %s", removedUser, companyName) );
     }
@@ -62,8 +63,6 @@ public class DelegatedRemovalOfMigratedBatchEmailData extends EmailData {
         setSubject();
         return this;
     }
-
-    public String getCompanyName() { return companyName; }
 
     @Override
     public boolean equals(Object o) {

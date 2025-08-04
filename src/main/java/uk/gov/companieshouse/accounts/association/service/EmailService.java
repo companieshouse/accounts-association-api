@@ -181,6 +181,7 @@ public class EmailService {
                     sendEmail( xRequestId, INVITE_CANCELLED_MESSAGE_TYPE, emailData, logMessageSupplier ); } )
                 .then();
     }
+
     public Mono<Void> sendDelegatedRemovalOfMigratedEmail( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String removedBy, final String recipientEmail ) {
         return Mono.just( new DelegatedRemovalOfMigratedEmailData()
                         .removedBy( removedBy )

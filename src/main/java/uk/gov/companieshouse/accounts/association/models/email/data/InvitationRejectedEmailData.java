@@ -4,8 +4,6 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import uk.gov.companieshouse.email_producer.model.EmailData;
 
-import java.util.Objects;
-
 public class InvitationRejectedEmailData extends EmailData {
 
     private String personWhoDeclined;
@@ -31,9 +29,6 @@ public class InvitationRejectedEmailData extends EmailData {
     }
 
     public InvitationRejectedEmailData personWhoDeclined( final String personWhoDeclined ){
-//        if ( Objects.isNull(personWhoDeclined) ) {
-//            throw new NullPointerException("inviteeDisplayName cannot be null");
-//        }
         setPersonWhoDeclined( personWhoDeclined );
         return this;
     }
@@ -47,9 +42,6 @@ public class InvitationRejectedEmailData extends EmailData {
     }
 
     public InvitationRejectedEmailData companyName( final String companyName ){
-//        if ( Objects.isNull(companyName) ) {
-//            throw new NullPointerException("companyName cannot be null");
-//        }
         setCompanyName( companyName );
         return this;
     }

@@ -37,9 +37,6 @@ public class InviteEmailData extends EmailData {
     }
 
     public InviteEmailData inviterDisplayName( final String inviterDisplayName ){
-//        if ( Objects.isNull(inviterDisplayName) ) {
-//            throw new NullPointerException("inviteeDisplayName cannot be null");
-//        }
         setInviterDisplayName( inviterDisplayName );
         return this;
     }
