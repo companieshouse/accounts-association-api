@@ -71,7 +71,7 @@ public class ComparisonUtils {
 
     public ArgumentMatcher<InvitationAcceptedEmailData> invitationAcceptedEmailDataMatcher( final List<String> to, final InvitationAcceptedEmailData expectedBaseEmail ){
         return emailData -> to.stream()
-                .map( expectedBaseEmail::personWhoCreatedInvite )
+                .map( expectedBaseEmail::to )
                 .map( InvitationAcceptedEmailData::subject )
                 .map( expectEmail -> compare( expectEmail, List.of( "authorisedPerson", "personWhoCreatedInvite", "companyName", "to", "subject" ), List.of(), Map.of() ) )
                 .map( matcher -> matcher.matches( emailData ) )
@@ -141,7 +141,7 @@ public class ComparisonUtils {
                 .subject();
 
         final var expectedCancelledInviteEmail = new InviteCancelledEmailData()
-                .to( to ) // TODO: is this right, might be cancelledByEmail, but fails tests when it is
+                .to( cancelledByEmail )
                 .companyName( companyName )
                 .cancelledBy( personWhoCancelledInvite )
                 .subject();
