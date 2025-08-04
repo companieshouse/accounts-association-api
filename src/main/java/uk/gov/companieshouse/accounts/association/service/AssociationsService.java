@@ -208,6 +208,7 @@ public class AssociationsService {
                 .invitations( List.of( new InvitationDao().invitedBy( invitedByUserId ).invitedAt( LocalDateTime.now() ) ) )
                 .etag( generateEtag() );
 
+        LOGGER.debugContext( getXRequestId(), "Insert Association", null );
         final var createdAssociation = associationsRepository.insert( proposedAssociation );
         LOGGER.debugContext( getXRequestId(), String.format( "Successfully created new invitation for user_id=%s and company_number=%s. user_email was provided: %b.", userId, companyNumber,  Objects.nonNull( userEmail ) ), null );
         return createdAssociation;
