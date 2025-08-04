@@ -125,7 +125,7 @@ public class EmailService {
         return userId -> Mono.just( userId )
                 .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
                 .map( user -> new InvitationAcceptedEmailData()
-                        .personWhoCreatedInvite( inviteeDisplayName )
+                        .authorisedPerson( inviteeDisplayName )
                         .to( user.getEmail() ) )
                 .zipWith( personWhoCreatedInvite, InvitationAcceptedEmailData::personWhoCreatedInvite )
                 .zipWith( companyName, InvitationAcceptedEmailData::companyName )

@@ -536,10 +536,9 @@ class UserCompanyAssociationTest {
 
         latch.await( 10, TimeUnit.SECONDS );
 
-        //TODO: personWhoCreatedInvite is getting over written by the.joker@gotham.city
         final var expectedBaseEmail = new InvitationAcceptedEmailData()
-                .authorisedPerson( "the.joker@gotham.city" )
-                .personWhoCreatedInvite( "homer.simpson@springfield.com" )
+                .authorisedPerson( "homer.simpson@springfield.com" )
+                .personWhoCreatedInvite( "the.joker@gotham.city" )
                 .companyName( "Wayne Enterprises" );
 
         Mockito.verify( emailProducer, times( 3 ) ).sendEmail( argThat( comparisonUtils.invitationAcceptedEmailDataMatcher( List.of( "the.joker@gotham.city", "robin@gotham.city", "homer.simpson@springfield.com" ), expectedBaseEmail ) ), eq( INVITATION_ACCEPTED_MESSAGE_TYPE.getValue() ) );
