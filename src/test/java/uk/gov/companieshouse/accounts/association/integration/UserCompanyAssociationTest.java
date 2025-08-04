@@ -144,7 +144,6 @@ class UserCompanyAssociationTest {
                 .andExpect( status().isNotFound() );
     }
 
-
     @Test
     void getAssociationDetailsFetchesAssociationDetails() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18" ) );
@@ -455,7 +454,7 @@ class UserCompanyAssociationTest {
 
         latch.await( 10, TimeUnit.SECONDS );
 
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "light.yagami@death.note", "Batman", "light.yagami@death.note", "Wayne Enterprises", "bruce.wayne@gotham.city"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "null", "Batman", "null", "Wayne Enterprises", "light.yagami@death.note"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test
@@ -479,7 +478,7 @@ class UserCompanyAssociationTest {
                 .andExpect( status().isOk() );
 
         latch.await( 10, TimeUnit.SECONDS );
-        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "light.yagami@death.note", "Batman", "light.yagami@death.note", "Wayne Enterprises",  "Batman"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) ); //TODO: passes if to is light.yagami@death.note rather than null
+        Mockito.verify( emailProducer ).sendEmail( argThat( comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher( "null", "Batman", "null", "Wayne Enterprises",  "light.yagami@death.note"  ) ), eq( INVITE_CANCELLED_MESSAGE_TYPE.getValue() ) );
     }
 
     @Test

@@ -164,8 +164,6 @@ public class ComparisonUtils {
     }
 
     public ArgumentMatcher<EmailData> delegatedRemovalOfMigratedBatchMatcher( final String recipientEmail,  final String companyName, final String removedBy, final String removedUser ){
-       // final var subject = String.format("Companies House: %s's digital authorisation not restored for %s", removedUser, companyName);
-
         final var expectedEmail = new DelegatedRemovalOfMigratedBatchEmailData()
                 .removedBy( removedBy )
                 .removedUser( removedUser )
@@ -223,7 +221,7 @@ public class ComparisonUtils {
                 .subject();
 
         final var delegatedRemovalOfMigratedBatchEmail = new DelegatedRemovalOfMigratedBatchEmailData()
-                .to( confirmedUserEmail ) //TODO: check this is the correct email, as its above
+                .to( confirmedUserEmail )
                 .companyName( companyName )
                 .removedBy( removedBy )
                 .removedUser( removedUser )

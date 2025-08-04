@@ -74,6 +74,7 @@ public class AuthorisationRemovedEmailData extends EmailData {
         setSubject();
         return this;
     }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
