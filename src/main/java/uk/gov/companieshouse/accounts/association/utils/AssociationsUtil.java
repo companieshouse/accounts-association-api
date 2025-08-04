@@ -2,6 +2,8 @@ package uk.gov.companieshouse.accounts.association.utils;
 
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
+import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
@@ -26,11 +28,14 @@ public final class AssociationsUtil {
     private AssociationsUtil(){}
 
     private static Update mapToBaseUpdate( final AssociationDao targetAssociation, final User targetUser, final String changedByUserId ){
+        LOGGER.debugContext( getXRequestId(), "Attempting to mapToBaseUpdate", null );
+
         final var previousState = new PreviousStatesDao().status( targetAssociation.getStatus() ).changedBy( changedByUserId ).changedAt( LocalDateTime.now() );
 
         final var baseUpdate = new Update()
                 .set( "etag", generateEtag() )
                 .push( "previous_states", previousState );
+        LOGGER.debugContext( getXRequestId(), "Created baseUpdate", null );
 
         return Optional.ofNullable( targetUser )
                 .map( user -> baseUpdate.set( "user_email", null ).set( "user_id", user.getUserId() ) )
@@ -38,6 +43,7 @@ public final class AssociationsUtil {
     }
 
     public static Update mapToInvitationUpdate( final AssociationDao targetAssociation, final User targetUser, final String invitedByUserId, final LocalDateTime now ){
+        LOGGER.debugContext( getXRequestId(), "Attempting to mapToInvitationUpdate", null );
         final var invitationDao = new InvitationDao().invitedBy( invitedByUserId ).invitedAt( now );
         return mapToBaseUpdate( targetAssociation, targetUser, invitedByUserId )
                 .push( "invitations", invitationDao )
