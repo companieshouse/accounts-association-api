@@ -88,10 +88,12 @@ public class UserCompanyInvitations implements UserCompanyInvitationsInterface {
 
         final var targetAssociation = associationsService.fetchAssociationDao( companyNumber, Objects.nonNull( inviteeUserDetails ) ? inviteeUserDetails.getUserId() : null, inviteeEmail )
                 .map( association -> {
+                    LOGGER.debugContext( getXRequestId(), "Mapping association", null );
                     if( CONFIRMED.getValue().equals( association.getStatus() ) ) {
                         throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "This invitee email address already has a confirmed association at company %s", companyNumber ) ) );
                     }
                     associationsService.updateAssociation( association.getId(), mapToInvitationUpdate( association, inviteeUserDetails, getEricIdentity(), now() ) );
+                    LOGGER.debugContext( getXRequestId(), "Completed update associations", null );
                     return association.approvalExpiryAt( now().plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ) );
                 } )
                 .orElseGet( () -> {
