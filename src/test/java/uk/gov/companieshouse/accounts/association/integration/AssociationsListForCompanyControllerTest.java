@@ -17,11 +17,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
@@ -381,7 +380,7 @@ class AssociationsListForCompanyControllerTest {
 
         Assertions.assertEquals( 3, associationsList.getTotalResults() );
 
-        for ( final Association association: associations ){
+        for ( final uk.gov.companieshouse.api.accounts.associations.model.Association association: associations ){
             final var expectedStatus = switch ( association.getId() ){
                 case "MKAssociation001" -> "migrated";
                 case "MKAssociation002" -> "confirmed";
@@ -428,7 +427,7 @@ class AssociationsListForCompanyControllerTest {
                         .content( "{\"user_id\":\"MKUser002\", \"status\":[\"confirmed\", \"removed\"]} " ) )
                 .andExpect( status().isOk() );
 
-        final var association = parseResponseTo( response, Association.class );
+        final var association = parseResponseTo( response, uk.gov.companieshouse.api.accounts.associations.model.Association.class );
         Assertions.assertEquals( "MKAssociation002", association.getId() );
     }
 
@@ -457,7 +456,7 @@ class AssociationsListForCompanyControllerTest {
                         .content( String.format( "{\"user_email\":\"luigi@mushroom.kingdom\" %s} ", status) ) )
                 .andExpect( status().isOk() );
 
-        final var association = parseResponseTo( response, Association.class );
+        final var association = parseResponseTo( response, uk.gov.companieshouse.api.accounts.associations.model.Association.class );
         Assertions.assertEquals( "MKAssociation002", association.getId() );
     }
 
@@ -476,7 +475,7 @@ class AssociationsListForCompanyControllerTest {
                         .content(  "{\"user_email\":\"mario@mushroom.kingdom\" , \"status\":[\"migrated\"] }" ) )
                 .andExpect( status().isOk() );
 
-        final var association = parseResponseTo( response, Association.class );
+        final var association = parseResponseTo( response, uk.gov.companieshouse.api.accounts.associations.model.Association.class );
         Assertions.assertEquals( "MKAssociation001", association.getId() );
     }
 
@@ -608,7 +607,7 @@ class AssociationsListForCompanyControllerTest {
 
     @AfterEach
     public void after() {
-        mongoTemplate.dropCollection(AssociationDao.class);
+        mongoTemplate.dropCollection(Association.class);
     }
 
 }

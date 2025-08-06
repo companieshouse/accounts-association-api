@@ -15,7 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 
 @ExtendWith( MockitoExtension.class )
@@ -41,7 +41,7 @@ class InvitationsCollectionMappersTest {
 
     @Test
     void daoToDtoWithNullAssociationThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class , () -> invitationsCollectionMappers.daoToDto( (AssociationDao) null, 0, 15 ) );
+        Assertions.assertThrows( NullPointerException.class , () -> invitationsCollectionMappers.daoToDto( (Association) null, 0, 15 ) );
     }
 
     @Test
@@ -115,7 +115,7 @@ class InvitationsCollectionMappersTest {
 
     @Test
     void daoToDtoWithNullListThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> invitationsCollectionMappers.daoToDto( (List<AssociationDao>) null, 0, 15) );
+        Assertions.assertThrows( NullPointerException.class, () -> invitationsCollectionMappers.daoToDto( (List<Association>) null, 0, 15) );
     }
 
     @Test

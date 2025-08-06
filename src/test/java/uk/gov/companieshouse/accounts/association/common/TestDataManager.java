@@ -14,17 +14,14 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.models.InvitationDao;
-import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
+
+import uk.gov.companieshouse.accounts.association.models.Association;
+import uk.gov.companieshouse.accounts.association.models.Invitation;
+import uk.gov.companieshouse.accounts.association.models.PreviousStates;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
-import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
-import uk.gov.companieshouse.api.accounts.associations.model.Links;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousState;
-import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
@@ -41,17 +38,17 @@ public class TestDataManager {
 
     private final LocalDateTime now = LocalDateTime.now();
 
-    private final Map<String, Supplier<AssociationDao>> associationDaoSuppliers = new HashMap<>();
+    private final Map<String, Supplier<Association>> associationDaoSuppliers = new HashMap<>();
     private final Map<String, Supplier<User>> userDtoSuppliers = new HashMap<>();
     private final Map<String, Supplier<CompanyDetails>> companyDetailsDtoSuppliers = new HashMap<>();
 
     private void instantiateAssociationDaoSuppliers(){
-        final Supplier<AssociationDao> WayneEnterprisesBatmanAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesBatmanAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("666");
             invitation.setInvitedAt(now.plusDays(4));
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("111");
             association.setUserEmail("bruce.wayne@gotham.city");
@@ -67,12 +64,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "1", WayneEnterprisesBatmanAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesJokerAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesJokerAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("666");
             invitation.setInvitedAt( now.plusDays(8) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("222");
             association.setUserEmail("the.joker@gotham.city");
@@ -89,12 +86,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "2", WayneEnterprisesJokerAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesHarleyQuinnAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesHarleyQuinnAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("666");
             invitation.setInvitedAt( now.plusDays(12) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("333");
             association.setUserEmail("harley.quinn@gotham.city");
@@ -111,12 +108,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "3", WayneEnterprisesHarleyQuinnAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesRobinAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesRobinAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("666");
             invitation.setInvitedAt( now.plusDays(16) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("444");
             association.setUserEmail("robin@gotham.city");
@@ -133,12 +130,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "4", WayneEnterprisesRobinAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesBatWomanAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesBatWomanAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("666");
             invitation.setInvitedAt( now.plusDays(20) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("555");
             association.setUserEmail("barbara.gordon@gotham.city");
@@ -155,16 +152,16 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "5", WayneEnterprisesBatWomanAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesHomerAssociationDaoSupplier = () -> {
-            final var olderInvitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesHomerAssociationDaoSupplier = () -> {
+            final var olderInvitation = new Invitation();
             olderInvitation.setInvitedBy("444");
             olderInvitation.setInvitedAt( now.plusDays(14) );
 
-            final var newerInvitation = new InvitationDao();
+            final var newerInvitation = new Invitation();
             newerInvitation.setInvitedBy("222");
             newerInvitation.setInvitedAt( now.plusDays(16) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("666");
             association.setUserEmail("homer.simpson@springfield.com");
@@ -181,12 +178,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "6", WayneEnterprisesHomerAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesMargeAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesMargeAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(28) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("777");
             association.setUserEmail("marge.simpson@springfield.com");
@@ -203,12 +200,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "7", WayneEnterprisesMargeAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesBartAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesBartAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(32) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("888");
             association.setUserEmail("bart.simpson@springfield.com");
@@ -225,12 +222,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "8", WayneEnterprisesBartAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesLisaAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesLisaAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(36) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("999");
             association.setUserEmail("lisa.simpson@springfield.com");
@@ -247,12 +244,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "9", WayneEnterprisesLisaAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesMaggieAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesMaggieAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(40) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("1111");
             association.setUserEmail("maggie.simpson@springfield.com");
@@ -269,12 +266,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "10", WayneEnterprisesMaggieAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesCrustyAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesCrustyAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(44) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("2222");
             association.setUserEmail("crusty.the.clown@springfield.com");
@@ -292,12 +289,12 @@ public class TestDataManager {
 
         associationDaoSuppliers.put( "11", WayneEnterprisesCrustyAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesItchyAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesItchyAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(48) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("3333");
             association.setUserEmail("itchy@springfield.com");
@@ -314,12 +311,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "12", WayneEnterprisesItchyAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesScratchyAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesScratchyAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(52) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("4444");
             association.setUserEmail("scratchy@springfield.com");
@@ -336,12 +333,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "13", WayneEnterprisesScratchyAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesRossAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesRossAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("111");
             invitation.setInvitedAt( now.plusDays(56) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("5555");
             association.setUserEmail("ross@friends.com");
@@ -358,12 +355,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "14", WayneEnterprisesRossAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesRachelAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesRachelAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("111");
             invitation.setInvitedAt( now.plusDays(60) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("6666");
             association.setUserEmail("rachel@friends.com");
@@ -380,12 +377,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "15", WayneEnterprisesRachelAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesChandlerAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesChandlerAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("111");
             invitation.setInvitedAt( now.plusDays(64) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserId("7777");
             association.setUserEmail("chandler@friends.com");
@@ -402,12 +399,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "16", WayneEnterprisesChandlerAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesMrBlobbyAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesMrBlobbyAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("111");
             invitation.setInvitedAt( now.plusDays(68) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("222222");
             association.setUserEmail("mr.blobby@nightmare.com");
             association.setStatus(StatusEnum.CONFIRMED.getValue());
@@ -423,12 +420,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "17", WayneEnterprisesMrBlobbyAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> TescoScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> TescoScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("666");
             invitation.setInvitedAt(now.plusDays(4));
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("333333");
             association.setUserId("9999");
             association.setStatus(StatusEnum.CONFIRMED.getValue());
@@ -444,12 +441,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "18", TescoScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> SainsburysScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> SainsburysScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("666");
             invitation.setInvitedAt( now.plusDays(8) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("444444");
             association.setUserId("9999");
             association.setStatus(StatusEnum.CONFIRMED.getValue());
@@ -465,12 +462,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "19", SainsburysScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> MorrisonScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> MorrisonScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("666");
             invitation.setInvitedAt( now.plusDays(12) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("555555");
             association.setUserId("9999");
             association.setStatus(StatusEnum.CONFIRMED.getValue());
@@ -486,12 +483,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "20", MorrisonScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> AldiScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> AldiScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("666");
             invitation.setInvitedAt( now.plusDays(16) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("666666");
             association.setUserId("9999");
             association.setStatus(StatusEnum.CONFIRMED.getValue());
@@ -507,12 +504,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "21", AldiScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> LidlScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> LidlScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("666");
             invitation.setInvitedAt( now.plusDays(20) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("777777");
             association.setUserId("9999");
             association.setStatus(StatusEnum.CONFIRMED.getValue());
@@ -528,12 +525,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "22", LidlScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> McDonaldsScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> McDonaldsScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(24) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("888888");
             association.setUserId("9999");
             association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
@@ -549,12 +546,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "23", McDonaldsScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> BurgerKingScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> BurgerKingScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(28) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("999999");
             association.setUserId("9999");
             association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
@@ -570,12 +567,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "24", BurgerKingScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> PizzaHutScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> PizzaHutScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(32) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("x111111");
             association.setUserId("9999");
             association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
@@ -591,12 +588,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "25", PizzaHutScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> DominosScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> DominosScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(36) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("x222222");
             association.setUserId("9999");
             association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
@@ -612,12 +609,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "26", DominosScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> PizzaExpressScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> PizzaExpressScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(40) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("x333333");
             association.setUserId("9999");
             association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
@@ -633,12 +630,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "27", PizzaExpressScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> NandosScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> NandosScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(44) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("x444444");
             association.setUserId("9999");
             association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
@@ -654,12 +651,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "28", NandosScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> SubwayScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> SubwayScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(48) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("x555555");
             association.setUserId("9999");
             association.setUserEmail("scrooge.mcduck@disney.land");
@@ -676,12 +673,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "29", SubwayScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> GreggsScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> GreggsScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("5555");
             invitation.setInvitedAt( now.plusDays(52) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("x666666");
             association.setUserId("9999");
             association.setUserEmail("scrooge.mcduck@disney.land");
@@ -698,12 +695,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "30", GreggsScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> FacebookScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> FacebookScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("111");
             invitation.setInvitedAt( now.plusDays(56) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("x777777");
             association.setUserId("9999");
             association.setStatus(StatusEnum.REMOVED.getValue());
@@ -719,12 +716,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "31", FacebookScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> TwitterScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> TwitterScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("111");
             invitation.setInvitedAt( now.plusDays(60) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("x888888");
             association.setUserId("9999");
             association.setStatus(StatusEnum.REMOVED.getValue());
@@ -740,12 +737,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "32", TwitterScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> InstagramScroogeMcDuckAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> InstagramScroogeMcDuckAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("111");
             invitation.setInvitedAt( now.plusDays(64) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("x999999");
             association.setUserId("9999");
             association.setStatus(StatusEnum.REMOVED.getValue());
@@ -761,12 +758,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "33", InstagramScroogeMcDuckAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> WayneEnterprisesLightYagamiAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> WayneEnterprisesLightYagamiAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("111");
             invitation.setInvitedAt( now.plusDays(64) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("111111");
             association.setUserEmail( "light.yagami@death.note" );
             association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
@@ -782,12 +779,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "34", WayneEnterprisesLightYagamiAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> TescoLightYagamiAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> TescoLightYagamiAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("9999");
             invitation.setInvitedAt( now.plusDays(64) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("333333");
             association.setUserId( "000" );
             association.setStatus(StatusEnum.CONFIRMED.getValue());
@@ -803,12 +800,12 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "35", TescoLightYagamiAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> SainsburysLightYagamiAssociationDaoSupplier = () -> {
-            final var invitation = new InvitationDao();
+        final Supplier<Association> SainsburysLightYagamiAssociationDaoSupplier = () -> {
+            final var invitation = new Invitation();
             invitation.setInvitedBy("9999");
             invitation.setInvitedAt( now.plusDays(64) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("444444");
             association.setUserEmail( "light.yagami@death.note" );
             association.setStatus(StatusEnum.REMOVED.getValue());
@@ -824,20 +821,20 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "36", SainsburysLightYagamiAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> PizzaHutLightYagamiAssociationDaoSupplier = () -> {
-            final var invitationOldest = new InvitationDao();
+        final Supplier<Association> PizzaHutLightYagamiAssociationDaoSupplier = () -> {
+            final var invitationOldest = new Invitation();
             invitationOldest.setInvitedBy("666");
             invitationOldest.setInvitedAt(now.minusDays(9));
 
-            final var invitationMedian = new InvitationDao();
+            final var invitationMedian = new Invitation();
             invitationMedian.setInvitedBy("333");
             invitationMedian.setInvitedAt(now.minusDays(6));
 
-            final var invitationNewest = new InvitationDao();
+            final var invitationNewest = new Invitation();
             invitationNewest.setInvitedBy("444");
             invitationNewest.setInvitedAt(now.minusDays(4));
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("X111111");
             association.setUserId("000");
             association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
@@ -851,20 +848,20 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "37", PizzaHutLightYagamiAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> DominosLightYagamiAssociationDaoSupplier = () -> {
-            final var invitationOldest = new InvitationDao();
+        final Supplier<Association> DominosLightYagamiAssociationDaoSupplier = () -> {
+            final var invitationOldest = new Invitation();
             invitationOldest.setInvitedBy("111");
             invitationOldest.setInvitedAt( now.minusDays(3) );
 
-            final var invitationMedian = new InvitationDao();
+            final var invitationMedian = new Invitation();
             invitationMedian.setInvitedBy("222");
             invitationMedian.setInvitedAt( now.minusDays(2) );
 
-            final var invitationNewest = new InvitationDao();
+            final var invitationNewest = new Invitation();
             invitationNewest.setInvitedBy("444");
             invitationNewest.setInvitedAt( now.plusDays(8) );
 
-            final var association = new AssociationDao();
+            final var association = new Association();
             association.setCompanyNumber("x222222");
             association.setUserId("9999");
             association.setStatus(StatusEnum.AWAITING_APPROVAL.getValue());
@@ -878,7 +875,7 @@ public class TestDataManager {
         };
         associationDaoSuppliers.put( "38", DominosLightYagamiAssociationDaoSupplier );
 
-        final Supplier<AssociationDao> marioAssociation = () -> new AssociationDao()
+        final Supplier<Association> marioAssociation = () -> new Association()
                 .id( "MKAssociation001" )
                 .companyNumber( "MKCOMP001" )
                 .userEmail( "mario@mushroom.kingdom" )
@@ -888,7 +885,7 @@ public class TestDataManager {
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MKAssociation001", marioAssociation );
 
-        final Supplier<AssociationDao> luigiAssociation = () -> new AssociationDao()
+        final Supplier<Association> luigiAssociation = () -> new Association()
                 .id( "MKAssociation002" )
                 .companyNumber( "MKCOMP001" )
                 .userId( "MKUser002" )
@@ -897,34 +894,34 @@ public class TestDataManager {
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MKAssociation002", luigiAssociation );
 
-        final Supplier<AssociationDao> peachAssociation = () -> new AssociationDao()
+        final Supplier<Association> peachAssociation = () -> new Association()
                 .id( "MKAssociation003" )
                 .companyNumber( "MKCOMP001" )
                 .userId( "MKUser003" )
                 .status( "removed" )
                 .approvalRoute( "migration" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MKUser002" ).invitedAt( now.minusDays( 8L ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MKUser002" ).invitedAt( now.minusDays( 8L ) ) ) )
                 .approvalExpiryAt( now.minusDays( 1L ) )
                 .approvedAt( now.minusDays( 7L ) )
                 .removedAt( now.minusDays( 6L ) )
                 .migratedAt( now.minusDays( 10L ) )
 
                 .previousStates( List.of(
-                        new PreviousStatesDao().status( "migrated" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 9L ) ),
-                        new PreviousStatesDao().status( "removed" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 8L ) ),
-                        new PreviousStatesDao().status( "awaiting-approval" ).changedBy( "MKUser003" ).changedAt( now.minusDays( 7L ) ),
-                        new PreviousStatesDao().status( "confirmed" ).changedBy( "MKUser003" ).changedAt( now.minusDays( 6L ) )
+                        new PreviousStates().status( "migrated" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 9L ) ),
+                        new PreviousStates().status( "removed" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 8L ) ),
+                        new PreviousStates().status( "awaiting-approval" ).changedBy( "MKUser003" ).changedAt( now.minusDays( 7L ) ),
+                        new PreviousStates().status( "confirmed" ).changedBy( "MKUser003" ).changedAt( now.minusDays( 6L ) )
                 ) )
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MKAssociation003", peachAssociation );
 
-        final Supplier<AssociationDao> bowserAssociation = () -> new AssociationDao()
+        final Supplier<Association> bowserAssociation = () -> new Association()
                 .id( "MKAssociation004" )
                 .companyNumber( "MKCOMP001" )
                 .userId( "MKUser004" )
                 .status( "unauthorised" )
                 .approvalRoute( "migration" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MKUser002" ).invitedAt( now.minusDays( 8L ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MKUser002" ).invitedAt( now.minusDays( 8L ) ) ) )
                 .unauthorisedAt( now.minusDays( 6L ) )
                 .unauthorisedBy( "Companies House" )
                 .approvalExpiryAt( now.minusDays( 1L ) )
@@ -932,21 +929,21 @@ public class TestDataManager {
                 .removedAt( now.minusDays( 9L ) )
                 .migratedAt( now.minusDays( 10L ) )
                 .previousStates( List.of(
-                        new PreviousStatesDao().status( "migrated" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 9L ) ),
-                        new PreviousStatesDao().status( "removed" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 8L ) ),
-                        new PreviousStatesDao().status( "awaiting-approval" ).changedBy( "MKUser004" ).changedAt( now.minusDays( 7L ) ),
-                        new PreviousStatesDao().status( "confirmed" ).changedBy( "Companies House" ).changedAt( now.minusDays( 6L ) )
+                        new PreviousStates().status( "migrated" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 9L ) ),
+                        new PreviousStates().status( "removed" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 8L ) ),
+                        new PreviousStates().status( "awaiting-approval" ).changedBy( "MKUser004" ).changedAt( now.minusDays( 7L ) ),
+                        new PreviousStates().status( "confirmed" ).changedBy( "Companies House" ).changedAt( now.minusDays( 6L ) )
                 ) )
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MKAssociation004", bowserAssociation );
 
-        final Supplier<AssociationDao> bowsetteAssociation = () -> new AssociationDao()
+        final Supplier<Association> bowsetteAssociation = () -> new Association()
                 .id( "MKAssociation005" )
                 .companyNumber( "MKCOMP001" )
                 .userId( "MKUser005" )
                 .status( "confirmed" )
                 .approvalRoute( "auth_code" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MKUser002" ).invitedAt( now.minusDays( 8L ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MKUser002" ).invitedAt( now.minusDays( 8L ) ) ) )
                 .unauthorisedAt( now.minusDays( 6L ) )
                 .unauthorisedBy( "Companies House" )
                 .approvalExpiryAt( now.minusDays( 1L ) )
@@ -954,16 +951,16 @@ public class TestDataManager {
                 .removedAt( now.minusDays( 9L ) )
                 .migratedAt( now.minusDays( 10L ) )
                 .previousStates( List.of(
-                        new PreviousStatesDao().status( "migrated" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 9L ) ),
-                        new PreviousStatesDao().status( "removed" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 8L ) ),
-                        new PreviousStatesDao().status( "awaiting-approval" ).changedBy( "MKUser005" ).changedAt( now.minusDays( 7L ) ),
-                        new PreviousStatesDao().status( "confirmed" ).changedBy( "Companies House" ).changedAt( now.minusDays( 6L ) ),
-                        new PreviousStatesDao().status( "unauthorised" ).changedBy( "MKUser005" ).changedAt( now.minusDays( 3L ) )
+                        new PreviousStates().status( "migrated" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 9L ) ),
+                        new PreviousStates().status( "removed" ).changedBy( "MKUser002" ).changedAt( now.minusDays( 8L ) ),
+                        new PreviousStates().status( "awaiting-approval" ).changedBy( "MKUser005" ).changedAt( now.minusDays( 7L ) ),
+                        new PreviousStates().status( "confirmed" ).changedBy( "Companies House" ).changedAt( now.minusDays( 6L ) ),
+                        new PreviousStates().status( "unauthorised" ).changedBy( "MKUser005" ).changedAt( now.minusDays( 3L ) )
                 ) )
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MKAssociation005", bowsetteAssociation );
 
-        final Supplier<AssociationDao> MiAssociation001 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation001 = () -> new Association()
                 .id( "MiAssociation001" )
                 .companyNumber( "MICOMP001" )
                 .userId( "MiUser001" )
@@ -972,7 +969,7 @@ public class TestDataManager {
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MiAssociation001", MiAssociation001 );
 
-        final Supplier<AssociationDao> MiAssociation002 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation002 = () -> new Association()
                 .id( "MiAssociation002" )
                 .companyNumber( "MICOMP001" )
                 .userId( "MiUser002" )
@@ -981,63 +978,63 @@ public class TestDataManager {
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MiAssociation002", MiAssociation002 );
 
-        final Supplier<AssociationDao> MiAssociation003 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation003 = () -> new Association()
                 .id( "MiAssociation003" )
                 .companyNumber( "MICOMP002" )
                 .userId( "MiUser002" )
                 .status( "confirmed" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "1992-05-08T10:30:00.000000" ) )
                 .approvedAt( LocalDateTime.parse( "1992-05-06T10:30:00.000000" ) )
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MiAssociation003", MiAssociation003 );
 
-        final Supplier<AssociationDao> MiAssociation004 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation004 = () -> new Association()
                 .id( "MiAssociation004" )
                 .companyNumber( "MICOMP003" )
                 .userId( "MiUser002" )
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2020-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2020-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2020-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MiAssociation004", MiAssociation004 );
 
-        final Supplier<AssociationDao> MiAssociation005 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation005 = () -> new Association()
                 .id( "MiAssociation005" )
                 .companyNumber( "MICOMP004" )
                 .userEmail( "lechuck.monkey.island@inugami-example.com" )
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2021-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2021-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2021-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MiAssociation005", MiAssociation005 );
 
-        final Supplier<AssociationDao> MiAssociation006 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation006 = () -> new Association()
                 .id( "MiAssociation006" )
                 .companyNumber( "MICOMP005" )
                 .userId( "MiUser002" )
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2500-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2500-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2500-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MiAssociation006", MiAssociation006 );
 
-        final Supplier<AssociationDao> MiAssociation007 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation007 = () -> new Association()
                 .id( "MiAssociation007" )
                 .companyNumber( "MICOMP006" )
                 .userEmail( "lechuck.monkey.island@inugami-example.com" )
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser004" ).invitedAt( LocalDateTime.parse( "2019-05-01T10:30:00.000000" ) ), new InvitationDao().invitedBy( "MiUser001").invitedAt( LocalDateTime.parse( "2600-05-01T10:30:00.000000" ) ), new InvitationDao().invitedBy( "MiUser003" ).invitedAt( LocalDateTime.parse( "2600-05-03T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser004" ).invitedAt( LocalDateTime.parse( "2019-05-01T10:30:00.000000" ) ), new Invitation().invitedBy( "MiUser001").invitedAt( LocalDateTime.parse( "2600-05-01T10:30:00.000000" ) ), new Invitation().invitedBy( "MiUser003" ).invitedAt( LocalDateTime.parse( "2600-05-03T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2600-05-10T10:30:00.000000" ) )
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MiAssociation007", MiAssociation007 );
 
-        final Supplier<AssociationDao> MiAssociation008 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation008 = () -> new Association()
                 .id( "MiAssociation008" )
                 .companyNumber( "MICOMP007" )
                 .userId( "MiUser002" )
@@ -1047,7 +1044,7 @@ public class TestDataManager {
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MiAssociation008", MiAssociation008 );
 
-        final Supplier<AssociationDao> MiAssociation009 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation009 = () -> new Association()
                 .id( "MiAssociation009" )
                 .companyNumber( "MICOMP008" )
                 .userEmail( "lechuck.monkey.island@inugami-example.com" )
@@ -1058,33 +1055,33 @@ public class TestDataManager {
 
         associationDaoSuppliers.put( "MiAssociation009", MiAssociation009 );
 
-        final Supplier<AssociationDao> MiAssociation010 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation010 = () -> new Association()
                 .id( "MiAssociation010" )
                 .companyNumber( "MICOMP009" )
                 .userId( "MiUser002" )
                 .status( "removed" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "1992-05-08T10:30:00.000000" ) )
                 .removedAt( LocalDateTime.parse( "1992-05-04T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation010", MiAssociation010 );
 
-        final Supplier<AssociationDao> MiAssociation011 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation011 = () -> new Association()
                 .id( "MiAssociation011" )
                 .companyNumber( "MICOMP010" )
                 .userEmail( "lechuck.monkey.island@inugami-example.com" )
                 .status( "removed" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "1992-05-08T10:30:00.000000" ) )
                 .removedAt( LocalDateTime.parse( "1992-05-05T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation011", MiAssociation011 );
 
-        final Supplier<AssociationDao> MiAssociation012 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation012 = () -> new Association()
                 .id( "MiAssociation012" )
                 .companyNumber( "MICOMP001" )
                 .userId( "MiUser003" )
@@ -1094,68 +1091,68 @@ public class TestDataManager {
 
         associationDaoSuppliers.put( "MiAssociation012", MiAssociation012 );
 
-        final Supplier<AssociationDao> MiAssociation013 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation013 = () -> new Association()
                 .id( "MiAssociation013" )
                 .companyNumber( "MICOMP001" )
                 .userId( "MiUser004" )
                 .status( "confirmed" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "1992-05-08T10:30:00.000000" ) )
                 .approvedAt( LocalDateTime.parse( "1992-05-06T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation013", MiAssociation013 );
 
-        final Supplier<AssociationDao> MiAssociation014 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation014 = () -> new Association()
                 .id( "MiAssociation014" )
                 .companyNumber( "MICOMP001" )
                 .userId( "MiUser005" )
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2020-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2020-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2020-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation014", MiAssociation014 );
 
-        final Supplier<AssociationDao> MiAssociation015 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation015 = () -> new Association()
                 .id( "MiAssociation015" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "largo.lagrande.monkey.island@inugami-example.com" )
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2021-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2021-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2021-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation015", MiAssociation015 );
 
-        final Supplier<AssociationDao> MiAssociation016 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation016 = () -> new Association()
                 .id( "MiAssociation016" )
                 .companyNumber( "MICOMP001" )
                 .userId( "MiUser007" )
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2500-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2500-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2500-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation016", MiAssociation016 );
 
-        final Supplier<AssociationDao> MiAssociation017 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation017 = () -> new Association()
                 .id( "MiAssociation017" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "meathook.monkey.island@inugami-example.com" )
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2600-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2600-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2600-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation017", MiAssociation017 );
 
-        final Supplier<AssociationDao> MiAssociation018 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation018 = () -> new Association()
                 .id( "MiAssociation018" )
                 .companyNumber( "MICOMP001" )
                 .userId( "MiUser009" )
@@ -1165,7 +1162,7 @@ public class TestDataManager {
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MiAssociation018", MiAssociation018 );
 
-        final Supplier<AssociationDao> MiAssociation019 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation019 = () -> new Association()
                 .id( "MiAssociation019" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "haggis.mcmutton.monkey.island@inugami-example.com" )
@@ -1175,32 +1172,32 @@ public class TestDataManager {
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MiAssociation019", MiAssociation019 );
 
-        final Supplier<AssociationDao> MiAssociation020 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation020 = () -> new Association()
                 .id( "MiAssociation020" )
                 .companyNumber( "MICOMP001" )
                 .userId( "MiUser011" )
                 .status( "removed" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "1992-05-08T10:30:00.000000" ) )
                 .removedAt( LocalDateTime.parse(  "1992-05-04T10:30:00.000000" ) )
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MiAssociation020", MiAssociation020 );
 
-        final Supplier<AssociationDao> MiAssociation021 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation021 = () -> new Association()
                 .id( "MiAssociation021" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "morgan.leflay.monkey.island@inugami-example.com" )
                 .status( "removed" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "1992-05-08T10:30:00.000000" ) )
                 .removedAt( LocalDateTime.parse("1992-05-05T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation021", MiAssociation021 );
 
-        final Supplier<AssociationDao> MiAssociation022 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation022 = () -> new Association()
                 .id( "MiAssociation022" )
                 .companyNumber( "MICOMP001" )
                 .userId( "MiUser013" )
@@ -1210,7 +1207,7 @@ public class TestDataManager {
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MiAssociation022", MiAssociation022 );
 
-        final Supplier<AssociationDao> MiAssociation023 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation023 = () -> new Association()
                 .id( "MiAssociation023" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "three.headed.monkey.monkey.island@inugami-example.com" )
@@ -1220,19 +1217,19 @@ public class TestDataManager {
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MiAssociation023", MiAssociation023 );
 
-        final Supplier<AssociationDao> MiAssociation024 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation024 = () -> new Association()
                 .id( "MiAssociation024" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "apple.bob.monkey.island@inugami-example.com" )
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser002" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser002" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "1992-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation024", MiAssociation024 );
 
-        final Supplier<AssociationDao> MiAssociation025 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation025 = () -> new Association()
                 .id( "MiAssociation025" )
                 .companyNumber( "MICOMP001" )
                 .userId( "MiUser016" )
@@ -1242,43 +1239,43 @@ public class TestDataManager {
                 .etag( generateEtag() );
         associationDaoSuppliers.put( "MiAssociation025", MiAssociation025 );
 
-        final Supplier<AssociationDao> MiAssociation026 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation026 = () -> new Association()
                 .id( "MiAssociation026" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "lemonhead.monkey.island@inugami-example.com" )
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser002" ).invitedAt( LocalDateTime.parse( "2992-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser002" ).invitedAt( LocalDateTime.parse( "2992-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2992-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation026", MiAssociation026 );
 
-        final Supplier<AssociationDao> MiAssociation027 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation027 = () -> new Association()
                 .id( "MiAssociation027" )
                 .companyNumber( "MICOMP002" )
                 .userEmail( "guybrush.threepwood.monkey.island@inugami-example.com" )
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser002" ).invitedAt( LocalDateTime.parse( "2992-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser002" ).invitedAt( LocalDateTime.parse( "2992-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2992-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation027", MiAssociation027 );
 
-        final Supplier<AssociationDao> MiAssociation028 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation028 = () -> new Association()
                 .id( "MiAssociation028" )
                 .companyNumber( "MICOMP003" )
                 .userEmail( "guybrush.threepwood.monkey.island@inugami-example.com" )
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser002" ).invitedAt( LocalDateTime.parse( "2992-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser002" ).invitedAt( LocalDateTime.parse( "2992-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2992-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation028", MiAssociation028 );
 
-        final Supplier<AssociationDao> MiAssociation029 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation029 = () -> new Association()
                 .id( "MiAssociation029" )
                 .companyNumber( "MICOMP003" )
                 .userId( "MiUser018" )
@@ -1288,7 +1285,7 @@ public class TestDataManager {
 
         associationDaoSuppliers.put( "MiAssociation029", MiAssociation029 );
 
-        final Supplier<AssociationDao> MiAssociation030 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation030 = () -> new Association()
                 .id( "MiAssociation030" )
                 .companyNumber( "MICOMP001" )
                 .userId( "MiUser019" )
@@ -1298,19 +1295,19 @@ public class TestDataManager {
 
         associationDaoSuppliers.put( "MiAssociation030", MiAssociation030 );
 
-        final Supplier<AssociationDao> MiAssociation031 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation031 = () -> new Association()
                 .id( "MiAssociation031" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "navigator.head.monkey.island@inugami-example.com" )
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser002" ).invitedAt( LocalDateTime.parse( "2992-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser002" ).invitedAt( LocalDateTime.parse( "2992-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2992-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation031", MiAssociation031 );
 
-        final Supplier<AssociationDao> MiAssociation032 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation032 = () -> new Association()
                 .id( "MiAssociation032" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "carla.monkey.island@inugami-example.com" )
@@ -1321,7 +1318,7 @@ public class TestDataManager {
 
         associationDaoSuppliers.put( "MiAssociation032", MiAssociation032 );
 
-        final Supplier<AssociationDao> MiAssociation033 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation033 = () -> new Association()
                 .id( "MiAssociation033" )
                 .companyNumber( "MICOMP011" )
                 .userEmail( "lechuck.monkey.island@inugami-example.com" )
@@ -1332,7 +1329,7 @@ public class TestDataManager {
 
         associationDaoSuppliers.put( "MiAssociation033", MiAssociation033 );
 
-        final Supplier<AssociationDao> MiAssociation034 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation034 = () -> new Association()
                 .id( "MiAssociation034" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "mad.marty.monkey.island@inugami-example.com" )
@@ -1343,7 +1340,7 @@ public class TestDataManager {
 
         associationDaoSuppliers.put( "MiAssociation034", MiAssociation034 );
 
-        final Supplier<AssociationDao> MiAssociation035 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation035 = () -> new Association()
                 .id( "MiAssociation035" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "pegnose.pete.monkey.island@inugami-example.com" )
@@ -1354,7 +1351,7 @@ public class TestDataManager {
 
         associationDaoSuppliers.put( "MiAssociation035", MiAssociation035 );
 
-        final Supplier<AssociationDao> MiAssociation036 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation036 = () -> new Association()
                 .id( "MiAssociation036" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "captain.smirk.monkey.island@inugami-example.com" )
@@ -1365,7 +1362,7 @@ public class TestDataManager {
 
         associationDaoSuppliers.put( "MiAssociation036", MiAssociation036 );
 
-        final Supplier<AssociationDao> MiAssociation037 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation037 = () -> new Association()
                 .id( "MiAssociation037" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "cutthroat.bill.monkey.island@inugami-example.com" )
@@ -1376,7 +1373,7 @@ public class TestDataManager {
 
         associationDaoSuppliers.put( "MiAssociation037", MiAssociation037 );
 
-        final Supplier<AssociationDao> MiAssociation038 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation038 = () -> new Association()
                 .id( "MiAssociation038" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "rapp.scallion.monkey.island@inugami-example.com" )
@@ -1387,7 +1384,7 @@ public class TestDataManager {
 
         associationDaoSuppliers.put( "MiAssociation038", MiAssociation038 );
 
-        final Supplier<AssociationDao> MiAssociation039 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation039 = () -> new Association()
                 .id( "MiAssociation039" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "edward.van.helgen.monkey.island@inugami-example.com" )
@@ -1398,7 +1395,7 @@ public class TestDataManager {
 
         associationDaoSuppliers.put( "MiAssociation039", MiAssociation039 );
 
-        final Supplier<AssociationDao> MiAssociation040 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation040 = () -> new Association()
                 .id( "MiAssociation040" )
                 .companyNumber( "MICOMP001" )
                 .userEmail( "griswold.goodsoup.monkey.island@inugami-example.com" )
@@ -1409,50 +1406,50 @@ public class TestDataManager {
 
         associationDaoSuppliers.put( "MiAssociation040", MiAssociation040 );
 
-        final Supplier<AssociationDao> MiAssociation041 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation041 = () -> new Association()
                 .id( "MiAssociation041" )
                 .companyNumber( "MICOMP001" )
                 .userId( "MiUser026" )
                 .status( "removed" )
                 .approvalRoute( "migration" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2025-03-03T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2025-03-03T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2025-03-10T10:30:00.000000" ) )
                 .approvedAt( LocalDateTime.parse( "2025-03-04T10:30:00.000000" ) )
                 .removedAt( LocalDateTime.parse( "2025-03-05T10:30:00.000000" ) )
                 .migratedAt( LocalDateTime.parse( "2025-03-01T10:30:00.000000") )
-                .previousStates( List.of( new PreviousStatesDao().status( "migrated" ).changedBy( "MKUser001" ).changedAt( LocalDateTime.parse( "2025-03-03T10:30:00.000000" ) ) ) )
+                .previousStates( List.of( new PreviousStates().status( "migrated" ).changedBy( "MKUser001" ).changedAt( LocalDateTime.parse( "2025-03-03T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2025-03-10T10:30:00.000000" ) )
                 .approvedAt( LocalDateTime.parse( "2025-03-04T10:30:00.000000" ) )
                 .removedAt( LocalDateTime.parse( "2025-03-05T10:30:00.000000" ) )
                 .migratedAt( LocalDateTime.parse( "2025-03-01T10:30:00.000000" ) )
-                .previousStates( List.of( new PreviousStatesDao().status( "migrated" ).changedBy( "MiUser001").changedAt( LocalDateTime.parse( "2025-03-02T10:30:00.000000" ) ),
-                        new PreviousStatesDao().status( "removed" ).changedBy( "MiUser001" ).changedAt( LocalDateTime.parse("2025-03-03T10:30:00.000000" ) ),
-                        new PreviousStatesDao().status( "awaiting-approval" ).changedBy( "MiUser026" ).changedAt( LocalDateTime.parse( "2025-03-04T10:30:00.000000" ) ),
-                        new PreviousStatesDao().status( "confirmed" ).changedBy( "MiUser026" ).changedAt( LocalDateTime.parse( "2025-03-05T10:30:00.000000" ) ) ) )
+                .previousStates( List.of( new PreviousStates().status( "migrated" ).changedBy( "MiUser001").changedAt( LocalDateTime.parse( "2025-03-02T10:30:00.000000" ) ),
+                        new PreviousStates().status( "removed" ).changedBy( "MiUser001" ).changedAt( LocalDateTime.parse("2025-03-03T10:30:00.000000" ) ),
+                        new PreviousStates().status( "awaiting-approval" ).changedBy( "MiUser026" ).changedAt( LocalDateTime.parse( "2025-03-04T10:30:00.000000" ) ),
+                        new PreviousStates().status( "confirmed" ).changedBy( "MiUser026" ).changedAt( LocalDateTime.parse( "2025-03-05T10:30:00.000000" ) ) ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation041", MiAssociation041 );
 
-        final Supplier<AssociationDao> MiAssociation042 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation042 = () -> new Association()
                 .id( "MiAssociation042" )
                 .companyNumber( "MICOMP001" )
                 .userId( "MiUser028" )
                 .status( "confirmed" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "1992-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "1992-05-08T10:30:00.000000" ) )
                 .approvedAt( LocalDateTime.parse( "1992-05-06T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
         associationDaoSuppliers.put( "MiAssociation042", MiAssociation042 );
 
-        final Supplier<AssociationDao> MiAssociation043 = () -> new AssociationDao()
+        final Supplier<Association> MiAssociation043 = () -> new Association()
                 .id( "MiAssociation043" )
                 .companyNumber( "MICOMP001" )
                 .userId( "MiUser029" )
                 .status( "awaiting-approval" )
                 .approvalRoute( "invitation" )
-                .invitations( List.of( new InvitationDao().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2500-05-01T10:30:00.000000" ) ) ) )
+                .invitations( List.of( new Invitation().invitedBy( "MiUser001" ).invitedAt( LocalDateTime.parse( "2500-05-01T10:30:00.000000" ) ) ) )
                 .approvalExpiryAt( LocalDateTime.parse( "2500-05-08T10:30:00.000000" ) )
                 .etag( generateEtag() );
 
@@ -1554,7 +1551,7 @@ public class TestDataManager {
         instantiateCompanyDtoSuppliers();
     }
 
-    public List<AssociationDao> fetchAssociationDaos( final String... ids  ){
+    public List<Association> fetchAssociationDaos(final String... ids  ){
         return Arrays.stream( ids )
                 .map( associationDaoSuppliers::get )
                 .map( Supplier::get )
@@ -1575,11 +1572,11 @@ public class TestDataManager {
                 .collect( Collectors.toList() );
     }
 
-    public Association fetchAssociationDto( final String id, final User user ){
+    public uk.gov.companieshouse.api.accounts.associations.model.Association fetchAssociationDto(final String id, final User user ){
         final var associationDao = fetchAssociationDaos( id ).getFirst();
         final var companyDetails = fetchCompanyDetailsDtos( associationDao.getCompanyNumber() ).getFirst();
 
-        final var associationDto = new Association();
+        final var associationDto = new uk.gov.companieshouse.api.accounts.associations.model.Association();
         associationDto.setId( associationDao.getId() );
         associationDto.setUserId( user.getUserId() );
         associationDto.setUserEmail( user.getEmail() );
@@ -1601,14 +1598,14 @@ public class TestDataManager {
         return associationDto;
     }
 
-    public List<Invitation> fetchInvitations( final String associationId ){
+    public List<uk.gov.companieshouse.api.accounts.associations.model.Invitation> fetchInvitations(final String associationId ){
         return Stream.of( fetchAssociationDaos( associationId ) )
                 .map( List::getFirst )
-                .map( AssociationDao::getInvitations )
+                .map( Association::getInvitations )
                 .flatMap( List::stream )
                 .map( invitationDao -> {
                     boolean isActive = LocalDateTime.now().isBefore(invitationDao.getExpiredAt());
-                    final var invitationDto = new Invitation();
+                    final var invitationDto = new uk.gov.companieshouse.api.accounts.associations.model.Invitation();
                     invitationDto.setAssociationId( associationId );
                     invitationDto.setInvitedBy( invitationDao.getInvitedBy() );
                     invitationDto.setInvitedAt( invitationDao.getInvitedAt().toString() );
@@ -1621,7 +1618,7 @@ public class TestDataManager {
     public List<PreviousState> fetchPreviousStates( final String associationId ){
         return Stream.of( fetchAssociationDaos( associationId ) )
                 .map( List::getFirst )
-                .map( AssociationDao::getPreviousStates )
+                .map( Association::getPreviousStates )
                 .flatMap( List::stream )
                 .map( previousStatesDao -> new PreviousState()
                             .status( PreviousState.StatusEnum.fromValue( previousStatesDao.getStatus() ) )

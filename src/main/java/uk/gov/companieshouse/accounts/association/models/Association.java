@@ -15,7 +15,7 @@ import java.util.List;
 
 @Document( "user_company_associations" )
 @CompoundIndex( name = "company_user_idx", def = "{'company_number': 1, 'user_id': 1, 'user_email': 1}", unique = true )
-public class AssociationDao {
+public class Association {
 
     @Id
     private String id;
@@ -40,7 +40,7 @@ public class AssociationDao {
     @Field( "approval_route" )
     private String approvalRoute;
 
-    private final List<InvitationDao> invitations = new ArrayList<>();
+    private final List<Invitation> invitations = new ArrayList<>();
 
     @Field( "approval_expiry_at" )
     private LocalDateTime approvalExpiryAt;
@@ -65,7 +65,7 @@ public class AssociationDao {
     private String unauthorisedBy;
 
     @Field( "previous_states" )
-    private final List<PreviousStatesDao> previousStates = new ArrayList<>();
+    private final List<PreviousStates> previousStates = new ArrayList<>();
 
     @NotNull
     private String etag;
@@ -77,7 +77,7 @@ public class AssociationDao {
         this.id = id;
     }
 
-    public AssociationDao id( final String id ){
+    public Association id(final String id ){
         setId( id );
         return this;
     }
@@ -90,7 +90,7 @@ public class AssociationDao {
         this.companyNumber = companyNumber;
     }
 
-    public AssociationDao companyNumber( final String companyNumber ){
+    public Association companyNumber(final String companyNumber ){
         setCompanyNumber( companyNumber );
         return this;
     }
@@ -103,7 +103,7 @@ public class AssociationDao {
         this.userId = userId;
     }
 
-    public AssociationDao userId( final String userId ){
+    public Association userId(final String userId ){
         setUserId( userId );
         return this;
     }
@@ -116,7 +116,7 @@ public class AssociationDao {
         this.userEmail = userEmail;
     }
 
-    public AssociationDao userEmail( final String userEmail ){
+    public Association userEmail(final String userEmail ){
         setUserEmail( userEmail );
         return this;
     }
@@ -129,7 +129,7 @@ public class AssociationDao {
         this.status = status;
     }
 
-    public AssociationDao status( final String status ){
+    public Association status(final String status ){
         setStatus( status );
         return this;
     }
@@ -142,7 +142,7 @@ public class AssociationDao {
         this.approvalRoute = approvalRoute;
     }
 
-    public AssociationDao approvalRoute( final String approvalRoute ){
+    public Association approvalRoute(final String approvalRoute ){
         setApprovalRoute( approvalRoute );
         return this;
     }
@@ -152,17 +152,17 @@ public class AssociationDao {
         return approvalRoute;
     }
 
-    public void setInvitations( final List<InvitationDao> invitations ){
+    public void setInvitations( final List<Invitation> invitations ){
         this.invitations.clear();
         this.invitations.addAll( invitations );
     }
 
-    public AssociationDao invitations( final List<InvitationDao> invitations ){
+    public Association invitations(final List<Invitation> invitations ){
         setInvitations( invitations );
         return this;
     }
 
-    public List<InvitationDao> getInvitations(){
+    public List<Invitation> getInvitations(){
         return invitations;
     }
 
@@ -170,7 +170,7 @@ public class AssociationDao {
         this.approvalExpiryAt = approvalExpiryAt;
     }
 
-    public AssociationDao approvalExpiryAt( final LocalDateTime approvalExpiryAt ){
+    public Association approvalExpiryAt(final LocalDateTime approvalExpiryAt ){
         setApprovalExpiryAt( approvalExpiryAt );
         return this;
     }
@@ -183,7 +183,7 @@ public class AssociationDao {
         this.approvedAt = approvedAt;
     }
 
-    public AssociationDao approvedAt( final LocalDateTime approvedAt ){
+    public Association approvedAt(final LocalDateTime approvedAt ){
         setApprovedAt( approvedAt );
         return this;
     }
@@ -196,7 +196,7 @@ public class AssociationDao {
         this.removedAt = removedAt;
     }
 
-    public AssociationDao removedAt( final LocalDateTime removedAt ){
+    public Association removedAt(final LocalDateTime removedAt ){
         setRemovedAt( removedAt );
         return this;
     }
@@ -213,7 +213,7 @@ public class AssociationDao {
         this.migratedAt = migratedAt;
     }
 
-    public AssociationDao migratedAt( final LocalDateTime migratedAt ){
+    public Association migratedAt(final LocalDateTime migratedAt ){
         setMigratedAt( migratedAt );
         return this;
     }
@@ -226,7 +226,7 @@ public class AssociationDao {
         this.unauthorisedAt = unauthorisedAt;
     }
 
-    public AssociationDao unauthorisedAt( final LocalDateTime unauthorisedAt ){
+    public Association unauthorisedAt(final LocalDateTime unauthorisedAt ){
         setUnauthorisedAt( unauthorisedAt );
         return this;
     }
@@ -239,7 +239,7 @@ public class AssociationDao {
         this.unauthorisedBy = unauthorisedBy;
     }
 
-    public AssociationDao unauthorisedBy( final String unauthorisedBy ){
+    public Association unauthorisedBy(final String unauthorisedBy ){
         setUnauthorisedBy( unauthorisedBy );
         return this;
     }
@@ -248,17 +248,17 @@ public class AssociationDao {
         return unauthorisedBy;
     }
 
-    public void setPreviousStates( final List<PreviousStatesDao> previousStates ){
+    public void setPreviousStates( final List<PreviousStates> previousStates ){
         this.previousStates.clear();
         this.previousStates.addAll( previousStates );
     }
 
-    public AssociationDao previousStates( final List<PreviousStatesDao> previousStates ){
+    public Association previousStates(final List<PreviousStates> previousStates ){
         setPreviousStates( previousStates );
         return this;
     }
 
-    public List<PreviousStatesDao> getPreviousStates(){
+    public List<PreviousStates> getPreviousStates(){
         return previousStates;
     }
 
@@ -266,7 +266,7 @@ public class AssociationDao {
         this.etag = etag;
     }
 
-    public AssociationDao etag( final String etag ){
+    public Association etag(final String etag ){
         setEtag( etag );
         return this;
     }
@@ -281,7 +281,7 @@ public class AssociationDao {
 
     @Override
     public String toString() {
-        return "AssociationDao{" +
+        return "Association{" +
                 "id='" + id + '\'' +
                 ", companyNumber='" + companyNumber + '\'' +
                 ", userId='" + userId + '\'' +

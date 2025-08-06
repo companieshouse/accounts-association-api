@@ -16,7 +16,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
 @Service
@@ -48,13 +48,15 @@ public class CompanyService {
         return toFetchCompanyProfileRequest( companyNumber, getXRequestId() ).block( Duration.ofSeconds( 20L ) );
     }
 
-    public Map<String, CompanyDetails> fetchCompanyProfiles( final Stream<AssociationDao> associations ) {
+    public Map<String, CompanyDetails> fetchCompanyProfiles( final Stream<Association> associations ) {
         final var xRequestId = getXRequestId();
-        return Flux.fromStream( associations )
-                .map( AssociationDao::getCompanyNumber )
-                .flatMap( companyNumber -> toFetchCompanyProfileRequest( companyNumber, xRequestId ) )
-                .collectMap( CompanyDetails::getCompanyNumber )
-                .block( Duration.ofSeconds( 20L ) );
+
+        return   associations
+                .map( Association::getCompanyNumber )
+                .parallel()
+                .flatMap(companyNumber -> toFetchCompanyProfileRequest(companyNumber, xRequestId))
+                .collectMap(CompanyDetails::getCompanyNumber)
+                .block(Duration.ofSeconds(20));
     }
 
 }

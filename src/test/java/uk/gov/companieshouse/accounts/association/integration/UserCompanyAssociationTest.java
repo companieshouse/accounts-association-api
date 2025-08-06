@@ -57,12 +57,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationAcceptedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
@@ -160,7 +159,7 @@ class UserCompanyAssociationTest {
                                 .header("ERIC-Authorised-Key-Roles", "*") )
                         .andExpect( status().isOk() );
 
-        final var association = parseResponseTo( response, Association.class );
+        final var association = parseResponseTo( response, uk.gov.companieshouse.api.accounts.associations.model.Association.class );
 
         Assertions.assertEquals( "9999", association.getUserId());
     }
@@ -178,7 +177,7 @@ class UserCompanyAssociationTest {
                                 .header( "ERIC-Identity-Type", "oauth2" ) )
                         .andExpect( status().isOk() );
 
-        final var association = parseResponseTo( response, Association.class );
+        final var association = parseResponseTo( response, uk.gov.companieshouse.api.accounts.associations.model.Association.class );
 
         Assertions.assertEquals( "MKAssociation001", association.getId() );
         Assertions.assertEquals( "migrated", association.getStatus().getValue() );
@@ -198,7 +197,7 @@ class UserCompanyAssociationTest {
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isOk() );
 
-        final var association = parseResponseTo( response, Association.class );
+        final var association = parseResponseTo( response, uk.gov.companieshouse.api.accounts.associations.model.Association.class );
 
         Assertions.assertEquals( "MKAssociation001", association.getId() );
     }
@@ -231,7 +230,7 @@ class UserCompanyAssociationTest {
                         .header( "Eric-Authorised-Roles", ADMIN_READ_PERMISSION ) )
                 .andExpect( status().isOk() );
 
-        final var association = parseResponseTo( response, Association.class );
+        final var association = parseResponseTo( response, uk.gov.companieshouse.api.accounts.associations.model.Association.class );
         Assertions.assertEquals( "MKAssociation004", association.getId() );
         Assertions.assertEquals( StatusEnum.UNAUTHORISED, association.getStatus() );
         Assertions.assertNotNull( association.getUnauthorisedAt() );
@@ -313,7 +312,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert( oldAssociationData );
         mockers.mockUsersServiceFetchUserDetails(  "9999" );
         mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "9999" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "9999" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         mockMvc.perform( patch( "/associations/18" )
                         .header("X-Request-Id", "theId123")
@@ -340,7 +339,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert( oldAssociationData );
         mockers.mockUsersServiceFetchUserDetails(  "9999" );
         mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "9999" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "9999" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         mockMvc.perform( patch( "/associations/18" )
                         .header("X-Request-Id", "theId123")
@@ -364,7 +363,7 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdWithNullUserIdAndNonexistentUserAndConfirmedReturnsBadRequest() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "17" ) );
         mockers.mockUsersServiceFetchUserDetails( "222" );
-        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
 
         mockMvc.perform( patch( "/associations/17" )
@@ -385,7 +384,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert(associationDaos);
         mockers.mockUsersServiceFetchUserDetails( "111" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         mockMvc.perform( patch( "/associations/34" )
                         .header("X-Request-Id", "theId123")
@@ -413,7 +412,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert(associationDaos);
         mockers.mockUsersServiceFetchUserDetails( "111" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         mockMvc.perform( patch( "/associations/34" )
                         .header("X-Request-Id", "theId123")
@@ -442,7 +441,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "35" ) );
         mockers.mockUsersServiceFetchUserDetails( "9999" );
         mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         mockMvc.perform( patch( "/associations/35" )
                         .header("X-Request-Id", "theId123")
@@ -459,7 +458,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1", "34" ) );
         mockers.mockUsersServiceFetchUserDetails( "111" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         setEmailProducerCountDownLatch( 1 );
 
@@ -484,7 +483,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert(associationDaos);
         mockers.mockUsersServiceFetchUserDetails( "111" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         setEmailProducerCountDownLatch( 1 );
 
@@ -506,7 +505,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "3", "4" ) );
         mockers.mockUsersServiceFetchUserDetails( "333" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "444" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "444" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         mockMvc.perform( patch( "/associations/4" )
                         .header("X-Request-Id", "theId123")
@@ -523,7 +522,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "3", "4" ) );
         mockers.mockUsersServiceFetchUserDetails( "333" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "444" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "444" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         mockMvc.perform( patch( "/associations/4" )
                         .header("X-Request-Id", "theId123")
@@ -541,7 +540,7 @@ class UserCompanyAssociationTest {
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         mockers.mockUsersServiceFetchUserDetails( "222", "666" );
         mockers.mockUsersServiceToFetchUserDetailsRequest( "222", "444", "666" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "666" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "666" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         setEmailProducerCountDownLatch( 3 );
 
@@ -569,7 +568,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         mockers.mockUsersServiceFetchUserDetails( "MKUser001" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "MKUser001" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "MKUser001" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         mockMvc.perform( patch( "/associations/MKAssociation001"  )
                         .header( "X-Request-Id", "theId123" )
@@ -585,7 +584,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         mockers.mockUsersServiceFetchUserDetails( "MKUser001" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "MKUser001" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "MKUser001" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         mockMvc.perform( patch( "/associations/MKAssociation001"  )
                         .header( "X-Request-Id", "theId123" )
@@ -613,7 +612,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "MKUser001" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "MKUser001" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         mockMvc.perform( patch( "/associations/MKAssociation001"  )
                         .header( "X-Request-Id", "theId123" )
@@ -645,7 +644,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "MKUser001" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "MKUser001" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         mockMvc.perform( patch( "/associations/MKAssociation001"  )
                         .header( "X-Request-Id", "theId123" )
@@ -673,7 +672,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
-        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         mockMvc.perform( patch( "/associations/MKAssociation001"  )
                         .header( "X-Request-Id", "theId123" )
@@ -704,7 +703,7 @@ class UserCompanyAssociationTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation001", "MKAssociation002" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
-        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         mockMvc.perform( patch( "/associations/MKAssociation001"  )
                         .header( "X-Request-Id", "theId123" )
@@ -733,7 +732,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails( "9999" );
         mockers.mockUsersServiceToFetchUserDetailsRequest( "9999", "111", "222" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "111" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "111" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         setEmailProducerCountDownLatch( 2 );
 
@@ -761,7 +760,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails( "9999", "666" );
         mockers.mockUsersServiceToFetchUserDetailsRequest( "9999", "666", "222" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "666" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "666" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         setEmailProducerCountDownLatch( 2 );
 
@@ -847,7 +846,7 @@ class UserCompanyAssociationTest {
         final var targetUser = testDataManager.fetchUserDtos( targetUserId ).getFirst();
 
         associationsRepository.insert( associations );
-        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( Association.class ) );
         mockers.mockCompanyServiceFetchCompanyProfile( associations.getCompanyNumber() );
         mockers.mockUsersServiceFetchUserDetails( targetUserId );
         mockers.mockUsersServiceToFetchUserDetailsRequest( targetUserId );
@@ -943,7 +942,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
         mockers.mockUsersServiceToFetchUserDetailsRequest( "MKUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         setEmailProducerCountDownLatch( 2 );
 
@@ -969,7 +968,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails( "MKUser001", "MKUser002" );
         mockers.mockUsersServiceToFetchUserDetailsRequest( "MKUser001", "MKUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         setEmailProducerCountDownLatch( 2 );
 
@@ -995,7 +994,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
         mockers.mockUsersServiceToFetchUserDetailsRequest( "MKUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         setEmailProducerCountDownLatch( 2 );
 
@@ -1021,7 +1020,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
         mockers.mockUsersServiceToFetchUserDetailsRequest( "MKUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( Association.class ) );
 
         setEmailProducerCountDownLatch( 2 );
 
@@ -1169,7 +1168,7 @@ class UserCompanyAssociationTest {
 
     @AfterEach
     public void after() {
-        mongoTemplate.dropCollection(AssociationDao.class);
+        mongoTemplate.dropCollection(Association.class);
     }
 
 }

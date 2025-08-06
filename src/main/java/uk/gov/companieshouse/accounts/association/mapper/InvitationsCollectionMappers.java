@@ -6,9 +6,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.models.InvitationDao;
-import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
+import uk.gov.companieshouse.accounts.association.models.Association;
+import uk.gov.companieshouse.accounts.association.models.Invitation;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.Links;
 
@@ -24,7 +23,7 @@ public class InvitationsCollectionMappers {
         this.invitationsMapper = invitationsMapper;
     }
 
-    private Function<List<Invitation>, InvitationsList> mapToInvitationsList( final String basePath, final int totalResults, final int pageIndex, final int itemsPerPage ){
+    private Function<List<uk.gov.companieshouse.api.accounts.associations.model.Invitation>, InvitationsList> mapToInvitationsList(final String basePath, final int totalResults, final int pageIndex, final int itemsPerPage ){
         return items -> {
             final var totalPages = (int) Math.ceil( (double) totalResults / itemsPerPage );
             return new InvitationsList()
@@ -39,7 +38,7 @@ public class InvitationsCollectionMappers {
         };
     }
 
-    public InvitationsList daoToDto( final AssociationDao association, final int pageIndex, final int itemsPerPage ){
+    public InvitationsList daoToDto(final Association association, final int pageIndex, final int itemsPerPage ){
         return association.getInvitations()
                 .stream()
                 .skip((long) pageIndex * itemsPerPage )
@@ -48,18 +47,18 @@ public class InvitationsCollectionMappers {
                 .collect( Collectors.collectingAndThen( Collectors.toList(), mapToInvitationsList( String.format( GET_INVITATIONS_FOR_ASSOCIATION_URI, association.getId() ), association.getInvitations().size(), pageIndex, itemsPerPage ) ) );
     }
 
-    private Invitation mapToMostRecentInvitation( final AssociationDao association ){
+    private uk.gov.companieshouse.api.accounts.associations.model.Invitation mapToMostRecentInvitation(final Association association ){
         final var mostRecentInvitation = Stream.of( association.getInvitations() )
                 .filter( invitations -> invitations.size() > 1 )
                 .flatMap( List::stream )
-                .max( Comparator.comparing( InvitationDao::getInvitedAt ) )
+                .max( Comparator.comparing( Invitation::getInvitedAt ) )
                 .orElse( association.getInvitations().getFirst() );
         return invitationsMapper.daoToDto( mostRecentInvitation, association.getId() );
     }
 
-    public InvitationsList daoToDto( final List<AssociationDao> associationsWithActiveInvitations, final int pageIndex, final int itemsPerPage ){
+    public InvitationsList daoToDto(final List<Association> associationsWithActiveInvitations, final int pageIndex, final int itemsPerPage ){
         return associationsWithActiveInvitations.stream()
-                .sorted( Comparator.comparing( AssociationDao::getApprovalExpiryAt ).reversed() )
+                .sorted( Comparator.comparing( Association::getApprovalExpiryAt ).reversed() )
                 .skip((long) pageIndex * itemsPerPage )
                 .limit( itemsPerPage )
                 .map( this::mapToMostRecentInvitation )

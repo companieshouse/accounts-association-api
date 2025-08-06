@@ -10,7 +10,7 @@ import java.util.Objects;
 import org.mockito.ArgumentMatcher;
 import org.springframework.data.domain.Page;
 import uk.gov.companieshouse.accounts.association.common.Preprocessors.Preprocessor;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.models.email.builders.*;
 import uk.gov.companieshouse.accounts.association.models.email.data.AuthorisationRemovedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.DelegatedRemovalOfMigratedBatchEmailData;
@@ -245,12 +245,12 @@ public class ComparisonUtils {
         };
     }
 
-    public ArgumentMatcher<Page<AssociationDao>> associationsPageMatches( final int totalElements, final int totalPages, final int numElementsOnPage, final List<String> expectedAssociationIds ){
+    public ArgumentMatcher<Page<Association>> associationsPageMatches(final int totalElements, final int totalPages, final int numElementsOnPage, final List<String> expectedAssociationIds ){
         return page -> {
             final var associationIds =
                     page.getContent()
                             .stream()
-                            .map( AssociationDao::getId )
+                            .map( Association::getId )
                             .toList();
 
             return page.getTotalElements() == totalElements &&

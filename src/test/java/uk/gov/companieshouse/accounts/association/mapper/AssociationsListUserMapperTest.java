@@ -17,7 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.user.model.User;
@@ -101,7 +101,7 @@ class AssociationsListUserMapperTest {
     void daoToDtoDoesNothingWhenPageIsEmpty(){
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
 
-        final var content = new PageImpl<AssociationDao>( List.of(), PageRequest.of( 0, 2 ), 0 );
+        final var content = new PageImpl<Association>( List.of(), PageRequest.of( 0, 2 ), 0 );
 
         Mockito.doReturn( Map.of() ).when( companyService ).fetchCompanyProfiles( any( Stream.class ) );
 

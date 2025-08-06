@@ -20,10 +20,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
 
 import java.util.List;
 import uk.gov.companieshouse.api.accounts.user.model.User;
@@ -133,7 +132,7 @@ class AssociationMapperTest {
 
     @Test
     void enrichAssociationWithLinksAndKindCorrectlyUpdatesAssociation(){
-        final var association = new Association().id( "1" );
+        final var association = new uk.gov.companieshouse.api.accounts.associations.model.Association().id( "1" );
         associationMapper.enrichAssociationWithLinksAndKind( association );
         Assertions.assertEquals( "/associations/1", association.getLinks().getSelf() );
         Assertions.assertEquals( DEFAULT_KIND, association.getKind() );
@@ -159,7 +158,7 @@ class AssociationMapperTest {
 
     @ParameterizedTest
     @MethodSource( "daoToDtoTestData" )
-    void daoToDtoPerformsMappingRegardlessOfAvailableData( final AssociationDao associationDao, final Association expectedAssociation, final User userDto, final CompanyDetails companyDto ){
+    void daoToDtoPerformsMappingRegardlessOfAvailableData(final Association associationDao, final uk.gov.companieshouse.api.accounts.associations.model.Association expectedAssociation, final User userDto, final CompanyDetails companyDto ){
         if ( Objects.isNull( userDto ) ) {
             mockers.mockUsersServiceFetchUserDetails( "111" );
         }

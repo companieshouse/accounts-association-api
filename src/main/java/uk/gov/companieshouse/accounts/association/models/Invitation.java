@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
 
-public class InvitationDao {
+public class Invitation {
 
     @Field( "invited_by" )
     private String invitedBy;
@@ -18,7 +18,7 @@ public class InvitationDao {
         this.invitedBy = invitedBy;
     }
 
-    public InvitationDao invitedBy( final String invitedBy ){
+    public Invitation invitedBy(final String invitedBy ){
         setInvitedBy( invitedBy );
         return this;
     }
@@ -31,7 +31,7 @@ public class InvitationDao {
         this.invitedAt = invitedAt;
     }
 
-    public InvitationDao invitedAt( final LocalDateTime invitedAt ){
+    public Invitation invitedAt(final LocalDateTime invitedAt ){
         setInvitedAt( invitedAt );
         return this;
     }
@@ -46,7 +46,7 @@ public class InvitationDao {
 
     @Override
     public String toString() {
-        return "InvitationDao{" +
+        return "Invitation{" +
                 "invitedBy='" + invitedBy + '\'' +
                 ", invitedAt=" + invitedAt +
                 '}';

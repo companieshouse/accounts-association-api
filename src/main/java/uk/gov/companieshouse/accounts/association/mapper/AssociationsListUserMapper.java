@@ -8,7 +8,7 @@ import java.util.Objects;
 import org.mapstruct.Mapper;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
@@ -16,7 +16,7 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 @Mapper( componentModel = "spring" )
 public abstract class AssociationsListUserMapper extends AssociationMapper {
 
-    public AssociationsList daoToDto( final Page<AssociationDao> associationsList, final User user ) {
+    public AssociationsList daoToDto(final Page<Association> associationsList, final User user ) {
         if ( Objects.isNull( user ) ){
             LOGGER.errorContext( getXRequestId(), new Exception( "User cannot be null" ), null );
             throw new IllegalArgumentException( "User cannot be null" );

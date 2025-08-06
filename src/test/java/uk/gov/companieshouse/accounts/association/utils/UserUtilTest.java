@@ -15,7 +15,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.models.context.RequestContext;
 import uk.gov.companieshouse.accounts.association.models.context.RequestContextData.RequestContextDataBuilder;
 import uk.gov.companieshouse.api.accounts.user.model.User;
@@ -43,21 +43,21 @@ class UserUtilTest {
     @Test
     void isRequestingUserWithNullInputsReturnsFalse(){
         Assertions.assertFalse( isRequestingUser( null ) );
-        Assertions.assertFalse( isRequestingUser( new AssociationDao() ) );
+        Assertions.assertFalse( isRequestingUser( new Association() ) );
     }
 
     private static Stream<Arguments> isRequestingUserCorrectlyClassifiesTargetAssociationScenarios(){
         return Stream.of(
-                Arguments.of( new AssociationDao().userId( "111" ), true ),
-                Arguments.of( new AssociationDao().userId( "222" ), false ),
-                Arguments.of( new AssociationDao().userEmail( "bruce.wayne@gotham.city" ), true ),
-                Arguments.of( new AssociationDao().userEmail( "joker@gotham.city" ), false )
+                Arguments.of( new Association().userId( "111" ), true ),
+                Arguments.of( new Association().userId( "222" ), false ),
+                Arguments.of( new Association().userEmail( "bruce.wayne@gotham.city" ), true ),
+                Arguments.of( new Association().userEmail( "joker@gotham.city" ), false )
         );
     }
 
     @ParameterizedTest
     @MethodSource( "isRequestingUserCorrectlyClassifiesTargetAssociationScenarios" )
-    void isRequestingUserCorrectlyClassifiesTargetAssociation( final AssociationDao targetAssociation, final boolean expectedOutcome ){
+    void isRequestingUserCorrectlyClassifiesTargetAssociation(final Association targetAssociation, final boolean expectedOutcome ){
         final var requestingUser = testDataManager.fetchUserDtos( "111" ).getFirst();
 
         final var request = new MockHttpServletRequest();

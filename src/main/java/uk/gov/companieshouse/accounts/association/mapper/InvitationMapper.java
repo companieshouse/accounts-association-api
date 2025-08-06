@@ -9,9 +9,8 @@ import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.springframework.beans.factory.annotation.Autowired;
-import uk.gov.companieshouse.accounts.association.models.InvitationDao;
+import uk.gov.companieshouse.accounts.association.models.Invitation;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 
 @Mapper( componentModel = "spring" )
 public abstract class InvitationMapper {
@@ -20,12 +19,12 @@ public abstract class InvitationMapper {
     private UsersService usersService;
 
     @AfterMapping
-    protected void replaceUserIdWithUserEmail( @MappingTarget final Invitation invitation ){
+    protected void replaceUserIdWithUserEmail( @MappingTarget final uk.gov.companieshouse.api.accounts.associations.model.Invitation invitation ){
         invitation.setInvitedBy( usersService.fetchUserDetails( invitation.getInvitedBy(), getXRequestId() ).getEmail() );
     }
 
     @AfterMapping
-    protected void enrichWithIsActive( @MappingTarget final Invitation invitation ){
+    protected void enrichWithIsActive( @MappingTarget final uk.gov.companieshouse.api.accounts.associations.model.Invitation invitation ){
         final var invitedAt = LocalDateTime.parse( invitation.getInvitedAt() );
         final var expiredAt = invitedAt.plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES );
         final var isActive = LocalDateTime.now().isBefore( expiredAt );
@@ -33,10 +32,10 @@ public abstract class InvitationMapper {
     }
 
     @AfterMapping
-    protected void enrichWithAssociationId( @MappingTarget final Invitation invitation, @Context final String associationId ){
+    protected void enrichWithAssociationId(@MappingTarget final uk.gov.companieshouse.api.accounts.associations.model.Invitation invitation, @Context final String associationId ){
         invitation.setAssociationId( associationId );
     }
 
-    public abstract Invitation daoToDto( final InvitationDao invitation, @Context final String associationId );
+    public abstract uk.gov.companieshouse.api.accounts.associations.model.Invitation daoToDto(final Invitation invitation, @Context final String associationId );
 
 }
