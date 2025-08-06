@@ -4,9 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -16,18 +14,6 @@ import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.par
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
-import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.DELEGATED_REMOVAL_OF_MIGRATED;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.DELEGATED_REMOVAL_OF_MIGRATED_BATCH;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_CANCELLED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_CANCELLED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.REMOVAL_OF_OWN_MIGRATED;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.CONFIRMED;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.UNAUTHORISED;
@@ -35,7 +21,6 @@ import static uk.gov.companieshouse.api.accounts.associations.model.PreviousStat
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
@@ -63,13 +48,12 @@ import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfig;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.Links;
@@ -159,7 +143,7 @@ class UserCompanyAssociationTest {
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*"))
                 .andExpect(status().isOk());
-        final var result = parseResponseTo( response, Association.class );
+        final var result = parseResponseTo( response, uk.gov.companieshouse.api.accounts.associations.model.Association.class );
 
         Assertions.assertEquals("18", result.getId());
     }
@@ -177,7 +161,7 @@ class UserCompanyAssociationTest {
                                 .header( "ERIC-Identity-Type", "oauth2" ) )
                         .andExpect( status().isOk() );
 
-        final var responseAssociation = parseResponseTo( response, Association.class );
+        final var responseAssociation = parseResponseTo( response, uk.gov.companieshouse.api.accounts.associations.model.Association.class );
 
         Assertions.assertEquals( "MKAssociation001", responseAssociation.getId() );
         Assertions.assertEquals( "migrated", responseAssociation.getStatus().getValue() );
@@ -196,7 +180,7 @@ class UserCompanyAssociationTest {
                         .header("ERIC-Authorised-Key-Roles", "*") )
                 .andExpect( status().isOk() );
 
-        final var responseAssociation = parseResponseTo( response, Association.class );
+        final var responseAssociation = parseResponseTo( response, uk.gov.companieshouse.api.accounts.associations.model.Association.class );
 
         Assertions.assertEquals( "MKAssociation001", responseAssociation.getId() );
     }
@@ -231,7 +215,7 @@ class UserCompanyAssociationTest {
                                 .header( "Eric-Authorised-Roles", ADMIN_READ_PERMISSION ) )
                         .andExpect( status().isOk() );
 
-        final var association = parseResponseTo( response, Association.class );
+        final var association = parseResponseTo( response, uk.gov.companieshouse.api.accounts.associations.model.Association.class );
         Assertions.assertEquals( "MKAssociation004", association.getId() );
         Assertions.assertEquals( StatusEnum.UNAUTHORISED, association.getStatus() );
         Assertions.assertNotNull( association.getUnauthorisedAt() );
@@ -418,7 +402,7 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdWithRemovedUpdatesAssociationStatus() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "35" ).getFirst();
 
-        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
         mockers.mockUsersServiceFetchUserDetails( "9999" );
         mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
         Mockito.doReturn( Optional.of( association ) ).when( associationsService ).fetchAssociationDao( "35" );
@@ -460,7 +444,7 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdWithNullUserIdAndExistingUserAndConfirmedUpdatesAssociationStatus() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "36" ).getFirst();
 
-        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
         mockers.mockUsersServiceFetchUserDetails( "000" );
         Mockito.doReturn( Optional.of( association ) ).when( associationsService ).fetchAssociationDao( "36" );
 
@@ -481,7 +465,7 @@ class UserCompanyAssociationTest {
         final var association = testDataManager.fetchAssociationDaos( "34" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "000" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
         Mockito.doReturn( Optional.of( association ) ).when( associationsService ).fetchAssociationDao( "34" );
         Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationRejectedEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "light.yagami@death.note" ) );
 
@@ -501,7 +485,7 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdWithNullUserIdAndNonexistentUserAndRemovedUpdatesAssociationStatus() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "34" ).getFirst();
 
-        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( Association.class ) );
         mockers.mockUsersServiceFetchUserDetails( "000" );
         Mockito.doReturn( Optional.of( association ) ).when( associationsService ).fetchAssociationDao( "34" );
         Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationRejectedEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "light.yagami@death.note" ) );
@@ -522,7 +506,7 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdNotificationsWhereTargetUserIdExistsSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "35" ).getFirst();
 
-        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
         mockers.mockUsersServiceFetchUserDetails( "9999" );
         mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).fetchAssociationDao("35");
@@ -547,7 +531,7 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdNotificationsWhereTargetUserIdDoesNotExistSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "34" ).getFirst();
 
-        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "000" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
         mockers.mockUsersServiceFetchUserDetails( "111" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).fetchAssociationDao("34");
@@ -572,7 +556,7 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdNotificationsWhereUserCannotBeFoundSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos( "34" ).getFirst();
 
-        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( Association.class ) );
         mockers.mockUsersServiceFetchUserDetails( "111" );
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
         Mockito.doReturn(Optional.of(association)).when(associationsService).fetchAssociationDao("34");
@@ -599,7 +583,7 @@ class UserCompanyAssociationTest {
 
         mockers.mockUsersServiceFetchUserDetails( "333" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "444" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "444" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
         Mockito.doReturn(Optional.of(association)).when(associationsService).fetchAssociationDao("4");
         Mockito.doReturn( Flux.just( "333" ) ).when( associationsService ).fetchConfirmedUserIds( "111111" );
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
@@ -624,7 +608,7 @@ class UserCompanyAssociationTest {
         final var association = testDataManager.fetchAssociationDaos( "6" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "666", "222" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "666" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "666" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).fetchAssociationDao("6");
         Mockito.doReturn( Flux.just( "222", "444" ) ).when( associationsService ).fetchConfirmedUserIds( "111111" );
@@ -667,7 +651,7 @@ class UserCompanyAssociationTest {
         final var association = testDataManager.fetchAssociationDaos( "38" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "9999", "444" );
-        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( Association.class ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "x222222" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).fetchAssociationDao("38");
         Mockito.doReturn( Flux.just( "111", "222", "444" ) ).when( associationsService ).fetchConfirmedUserIds( "x222222" );
@@ -690,7 +674,7 @@ class UserCompanyAssociationTest {
         final var association = testDataManager.fetchAssociationDaos( "38" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "9999", "222" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "9999" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "9999" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "x222222" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).fetchAssociationDao("38");
         Mockito.doReturn( Flux.just( "111", "222", "444" ) ).when( associationsService ).fetchConfirmedUserIds( "x222222" );
@@ -715,7 +699,7 @@ class UserCompanyAssociationTest {
         final var association = testDataManager.fetchAssociationDaos( "38" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "9999" );
-        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( Association.class ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "x222222" );
         Mockito.doReturn(Optional.of(association)).when(associationsService).fetchAssociationDao("38");
         Mockito.doReturn( Flux.just( "111", "222", "444" ) ).when( associationsService ).fetchConfirmedUserIds( "x222222" );
@@ -754,9 +738,9 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails( requestingUserId );
 
         if ( targetUserExists ) {
-            Mockito.doReturn( testDataManager.fetchUserDtos( "MKUser001" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+            Mockito.doReturn( testDataManager.fetchUserDtos( "MKUser001" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
         } else {
-            Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+            Mockito.doReturn( null ).when( usersService ).fetchUserDetails( any( Association.class ) );
         }
 
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
@@ -781,7 +765,7 @@ class UserCompanyAssociationTest {
 
         mockers.mockUsersServiceFetchUserDetails( "9999" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "111" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "111" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
         Mockito.doReturn( Optional.of( association ) ).when( associationsService ).fetchAssociationDao( "1" );
         Mockito.doReturn( Flux.just( "222" ) ).when( associationsService ).fetchConfirmedUserIds( "111111" );
 
@@ -807,11 +791,11 @@ class UserCompanyAssociationTest {
 
         mockers.mockUsersServiceFetchUserDetails( "9999" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( testDataManager.fetchUserDtos( "666" ).getFirst() ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( testDataManager.fetchUserDtos( "666" ).getFirst() ).when( usersService ).fetchUserDetails( any( Association.class ) );
         Mockito.doReturn( Optional.of( association ) ).when( associationsService ).fetchAssociationDao( "6" );
         Mockito.doReturn( Flux.just( "222" ) ).when( associationsService ).fetchConfirmedUserIds( "111111" );
 
-        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteCancelledEmail( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), any( AssociationDao.class ) );
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteCancelledEmail( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), any( Association.class ) );
         Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationCancelledEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), eq( "homer.simpson@springfield.com" ) );
 
         mockMvc.perform( patch( "/associations/6"  )
@@ -824,7 +808,7 @@ class UserCompanyAssociationTest {
                 .andExpect( status().isOk() );
 
 
-        Mockito.verify( emailService ).sendInviteCancelledEmail( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), any( AssociationDao.class ) );
+        Mockito.verify( emailService ).sendInviteCancelledEmail( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), any( Association.class ) );
         Mockito.verify( emailService ).sendInvitationCancelledEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Companies House" ), eq( "homer.simpson@springfield.com" ) );
     }
 
@@ -836,7 +820,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
-        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( Association.class ) );
         Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation001" );
         Mockito.doReturn( Flux.just( "MKUser002" ) ).when( associationsService ).fetchConfirmedUserIds( "MKCOMP001" );
         Mockito.doReturn( Mono.empty() ).when( emailService ).sendDelegatedRemovalOfMigratedEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), eq( "mario@mushroom.kingdom" ) );
@@ -862,7 +846,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails( "MKUser001", "MKUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
-        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( Association.class ) );
         Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation001" );
         Mockito.doReturn( Flux.just( "MKUser002" ) ).when( associationsService ).fetchConfirmedUserIds( "MKCOMP001" );
         Mockito.doReturn( Mono.empty() ).when( emailService ).sendRemoveOfOwnMigratedEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "MKUser001" ) );
@@ -888,7 +872,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
-        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( Association.class ) );
         Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation001" );
         Mockito.doReturn( Flux.just( "MKUser002" ) ).when( associationsService ).fetchConfirmedUserIds( "MKCOMP001" );
         Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), anyString(), eq( "luigi@mushroom.kingdom" ) );
@@ -914,7 +898,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
         Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
-        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( Association.class ) );
         Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKAssociation004" );
         Mockito.doReturn( Flux.just( "MKUser002" ) ).when( associationsService ).fetchConfirmedUserIds( "MKCOMP001" );
         Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), anyString(), eq( "bowser@mushroom.kingdom" ) );
@@ -1075,7 +1059,7 @@ class UserCompanyAssociationTest {
         final var targetUser = testDataManager.fetchUserDtos( targetUserId ).getFirst();
 
         Mockito.doReturn( Optional.of( associations ) ).when( associationsService ).fetchAssociationDao( targetAssociationId );
-        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( AssociationDao.class ) );
+        Mockito.doReturn( targetUser ).when( usersService ).fetchUserDetails( any( Association.class ) );
         mockers.mockCompanyServiceFetchCompanyProfile( associations.getCompanyNumber() );
         mockers.mockUsersServiceFetchUserDetails( targetUserId );
         Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( associations.getCompanyNumber() ), any( Mono.class ), eq( targetUser.getDisplayName() ) );

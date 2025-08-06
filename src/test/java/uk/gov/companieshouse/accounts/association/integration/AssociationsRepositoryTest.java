@@ -17,7 +17,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.MethodMode;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
@@ -112,7 +112,7 @@ class AssociationsRepositoryTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22" ) );
 
         final var page = associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("9999",null, Set.of(StatusEnum.CONFIRMED.getValue() ),"",PageRequest.of(1, 1) );
-        final var ids = page.getContent().stream().map(AssociationDao::getCompanyNumber).toList();
+        final var ids = page.getContent().stream().map(Association::getCompanyNumber).toList();
         Assertions.assertTrue( ids.contains( "444444" ) );
         Assertions.assertEquals( 1, ids.size() );
     }
@@ -122,7 +122,7 @@ class AssociationsRepositoryTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22" ) );
 
         final var page = associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("9999",null, Set.of(StatusEnum.CONFIRMED.getValue() ),"", null);
-        final var ids = page.getContent().stream().map(AssociationDao::getCompanyNumber).toList();
+        final var ids = page.getContent().stream().map(Association::getCompanyNumber).toList();
         Assertions.assertTrue( ids.containsAll( List.of( "333333", "444444", "555555", "666666", "777777" ) ) );
         Assertions.assertEquals( 5, ids.size() );
     }
@@ -132,7 +132,7 @@ class AssociationsRepositoryTest {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "18", "19", "20", "21", "22" ) );
 
         final var page = associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber("9999",null, Set.of(StatusEnum.CONFIRMED.getValue() ),"333333", null);
-        final var ids = page.getContent().stream().map(AssociationDao::getCompanyNumber).toList();
+        final var ids = page.getContent().stream().map(Association::getCompanyNumber).toList();
         Assertions.assertTrue( ids.contains( "333333" ) );
         Assertions.assertEquals( 1, ids.size() );
     }
@@ -192,7 +192,7 @@ class AssociationsRepositoryTest {
                 associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( "111111", Set.of( StatusEnum.CONFIRMED.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 15 ) )
                         .getContent()
                         .stream()
-                        .map( AssociationDao::getUserId )
+                        .map( Association::getUserId )
                         .toList();
         Assertions.assertEquals( 1, queryWithConfirmedFilter.size() );
         Assertions.assertTrue( queryWithConfirmedFilter.contains( "111" ) );
@@ -201,7 +201,7 @@ class AssociationsRepositoryTest {
                 associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( "111111", Set.of( StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue() ), LocalDateTime.now(), PageRequest.of( 0, 15 ) )
                         .getContent()
                         .stream()
-                        .map( AssociationDao::getUserId )
+                        .map( Association::getUserId )
                         .toList();
         Assertions.assertEquals( 2, queryWithConfirmedAndAwaitingFilter.size() );
         Assertions.assertTrue( queryWithConfirmedAndAwaitingFilter.containsAll( List.of( "111", "666" ) ) );
@@ -215,7 +215,7 @@ class AssociationsRepositoryTest {
         final var secondPageContent =
                 secondPage.getContent()
                         .stream()
-                        .map( AssociationDao::getUserId )
+                        .map( Association::getUserId )
                         .toList();
 
         Assertions.assertEquals( 3, secondPage.getTotalElements() );
@@ -348,8 +348,8 @@ class AssociationsRepositoryTest {
         Assertions.assertEquals( StatusEnum.REMOVED.getValue(), associationsRepository.findById( "1" ).get().getStatus() );
     }
 
-    private AssociationDao createMinimalistAssociationForCompositeKeyTests( final String userId, final String userEmail, final String companyNumber ){
-        final var association = new AssociationDao();
+    private Association createMinimalistAssociationForCompositeKeyTests(final String userId, final String userEmail, final String companyNumber ){
+        final var association = new Association();
         association.setUserId( userId );
         association.setUserEmail( userEmail );
         association.setCompanyNumber( companyNumber );
@@ -461,7 +461,7 @@ class AssociationsRepositoryTest {
 
         final var associationIds = associationsRepository.fetchAssociationsWithActiveInvitations( "9999", null, LocalDateTime.now() )
                 .stream()
-                .map( AssociationDao::getId )
+                .map( Association::getId )
                 .toList();
 
         Assertions.assertEquals( 1, associationIds.size() );
@@ -474,7 +474,7 @@ class AssociationsRepositoryTest {
 
         final var associationIds = associationsRepository.fetchAssociationsWithActiveInvitations( null, "homer.simpson@springfield.com", LocalDateTime.now() )
                 .stream()
-                .map( AssociationDao::getId )
+                .map( Association::getId )
                 .toList();
 
         Assertions.assertEquals( 1, associationIds.size() );
@@ -507,6 +507,6 @@ class AssociationsRepositoryTest {
 
     @AfterEach
     public void after() {
-        mongoTemplate.dropCollection(AssociationDao.class);
+        mongoTemplate.dropCollection(Association.class);
     }
 }

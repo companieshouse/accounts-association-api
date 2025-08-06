@@ -16,8 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
-import uk.gov.companieshouse.accounts.association.models.InvitationDao;
-import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
+import uk.gov.companieshouse.accounts.association.models.Invitation;
+import uk.gov.companieshouse.accounts.association.models.PreviousStates;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 
 @ExtendWith( MockitoExtension.class )
@@ -40,8 +40,8 @@ class AssociationsUtilTest {
         final var update = mapToInvitationUpdate( targetAssociation, targetUser, "MKUser002", now() );
         final var documentSet = update.getUpdateObject().get( "$set", Document.class );
         final var documentPush = update.getUpdateObject().get( "$push", Document.class );
-        final var invitations = (InvitationDao) documentPush.get( "invitations" );
-        final var previousStates = (PreviousStatesDao) documentPush.get( "previous_states" );
+        final var invitations = (Invitation) documentPush.get( "invitations" );
+        final var previousStates = (PreviousStates) documentPush.get( "previous_states" );
 
         Assertions.assertEquals( "awaiting-approval", documentSet.get( "status" ) );
         Assertions.assertEquals( "MKUser002", invitations.getInvitedBy() );
@@ -62,8 +62,8 @@ class AssociationsUtilTest {
         final var update = mapToInvitationUpdate( targetAssociation, null, "MKUser002", now() );
         final var documentSet = update.getUpdateObject().get( "$set", Document.class );
         final var documentPush = update.getUpdateObject().get( "$push", Document.class );
-        final var invitations = (InvitationDao) documentPush.get( "invitations" );
-        final var previousStates = (PreviousStatesDao) documentPush.get( "previous_states" );
+        final var invitations = (Invitation) documentPush.get( "invitations" );
+        final var previousStates = (PreviousStates) documentPush.get( "previous_states" );
 
         Assertions.assertEquals( "awaiting-approval", documentSet.get( "status" ) );
         Assertions.assertEquals( "MKUser002", invitations.getInvitedBy() );

@@ -15,7 +15,7 @@ import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
 @ExtendWith( MockitoExtension.class )
@@ -73,7 +73,7 @@ class CompanyServiceTest {
 
     @Test
     void fetchCompanyProfilesWithStreamThatHasNonExistentCompanyReturnsNotFoundRuntimeException(){
-        final var associationDao = new AssociationDao();
+        final var associationDao = new Association();
         associationDao.setCompanyNumber( "404COMP" );
         mockers.mockWebClientForFetchCompanyProfileErrorResponse( "404COMP", 404 );
         Assertions.assertThrows( NotFoundRuntimeException.class, () -> companyService.fetchCompanyProfiles( Stream.of( associationDao ) ) );
@@ -81,7 +81,7 @@ class CompanyServiceTest {
 
     @Test
     void fetchCompanyProfilesWithStreamThatHasMalformedCompanyNumberReturnsInternalServerErrorRuntimeException(){
-        final var associationDao = new AssociationDao();
+        final var associationDao = new Association();
         associationDao.setCompanyNumber( "£$@123" );
         mockers.mockWebClientForFetchCompanyProfileErrorResponse( "£$@123", 400 );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> companyService.fetchCompanyProfiles( Stream.of( associationDao ) ) );

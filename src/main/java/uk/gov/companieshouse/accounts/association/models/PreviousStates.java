@@ -3,7 +3,7 @@ package uk.gov.companieshouse.accounts.association.models;
 import java.time.LocalDateTime;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-public class PreviousStatesDao {
+public class PreviousStates {
 
     private String status;
 
@@ -17,7 +17,7 @@ public class PreviousStatesDao {
         this.status = status;
     }
 
-    public PreviousStatesDao status( final String status ){
+    public PreviousStates status(final String status ){
         setStatus( status );
         return this;
     }
@@ -30,7 +30,7 @@ public class PreviousStatesDao {
         this.changedBy = changedBy;
     }
 
-    public PreviousStatesDao changedBy( final String changedBy ){
+    public PreviousStates changedBy(final String changedBy ){
         setChangedBy( changedBy );
         return this;
     }
@@ -43,7 +43,7 @@ public class PreviousStatesDao {
         this.changedAt = changedAt;
     }
 
-    public PreviousStatesDao changedAt( final LocalDateTime changedAt ){
+    public PreviousStates changedAt(final LocalDateTime changedAt ){
         setChangedAt( changedAt );
         return this;
     }
@@ -55,7 +55,7 @@ public class PreviousStatesDao {
 
     @Override
     public String toString() {
-        return "PreviousStatesDao{" +
+        return "PreviousStates{" +
                 "status='" + status + '\'' +
                 ", changedBy='" + changedBy + '\'' +
                 ", changedAt=" + changedAt +

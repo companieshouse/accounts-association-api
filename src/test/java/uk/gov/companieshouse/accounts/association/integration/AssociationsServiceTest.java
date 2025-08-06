@@ -13,7 +13,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Update;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
@@ -23,7 +22,7 @@ import uk.gov.companieshouse.accounts.association.exceptions.InternalServerError
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
 import uk.gov.companieshouse.accounts.association.mapper.InvitationMapper;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
@@ -129,7 +128,7 @@ class AssociationsServiceTest {
     void fetchAssociationsForUserAndPartialCompanyNumberPaginationWorksCorrectly(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation002", "MiAssociation001", "MiAssociation003", "MiAssociation004", "MiAssociation006" ) );
         final var user = testDataManager.fetchUserDtos( "MiUser002" ).getFirst();
-        final var associations = associationsService.fetchAssociationsForUserAndPartialCompanyNumber( user, null, 1, 2 ).map( AssociationDao :: getId ).getContent();
+        final var associations = associationsService.fetchAssociationsForUserAndPartialCompanyNumber( user, null, 1, 2 ).map( Association:: getId ).getContent();
         Assertions.assertEquals(2, associations.size() );
         Assertions.assertTrue(  associations.containsAll( List.of ( "MiAssociation004" , "MiAssociation006" ) ) );
     }
@@ -547,7 +546,7 @@ class AssociationsServiceTest {
 
     @AfterEach
     public void after() {
-        mongoTemplate.dropCollection(AssociationDao.class);
+        mongoTemplate.dropCollection(Association.class);
     }
 
 }

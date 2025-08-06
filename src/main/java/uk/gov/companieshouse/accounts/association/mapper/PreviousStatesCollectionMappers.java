@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
+import uk.gov.companieshouse.accounts.association.models.PreviousStates;
 import uk.gov.companieshouse.api.accounts.associations.model.Links;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousState;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
@@ -37,10 +37,10 @@ public class PreviousStatesCollectionMappers {
         };
     }
 
-    public PreviousStatesList daoToDto( final AssociationDao association, final int pageIndex, final int itemsPerPage ){
+    public PreviousStatesList daoToDto(final Association association, final int pageIndex, final int itemsPerPage ){
         return association.getPreviousStates()
                 .stream()
-                .sorted( Comparator.comparing( PreviousStatesDao::getChangedAt ).reversed() )
+                .sorted( Comparator.comparing( PreviousStates::getChangedAt ).reversed() )
                 .skip((long) pageIndex * itemsPerPage )
                 .limit( itemsPerPage )
                 .map( previousStatesMapper::daoToDto )

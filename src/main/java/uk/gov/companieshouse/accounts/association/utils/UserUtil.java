@@ -4,7 +4,7 @@ import static uk.gov.companieshouse.accounts.association.utils.RequestContextUti
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
 
 import java.util.Optional;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
 public final class UserUtil {
@@ -17,14 +17,14 @@ public final class UserUtil {
                 .orElse( defaultValue );
     }
 
-    public static boolean isRequestingUser( final AssociationDao targetAssociation ){
+    public static boolean isRequestingUser( final Association targetAssociation ){
         final var idMatches = Optional.ofNullable( targetAssociation )
-                .map( AssociationDao::getUserId )
+                .map( Association::getUserId )
                 .filter( userId -> userId.equals( getEricIdentity() ) )
                 .isPresent();
 
         final var emailMatch = Optional.ofNullable( targetAssociation )
-                .map( AssociationDao::getUserEmail )
+                .map( Association::getUserEmail )
                 .filter( userEmail -> userEmail.equals( getUser().getEmail() ) )
                 .isPresent();
 

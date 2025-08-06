@@ -1,6 +1,5 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import org.junit.jupiter.api.Assertions;
@@ -27,8 +26,8 @@ import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfig;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
+import uk.gov.companieshouse.accounts.association.models.PreviousStates;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
@@ -303,7 +302,7 @@ class UserCompanyAssociationsTest {
                         .header("ERIC-Authorised-Key-Roles", "*"))
                 .andExpect(status().isOk());
         final var associationsList = parseResponseTo( response, AssociationsList.class );
-        final var items = associationsList.getItems().stream().map(Association::getId).toList();
+        final var items = associationsList.getItems().stream().map(uk.gov.companieshouse.api.accounts.associations.model.Association::getId).toList();
         final var links = associationsList.getLinks();
 
         Assertions.assertTrue(items.containsAll(List.of("18", "19")));
@@ -555,7 +554,7 @@ class UserCompanyAssociationsTest {
         mockers.mockUsersServiceFetchUserDetails( "111" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
         Mockito.doReturn(associationDao).when(associationsService).createAssociationWithAuthCodeApprovalRoute("111111", "111");
-        Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
+        Mockito.doReturn(new PageImpl<uk.gov.companieshouse.accounts.association.models.Association>(new ArrayList<>())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
         Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "111111" ), any( Mono.class ), eq( "Batman" ) );
 
         final var response = mockMvc.perform(post("/associations")
@@ -593,7 +592,7 @@ class UserCompanyAssociationsTest {
         mockers.mockUsersServiceFetchUserDetails( "666" );
         mockers.mockCompanyServiceFetchCompanyProfile("333333" );
         Mockito.doReturn(associationDao).when(associationsService).createAssociationWithAuthCodeApprovalRoute("333333", "666");
-        Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
+        Mockito.doReturn(new PageImpl<Association>(new ArrayList<>())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
         Mockito.doReturn( Flux.just( "666" ) ).when( associationsService ).fetchConfirmedUserIds( "333333" );
         Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "333333" ), any( Mono.class ), eq( "homer.simpson@springfield.com" ) );
 
@@ -664,7 +663,7 @@ class UserCompanyAssociationsTest {
 
         mockers.mockUsersServiceFetchUserDetails( "9999" );
         mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
-        Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
+        Mockito.doReturn(new PageImpl<uk.gov.companieshouse.accounts.association.models.Association>(new ArrayList<>())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
         Mockito.doReturn( Flux.just( "000" ) ).when( associationsService ).fetchConfirmedUserIds( "333333" );
         Mockito.doReturn(associationDao).when(associationsService).createAssociationWithAuthCodeApprovalRoute("333333", "9999");
         Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "333333" ), any( Mono.class ), eq( "Scrooge McDuck" ) );
@@ -687,7 +686,7 @@ class UserCompanyAssociationsTest {
         final var company = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
         final var updatedAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst()
                 .status( "confirmed" )
-                .previousStates( new ArrayList<>( List.of( new PreviousStatesDao().status( "migrated" ).changedBy( "MKUser001" ).changedAt( LocalDateTime.now() ) ) ) )
+                .previousStates( new ArrayList<>( List.of( new PreviousStates().status( "migrated" ).changedBy( "MKUser001" ).changedAt( LocalDateTime.now() ) ) ) )
                 .approvalRoute( "auth_code" )
                 .etag( generateEtag() );
 

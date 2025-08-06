@@ -30,8 +30,8 @@ import uk.gov.companieshouse.accounts.association.mapper.InvitationsCollectionMa
 import uk.gov.companieshouse.accounts.association.mapper.InvitationMapper;
 import uk.gov.companieshouse.accounts.association.mapper.PreviousStatesCollectionMappers;
 import uk.gov.companieshouse.accounts.association.mapper.PreviousStatesMapperImpl;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.models.InvitationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
+import uk.gov.companieshouse.accounts.association.models.Invitation;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.user.model.User;
@@ -325,7 +325,7 @@ class AssociationsServiceTest {
     @Test
     void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithInvalidStatusReturnsEmptyPage() {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
-        final var content = new ArrayList<AssociationDao>();
+        final var content = new ArrayList<Association>();
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, content.size() );
 
@@ -339,7 +339,7 @@ class AssociationsServiceTest {
     @Test
     void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithNonexistentOrInvalidCompanyNumberReturnsEmptyPage() {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
-        final var content = new ArrayList<AssociationDao>();
+        final var content = new ArrayList<Association>();
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, content.size() );
 
@@ -353,7 +353,7 @@ class AssociationsServiceTest {
     @Test
     void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithNonexistentUserIdReturnsEmptyPage() {
         final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
-        final var content = new ArrayList<AssociationDao>();
+        final var content = new ArrayList<Association>();
         final var pageRequest = PageRequest.of(0, 15);
         final var page = new PageImpl<>(content, pageRequest, content.size() );
 
@@ -512,7 +512,7 @@ class AssociationsServiceTest {
 
     @Test
     void createAssociationWithAuthCodeApprovalRouteCreatesAssociation(){
-        final var expectedAssociation = new AssociationDao()
+        final var expectedAssociation = new Association()
                 .companyNumber( "111111" )
                 .userId( "111" )
                 .status( CONFIRMED.getValue() )
@@ -541,14 +541,14 @@ class AssociationsServiceTest {
     @ParameterizedTest
     @MethodSource( "createAssociationWithInvitationApprovalRouteScenarios" )
     void createAssociationWithInvitationApprovalRouteCreatesAssociation( final String userId, final String userEmail ){
-        final var expectedAssociation = new AssociationDao()
+        final var expectedAssociation = new Association()
                 .companyNumber( "111111" )
                 .userId( userId )
                 .userEmail( userEmail )
                 .status( AWAITING_APPROVAL.getValue() )
                 .approvalRoute( INVITATION.getValue() )
                 .approvalExpiryAt( LocalDateTime.now().plusDays( 30 ) )
-                .invitations( List.of( new InvitationDao()
+                .invitations( List.of( new Invitation()
                         .invitedBy( "222" )
                         .invitedAt( LocalDateTime.now() )
                 ) )

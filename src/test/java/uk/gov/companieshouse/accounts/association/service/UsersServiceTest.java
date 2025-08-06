@@ -22,7 +22,7 @@ import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.models.context.RequestContext;
 import uk.gov.companieshouse.accounts.association.models.context.RequestContextData.RequestContextDataBuilder;
 import uk.gov.companieshouse.api.accounts.user.model.User;
@@ -75,7 +75,7 @@ class UsersServiceTest {
 
     @Test
     void fetchUserDetailsWithNullStreamThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> usersService.fetchUserDetails( (Stream<AssociationDao>) null ) );
+        Assertions.assertThrows( NullPointerException.class, () -> usersService.fetchUserDetails( (Stream<Association>) null ) );
     }
 
     @Test
@@ -85,7 +85,7 @@ class UsersServiceTest {
 
     @Test
     void fetchUserDetailsWithStreamThatHasNonExistentUserReturnsNotFoundRuntimeException(){
-        final var associationDao = new AssociationDao();
+        final var associationDao = new Association();
         associationDao.setUserId( "404User" );
         mockers.mockWebClientForFetchUserDetailsErrorResponse( "404User", 404 );
         Assertions.assertThrows( NotFoundRuntimeException.class, () -> usersService.fetchUserDetails( Stream.of( associationDao ) ) );
@@ -93,7 +93,7 @@ class UsersServiceTest {
 
     @Test
     void fetchUserDetailsWithStreamThatHasMalformedUserIdReturnsInternalServerErrorRuntimeException(){
-        final var associationDao = new AssociationDao();
+        final var associationDao = new Association();
         associationDao.setUserId( "£$@123" );
         mockers.mockWebClientForFetchUserDetailsErrorResponse( "£$@123", 400 );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails( Stream.of( associationDao ) ) );
@@ -155,7 +155,7 @@ class UsersServiceTest {
 
     @Test
     void fetchUserDetailsWithNullAssociationOrNullUserIdAndUserEmailReturnsNull(){
-        Assertions.assertNull( usersService.fetchUserDetails( new AssociationDao() ) );
+        Assertions.assertNull( usersService.fetchUserDetails( new Association() ) );
     }
 
     @Test

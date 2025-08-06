@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.models.email.EmailNotification;
 import uk.gov.companieshouse.accounts.association.models.email.builders.*;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
@@ -164,13 +164,13 @@ public class EmailService {
                 .then();
     }
 
-    public Mono<Void> sendInviteCancelledEmail( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String cancelledByDisplayName, final AssociationDao associationDao ){
-        return Mono.just( associationDao )
+    public Mono<Void> sendInviteCancelledEmail( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String cancelledByDisplayName, final Association association){
+        return Mono.just(association)
                 .filter( dao -> Objects.nonNull( dao.getUserId() ) )
-                .map( AssociationDao::getUserId )
+                .map( Association::getUserId )
                 .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
                 .map( User::getEmail )
-                .switchIfEmpty( Mono.just( associationDao ).map( AssociationDao::getUserEmail ) )
+                .switchIfEmpty( Mono.just(association).map( Association::getUserEmail ) )
                 .map( inviteeEmail -> new InviteCancelledEmailBuilder()
                         .setRecipientEmail( inviteeEmail )
                         .setCancelledBy( cancelledByDisplayName ) )

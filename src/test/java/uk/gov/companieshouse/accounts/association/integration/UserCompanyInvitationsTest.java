@@ -38,7 +38,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -529,7 +529,7 @@ class UserCompanyInvitationsTest {
 
     @ParameterizedTest
     @MethodSource( "inviteUserAppliedToMigratedAssociationScenarios" )
-    void inviteUserCanBeAppliedToMigratedAssociations( final AssociationDao targetAssociation ) throws Exception {
+    void inviteUserCanBeAppliedToMigratedAssociations( final Association targetAssociation ) throws Exception {
         final var requestingAssociation = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
 
         associationsRepository.insert( List.of( requestingAssociation, targetAssociation ) );
@@ -560,7 +560,7 @@ class UserCompanyInvitationsTest {
 
     @AfterEach
     public void after() {
-        mongoTemplate.dropCollection(AssociationDao.class);
+        mongoTemplate.dropCollection(Association.class);
     }
 
 }

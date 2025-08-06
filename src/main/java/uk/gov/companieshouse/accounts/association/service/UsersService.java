@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 
@@ -52,15 +53,15 @@ public class UsersService {
         return toFetchUserDetailsRequest( userId, xRequestId ).block( Duration.ofSeconds( 20L ) );
     }
 
-    public Map<String, User> fetchUserDetails( final Stream<AssociationDao> associations ){
+    public Map<String, User> fetchUserDetails(final Stream<Association> associations) {
         final var xRequestId = getXRequestId();
-        return Flux.fromStream( associations )
-                .filter( association -> Objects.nonNull( association.getUserId() ) )
-                .map( AssociationDao::getUserId )
-                .distinct()
-                .flatMap( userId -> toFetchUserDetailsRequest( userId, xRequestId ) )
-                .collectMap( User::getUserId )
-                .block( Duration.ofSeconds( 20L ) );
+        return associations
+                .map(Association::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(
+                        userId -> userId,
+                        userId -> toFetchUserDetailsRequest(userId, xRequestId).block(Duration.ofSeconds(20))
+                ));
     }
 
     public UsersList searchUserDetails( final List<String> emails ) {
@@ -107,7 +108,7 @@ public class UsersService {
                 .orElse( null );
     }
 
-    public User fetchUserDetails( final AssociationDao association ){
+    public User fetchUserDetails( final Association association ){
         return retrieveUserDetails( association.getUserId(), association.getUserEmail() );
     }
 

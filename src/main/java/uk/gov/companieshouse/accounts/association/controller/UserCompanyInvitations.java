@@ -64,9 +64,8 @@ public class UserCompanyInvitations implements UserCompanyInvitationsInterface {
     public ResponseEntity<ResponseBodyPost> inviteUser( final InvitationRequestBodyPost requestBody ) {
         LOGGER.infoContext( getXRequestId(), String.format( "Received request with requesting user_id=%s, company_number=%s.", getEricIdentity(), requestBody.getCompanyNumber() ),null );
 
-        final var inviteeEmail = Optional.of( requestBody )
-                .map( InvitationRequestBodyPost::getInviteeEmailId )
-                .orElseThrow( () -> new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "invitee_email_id is null." ) ) );
+        final var inviteeEmail = Optional.ofNullable(requestBody.getInviteeEmailId())
+                .orElseThrow(() -> new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("invitee_email_id is null.")));
 
         final var companyNumber = requestBody.getCompanyNumber();
         final CompanyDetails companyDetails;
@@ -80,27 +79,41 @@ public class UserCompanyInvitations implements UserCompanyInvitationsInterface {
             throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Requesting user %s does not have a confirmed association at company %s", getEricIdentity(), companyNumber ) ) );
         }
 
-        final var inviteeUserDetails = Optional
-                .ofNullable( usersService.searchUserDetails( List.of( inviteeEmail ) ) )
-                .filter( list -> !list.isEmpty() )
-                .map( List::getFirst )
-                .orElse( null );
+        final var inviteeUserDetails = usersService.searchUserDetails(List.of(inviteeEmail))
+                        .stream()
+                        .findFirst()
+                        .orElse(null);
 
-        final var targetAssociation = associationsService.fetchAssociationDao( companyNumber, Objects.nonNull( inviteeUserDetails ) ? inviteeUserDetails.getUserId() : null, inviteeEmail )
-                .map( association -> {
-                    LOGGER.debugContext( getXRequestId(), "Mapping association", null );
-                    if( CONFIRMED.getValue().equals( association.getStatus() ) ) {
-                        throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "This invitee email address already has a confirmed association at company %s", companyNumber ) ) );
+        final var targetAssociation = associationsService.fetchAssociationDao(
+                        companyNumber,
+                        inviteeUserDetails != null ? inviteeUserDetails.getUserId() : null,
+                        inviteeEmail
+                )
+                .map(association -> {
+                    LOGGER.debugContext(getXRequestId(), "Mapping association", null);
+                    if (CONFIRMED.getValue().equals(association.getStatus())) {
+                        throw new BadRequestRuntimeException(
+                                PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN,
+                                new Exception("This invitee email address already has a confirmed association at company " + companyNumber)
+                        );
                     }
-                    associationsService.updateAssociation( association.getId(), mapToInvitationUpdate( association, inviteeUserDetails, getEricIdentity(), now() ) );
-                    LOGGER.debugContext( getXRequestId(), "Completed update associations", null );
-                    return association.approvalExpiryAt( now().plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ) );
-                } )
-                .orElseGet( () -> {
-                    final var userId = Objects.nonNull( inviteeUserDetails ) ? inviteeUserDetails.getUserId() : null;
-                    final var userEmail = Objects.nonNull( inviteeUserDetails ) ? null : inviteeEmail;
-                    return associationsService.createAssociationWithInvitationApprovalRoute( companyNumber, userId, userEmail, getEricIdentity() );
-                } );
+                    associationsService.updateAssociation(
+                            association.getId(),
+                            mapToInvitationUpdate(association, inviteeUserDetails, getEricIdentity(), now())
+                    );
+                    LOGGER.debugContext(getXRequestId(), "Completed update associations", null);
+                    return association.approvalExpiryAt(now().plusDays(DAYS_SINCE_INVITE_TILL_EXPIRES));
+                })
+                .orElseGet(() -> {
+                    final var userId = inviteeUserDetails != null ? inviteeUserDetails.getUserId() : null;
+                    final var userEmail = inviteeUserDetails == null ? inviteeEmail : null;
+                    return associationsService.createAssociationWithInvitationApprovalRoute(
+                            companyNumber,
+                            userId,
+                            userEmail,
+                            getEricIdentity()
+                    );
+                });
 
         emailService.sendInviteEmail( getXRequestId(), companyDetails.getCompanyNumber(), Mono.just( companyDetails.getCompanyName() ), mapToDisplayValue( getUser(), getUser().getEmail() ), targetAssociation.getApprovalExpiryAt().toString(), inviteeEmail ).subscribe();
         Mono.just( companyNumber )

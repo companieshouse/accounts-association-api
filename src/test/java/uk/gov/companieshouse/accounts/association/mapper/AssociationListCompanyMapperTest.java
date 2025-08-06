@@ -13,10 +13,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
 import java.util.List;
@@ -105,7 +104,7 @@ class AssociationListCompanyMapperTest {
         final var users = testDataManager.fetchUserDtos( "111", "222" );
         final var company = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
 
-        final var content = new PageImpl<AssociationDao>( List.of(), PageRequest.of( 0, 2 ), 0 );
+        final var content = new PageImpl<Association>( List.of(), PageRequest.of( 0, 2 ), 0 );
 
         Mockito.doReturn( Map.of( "111", users.getFirst(), "222", users.getLast() ) ).when( usersService ).fetchUserDetails( any( Stream.class ) );
 

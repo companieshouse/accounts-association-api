@@ -14,10 +14,9 @@ import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompany
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
 import uk.gov.companieshouse.accounts.association.mapper.InvitationsCollectionMappers;
 import uk.gov.companieshouse.accounts.association.mapper.PreviousStatesCollectionMappers;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.models.InvitationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
+import uk.gov.companieshouse.accounts.association.models.Invitation;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
@@ -63,7 +62,7 @@ public class AssociationsService {
     }
 
     @Transactional( readOnly = true )
-    public Optional<AssociationDao> fetchAssociationDao( final String associationId ) {
+    public Optional<Association> fetchAssociationDao(final String associationId ) {
         LOGGER.debugContext( getXRequestId(), String.format( "Attempting to fetch association with id: %s", associationId ), null );
         final var association = associationsRepository.findById( associationId );
         LOGGER.debugContext( getXRequestId(), String.format( "Successfully to fetched association with id: %s", associationId ), null );
@@ -71,7 +70,7 @@ public class AssociationsService {
     }
 
     @Transactional( readOnly = true )
-    public Optional<Association> fetchAssociationDto( final String associationId ) {
+    public Optional<uk.gov.companieshouse.api.accounts.associations.model.Association> fetchAssociationDto(final String associationId ) {
         LOGGER.debugContext( getXRequestId(), String.format( "Attempting to retrieve association with id: %s", associationId ), null );
         final var association = associationsRepository.findById( associationId ).map( associationDao -> associationsListCompanyMapper.daoToDto( associationDao, null, null ) );
         LOGGER.debugContext( getXRequestId(), String.format( "Successfully retrieved association with id: %s", associationId ), null );
@@ -79,7 +78,7 @@ public class AssociationsService {
     }
 
     @Transactional( readOnly = true )
-    public Optional<AssociationDao> fetchAssociationDao( final String companyNumber, final String userId, final String userEmail ) {
+    public Optional<Association> fetchAssociationDao(final String companyNumber, final String userId, final String userEmail ) {
         LOGGER.debugContext( getXRequestId(), String.format( "Attempting to fetch association for user_id=%s and company_number=%s. user_email was provided: %b.", userId, companyNumber, Objects.nonNull( userEmail ) ), null );
         final var association = associationsRepository.fetchAssociation( companyNumber, userId, userEmail );
         LOGGER.debugContext( getXRequestId(), String.format( "Successfully fetched association for user_id=%s and company_number=%s. user_email was provided: %b.", userId, companyNumber, Objects.nonNull( userEmail ) ), null );
@@ -94,7 +93,7 @@ public class AssociationsService {
     @Transactional( readOnly = true )
     public Flux<String> fetchConfirmedUserIds( final String companyNumber ) {
         LOGGER.debugContext( getXRequestId(), String.format( "Attempting to fetch user_id's for confirmed associations at company %s", companyNumber ), null );
-        return Flux.fromStream( associationsRepository.fetchConfirmedAssociations( companyNumber ).map( AssociationDao::getUserId ) );
+        return Flux.fromStream( associationsRepository.fetchConfirmedAssociations( companyNumber ).map( Association::getUserId ) );
     }
 
     @Transactional( readOnly = true )
@@ -110,7 +109,7 @@ public class AssociationsService {
     }
 
     @Transactional( readOnly = true )
-    public Optional<Association> fetchUnexpiredAssociationsForCompanyUserAndStatuses(final CompanyDetails companyDetails, final Set<StatusEnum> statuses, final User user, final String userEmail ) {
+    public Optional<uk.gov.companieshouse.api.accounts.associations.model.Association> fetchUnexpiredAssociationsForCompanyUserAndStatuses(final CompanyDetails companyDetails, final Set<StatusEnum> statuses, final User user, final String userEmail ) {
         LOGGER.debugContext( getXRequestId(), "Attempting to fetch unexpired associations for company, user and statuses", null );
         final var userId = Optional.ofNullable( user ).map( User::getUserId ).orElse( null );
         final var parsedStatuses = statuses.stream().map( StatusEnum::getValue ).collect( Collectors.toSet() );
@@ -124,7 +123,7 @@ public class AssociationsService {
     }
 
     @Transactional( readOnly = true )
-    public Page<AssociationDao> fetchAssociationsForUserAndPartialCompanyNumber( final User user, final String partialCompanyNumber, final int pageIndex, final int itemsPerPage ){
+    public Page<Association> fetchAssociationsForUserAndPartialCompanyNumber(final User user, final String partialCompanyNumber, final int pageIndex, final int itemsPerPage ){
         final var loggingString = Objects.nonNull( partialCompanyNumber ) ? String.format( " and company %s", partialCompanyNumber ) : "";
         LOGGER.debugContext( getXRequestId(), String.format( "Attempting to fetch associations for user %s", user.getUserId() ) + loggingString, null );
         final var coalescedPartialCompanyNumber = Optional.ofNullable( partialCompanyNumber ).orElse( "" );
@@ -171,14 +170,14 @@ public class AssociationsService {
     }
 
     @Transactional
-    public AssociationDao createAssociationWithAuthCodeApprovalRoute( final String companyNumber, final String userId ){
+    public Association createAssociationWithAuthCodeApprovalRoute(final String companyNumber, final String userId ){
         LOGGER.debugContext( getXRequestId(), String.format( "Attempting to create association for company_number %s and user_id %s.", companyNumber, userId ), null );
         if ( Objects.isNull( companyNumber ) || Objects.isNull( userId ) ) {
             LOGGER.errorContext( getXRequestId(), new Exception( "companyNumber or userId is null" ), null );
             throw new NullPointerException( "companyNumber and userId must not be null" );
         }
 
-        final var proposedAssociation = new AssociationDao()
+        final var proposedAssociation = new Association()
                 .companyNumber( companyNumber )
                 .userId( userId )
                 .status( CONFIRMED.getValue() )
@@ -191,21 +190,21 @@ public class AssociationsService {
     }
 
     @Transactional
-    public AssociationDao createAssociationWithInvitationApprovalRoute( final String companyNumber, final String userId, final String userEmail, final String invitedByUserId ){
+    public Association createAssociationWithInvitationApprovalRoute(final String companyNumber, final String userId, final String userEmail, final String invitedByUserId ){
         LOGGER.debugContext( getXRequestId(), String.format( "Attempting to create new invitation for user_id=%s and company_number=%s. user_email was provided: %b.", userId, companyNumber, Objects.nonNull( userEmail ) ), null );
         if ( Objects.isNull( companyNumber ) || ( Objects.isNull( userId ) && Objects.isNull( userEmail ) ) || Objects.isNull( invitedByUserId ) ) {
             LOGGER.errorContext( getXRequestId(), new Exception( "companyNumber, user, or invitedByUserId is null" ), null );
             throw new NullPointerException( "companyNumber, user, and invitedByUserId must not be null" );
         }
 
-        final var proposedAssociation = new AssociationDao()
+        final var proposedAssociation = new Association()
                 .companyNumber( companyNumber )
                 .userId( userId )
                 .userEmail( userEmail )
                 .status( AWAITING_APPROVAL.getValue() )
                 .approvalRoute( INVITATION.getValue() )
                 .approvalExpiryAt( LocalDateTime.now().plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ) )
-                .invitations( List.of( new InvitationDao().invitedBy( invitedByUserId ).invitedAt( LocalDateTime.now() ) ) )
+                .invitations( List.of( new Invitation().invitedBy( invitedByUserId ).invitedAt( LocalDateTime.now() ) ) )
                 .etag( generateEtag() );
 
         LOGGER.debugContext( getXRequestId(), "Insert Association", null );
@@ -215,13 +214,21 @@ public class AssociationsService {
     }
 
     @Transactional
-    public void updateAssociation( final String associationId, final Update update ) {
-        LOGGER.debugContext( getXRequestId(), String.format( "Attempting to update association with id: %s", associationId ), null );
-        Optional.ofNullable( associationId )
-                .map( id -> associationsRepository.updateAssociation( id, update ) )
-                .filter( numRecordsUpdated -> numRecordsUpdated > 0 )
-                .orElseThrow( () -> new InternalServerErrorRuntimeException( "Failed to update association", new Exception( String.format( "Failed to update association with id: %s", associationId ) ) ) );
-        LOGGER.debugContext( getXRequestId(), String.format( "Updated association %s", associationId ), null );
+    public void updateAssociation(String associationId, Update update) {
+        LOGGER.debugContext(getXRequestId(), "Attempting to update association with id: " + associationId, null);
+
+        int updatedRecords = Optional.ofNullable(associationId)
+                .map(id -> associationsRepository.updateAssociation(id, update))
+                .orElse(0);
+
+        if (updatedRecords <= 0) {
+            throw new InternalServerErrorRuntimeException(
+                    "Failed to update association",
+                    new Exception("Failed to update association with id: " + associationId)
+            );
+        }
+
+        LOGGER.debugContext(getXRequestId(), "Updated association " + associationId, null);
     }
 
 }

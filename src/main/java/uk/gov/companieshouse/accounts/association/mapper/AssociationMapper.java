@@ -11,10 +11,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.springframework.beans.factory.annotation.Autowired;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.Association;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
 
 import java.time.LocalDateTime;
@@ -38,7 +37,7 @@ public abstract class AssociationMapper {
     }
 
     @AfterMapping
-    protected void enrichWithUserDetails( @MappingTarget final Association association, @Context User userDetails ){
+    protected void enrichWithUserDetails(@MappingTarget final uk.gov.companieshouse.api.accounts.associations.model.Association association, @Context User userDetails ){
         if ( Objects.isNull( userDetails ) ){
             userDetails = Optional.ofNullable( association.getUserId() )
                     .map( user -> usersService.fetchUserDetails( user, getXRequestId() ) )
@@ -49,7 +48,7 @@ public abstract class AssociationMapper {
     }
 
     @AfterMapping
-    protected void enrichWithCompanyDetails( @MappingTarget final Association association, @Context CompanyDetails companyDetails ) {
+    protected void enrichWithCompanyDetails(@MappingTarget final uk.gov.companieshouse.api.accounts.associations.model.Association association, @Context CompanyDetails companyDetails ) {
         if ( Objects.isNull( companyDetails ) ){
             companyDetails = companyService.fetchCompanyProfile( association.getCompanyNumber() );
         }
@@ -58,7 +57,7 @@ public abstract class AssociationMapper {
     }
 
     @AfterMapping
-    protected void enrichAssociationWithLinksAndKind( @MappingTarget final Association association ) {
+    protected void enrichAssociationWithLinksAndKind( @MappingTarget final uk.gov.companieshouse.api.accounts.associations.model.Association association ) {
         final var associationId = association.getId();
         final var self = String.format( "/associations/%s", associationId );
         final var links = new AssociationLinks().self( self );
@@ -67,8 +66,8 @@ public abstract class AssociationMapper {
         association.setKind( DEFAULT_KIND );
     }
 
-    @Mapping( target = "status", expression = "java(Association.StatusEnum.fromValue(associationDao.getStatus()))" )
-    @Mapping( target = "approvalRoute", expression = "java(Association.ApprovalRouteEnum.fromValue(associationDao.getApprovalRoute()))" )
-    public abstract Association daoToDto( final AssociationDao associationDao, @Context final User userDetails, @Context final CompanyDetails companyDetails );
+    @Mapping( target = "status", expression = "java(Association.StatusEnum.fromValue(association.getStatus()))" )
+    @Mapping( target = "approvalRoute", expression = "java(Association.ApprovalRouteEnum.fromValue(association.getApprovalRoute()))" )
+    public abstract uk.gov.companieshouse.api.accounts.associations.model.Association daoToDto(final Association association, @Context final User userDetails, @Context final CompanyDetails companyDetails );
 
 }
