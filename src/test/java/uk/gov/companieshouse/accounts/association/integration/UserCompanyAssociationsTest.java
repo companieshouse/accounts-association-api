@@ -179,17 +179,12 @@ class UserCompanyAssociationsTest {
     void fetchAssociationsByWithInvalidStatusReturnsZeroResults() throws Exception {
         mockers.mockUsersServiceFetchUserDetails( "9999" );
 
-        final var response =
-                mockMvc.perform( get( "/associations?status=$$$$" )
-                                .header("X-Request-Id", "theId123")
-                                .header("Eric-identity", "9999")
-                                .header("ERIC-Identity-Type", "oauth2")
-                                .header("ERIC-Authorised-Key-Roles", "*") )
-                        .andExpect( status().isOk() );
-
-        final var associationsList = parseResponseTo( response, AssociationsList.class );
-
-        Assertions.assertEquals( 0, associationsList.getTotalResults() );
+        mockMvc.perform( get( "/associations?status=$$$$" )
+                        .header("X-Request-Id", "theId123")
+                        .header("Eric-identity", "9999")
+                        .header("ERIC-Identity-Type", "oauth2")
+                        .header("ERIC-Authorised-Key-Roles", "*") )
+                .andExpect( status().isBadRequest() );
     }
 
     @Test

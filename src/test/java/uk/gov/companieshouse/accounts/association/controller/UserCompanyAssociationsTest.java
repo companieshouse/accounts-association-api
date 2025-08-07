@@ -214,15 +214,12 @@ class UserCompanyAssociationsTest {
         mockers.mockUsersServiceFetchUserDetails( "9999" );
         Mockito.doReturn(new AssociationsList().totalResults(0).items(List.of())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, null,Set.of("$$$$"), 0, 15);
 
-        final var response = mockMvc.perform(get("/associations?status=$$$$")
+        mockMvc.perform(get("/associations?status=$$$$")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*"))
-                .andExpect(status().isOk());
-        final var associationsList = parseResponseTo( response, AssociationsList.class );
-
-        Assertions.assertEquals(0, associationsList.getTotalResults());
+                .andExpect(status().isBadRequest());
     }
 
     @Test
