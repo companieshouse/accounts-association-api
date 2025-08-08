@@ -13,15 +13,18 @@ import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.*;
-
+import java.util.stream.Collectors;
+import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
 import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToAuthCodeConfirmedUpdated;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
@@ -97,7 +100,10 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
     public ResponseEntity<AssociationsList> fetchAssociationsBy( final List<String> status, final Integer pageIndex, final Integer itemsPerPage, final String companyNumber ) {
         LOGGER.infoContext( getXRequestId(), String.format( "Received request with user_id=%s, status=%s, page_index=%d, items_per_page=%d, company_number=%s.", getEricIdentity(), String.join( ",", status ), pageIndex, itemsPerPage, companyNumber ),null );
 
-        checkStatusesToEnums(status);
+        final var allStatuses = fetchAllStatusesWithout( Set.of() ).stream().map( Association.StatusEnum::toString ).collect( Collectors.toSet() );
+        if ( !allStatuses.containsAll(status) ) {
+            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Status is invalid" ) );
+        }
 
         if ( pageIndex < 0 || itemsPerPage <= 0 ){
             throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
@@ -106,15 +112,5 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         final var associationsList = associationsService.fetchAssociationsForUserAndPartialCompanyNumberAndStatuses( getUser(), companyNumber, new HashSet<>( status ), pageIndex, itemsPerPage );
 
         return new ResponseEntity<>( associationsList, OK );
-    }
-
-    private void checkStatusesToEnums(final List<String> status ) {
-        for (String s : status) {
-            try {
-                Association.StatusEnum.fromValue(s);
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestRuntimeException("One or more status values are invalid.", e);
-            }
-        }
     }
 }
