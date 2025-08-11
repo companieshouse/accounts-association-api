@@ -52,7 +52,7 @@ public class CompanyService {
         final var xRequestId = getXRequestId();
         return Flux.fromStream( associations )
                 .map( AssociationDao::getCompanyNumber )
-                .flatMap( companyNumber -> toFetchCompanyProfileRequest( companyNumber, xRequestId ) )
+                .flatMap( companyNumber -> toFetchCompanyProfileRequest( companyNumber, xRequestId ), 64 )
                 .collectMap( CompanyDetails::getCompanyNumber )
                 .block( Duration.ofSeconds( 20L ) );
     }

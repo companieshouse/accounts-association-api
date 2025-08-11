@@ -77,7 +77,7 @@ public final class AssociationsUtil {
     }
 
     public static Set<StatusEnum> fetchAllStatusesWithout( final Set<StatusEnum> without ){
-        return Arrays.stream( StatusEnum.values() ).filter( status -> !without.contains( status ) ).collect( Collectors.toSet() );
+        return Arrays.stream( StatusEnum.values() ).parallel().filter( status -> !without.contains( status ) ).collect( Collectors.toSet() );
     }
 
 }

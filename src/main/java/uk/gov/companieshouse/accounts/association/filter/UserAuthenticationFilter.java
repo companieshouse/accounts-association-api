@@ -72,7 +72,7 @@ public class UserAuthenticationFilter extends OncePerRequestFilter {
 
     private void setSpringRoles( final RequestContextData requestContextData, final Set<SpringRole> springRoles ){
         LOGGER.debugContext( requestContextData.getXRequestId(), String.format( "Adding Spring roles: %s", springRoles.stream().map( SpringRole::getValue ).collect( Collectors.joining( ", " ) ) ), null );
-        final var roles = springRoles.stream()
+        final var roles = springRoles.parallelStream()
                 .map( SpringRole::getValue )
                 .map( role -> String.format( "ROLE_%s", role ) )
                 .map( SimpleGrantedAuthority::new )

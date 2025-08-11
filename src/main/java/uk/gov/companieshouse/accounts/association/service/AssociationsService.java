@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
@@ -94,13 +95,14 @@ public class AssociationsService {
     @Transactional( readOnly = true )
     public Flux<String> fetchConfirmedUserIds( final String companyNumber ) {
         LOGGER.debugContext( getXRequestId(), String.format( "Attempting to fetch user_id's for confirmed associations at company %s", companyNumber ), null );
-        return Flux.fromStream( associationsRepository.fetchConfirmedAssociations( companyNumber ).map( AssociationDao::getUserId ) );
+        return Flux.fromStream( associationsRepository.fetchConfirmedAssociations( companyNumber ).map( AssociationDao::getUserId ) ).parallel().runOn(
+                Schedulers.parallel() ).sequential();
     }
 
     @Transactional( readOnly = true )
     public AssociationsList fetchUnexpiredAssociationsForCompanyAndStatuses( final CompanyDetails companyDetails, final Set<StatusEnum> statuses, final String userId, final String userEmail,  final int pageIndex, final int itemsPerPage ) {
         LOGGER.debugContext( getXRequestId(), "Attempting to fetch unexpired associations for company and statuses", null );
-        final var parsedStatuses = statuses.stream().map( StatusEnum::getValue ).collect( Collectors.toSet() );
+        final var parsedStatuses = statuses.parallelStream().map( StatusEnum::getValue ).collect( Collectors.toSet() );
         final var associationDaos = Objects.nonNull( userEmail ) || Objects.nonNull( userId )
                 ? associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatusesAndUser( companyDetails.getCompanyNumber(), parsedStatuses, userId, userEmail, LocalDateTime.now(), PageRequest.of( pageIndex, itemsPerPage ) )
                 : associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails.getCompanyNumber(), parsedStatuses, LocalDateTime.now(), PageRequest.of( pageIndex, itemsPerPage ) );
@@ -113,7 +115,7 @@ public class AssociationsService {
     public Optional<Association> fetchUnexpiredAssociationsForCompanyUserAndStatuses(final CompanyDetails companyDetails, final Set<StatusEnum> statuses, final User user, final String userEmail ) {
         LOGGER.debugContext( getXRequestId(), "Attempting to fetch unexpired associations for company, user and statuses", null );
         final var userId = Optional.ofNullable( user ).map( User::getUserId ).orElse( null );
-        final var parsedStatuses = statuses.stream().map( StatusEnum::getValue ).collect( Collectors.toSet() );
+        final var parsedStatuses = statuses.parallelStream().map( StatusEnum::getValue ).collect( Collectors.toSet() );
         final var association = Optional.of( associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatusesAndUser( companyDetails.getCompanyNumber(), parsedStatuses, userId, userEmail, LocalDateTime.now(),  null ) )
                 .filter( Slice::hasContent )
                 .map( Slice::getContent )
@@ -128,7 +130,7 @@ public class AssociationsService {
         final var loggingString = Objects.nonNull( partialCompanyNumber ) ? String.format( " and company %s", partialCompanyNumber ) : "";
         LOGGER.debugContext( getXRequestId(), String.format( "Attempting to fetch associations for user %s", user.getUserId() ) + loggingString, null );
         final var coalescedPartialCompanyNumber = Optional.ofNullable( partialCompanyNumber ).orElse( "" );
-        final var allStatuses = fetchAllStatusesWithout( Set.of() ).stream().map( StatusEnum::getValue ).collect( Collectors.toSet() );
+        final var allStatuses = fetchAllStatusesWithout( Set.of() ).parallelStream().map( StatusEnum::getValue ).collect( Collectors.toSet() );
         final var associations = associationsRepository.fetchAssociationsForUserAndStatusesAndPartialCompanyNumber( user.getUserId(), user.getEmail(), allStatuses, coalescedPartialCompanyNumber, PageRequest.of( pageIndex, itemsPerPage ) );
         LOGGER.debugContext( getXRequestId(), String.format( "Successfully fetched associations for user %s", user.getUserId() ) + loggingString, null );
         return associations;

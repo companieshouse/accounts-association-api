@@ -58,7 +58,7 @@ public class UsersService {
                 .filter( association -> Objects.nonNull( association.getUserId() ) )
                 .map( AssociationDao::getUserId )
                 .distinct()
-                .flatMap( userId -> toFetchUserDetailsRequest( userId, xRequestId ) )
+                .flatMap( userId -> toFetchUserDetailsRequest( userId, xRequestId ), 32 )
                 .collectMap( User::getUserId )
                 .block( Duration.ofSeconds( 20L ) );
     }
