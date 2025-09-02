@@ -275,6 +275,16 @@
                     <groupId>org.eclipse.jetty</groupId>
                     <artifactId>jetty-webapp</artifactId>
                 </exclusion>
+                <!-- The following 2 exclusions prevents vulnerabilities in the email-producer-java on version 3.0.4 -->
+                <!-- These should be able to be removed when this is updated -->
+                <exclusion>
+                    <groupId>org.eclipse.jetty.http2</groupId>
+                    <artifactId>http2-server</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.http2</groupId>
+                    <artifactId>http2-common</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
