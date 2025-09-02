@@ -14,7 +14,7 @@
     <description>User and Company association.</description>
     <properties>
         <java.version>21</java.version>
-        <spring-boot.version>3.5.0</spring-boot.version>
+        <spring-boot.version>3.5.5</spring-boot.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.1</maven-surefire-plugin.version>
@@ -35,7 +35,7 @@
         <email-producer-java.version>3.0.4</email-producer-java.version>
         <flapdoodle.version>4.20.0</flapdoodle.version>
         <logback-classic.version>1.5.16</logback-classic.version>
-        <tomcat-core-and-websocket.version>11.0.9</tomcat-core-and-websocket.version>
+        <tomcat-core-and-websocket.version>11.0.10</tomcat-core-and-websocket.version>
         <grpc.version>1.73.0</grpc.version>
 
         <sonar-maven-plugin.version>4.0.0.4121</sonar-maven-plugin.version>
@@ -280,7 +280,7 @@
         <dependency>
             <groupId>org.eclipse.jetty.ee10</groupId>
             <artifactId>jetty-ee10-webapp</artifactId>
-            <version>12.0.22</version>
+            <version>12.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
