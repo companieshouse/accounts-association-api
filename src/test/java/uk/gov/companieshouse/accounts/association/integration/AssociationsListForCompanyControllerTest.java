@@ -510,7 +510,7 @@ class AssociationsListForCompanyControllerTest {
                         .header( "ERIC-Identity-Type", "key" )
                         .header( "ERIC-Authorised-Key-Roles", "*" )
                         .contentType(MediaType.APPLICATION_JSON )
-                        .content( "{\"user_email\":\"$$$$$@mushroom.kingdom\" }" ) )
+                        .content( "{\"user_email\":\"$\\(){}$$$$@mushroomkingdom\" }" ) )
                 .andExpect( status().isBadRequest() );
     }
 
@@ -534,7 +534,7 @@ class AssociationsListForCompanyControllerTest {
                         .header( "ERIC-Identity-Type", "key" )
                         .header( "ERIC-Authorised-Key-Roles", "*" )
                         .contentType(MediaType.APPLICATION_JSON )
-                        .content( "\"user_email\":\"$$$$$@mushroom.kingdom\" ,\"status\":[\"confirmed\", \"removed\"]} " ) )
+                        .content( "\"user_email\":\"$$$$$@mushroomkingdom\" ,\"status\":[\"confirmed\", \"removed\"]} " ) )
                 .andExpect( status().isBadRequest() );
     }
 
