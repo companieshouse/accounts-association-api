@@ -557,7 +557,7 @@ class AssociationsListForCompanyControllerTest {
                         .header( "ERIC-Identity-Type", "key" )
                         .header( "ERIC-Authorised-Key-Roles", "*" )
                         .contentType(MediaType.APPLICATION_JSON )
-                        .content( "{\"user_email\":\"$$$$$@mushroom.kingdom\" }" ) )
+                        .content( "{\"user_email\":\"$\\(){}$$$$@mushroomkingdom\" " ) )
                 .andExpect( status().isBadRequest() );
     }
 
