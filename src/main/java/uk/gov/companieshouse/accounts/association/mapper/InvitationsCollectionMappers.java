@@ -3,9 +3,11 @@ package uk.gov.companieshouse.accounts.association.mapper;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
@@ -39,13 +41,19 @@ public class InvitationsCollectionMappers {
         };
     }
 
-    public InvitationsList daoToDto( final AssociationDao association, final int pageIndex, final int itemsPerPage ){
-        return association.getInvitations()
-                .stream()
-                .skip((long) pageIndex * itemsPerPage )
-                .limit( itemsPerPage )
-                .map( invitationDao -> invitationsMapper.daoToDto( invitationDao, association.getId() ) )
-                .collect( Collectors.collectingAndThen( Collectors.toList(), mapToInvitationsList( String.format( GET_INVITATIONS_FOR_ASSOCIATION_URI, association.getId() ), association.getInvitations().size(), pageIndex, itemsPerPage ) ) );
+    public Mono<InvitationsList> daoToDto( final AssociationDao association, final int pageIndex, final int itemsPerPage){
+        final var offset = (long) pageIndex * itemsPerPage;
+        final var href = String.format(GET_INVITATIONS_FOR_ASSOCIATION_URI, association.getId());
+        final var total = association.getInvitations().size();
+
+        return Flux.fromIterable(association.getInvitations())
+                .skip(offset)
+                .take(itemsPerPage)
+                .flatMapSequential(invitationDao -> Mono
+                        .fromCallable(() -> invitationsMapper.daoToDto(invitationDao, association.getId()))
+                        .subscribeOn(Schedulers.boundedElastic()))
+                .collectList()
+                .map(list -> mapToInvitationsList(href, total, pageIndex, itemsPerPage).apply(list));
     }
 
     private Invitation mapToMostRecentInvitation( final AssociationDao association ){
@@ -57,13 +65,27 @@ public class InvitationsCollectionMappers {
         return invitationsMapper.daoToDto( mostRecentInvitation, association.getId() );
     }
 
-    public InvitationsList daoToDto( final List<AssociationDao> associationsWithActiveInvitations, final int pageIndex, final int itemsPerPage ){
-        return associationsWithActiveInvitations.stream()
-                .sorted( Comparator.comparing( AssociationDao::getApprovalExpiryAt ).reversed() )
-                .skip((long) pageIndex * itemsPerPage )
-                .limit( itemsPerPage )
-                .map( this::mapToMostRecentInvitation )
-                .collect( Collectors.collectingAndThen( Collectors.toList(), mapToInvitationsList( FETCH_ACTIVE_INVITATIONS_FOR_USER_URI, associationsWithActiveInvitations.size(), pageIndex, itemsPerPage ) ) );
+    public Mono<InvitationsList> daoToDto(
+            final List<AssociationDao> associationsWithActiveInvitations,
+            final int pageIndex,
+            final int itemsPerPage) {
+
+        final long offset = (long) pageIndex * itemsPerPage;
+        final int total = associationsWithActiveInvitations.size();
+
+        return Flux.fromIterable(associationsWithActiveInvitations)
+                .sort(Comparator.comparing(AssociationDao::getApprovalExpiryAt).reversed())
+                .skip(offset)
+                .take(itemsPerPage)
+                .flatMapSequential(
+                        assoc -> Mono.fromCallable(() -> mapToMostRecentInvitation(assoc)))
+                .subscribeOn(Schedulers.boundedElastic())
+                .collectList()
+                .map(list -> mapToInvitationsList(
+                        FETCH_ACTIVE_INVITATIONS_FOR_USER_URI,
+                        total,
+                        pageIndex,
+                        itemsPerPage).apply(list));
     }
 
 }

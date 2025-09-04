@@ -27,6 +27,7 @@ import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGE
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.REMOVED;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.UNAUTHORISED;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.data.mongodb.core.query.Update;
@@ -82,9 +83,15 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
             throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
         }
 
-        return associationsService.fetchInvitations( associationId, pageIndex, itemsPerPage )
-                .map( invitations -> new ResponseEntity<>( invitations, OK ) )
-                .orElseThrow( () -> new NotFoundRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Could not find association %s.", associationId ) ) ) );
+        return associationsService.fetchInvitations(associationId, pageIndex, itemsPerPage)
+                .map(ResponseEntity::ok)
+                .switchIfEmpty(
+                        Mono.error(
+                                new NotFoundRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN,
+                                new Exception(String.format("Could not find association %s.", associationId)))
+                        )
+                )
+                .block(Duration.ofSeconds(5));
     }
 
     @Override
