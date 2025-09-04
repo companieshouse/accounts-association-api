@@ -3,6 +3,7 @@ package uk.gov.companieshouse.accounts.association.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -269,8 +270,7 @@ class UserCompanyAssociationTest {
 
     @Test
     void getInvitationsForAssociationWithNonexistentIdReturnsNotFound() throws Exception {
-        Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationDao("11");
-
+        Mockito.when(associationsService.fetchInvitations(eq("11"), anyInt(), anyInt())).thenReturn(Mono.empty());
         mockMvc.perform(get("/associations/11/invitations")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "000")
@@ -283,7 +283,8 @@ class UserCompanyAssociationTest {
     void getInvitationsForAssociationFetchesInvitations() throws Exception {
         final var invitations = testDataManager.fetchInvitations( "37" );
 
-        Mockito.doReturn( Optional.of( new InvitationsList().items( invitations ) ) ).when(associationsService).fetchInvitations("37", 0, 15);
+        Mockito.when(associationsService.fetchInvitations(eq("37"), eq(0), eq(15)))
+                .thenReturn(Mono.just(new InvitationsList().items(invitations)));
 
         final var response = mockMvc.perform(get("/associations/37/invitations")
                         .header("X-Request-Id", "theId123")
@@ -298,6 +299,8 @@ class UserCompanyAssociationTest {
         Assertions.assertEquals( resultInvitations.getFirst(), invitations.getFirst() );
         Assertions.assertEquals( resultInvitations.get(1), invitations.get(1) );
         Assertions.assertEquals( resultInvitations.getLast(), invitations.getLast() );
+
+        Mockito.verify(associationsService).fetchInvitations("37", 0, 15);
     }
 
 
@@ -314,7 +317,7 @@ class UserCompanyAssociationTest {
                 .items(invitations).links(mockLinks)
                 .itemsPerPage(1).pageNumber(1).totalResults(2).totalPages(2);
 
-        when(associationsService.fetchInvitations("37", 1, 1)).thenReturn(Optional.of(mockInvitationsList));
+        when(associationsService.fetchInvitations("37", 1, 1)).thenReturn(Mono.just(mockInvitationsList));
 
         final var response = mockMvc.perform(get("/associations/37/invitations?page_index=1&items_per_page=1")
                         .header("X-Request-Id", "theId123")
@@ -338,7 +341,8 @@ class UserCompanyAssociationTest {
 
     @Test
     void getInvitationsForAssociationWithMigratedAssociationReturnsEmpty() throws Exception {
-        Mockito.doReturn( Optional.of( new InvitationsList().items( List.of() ) ) ).when( associationsService ).fetchInvitations( "MKAssociation001", 0, 15 );
+        Mockito.when(associationsService.fetchInvitations(eq("MKAssociation001"), eq(0), eq(15)))
+                .thenReturn(Mono.just(new InvitationsList().items(List.of())));
 
         final var response = mockMvc.perform( get( "/associations/MKAssociation001/invitations" )
                         .header( "X-Request-Id", "theId123" )
@@ -349,7 +353,8 @@ class UserCompanyAssociationTest {
         final var resultInvitationsList = parseResponseTo( response, InvitationsList.class );
         final var resultInvitations = resultInvitationsList.getItems();
 
-        Assertions.assertTrue( resultInvitations.isEmpty() );
+        Assertions.assertTrue(resultInvitations.isEmpty());
+        Mockito.verify(associationsService).fetchInvitations("MKAssociation001", 0, 15);
     }
 
     @Test

@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.query.Update;
+import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
 import uk.gov.companieshouse.accounts.association.common.Preprocessors.ReduceTimeStampResolutionPreprocessor;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
@@ -34,6 +35,7 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
@@ -52,6 +54,7 @@ import static org.mockito.Mockito.when;
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.common.TestDataManager.block;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.INVITATION;
@@ -424,10 +427,17 @@ class AssociationsServiceTest {
 
     @Test
     void fetchInvitationsWithNullInvitationsListReturnsEmptyList() {
-        final var associationDao = testDataManager.fetchAssociationDaos( "18" ).getFirst();
-        Mockito.doReturn( Optional.of( associationDao ) ).when( associationsRepository ).findById( "18" );
-        associationsService.fetchInvitations( "18", 0, 1);
-        Mockito.verify( invitationsCollectionMappers ).daoToDto( associationDao, 0, 1 );
+        final var associationDao = testDataManager.fetchAssociationDaos("18").getFirst();
+
+        Mockito.when(associationsRepository.findById("18")).thenReturn(Optional.of(associationDao));
+        Mockito.when(invitationsCollectionMappers.daoToDto(associationDao, 0, 1))
+                .thenReturn(Mono.just(new InvitationsList().items(Collections.emptyList())));
+        final var result = block(associationsService.fetchInvitations("18", 0, 1));
+
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.getItems().isEmpty());
+
+        Mockito.verify(invitationsCollectionMappers).daoToDto(associationDao, 0, 1);
     }
 
     private static Stream<String> userIdsProvider() {
@@ -606,7 +616,8 @@ class AssociationsServiceTest {
     void fetchInvitationsFiltersWorkingCorrectly(){
         final var association = testDataManager.fetchAssociationDaos( "MiAssociation041" ).getFirst();
         Mockito.doReturn( Optional.of(association) ).when(associationsRepository).findById( "MiAssociation041" );
-        associationsService.fetchInvitations( "MiAssociation041", 0, 15);
+        Mockito.doReturn(Mono.empty()).when(invitationsCollectionMappers).daoToDto(association, 0, 15);
+        associationsService.fetchInvitations( "MiAssociation041", 0, 15).block();
         Mockito.verify( invitationsCollectionMappers ).daoToDto( association, 0, 15 );
     }
 

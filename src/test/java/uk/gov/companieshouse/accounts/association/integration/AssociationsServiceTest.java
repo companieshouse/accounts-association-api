@@ -12,10 +12,9 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
 import uk.gov.companieshouse.accounts.association.common.Preprocessors.ReduceTimeStampResolutionPreprocessor;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
@@ -40,6 +39,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.*;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.common.TestDataManager.block;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.INVITATION;
@@ -57,19 +57,19 @@ class AssociationsServiceTest {
     @Autowired
     private AssociationsRepository associationsRepository;
 
-    @MockBean
+    @MockitoBean
     private EmailProducer emailProducer;
 
-    @MockBean
+    @MockitoBean
     private KafkaProducerFactory kafkaProducerFactory;
 
-    @MockBean
+    @MockitoBean
     private AssociationsListUserMapper associationsListUserMapper;
 
-    @MockBean
+    @MockitoBean
     private AssociationsListCompanyMapper associationsListCompanyMapper;
 
-    @MockBean
+    @MockitoBean
     private InvitationMapper invitationsMapper;
 
     @Autowired
@@ -83,23 +83,32 @@ class AssociationsServiceTest {
     void fetchInvitationsFiltersWorkingCorrectly(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation041", "MiAssociation040", "MiAssociation042", "MiAssociation043", "MiAssociation030" ) );
         Mockito.doReturn(testDataManager.fetchInvitations( "MiAssociation041" ).getFirst() ).when(invitationsMapper).daoToDto( any(), eq("MiAssociation041"));
-        final var invitations = associationsService.fetchInvitations( "MiAssociation041" , 0, 15).stream().count();
-        Assertions.assertEquals(1, invitations );
-        Assertions.assertEquals( "MiAssociation041", associationsService.fetchInvitations( "MiAssociation041", 0, 15).get().getItems().getFirst().getAssociationId() );
+        final var invitationCount = block(associationsService.fetchInvitations("MiAssociation041", 0, 15).flux().count());
+        Assertions.assertEquals(1L, invitationCount );
+        final var list = block(associationsService.fetchInvitations("MiAssociation041", 0, 15));
+        Assertions.assertEquals("MiAssociation041", list.getItems().getFirst().getAssociationId());
     }
 
     @Test
     void fetchInvitationsPaginationWorksCorrectly(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MiAssociation007", "MiAssociation040", "MiAssociation042", "MiAssociation043", "MiAssociation030" ) );
         Mockito.doReturn(testDataManager.fetchInvitations( "MiAssociation007" ).getFirst() ).when(invitationsMapper).daoToDto( any(), eq("MiAssociation007"));
-        final var invitations = associationsService.fetchInvitations( "MiAssociation007" , 1, 2).stream().count();
-        Assertions.assertEquals(1, invitations );
-        Assertions.assertEquals( "MiAssociation007", associationsService.fetchInvitations( "MiAssociation007", 1, 2).get().getItems().getFirst().getAssociationId() );
+        final var invitationCount = associationsService.fetchInvitations( "MiAssociation007" , 1, 2).flux().count().block();
+        Assertions.assertEquals(1L, invitationCount );
+        final var list = associationsService.fetchInvitations("MiAssociation007", 1, 2)
+                .blockOptional()
+                .orElseThrow(() -> new AssertionError("Expected invitations but Mono was empty"));
+
+        Assertions.assertEquals("MiAssociation007", list.getItems().getFirst().getAssociationId());
     }
 
     @Test
     void fetchInvitationsWhenAssociationDoesNotExist(){
-        Assertions.assertTrue( associationsService.fetchInvitations( "MiAssociation040", 0, 15).isEmpty() );
+        Assertions.assertTrue(
+                associationsService.fetchInvitations("MiAssociation040", 0, 15)
+                        .blockOptional()
+                        .isEmpty()
+        );
     }
 
     @Test
@@ -385,9 +394,9 @@ class AssociationsServiceTest {
 
     @Test
     void fetchActiveInvitationsWithNullOrMalformedOrNonexistentUserIdReturnsEmptyList(){
-        Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( new User(), 0, 1 ).getItems() );
-        Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( new User().userId("$$$"), 0, 1 ).getItems() );
-        Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( new User().userId("9191"), 0, 1 ).getItems() );
+        Assertions.assertEquals( Collections.emptyList(), block(associationsService.fetchActiveInvitations( new User(), 0, 1 )).getItems() );
+        Assertions.assertEquals( Collections.emptyList(), block(associationsService.fetchActiveInvitations( new User().userId("$$$"), 0, 1 )).getItems() );
+        Assertions.assertEquals( Collections.emptyList(), block(associationsService.fetchActiveInvitations( new User().userId("9191"), 0, 1 )).getItems() );
     }
 
     @Test
@@ -403,7 +412,7 @@ class AssociationsServiceTest {
         final var mostRecentInvitationDtoInFirstAssociation = new Invitation().invitedAt( mostRecentInvitationDaoInFirstAssociation.getInvitedAt().toString() ).invitedBy( mostRecentInvitationDaoInFirstAssociation.getInvitedBy() );
         Mockito.doReturn( mostRecentInvitationDtoInFirstAssociation ).when( invitationsMapper ).daoToDto( argThat( comparisonUtils.compare( mostRecentInvitationDaoInFirstAssociation, List.of( "invited_by" ), List.of(), Map.of() ) ), eq( "37" ) );
 
-        final var invitations = associationsService.fetchActiveInvitations( user, 1, 1 );
+        final var invitations = block(associationsService.fetchActiveInvitations( user, 1, 1 ));
         final var invitation = invitations.getItems().getFirst();
 
         Assertions.assertEquals( mostRecentInvitationDaoInFirstAssociation.getInvitedBy(), invitation.getInvitedBy() );
