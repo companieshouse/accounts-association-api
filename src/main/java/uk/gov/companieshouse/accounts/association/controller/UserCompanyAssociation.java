@@ -37,6 +37,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.TimeOutException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
@@ -85,13 +86,13 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
 
         return associationsService.fetchInvitations(associationId, pageIndex, itemsPerPage)
                 .map(ResponseEntity::ok)
-                .switchIfEmpty(
-                        Mono.error(
-                                new NotFoundRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN,
-                                new Exception(String.format("Could not find association %s.", associationId)))
-                        )
-                )
-                .block(Duration.ofSeconds(5));
+                .switchIfEmpty(Mono.error(new NotFoundRuntimeException(
+                        PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN,
+                        new Exception(String.format("Could not find association %s.", associationId)))))
+                .blockOptional(Duration.ofSeconds(5))
+                .orElseThrow(() -> new TimeOutException(
+                        PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN,
+                        new Exception(String.format("Request for association %s timed out.", associationId))));
     }
 
     @Override
