@@ -11,9 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,10 +22,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -37,15 +35,11 @@ import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfig;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
-import uk.gov.companieshouse.accounts.association.models.InvitationDao;
-import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.Links;
 
@@ -60,19 +54,19 @@ class UserCompanyInvitationsTest {
     @Autowired
     private WebApplicationContext context;
 
-    @MockBean
+    @MockitoBean
     private StaticPropertyUtil staticPropertyUtil;
 
-    @MockBean
+    @MockitoBean
     private UsersService usersService;
 
-    @MockBean
+    @MockitoBean
     private CompanyService companyService;
 
-    @MockBean
+    @MockitoBean
     private AssociationsService associationsService;
 
-    @MockBean
+    @MockitoBean
     private EmailService emailService;
 
     final Function<String, Mono<Void>> sendEmailMock = userId -> Mono.empty();
@@ -190,7 +184,7 @@ class UserCompanyInvitationsTest {
                 .itemsPerPage(1).pageNumber(1).totalResults(2).totalPages(2);
 
         mockers.mockUsersServiceFetchUserDetails( "000" );
-        when(associationsService.fetchActiveInvitations(user, 1,1)).thenReturn(mockInvitationsList);
+        when(associationsService.fetchActiveInvitations(user, 1,1)).thenReturn(Mono.just(mockInvitationsList));
 
         final var response = mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
                         .header("X-Request-Id", "theId123")

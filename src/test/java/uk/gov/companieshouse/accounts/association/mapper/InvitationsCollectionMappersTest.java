@@ -2,9 +2,14 @@ package uk.gov.companieshouse.accounts.association.mapper;
 
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.common.TestDataManager.block;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -13,10 +18,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 
 @ExtendWith( MockitoExtension.class )
 @Tag( "unit-test" )
@@ -49,7 +56,7 @@ class InvitationsCollectionMappersTest {
         final var association = testDataManager.fetchAssociationDaos( "38" ).getFirst();
         association.getInvitations().clear();
 
-        final var invitations = invitationsCollectionMappers.daoToDto( association, 0, 15 );
+        final var invitations = block(invitationsCollectionMappers.daoToDto(association, 0, 15));
         Assertions.assertEquals( 0, invitations.getTotalResults() );
         Assertions.assertEquals( 0, invitations.getPageNumber() );
         Assertions.assertEquals( 15, invitations.getItemsPerPage() );
@@ -60,36 +67,44 @@ class InvitationsCollectionMappersTest {
     }
 
     @Test
-    void daoToDtoCorrectlyMapsAssociationToInvitationsList(){
-        final var association = testDataManager.fetchAssociationDaos( "38" ).getFirst();
-        association.getInvitations().getLast().invitedAt( LocalDateTime.now().minusDays( 30 ) );
+    void daoToDtoCorrectlyMapsAssociationToInvitationsList() {
+        final var association = testDataManager.fetchAssociationDaos("38").getFirst();
+        association.getInvitations().getLast().invitedAt(LocalDateTime.now().minusDays(30));
+        mockers.mockUsersServiceFetchUserDetails("111", "222", "444");
 
-        mockers.mockUsersServiceFetchUserDetails( "111", "222", "444" );
+        final var invitations = block(invitationsCollectionMappers.daoToDto(association, 0, 15));
+        Assertions.assertNotNull(invitations);
 
-        final var invitations = invitationsCollectionMappers.daoToDto( association, 0, 15 );
-        final var invitation0 = invitations.getItems().getFirst();
-        final var invitation1 = invitations.getItems().get( 1 );
-        final var invitation2 = invitations.getItems().getLast();
+        Assertions.assertEquals(3, invitations.getTotalResults());
+        Assertions.assertEquals(0, invitations.getPageNumber());
+        Assertions.assertEquals(15, invitations.getItemsPerPage());
+        Assertions.assertEquals(1, invitations.getTotalPages());
+        Assertions.assertEquals("/associations/38/invitations?page_index=0&items_per_page=15", invitations.getLinks().getSelf());
+        Assertions.assertEquals("", invitations.getLinks().getNext());
 
-        Assertions.assertEquals( 3, invitations.getTotalResults() );
-        Assertions.assertEquals( 0, invitations.getPageNumber() );
-        Assertions.assertEquals( 15, invitations.getItemsPerPage() );
-        Assertions.assertEquals( 1, invitations.getTotalPages() );
-        Assertions.assertEquals( "/associations/38/invitations?page_index=0&items_per_page=15", invitations.getLinks().getSelf() );
-        Assertions.assertEquals( "", invitations.getLinks().getNext() );
-        Assertions.assertEquals( "38", invitation0.getAssociationId() );
-        Assertions.assertEquals( "bruce.wayne@gotham.city", invitation0.getInvitedBy() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( LocalDateTime.now().minusDays( 3 ) ), reduceTimestampResolution( invitation0.getInvitedAt() ) );
-        Assertions.assertTrue( invitation0.getIsActive() );
-        Assertions.assertEquals( "38", invitation1.getAssociationId() );
-        Assertions.assertEquals( "the.joker@gotham.city", invitation1.getInvitedBy() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( LocalDateTime.now().minusDays( 2 ) ), reduceTimestampResolution( invitation1.getInvitedAt() ) );
-        Assertions.assertTrue( invitation1.getIsActive() );
-        Assertions.assertEquals( "38", invitation2.getAssociationId() );
-        Assertions.assertEquals( "robin@gotham.city", invitation2.getInvitedBy() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( LocalDateTime.now().minusDays( 30 ) ), reduceTimestampResolution( invitation2.getInvitedAt() ) );
-        Assertions.assertFalse( invitation2.getIsActive() );
+        record ExpectedData(String associationId, int daysAgo, boolean active) { }
+        final Map<String, ExpectedData> expected = new LinkedHashMap<>();
+        expected.put("bruce.wayne@gotham.city", new ExpectedData("38", 3,  true));
+        expected.put("the.joker@gotham.city",   new ExpectedData("38", 2,  true));
+        expected.put("robin@gotham.city",       new ExpectedData("38", 30, false));
+
+        final var now = LocalDateTime.now();
+        final var actual = invitations.getItems().stream().collect(
+                Collectors.toMap(Invitation::getInvitedBy, Function.identity(), (a, b) -> a, LinkedHashMap::new));
+
+        Assertions.assertEquals(expected.keySet(), actual.keySet(), "Expected emails addresses do not match actual results");
+
+        expected.forEach((email, exp) -> {
+            final var invitation = actual.get(email);
+            Assertions.assertEquals("38", invitation.getAssociationId());
+            Assertions.assertEquals(localDateTimeToNormalisedString(now.minusDays(exp.daysAgo())),
+                    reduceTimestampResolution(invitation.getInvitedAt()));
+            Assertions.assertEquals(exp.active(), invitation.getIsActive());
+        });
+
+        Assertions.assertIterableEquals(expected.keySet(), actual.keySet(), "Result set is out of order");
     }
+
 
     @Test
     void daoToDtoCorrectlyMapsAssociationToInvitationsListAndPaginatesCorrectly(){
@@ -98,7 +113,7 @@ class InvitationsCollectionMappersTest {
 
         mockers.mockUsersServiceFetchUserDetails( "222" );
 
-        final var invitations = invitationsCollectionMappers.daoToDto( association, 1, 1 );
+        final var invitations = block(invitationsCollectionMappers.daoToDto(association, 1, 1));
         final var invitation = invitations.getItems().getFirst();
 
         Assertions.assertEquals( 3, invitations.getTotalResults() );
@@ -120,7 +135,7 @@ class InvitationsCollectionMappersTest {
 
     @Test
     void daoToDtoAppliedToEmptyListReturnsEmpty(){
-        final var invitations = invitationsCollectionMappers.daoToDto( List.of(), 0, 15 );
+        final var invitations = block(invitationsCollectionMappers.daoToDto( List.of(), 0, 15 ));
         Assertions.assertEquals( 0, invitations.getTotalResults() );
         Assertions.assertEquals( 0, invitations.getPageNumber() );
         Assertions.assertEquals( 15, invitations.getItemsPerPage() );
@@ -138,7 +153,7 @@ class InvitationsCollectionMappersTest {
 
         mockers.mockUsersServiceFetchUserDetails( "9999", "444" );
 
-        final var invitations = invitationsCollectionMappers.daoToDto( associations, 0, 15 );
+        final var invitations = block(invitationsCollectionMappers.daoToDto( associations, 0, 15 ));
         final var invitation0 = invitations.getItems().getFirst();
         final var invitation1 = invitations.getItems().getLast();
 
@@ -168,7 +183,7 @@ class InvitationsCollectionMappersTest {
 
         mockers.mockUsersServiceFetchUserDetails( "444" );
 
-        final var invitations = invitationsCollectionMappers.daoToDto( associations, 0, 1 );
+        final var invitations = block(invitationsCollectionMappers.daoToDto( associations, 0, 1 ));
         final var invitation = invitations.getItems().getFirst();
 
         Assertions.assertEquals( 2, invitations.getTotalResults() );
@@ -183,5 +198,6 @@ class InvitationsCollectionMappersTest {
         Assertions.assertEquals( localDateTimeToNormalisedString( LocalDateTime.now().plusDays( 8 ) ), reduceTimestampResolution( invitation.getInvitedAt() ) );
         Assertions.assertTrue( invitation.getIsActive() );
     }
+
 
 }

@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
@@ -1630,4 +1631,8 @@ public class TestDataManager {
                 .collect( Collectors.toList() );
     }
 
+    public static <T> T block(Mono<T> mono) {
+        return mono.blockOptional()
+                .orElseThrow(() -> new AssertionError("Mono was empty"));
+    }
 }

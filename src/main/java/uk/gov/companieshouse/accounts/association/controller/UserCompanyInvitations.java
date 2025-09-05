@@ -14,6 +14,7 @@ import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUti
 import static uk.gov.companieshouse.accounts.association.utils.UserUtil.mapToDisplayValue;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.CONFIRMED;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -51,13 +52,18 @@ public class UserCompanyInvitations implements UserCompanyInvitationsInterface {
     public ResponseEntity<InvitationsList> fetchActiveInvitationsForUser( final Integer pageIndex, final Integer itemsPerPage ) {
         LOGGER.infoContext( getXRequestId(), String.format( "Received request with user_id=%s, itemsPerPage=%d, pageIndex=%d.", getEricIdentity(), itemsPerPage, pageIndex ),null );
 
-        if ( pageIndex < 0 || itemsPerPage <= 0 ){
-            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
+        if (pageIndex < 0 || itemsPerPage <= 0) {
+            throw new BadRequestRuntimeException(
+                    PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(PAGINATION_IS_MALFORMED));
         }
 
-        final var invitations = associationsService.fetchActiveInvitations( getUser(), pageIndex, itemsPerPage );
+        final var response = Optional.ofNullable(associationsService
+                        .fetchActiveInvitations(getUser(), pageIndex, itemsPerPage))
+                .flatMap(Mono::blockOptional)
+                .orElseGet(() -> new InvitationsList().items(Collections.emptyList()));
 
-        return new ResponseEntity<>( invitations, OK );
+        return new ResponseEntity<>(response, OK);
+
     }
 
     @Override
