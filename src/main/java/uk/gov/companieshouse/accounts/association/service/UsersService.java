@@ -87,9 +87,13 @@ public class UsersService {
         emails.stream()
                 .parallel()
                 .forEach(email -> {
-            var userDetails = fetchUserDetailsByEmail(email);
-            userList.add(userDetails);
-        });
+                    try {
+                        var userDetails = fetchUserDetailsByEmail(email);
+                        userList.add(userDetails);
+                    } catch (RestClientException exception) {
+                        LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, email), exception, null);
+                    }
+                });
 
         return (UsersList) userList;
     }
