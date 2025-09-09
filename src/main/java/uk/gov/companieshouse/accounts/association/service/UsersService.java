@@ -1,24 +1,25 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonTo;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.*;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isOAuth2Request;
 
-import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
-import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.util.UriComponentsBuilder;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
@@ -26,89 +27,111 @@ import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 @Service
 public class UsersService {
 
-    private final WebClient usersWebClient;
+    private final RestClient usersRestClient;
 
-    private UsersService( @Qualifier( "usersWebClient" ) final WebClient usersWebClient ){
-        this.usersWebClient = usersWebClient;
+    private static final String REST_CLIENT_EXCEPTION = "Encountered rest client exception when fetching user details for: %s";
+
+    @Autowired
+    private UsersService(@Qualifier("usersRestClient") final RestClient usersRestClient) {
+        this.usersRestClient = usersRestClient;
     }
 
-    public Mono<User> toFetchUserDetailsRequest( final String userId, final String xRequestId ) {
-        return usersWebClient.get()
-                .uri( String.format( "/users/%s", userId ) )
+    public User fetchUserDetails(final String userId, final String xRequestId) {
+        if (userId == null) {
+            IllegalArgumentException exception = new IllegalArgumentException("UserID cannot be null");
+            LOGGER.errorContext(xRequestId, "UserID cannot be null", exception, null);
+            throw exception;
+        }
+
+        final var uri = UriComponentsBuilder.newInstance()
+                .path("/users/{user}")
+                .buildAndExpand(userId)
+                .toUri();
+
+        var response = usersRestClient.get()
+                .uri(uri)
                 .retrieve()
-                .bodyToMono( String.class )
-                .map( parseJsonTo( User.class ) )
-                .onErrorMap( throwable -> {
-                    if ( throwable instanceof WebClientResponseException exception && NOT_FOUND.equals( exception.getStatusCode() ) ){
-                        return new NotFoundRuntimeException( "Failed to find user", exception );
+                .body(String.class);
+
+        return parseJsonTo(User.class).apply(response);
+    }
+
+    public Map<String, User> fetchUserDetails(final Stream<AssociationDao> associations) {
+        final var xRequestId = getXRequestId();
+        final var userDetailsMap = new ConcurrentHashMap<String, User>();
+
+        associations.parallel()
+                .map(AssociationDao::getUserId)
+                .forEach(userId -> {
+                    try {
+                        final var userDetails = fetchUserDetails(userId, xRequestId);
+                        userDetailsMap.put(userId, userDetails);
+                    } catch (RestClientException exception) {
+                        LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, userId), exception, null);
                     }
-                    throw new InternalServerErrorRuntimeException( "Failed to retrieve user details", (Exception) throwable );
-                } )
-                .doOnSubscribe( onSubscribe -> LOGGER.infoContext( xRequestId, String.format( "Sending request to accounts-user-api: GET /users/{user_id}. Attempting to retrieve user: %s", userId ), null ) )
-                .doFinally( signalType -> LOGGER.infoContext( xRequestId, String.format( "Finished request to accounts-user-api for user: %s", userId ), null ) );
+                });
+
+        return userDetailsMap;
     }
 
-    public User fetchUserDetails(final String userId, final String xRequestId ){
-        return toFetchUserDetailsRequest( userId, xRequestId ).block( Duration.ofSeconds( 20L ) );
-    }
-
-    public Map<String, User> fetchUserDetails( final Stream<AssociationDao> associations ){
+    public UsersList searchUserDetailsbByEmail(final List<String> emails) {
         final var xRequestId = getXRequestId();
-        return Flux.fromStream( associations )
-                .filter( association -> Objects.nonNull( association.getUserId() ) )
-                .map( AssociationDao::getUserId )
-                .distinct()
-                .flatMap( userId -> toFetchUserDetailsRequest( userId, xRequestId ) )
-                .collectMap( User::getUserId )
-                .block( Duration.ofSeconds( 20L ) );
+        if (emails == null) {
+            IllegalArgumentException exception = new IllegalArgumentException("Emails cannot be null");
+            LOGGER.errorContext(xRequestId, "Emails cannot be null", exception, null);
+            throw exception;
+        }
+
+        final var userList = Collections.synchronizedList(new UsersList());
+
+        emails.stream()
+                .parallel()
+                .forEach(email -> {
+            var userDetails = fetchUserDetailsByEmail(email);
+            userList.add(userDetails);
+        });
+
+        return (UsersList) userList;
     }
 
-    public UsersList searchUserDetails( final List<String> emails ) {
-        final var xRequestId = getXRequestId();
-        return usersWebClient.get()
-                .uri( "/users/search?user_email=" + String.join( "&user_email=", emails ) )
+    public User fetchUserDetailsByEmail(final String email) {
+        final var uri = UriComponentsBuilder.newInstance()
+                .path("/users/search")
+                .queryParam("user_email", "{email}")
+                .buildAndExpand(email)
+                .encode()
+                .toUri();
+
+        var response = usersRestClient.get()
+                .uri(uri)
                 .retrieve()
-                .bodyToMono( String.class )
-                .map( parseJsonTo( UsersList.class ) )
-                .onErrorMap( throwable -> {
-                    throw new InternalServerErrorRuntimeException( "Failed to retrieve user details", (Exception) throwable );
-                } )
-                .doOnSubscribe( onSubscribe -> LOGGER.infoContext( xRequestId,  "Sending request to accounts-user-api: GET /users/search. Attempting to retrieve users" , null ) )
-                .doFinally( signalType -> LOGGER.infoContext( xRequestId, "Finished request to accounts-user-api for users",  null ) )
-                .block( Duration.ofSeconds( 20L ) );
+                .body(String.class);
+
+        return parseJsonTo(User.class).apply(response);
     }
 
-    public User retrieveUserDetails( final String targetUserId, final String targetUserEmail ){
-        final var fetchedByUserId = Optional.ofNullable( targetUserId )
-                .map( userId -> {
-                    if ( isOAuth2Request() && userId.equals( getEricIdentity() ) ){
-                        return getUser();
-                    }
-                    return fetchUserDetails( userId, getXRequestId() );
-                } )
-                .orElse( null );
+    public User retrieveUserDetails(final String targetUserId, final String targetUserEmail) {
+        final var fetchedByUserId = Optional.ofNullable(targetUserId).map(userId -> {
+            if (isOAuth2Request() && userId.equals(getEricIdentity())) {
+                return getUser();
+            }
+            return fetchUserDetails(userId, getXRequestId());
+        }).orElse(null);
 
-        if ( Objects.nonNull( fetchedByUserId ) ){
+        if (Objects.nonNull(fetchedByUserId)) {
             return fetchedByUserId;
         }
 
-        return Optional.ofNullable( targetUserEmail )
-                .map( userEmail -> {
-                    if ( isOAuth2Request() && userEmail.equals( getUser().getEmail() ) ){
-                        return getUser();
-                    }
-                    return Optional.of( userEmail )
-                            .map( List::of )
-                            .map( this::searchUserDetails )
-                            .filter( list -> !list.isEmpty() )
-                            .map( List::getFirst )
-                            .orElse( null );
-                } )
-                .orElse( null );
+        return Optional.ofNullable(targetUserEmail).map(userEmail -> {
+            if (isOAuth2Request() && userEmail.equals(getUser().getEmail())) {
+                return getUser();
+            }
+            return Optional.of(userEmail).map(List::of).map(this::searchUserDetailsbByEmail)
+                    .filter(list -> !list.isEmpty()).map(List::getFirst).orElse(null);
+        }).orElse(null);
     }
 
-    public User fetchUserDetails( final AssociationDao association ){
-        return retrieveUserDetails( association.getUserId(), association.getUserEmail() );
+    public User fetchUserDetails(final AssociationDao association) {
+        return retrieveUserDetails(association.getUserId(), association.getUserEmail());
     }
-
 }
