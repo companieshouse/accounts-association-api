@@ -89,7 +89,7 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
                 .switchIfEmpty(Mono.error(new NotFoundRuntimeException(
                         PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN,
                         new Exception(String.format("Could not find association %s.", associationId)))))
-                .blockOptional(Duration.ofSeconds(5))
+                .blockOptional(Duration.ofSeconds(20))
                 .orElseThrow(() -> new TimeOutException(
                         PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN,
                         new Exception(String.format("Request for association %s timed out.", associationId))));
