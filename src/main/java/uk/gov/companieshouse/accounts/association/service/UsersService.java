@@ -48,7 +48,7 @@ public class UsersService {
                 .buildAndExpand(userId)
                 .toUri();
 
-        var response = usersRestClient.get()
+        final var response = usersRestClient.get()
                 .uri(uri)
                 .retrieve()
                 .body(String.class);
@@ -102,7 +102,7 @@ public class UsersService {
                 .encode()
                 .toUri();
 
-        var response = usersRestClient.get()
+        final var response = usersRestClient.get()
                 .uri(uri)
                 .retrieve()
                 .body(String.class);
