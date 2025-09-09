@@ -5,6 +5,7 @@ import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGE
 import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonTo;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.*;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,7 @@ public class UsersService {
 
     public Mono<User> toFetchUserDetailsRequest( final String userId, final String xRequestId ) {
         return usersWebClient.get()
-                .uri( String.format( "/users/%s", userId ) )
+                .uri(URI.create(String.format( "/users/%s", userId ) ))
                 .retrieve()
                 .bodyToMono( String.class )
                 .map( parseJsonTo( User.class ) )
