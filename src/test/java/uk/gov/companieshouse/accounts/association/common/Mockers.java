@@ -43,7 +43,7 @@ public class Mockers {
         final var responseSpec = Mockito.mock( WebClient.ResponseSpec.class );
 
         Mockito.doReturn( requestHeadersUriSpec ).when(webClient).get();
-        Mockito.lenient().doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri );
+        Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri );
         Mockito.doReturn( responseSpec ).when( requestHeadersSpec ).retrieve();
         Mockito.doReturn( jsonResponse ).when( responseSpec ).bodyToMono( String.class );
     }
