@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
@@ -66,7 +67,12 @@ public class UsersService {
     public UsersList searchUserDetails( final List<String> emails ) {
         final var xRequestId = getXRequestId();
         return usersWebClient.get()
-                .uri( "/users/search?user_email=" + String.join( "&user_email=", emails ) )
+                .uri(uriBuilder -> UriComponentsBuilder.fromUri(uriBuilder.build())
+                        .path("/users/search")
+                        .queryParam("user_email", "{emails}")
+                        .encode()
+                        .buildAndExpand(String.join(",", emails))
+                        .toUri())
                 .retrieve()
                 .bodyToMono( String.class )
                 .map( parseJsonTo( UsersList.class ) )
