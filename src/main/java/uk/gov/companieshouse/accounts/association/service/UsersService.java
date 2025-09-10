@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
@@ -54,14 +55,17 @@ public class UsersService {
         final var response = usersRestClient.get()
                 .uri(uri)
                 .retrieve()
+                .onStatus(status -> status.value() == 404, (req, res) -> {
+                    throw new NotFoundRuntimeException(res.getStatusText(), new Exception(res.getStatusText()));
+                })
                 .body(String.class);
 
         LOGGER.infoContext(xRequestId, String.format("Finished request to %s for user: %s.", uri, userId), null);
 
-        return parseJsonTo(User.class).apply(response);
+        return parseJsonTo(response, User.class);
     }
 
-    public Map<String, User> fetchUserDetails(final Stream<AssociationDao> associations) {
+    public Map<String, User> fetchUsersDetails(final Stream<AssociationDao> associations) {
         final var xRequestId = getXRequestId();
         final var userDetailsMap = new ConcurrentHashMap<String, User>();
 
@@ -87,23 +91,29 @@ public class UsersService {
             throw exception;
         }
 
-        final var userList = Collections.synchronizedList(new UsersList());
+        final var synchronizedList = Collections.synchronizedList(new UsersList());
 
         emails.stream()
                 .parallel()
                 .forEach(email -> {
                     try {
                         var userDetails = fetchUserDetailsByEmail(email);
-                        userList.add(userDetails);
+                        synchronizedList.add(userDetails.orElse(null));
                     } catch (RestClientException exception) {
                         LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, email), exception, null);
                     }
                 });
 
-        return (UsersList) userList;
+        UsersList usersList = new UsersList();
+        synchronizedList.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .forEach(usersList::add);
+
+        return usersList;
     }
 
-    public User fetchUserDetailsByEmail(final String email) {
+    public Optional<User> fetchUserDetailsByEmail(final String email) {
         final var uri = UriComponentsBuilder.newInstance()
                 .path("/users/search")
                 .queryParam("user_email", "{email}")
@@ -114,9 +124,12 @@ public class UsersService {
         final var response = usersRestClient.get()
                 .uri(uri)
                 .retrieve()
+                .onStatus(status -> status.value() == 404, (req, res) -> {
+                    throw new NotFoundRuntimeException(res.getStatusText(), new Exception(res.getStatusText()));
+                })
                 .body(String.class);
 
-        return parseJsonTo(User.class).apply(response);
+        return Optional.ofNullable(parseJsonTo(response, User.class));
     }
 
     public User retrieveUserDetails(final String targetUserId, final String targetUserEmail) {
@@ -131,12 +144,17 @@ public class UsersService {
             return fetchedByUserId;
         }
 
-        return Optional.ofNullable(targetUserEmail).map(userEmail -> {
+        return Optional.ofNullable(targetUserEmail)
+                .map(userEmail -> {
             if (isOAuth2Request() && userEmail.equals(getUser().getEmail())) {
                 return getUser();
             }
-            return Optional.of(userEmail).map(List::of).map(this::searchUserDetailsByEmail)
-                    .filter(list -> !list.isEmpty()).map(List::getFirst).orElse(null);
+            return Optional.of(userEmail)
+                    .map(List::of)
+                    .map(this::searchUserDetailsByEmail)
+                    .filter(list -> !list.isEmpty())
+                    .map(List::getFirst)
+                    .orElse(null);
         }).orElse(null);
     }
 

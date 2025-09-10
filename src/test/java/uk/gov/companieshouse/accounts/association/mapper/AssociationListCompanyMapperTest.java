@@ -16,7 +16,6 @@ import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
 import java.util.List;
@@ -64,7 +63,7 @@ class AssociationListCompanyMapperTest {
 
         final var content = new PageImpl<>( associationDaos, PageRequest.of( 0, 15 ), associationDaos.size() );
 
-        Mockito.doReturn( Map.of( "111", users.getFirst(), "222", users.getLast() ) ).when( usersService ).fetchUserDetails( any( Stream.class ) );
+        Mockito.doReturn( Map.of( "111", users.getFirst(), "222", users.getLast() ) ).when( usersService ).fetchUsersDetails( any( Stream.class ) );
 
         final var associations = associationsListCompanyMapper.daoToDto( content, company );
         final var links = associations.getLinks();
@@ -86,7 +85,7 @@ class AssociationListCompanyMapperTest {
 
         final var content = new PageImpl<>( associationDaos, PageRequest.of( 0, 2 ), 3 );
 
-        Mockito.doReturn( Map.of( "111", users.getFirst(), "222", users.getLast() ) ).when( usersService ).fetchUserDetails( any( Stream.class ) );
+        Mockito.doReturn( Map.of( "111", users.getFirst(), "222", users.getLast() ) ).when( usersService ).fetchUsersDetails( any( Stream.class ) );
 
         final var associations = associationsListCompanyMapper.daoToDto( content, company );
         final var links = associations.getLinks();
@@ -107,7 +106,7 @@ class AssociationListCompanyMapperTest {
 
         final var content = new PageImpl<AssociationDao>( List.of(), PageRequest.of( 0, 2 ), 0 );
 
-        Mockito.doReturn( Map.of( "111", users.getFirst(), "222", users.getLast() ) ).when( usersService ).fetchUserDetails( any( Stream.class ) );
+        Mockito.doReturn( Map.of( "111", users.getFirst(), "222", users.getLast() ) ).when( usersService ).fetchUsersDetails( any( Stream.class ) );
 
         final var associations = associationsListCompanyMapper.daoToDto( content, company );
         final var links = associations.getLinks();

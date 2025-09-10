@@ -1,6 +1,8 @@
 package uk.gov.companieshouse.accounts.association.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,13 +11,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.utils.ParsingUtil;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
 @ExtendWith( MockitoExtension.class )
@@ -23,7 +28,7 @@ import uk.gov.companieshouse.api.company.CompanyDetails;
 class CompanyServiceTest {
 
     @Mock
-    private WebClient companyWebClient;
+    private RestClient companyRestClient;
 
     @InjectMocks
     private CompanyService companyService;
@@ -34,30 +39,30 @@ class CompanyServiceTest {
 
     @BeforeEach
     void setup() {
-        mockers = new Mockers( companyWebClient, null, null, null );
+        mockers = new Mockers(companyRestClient, null, null, null );
     }
 
     @Test
     void fetchCompanyProfileForNullOrMalformedOrNonexistentCompanyReturnsNotFoundRuntimeException() {
-        mockers.mockWebClientForFetchCompanyProfileErrorResponse( null, 404 );
+        mockers.mockRestClientForFetchCompanyProfileErrorResponse( null, 404 );
         Assertions.assertThrows( NotFoundRuntimeException.class, () -> companyService.fetchCompanyProfile( null ) );
 
-        mockers.mockWebClientForFetchCompanyProfileErrorResponse( "!@£", 404 );
+        mockers.mockRestClientForFetchCompanyProfileErrorResponse( "!@£", 404 );
         Assertions.assertThrows( NotFoundRuntimeException.class, () -> companyService.fetchCompanyProfile( "!@£" ) );
 
-        mockers.mockWebClientForFetchCompanyProfileErrorResponse( "404COMP", 404 );
+        mockers.mockRestClientForFetchCompanyProfileErrorResponse( "404COMP", 404 );
         Assertions.assertThrows( NotFoundRuntimeException.class, () -> companyService.fetchCompanyProfile( "404COMP" ) );
     }
 
     @Test
     void fetchCompanyProfileWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
-        mockers.mockWebClientForFetchCompanyProfileJsonParsingError( "111111" );
+        mockers.mockRestClientForFetchCompanyProfileJsonParsingError( "111111" );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> companyService.fetchCompanyProfile( "111111" ) );
     }
 
     @Test
     void fetchCompanyProfileReturnsSpecifiedCompany() throws JsonProcessingException {
-        mockers.mockWebClientForFetchCompanyProfile( "111111" );
+        mockers.mockRestClientForFetchCompanyProfile( "111111" );
         Assertions.assertEquals( "Wayne Enterprises", companyService.fetchCompanyProfile( "111111" ).getCompanyName() );
     }
 
@@ -75,7 +80,7 @@ class CompanyServiceTest {
     void fetchCompanyProfilesWithStreamThatHasNonExistentCompanyReturnsNotFoundRuntimeException(){
         final var associationDao = new AssociationDao();
         associationDao.setCompanyNumber( "404COMP" );
-        mockers.mockWebClientForFetchCompanyProfileErrorResponse( "404COMP", 404 );
+        mockers.mockRestClientForFetchCompanyProfileErrorResponse( "404COMP", 404 );
         Assertions.assertThrows( NotFoundRuntimeException.class, () -> companyService.fetchCompanyProfiles( Stream.of( associationDao ) ) );
     }
 
@@ -83,22 +88,29 @@ class CompanyServiceTest {
     void fetchCompanyProfilesWithStreamThatHasMalformedCompanyNumberReturnsInternalServerErrorRuntimeException(){
         final var associationDao = new AssociationDao();
         associationDao.setCompanyNumber( "£$@123" );
-        mockers.mockWebClientForFetchCompanyProfileErrorResponse( "£$@123", 400 );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> companyService.fetchCompanyProfiles( Stream.of( associationDao ) ) );
+        mockers.mockRestClientForFetchCompanyProfileErrorResponse( "£$@123", 400 );
+        try (MockedStatic<ParsingUtil> mockedStatic = Mockito.mockStatic( ParsingUtil.class )) {
+            mockedStatic.when(() -> ParsingUtil.parseJsonTo( Mockito.any(), Mockito.any())).thenCallRealMethod();
+            Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> companyService.fetchCompanyProfiles( Stream.of( associationDao ) ) );
+        }
     }
 
     @Test
     void fetchCompanyProfilesWithStreamWithArbitraryErrorReturnsInternalServerErrorRuntimeException(){
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
-        mockers.mockWebClientForFetchCompanyProfileJsonParsingError( "111111" );
+        mockers.mockRestClientForFetchCompanyProfileJsonParsingError( "111111" );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> companyService.fetchCompanyProfiles( Stream.of( associationDao ) ) );
     }
 
     @Test
     void fetchCompanyProfilesWithStreamReturnsMap() throws JsonProcessingException {
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
-        mockers.mockWebClientForFetchCompanyProfile( "111111" );
-        final var companies = companyService.fetchCompanyProfiles( Stream.of( associationDao, associationDao ) );
+        mockers.mockRestClientForFetchCompanyProfile( "111111" );
+        Map<String, CompanyDetails> companies;
+        try (MockedStatic<ParsingUtil> mockedStatic = Mockito.mockStatic( ParsingUtil.class )) {
+            mockedStatic.when(() -> ParsingUtil.parseJsonTo( Mockito.any(), Mockito.any())).thenCallRealMethod();
+            companies = companyService.fetchCompanyProfiles( Stream.of( associationDao, associationDao ) );
+        }
 
         Assertions.assertEquals( 1, companies.size() );
         Assertions.assertTrue( companies.containsKey( "111111" ) );

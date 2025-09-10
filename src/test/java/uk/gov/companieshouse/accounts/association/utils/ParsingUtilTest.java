@@ -21,12 +21,12 @@ class ParsingUtilTest {
     void parseJsonToSuccessfullyParsesToSpecifiedClass() throws JsonProcessingException {
         final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
         final var json = new ObjectMapper().writeValueAsString( user );
-        Assertions.assertEquals( "Batman" , ParsingUtil.parseJsonTo( User.class ).apply( json ).getDisplayName() );
+        Assertions.assertEquals( "Batman" , ParsingUtil.parseJsonTo(json, User.class ).getDisplayName() );
     }
 
     @Test
     void parseJsonToWithArbitraryErrorThrowsInternalServerErrorRuntimeException( ){
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> ParsingUtil.parseJsonTo( User.class ).apply( "}{" ) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> ParsingUtil.parseJsonTo("}{", User.class ));
     }
 
 

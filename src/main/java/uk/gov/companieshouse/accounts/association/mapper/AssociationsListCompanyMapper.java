@@ -24,7 +24,7 @@ public abstract class AssociationsListCompanyMapper extends AssociationMapper {
         }
         final var endpointUrl = String.format( "/companies/%s", company.getCompanyNumber() );
 
-        final var users = usersService.fetchUserDetails( associationsList.stream() );
+        final var users = usersService.fetchUsersDetails( associationsList.stream() );
         final var associations = associationsList.map( associationDao -> {
             final var user = Objects.isNull( associationDao.getUserId() ) ? null : users.getOrDefault( associationDao.getUserId(), null );
             return daoToDto( associationDao, user, company );
