@@ -4,7 +4,6 @@ import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGE
 import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonTo;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -15,7 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
-import reactor.core.publisher.Flux;
+import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
@@ -25,19 +25,14 @@ public class CompanyService {
     private final RestClient companyRestClient;
 
     private static final String REST_CLIENT_EXCEPTION = "Encountered rest client exception when fetching company details for: %s";
+    private static final String BLANK_COMPANY_NUMBER = "Company number cannot be blank";
 
     @Autowired
     public CompanyService( @Qualifier( "companyRestClient" ) final RestClient companyRestClient) {
         this.companyRestClient = companyRestClient;
     }
 
-    private CompanyDetails fetchCompanyProfileRequest( final String companyNumber, final String xRequestId ) {
-        if (StringUtils.isBlank(companyNumber)) {
-            IllegalArgumentException exception = new IllegalArgumentException("CompanyNumber cannot be blank");
-            LOGGER.errorContext(xRequestId, "CompanyNumber cannot be blank", exception, null);
-            throw exception;
-        }
-
+    private CompanyDetails fetchCompanyProfileRequest(final String companyNumber, final String xRequestId) {
         final var uri = UriComponentsBuilder.newInstance()
                 .path("/company/{companyNumber}/company-detail")
                 .buildAndExpand(companyNumber)
@@ -48,14 +43,17 @@ public class CompanyService {
         final var response = companyRestClient.get()
                 .uri(uri)
                 .retrieve()
+                .onStatus(status -> status.value() == 404, (req, res) -> {
+                    throw new NotFoundRuntimeException(res.getStatusText(), new Exception(res.getStatusText()));
+                })
                 .body(String.class);
 
         LOGGER.infoContext(xRequestId, String.format("Finished request to %s for company: %s.", uri, companyNumber), null);
 
-        return parseJsonTo(CompanyDetails.class).apply(response);
+        return parseJsonTo(response, CompanyDetails.class);
     }
 
-    public Map<String, CompanyDetails> fetchCompanyProfiles( final Stream<AssociationDao> associations ) {
+    public Map<String, CompanyDetails> fetchCompanyProfiles(final Stream<AssociationDao> associations) {
         final var xRequestId = getXRequestId();
         final var companyDetailsMap = new ConcurrentHashMap<String, CompanyDetails>();
 
@@ -67,9 +65,28 @@ public class CompanyService {
                         companyDetailsMap.put(companyNumber, companyDetails);
                     } catch (RestClientException exception) {
                         LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, companyNumber), exception, null);
+                        throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
                     }
                 });
         return companyDetailsMap;
+    }
+
+    public CompanyDetails fetchCompanyProfile(final String companyNumber) {
+        final var xRequestId = getXRequestId();
+        if (StringUtils.isBlank(companyNumber)) {
+            NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_COMPANY_NUMBER,
+                    new Exception(BLANK_COMPANY_NUMBER));
+            LOGGER.errorContext(xRequestId, BLANK_COMPANY_NUMBER, exception, null);
+            throw exception;
+        }
+        CompanyDetails companyDetails;
+        try {
+            companyDetails = fetchCompanyProfileRequest(companyNumber, xRequestId);
+        } catch (RestClientException exception) {
+            LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, companyNumber), exception, null);
+            throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
+        }
+        return companyDetails;
     }
 }
 
