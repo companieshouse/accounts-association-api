@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -37,9 +38,9 @@ public class UsersService {
     }
 
     public User fetchUserDetails(final String userId, final String xRequestId) {
-        if (userId == null) {
-            IllegalArgumentException exception = new IllegalArgumentException("UserID cannot be null");
-            LOGGER.errorContext(xRequestId, "UserID cannot be null", exception, null);
+        if (StringUtils.isBlank(userId)) {
+            IllegalArgumentException exception = new IllegalArgumentException("UserID cannot be blank");
+            LOGGER.errorContext(xRequestId, "UserID cannot be blank", exception, null);
             throw exception;
         }
 
