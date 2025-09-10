@@ -1,13 +1,6 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import static uk.gov.companieshouse.accounts.association.models.Constants.OAUTH2;
-import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY;
-import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY_TYPE;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -26,6 +19,14 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.context.RequestContext;
 import uk.gov.companieshouse.accounts.association.models.context.RequestContextData.RequestContextDataBuilder;
 import uk.gov.companieshouse.api.accounts.user.model.User;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static uk.gov.companieshouse.accounts.association.models.Constants.OAUTH2;
+import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY;
+import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY_TYPE;
 
 @ExtendWith( MockitoExtension.class )
 @Tag( "unit-test" )
@@ -149,8 +150,8 @@ class UsersServiceTest {
 
     @Test
     void searchUserDetailsWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
-        mockers.mockWebClientForSearchUserDetailsJsonParsingError( "bruce.wayne@gotham.city" );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "bruce.wayne@gotham.city" ) ) );
+        mockers.mockWebClientForSearchUserDetailsJsonParsingError( "bruce.wayne+@gotham.city" );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "bruce.wayne+@gotham.city" ) ) );
     }
 
     @Test
