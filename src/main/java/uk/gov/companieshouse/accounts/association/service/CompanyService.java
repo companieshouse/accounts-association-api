@@ -1,62 +1,76 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonTo;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
-import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
 @Service
 public class CompanyService {
 
-    private final WebClient companyWebClient;
+    private final RestClient companyRestClient;
 
-    public CompanyService( @Qualifier( "companyWebClient" ) final WebClient companyWebClient ) {
-        this.companyWebClient = companyWebClient;
+    private static final String REST_CLIENT_EXCEPTION = "Encountered rest client exception when fetching company details for: %s";
+
+    @Autowired
+    public CompanyService( @Qualifier( "companyRestClient" ) final RestClient companyRestClient) {
+        this.companyRestClient = companyRestClient;
     }
 
-    private Mono<CompanyDetails> toFetchCompanyProfileRequest( final String companyNumber, final String xRequestId ) {
-        return companyWebClient.get()
-                .uri( String.format( "/company/%s/company-detail", companyNumber ) )
+    private CompanyDetails fetchCompanyProfileRequest( final String companyNumber, final String xRequestId ) {
+        if (StringUtils.isBlank(companyNumber)) {
+            IllegalArgumentException exception = new IllegalArgumentException("CompanyNumber cannot be blank");
+            LOGGER.errorContext(xRequestId, "CompanyNumber cannot be blank", exception, null);
+            throw exception;
+        }
+
+        final var uri = UriComponentsBuilder.newInstance()
+                .path("/company/{companyNumber}/company-detail")
+                .buildAndExpand(companyNumber)
+                .toUri();
+
+        LOGGER.infoContext(xRequestId, String.format("Starting request to %s. Attempting to retrieve company profile for company: %s", uri, companyNumber), null);
+
+        final var response = companyRestClient.get()
+                .uri(uri)
                 .retrieve()
-                .bodyToMono( String.class )
-                .map( parseJsonTo( CompanyDetails.class ) )
-                .onErrorMap( throwable -> {
-                    if ( throwable instanceof WebClientResponseException exception && NOT_FOUND.equals( exception.getStatusCode() ) ){
-                        return new NotFoundRuntimeException( "Failed to find company", exception );
-                    }
-                    throw new InternalServerErrorRuntimeException( "Failed to retrieve company profile", (Exception) throwable );
-                } )
-                .doOnSubscribe( onSubscribe -> LOGGER.infoContext( xRequestId, String.format( "Sending request to company-profile-api: GET /company/{company_number}/company-detail. Attempting to retrieve company profile for company: %s" , companyNumber ), null ) )
-                .doFinally( signalType -> LOGGER.infoContext( xRequestId, String.format( "Finished request to company-profile-api for company: %s.", companyNumber ), null ) );
-    }
+                .body(String.class);
 
-    public CompanyDetails fetchCompanyProfile( final String companyNumber ){
-        return toFetchCompanyProfileRequest( companyNumber, getXRequestId() ).block( Duration.ofSeconds( 20L ) );
+        LOGGER.infoContext(xRequestId, String.format("Finished request to %s for company: %s.", uri, companyNumber), null);
+
+        return parseJsonTo(CompanyDetails.class).apply(response);
     }
 
     public Map<String, CompanyDetails> fetchCompanyProfiles( final Stream<AssociationDao> associations ) {
         final var xRequestId = getXRequestId();
-        return Flux.fromStream( associations )
-                .map( AssociationDao::getCompanyNumber )
-                .flatMap( companyNumber -> toFetchCompanyProfileRequest( companyNumber, xRequestId ) )
-                .collectMap( CompanyDetails::getCompanyNumber )
-                .block( Duration.ofSeconds( 20L ) );
-    }
+        final var companyDetailsMap = new ConcurrentHashMap<String, CompanyDetails>();
 
+        associations.parallel()
+                .map(AssociationDao::getCompanyNumber)
+                .forEach(companyNumber -> {
+                    try {
+                        final var companyDetails = fetchCompanyProfileRequest(companyNumber, xRequestId);
+                        companyDetailsMap.put(companyNumber, companyDetails);
+                    } catch (RestClientException exception) {
+                        LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, companyNumber), exception, null);
+                    }
+                });
+        return companyDetailsMap;
+    }
 }
 
 

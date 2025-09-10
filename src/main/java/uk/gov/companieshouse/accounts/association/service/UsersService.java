@@ -49,10 +49,14 @@ public class UsersService {
                 .buildAndExpand(userId)
                 .toUri();
 
+        LOGGER.infoContext(xRequestId, String.format("Starting request to %s. Attempting to retrieve user details for: %s", uri, userId), null );
+
         final var response = usersRestClient.get()
                 .uri(uri)
                 .retrieve()
                 .body(String.class);
+
+        LOGGER.infoContext(xRequestId, String.format("Finished request to %s for user: %s.", uri, userId), null);
 
         return parseJsonTo(User.class).apply(response);
     }
@@ -75,7 +79,7 @@ public class UsersService {
         return userDetailsMap;
     }
 
-    public UsersList searchUserDetailsbByEmail(final List<String> emails) {
+    public UsersList searchUserDetailsByEmail(final List<String> emails) {
         final var xRequestId = getXRequestId();
         if (emails == null) {
             IllegalArgumentException exception = new IllegalArgumentException("Emails cannot be null");
@@ -131,7 +135,7 @@ public class UsersService {
             if (isOAuth2Request() && userEmail.equals(getUser().getEmail())) {
                 return getUser();
             }
-            return Optional.of(userEmail).map(List::of).map(this::searchUserDetailsbByEmail)
+            return Optional.of(userEmail).map(List::of).map(this::searchUserDetailsByEmail)
                     .filter(list -> !list.isEmpty()).map(List::getFirst).orElse(null);
         }).orElse(null);
     }
