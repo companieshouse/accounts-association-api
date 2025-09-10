@@ -8,11 +8,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import org.eclipse.jetty.http.HttpStatus;
 import org.mockito.Mockito;
 import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpClientErrorException.BadRequest;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
@@ -67,12 +70,12 @@ public class Mockers {
         final var responseSpec = Mockito.mock( RestClient.ResponseSpec.class );
 
         Mockito.lenient().doReturn( requestHeadersUriSpec ).when(restClient).get();
-        Mockito.lenient().doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri == null ? URI.create("") : URI.create(uri) );
+        Mockito.lenient().doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri(any(URI.class));
         Mockito.lenient().doReturn( responseSpec ).when( requestHeadersSpec ).retrieve();
         if (responseCode == 404) {
-            Mockito.lenient().doThrow(new NotFoundRuntimeException("Not Found", new Exception("Not Found"))).when(responseSpec).onStatus(any(), any());
+            Mockito.lenient().doThrow(HttpClientErrorException.create(HttpStatus.NOT_FOUND, "Not Found", null, null, null)).when(responseSpec).body(any(Class.class));
         } else if (responseCode == 400) {
-            Mockito.doThrow(new RestClientResponseException("Bad Request", HttpStatus.BAD_REQUEST_400, "Bad Request", null, null, null)).when(responseSpec).onStatus(any(), any());
+            Mockito.lenient().doThrow(HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Bad Request", null, null, null)).when(responseSpec).body(any(Class.class));
         } else {
             Mockito.doReturn(responseSpec).when(responseSpec).onStatus(any(), any());
         }
