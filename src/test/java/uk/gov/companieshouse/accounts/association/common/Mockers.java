@@ -1,13 +1,7 @@
 package uk.gov.companieshouse.accounts.association.common;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
 import org.mockito.Mockito;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -16,10 +10,16 @@ import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.EmailSendingException;
-import uk.gov.companieshouse.api.accounts.user.model.User;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 public class Mockers {
 
@@ -37,7 +37,7 @@ public class Mockers {
         this.usersService = usersService;
     }
 
-    private void mockWebClientSuccessResponse( final URI uri, final Mono<String> jsonResponse ){
+    private void mockWebClientSuccessResponse( final String uri, final Mono<String> jsonResponse ){
         final var requestHeadersUriSpec = Mockito.mock( WebClient.RequestHeadersUriSpec.class );
         final var requestHeadersSpec = Mockito.mock( WebClient.RequestHeadersSpec.class );
         final var responseSpec = Mockito.mock( WebClient.ResponseSpec.class );
@@ -51,13 +51,13 @@ public class Mockers {
     public void mockWebClientForFetchUserDetails( final String... userIds ) throws JsonProcessingException {
         for ( final String userId: userIds ){
             final var user = testDataManager.fetchUserDtos( userId ).getFirst();
-            final var uri = URI.create(String.format( "/users/%s", userId ));
+            final var uri = String.format( "/users/%s", userId );
             final var jsonResponse = new ObjectMapper().writeValueAsString( user );
             mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ) );
         }
     }
 
-    private void mockWebClientErrorResponse( final URI uri, int responseCode ){
+    private void mockWebClientErrorResponse( final String uri, int responseCode ){
         final var requestHeadersUriSpec = Mockito.mock( WebClient.RequestHeadersUriSpec.class );
         final var requestHeadersSpec = Mockito.mock( WebClient.RequestHeadersSpec.class );
         final var responseSpec = Mockito.mock( WebClient.ResponseSpec.class );
@@ -69,7 +69,7 @@ public class Mockers {
     }
 
     public void mockWebClientForFetchUserDetailsErrorResponse( final String userId, int responseCode ){
-        final var uri = URI.create(String.format("/users/%s", userId ));
+        final var uri = String.format( "/users/%s", userId );
         mockWebClientErrorResponse( uri, responseCode );
     }
 
@@ -79,7 +79,7 @@ public class Mockers {
         }
     }
 
-    private void mockWebClientJsonParsingError( final URI uri ){
+    private void mockWebClientJsonParsingError( final String uri ){
         final var requestHeadersUriSpec = Mockito.mock( WebClient.RequestHeadersUriSpec.class );
         final var requestHeadersSpec = Mockito.mock( WebClient.RequestHeadersSpec.class );
         final var responseSpec = Mockito.mock( WebClient.ResponseSpec.class );
@@ -91,43 +91,56 @@ public class Mockers {
     }
 
     public void mockWebClientForFetchUserDetailsJsonParsingError( final String userId ){
-        final var uri = URI.create(String.format( "/users/%s", userId ));
+        final var uri = String.format( "/users/%s", userId );
         mockWebClientJsonParsingError( uri );
     }
 
     public void mockWebClientForSearchUserDetails( final String... userIds ) throws JsonProcessingException {
         final var users = testDataManager.fetchUserDtos( userIds );
-        final var uri = UriComponentsBuilder.fromUriString("/users/search").queryParam("user_email", "{emails}").encode().buildAndExpand(String.join(",", users.stream().map(User::getEmail).toList())).toUri();
+        final var uri = UriComponentsBuilder.fromUriString("/users/search")
+                .queryParam("user_email", users.stream().map( User::getEmail ).toList() )
+                .encode()
+                .build().toString();
         final var jsonResponse = new ObjectMapper().writeValueAsString( users );
         mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ) );
     }
 
     public void mockWebClientForSearchUserDetailsErrorResponse( final String userEmail, int responseCode ){
-        final var uri = URI.create(String.format( "/users/search?user_email=%s", userEmail ));
+
+        final var uri = UriComponentsBuilder.fromUriString("/users/search")
+                .queryParam("user_email", List.of(userEmail))
+                .encode()
+                .build().toString();
         mockWebClientErrorResponse( uri, responseCode );
     }
 
     public void mockWebClientForSearchUserDetailsNonexistentEmail( final String... emails ) {
-        final var uri = UriComponentsBuilder.fromUriString("/users/search").queryParam("user_email", "{emails}").encode().buildAndExpand(String.join(",", Arrays.stream(emails).toList())).toUri();
+        final var uri = UriComponentsBuilder.fromUriString("/users/search")
+                .queryParam("user_email", Arrays.stream(emails).toList())
+                .encode()
+                .build().toString();
         mockWebClientSuccessResponse( uri, Mono.empty() );
     }
 
     public void mockWebClientForSearchUserDetailsJsonParsingError( final String... emails ){
-        final var uri = UriComponentsBuilder.fromUriString("/users/search").queryParam("user_email", "{emails}").encode().buildAndExpand(String.join(",", Arrays.stream(emails).toList())).toUri();
+        final var uri = UriComponentsBuilder.fromUriString("/users/search")
+                .queryParam("user_email", Arrays.stream(emails).toList())
+                .encode()
+                .build().toString();
         mockWebClientJsonParsingError( uri );
     }
 
     public void mockWebClientForFetchCompanyProfile( final String... companyNumbers ) throws JsonProcessingException {
         for ( final String companyNumber: companyNumbers ){
             final var company = testDataManager.fetchCompanyDetailsDtos( companyNumber ).getFirst();
-            final var uri = URI.create(String.format( "/company/%s/company-detail", companyNumber ));
+            final var uri = String.format( "/company/%s/company-detail", companyNumber );
             final var jsonResponse = new ObjectMapper().writeValueAsString( company );
             mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ) );
         }
     }
 
     public void mockWebClientForFetchCompanyProfileErrorResponse( final String companyNumber, int responseCode ){
-        final var uri = URI.create(String.format( "/company/%s/company-detail", companyNumber ));
+        final var uri = String.format( "/company/%s/company-detail", companyNumber );
         mockWebClientErrorResponse( uri, responseCode );
     }
 
@@ -138,7 +151,7 @@ public class Mockers {
     }
 
     public void mockWebClientForFetchCompanyProfileJsonParsingError( final String companyNumber ){
-        final var uri = URI.create(String.format( "/company/%s/company-detail", companyNumber ));
+        final var uri = String.format( "/company/%s/company-detail", companyNumber );
         mockWebClientJsonParsingError( uri );
     }
 
