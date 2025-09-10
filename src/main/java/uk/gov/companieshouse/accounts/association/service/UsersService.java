@@ -17,9 +17,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpClientErrorException.BadRequest;
 import org.springframework.web.client.HttpClientErrorException.NotFound;
 import org.springframework.web.client.RestClient;
@@ -38,6 +36,7 @@ public class UsersService {
 
     private static final String REST_CLIENT_EXCEPTION = "Encountered rest client exception when fetching user details for: %s";
     private static final String BLANK_USER_ID = "UserID cannot be blank";
+    private static final String EMAIL_IN_LIST_CANNOT_BE_NULL = "Email in list cannot be null";
 
     @Autowired
     private UsersService(@Qualifier("usersRestClient") final RestClient usersRestClient) {
@@ -102,9 +101,9 @@ public class UsersService {
         }
 
         if (emails.stream().anyMatch(Objects::isNull)) {
-            InternalServerErrorRuntimeException exception = new InternalServerErrorRuntimeException("Email in list cannot be null",
-                    new Exception("Email in list cannot be null"));
-            LOGGER.errorContext(xRequestId, "Email in list cannot be null", exception, null);
+            InternalServerErrorRuntimeException exception = new InternalServerErrorRuntimeException(EMAIL_IN_LIST_CANNOT_BE_NULL,
+                    new Exception(EMAIL_IN_LIST_CANNOT_BE_NULL));
+            LOGGER.errorContext(xRequestId, EMAIL_IN_LIST_CANNOT_BE_NULL, exception, null);
             throw exception;
         }
 
