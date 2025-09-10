@@ -143,9 +143,9 @@ class UsersServiceTest {
 
     @Test
     void searchUserDetailsWithNonexistentEmailReturnsNull() {
+        // Why do we want to return null here rather than an empty list?
         mockers.mockRestClientForSearchUserDetailsNonexistentEmail( "404@email.com" );
         Assertions.assertNull( usersService.searchUserDetailsByEmail( List.of( "404@email.com" ) ) );
-        // Why do we want to return null here rather than an empty list?
     }
 
     @Test

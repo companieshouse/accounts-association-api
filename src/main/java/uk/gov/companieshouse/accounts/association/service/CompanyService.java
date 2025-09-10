@@ -11,6 +11,8 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException.BadRequest;
+import org.springframework.web.client.HttpClientErrorException.NotFound;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -43,9 +45,6 @@ public class CompanyService {
         final var response = companyRestClient.get()
                 .uri(uri)
                 .retrieve()
-                .onStatus(status -> status.value() == 404, (req, res) -> {
-                    throw new NotFoundRuntimeException(res.getStatusText(), new Exception(res.getStatusText()));
-                })
                 .body(String.class);
 
         LOGGER.infoContext(xRequestId, String.format("Finished request to %s for company: %s.", uri, companyNumber), null);
@@ -57,35 +56,39 @@ public class CompanyService {
         final var xRequestId = getXRequestId();
         final var companyDetailsMap = new ConcurrentHashMap<String, CompanyDetails>();
 
-        associations.parallel()
-                .map(AssociationDao::getCompanyNumber)
-                .forEach(companyNumber -> {
-                    try {
-                        final var companyDetails = fetchCompanyProfileRequest(companyNumber, xRequestId);
-                        companyDetailsMap.put(companyNumber, companyDetails);
-                    } catch (RestClientException exception) {
-                        LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, companyNumber), exception, null);
-                        throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
-                    }
-                });
+        associations.parallel().map(AssociationDao::getCompanyNumber).forEach(companyNumber -> {
+            final var companyDetails = fetchCompanyProfile(companyNumber, xRequestId);
+            companyDetailsMap.put(companyNumber, companyDetails);
+        });
         return companyDetailsMap;
     }
 
     public CompanyDetails fetchCompanyProfile(final String companyNumber) {
-        final var xRequestId = getXRequestId();
+        return fetchCompanyProfile(companyNumber, getXRequestId());
+    }
+
+    public CompanyDetails fetchCompanyProfile(final String companyNumber, String xRequestId) {
+        xRequestId = xRequestId != null ? xRequestId : getXRequestId();
         if (StringUtils.isBlank(companyNumber)) {
-            NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_COMPANY_NUMBER,
-                    new Exception(BLANK_COMPANY_NUMBER));
+            NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_COMPANY_NUMBER, new Exception(BLANK_COMPANY_NUMBER));
             LOGGER.errorContext(xRequestId, BLANK_COMPANY_NUMBER, exception, null);
             throw exception;
         }
+
         CompanyDetails companyDetails;
         try {
             companyDetails = fetchCompanyProfileRequest(companyNumber, xRequestId);
+        } catch (NotFound exception) {
+            LOGGER.infoContext(xRequestId, String.format("No company found for email: %s", companyNumber), null);
+            throw new NotFoundRuntimeException(exception.getMessage(), exception);
+        } catch (BadRequest exception) {
+            LOGGER.errorContext(xRequestId,String.format("Bad request made when searching for company: %s", companyNumber), exception, null);
+            throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
         } catch (RestClientException exception) {
             LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, companyNumber), exception, null);
             throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
         }
+
         return companyDetails;
     }
 }

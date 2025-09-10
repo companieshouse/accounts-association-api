@@ -17,10 +17,15 @@ import java.util.stream.Stream;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpClientErrorException.BadRequest;
+import org.springframework.web.client.HttpClientErrorException.NotFound;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
+import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.api.accounts.user.model.User;
@@ -32,6 +37,7 @@ public class UsersService {
     private final RestClient usersRestClient;
 
     private static final String REST_CLIENT_EXCEPTION = "Encountered rest client exception when fetching user details for: %s";
+    private static final String BLANK_USER_ID = "UserID cannot be blank";
 
     @Autowired
     private UsersService(@Qualifier("usersRestClient") final RestClient usersRestClient) {
@@ -40,8 +46,8 @@ public class UsersService {
 
     public User fetchUserDetails(final String userId, final String xRequestId) {
         if (StringUtils.isBlank(userId)) {
-            IllegalArgumentException exception = new IllegalArgumentException("UserID cannot be blank");
-            LOGGER.errorContext(xRequestId, "UserID cannot be blank", exception, null);
+            NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_USER_ID, new Exception(BLANK_USER_ID));
+            LOGGER.errorContext(xRequestId, BLANK_USER_ID, exception, null);
             throw exception;
         }
 
@@ -55,9 +61,6 @@ public class UsersService {
         final var response = usersRestClient.get()
                 .uri(uri)
                 .retrieve()
-                .onStatus(status -> status.value() == 404, (req, res) -> {
-                    throw new NotFoundRuntimeException(res.getStatusText(), new Exception(res.getStatusText()));
-                })
                 .body(String.class);
 
         LOGGER.infoContext(xRequestId, String.format("Finished request to %s for user: %s.", uri, userId), null);
@@ -75,8 +78,15 @@ public class UsersService {
                     try {
                         final var userDetails = fetchUserDetails(userId, xRequestId);
                         userDetailsMap.put(userId, userDetails);
+                    } catch (NotFound exception) {
+                        LOGGER.infoContext(xRequestId, String.format("No user found for userId: %s", userId), null);
+                        throw new NotFoundRuntimeException(exception.getMessage(), exception);
+                    } catch (BadRequest exception) {
+                        LOGGER.errorContext(xRequestId, String.format("Bad request made when searching for userId: %s", userId), exception, null);
+                        throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
                     } catch (RestClientException exception) {
                         LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, userId), exception, null);
+                        throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
                     }
                 });
 
@@ -91,6 +101,13 @@ public class UsersService {
             throw exception;
         }
 
+        if (emails.stream().anyMatch(Objects::isNull)) {
+            InternalServerErrorRuntimeException exception = new InternalServerErrorRuntimeException("Email in list cannot be null",
+                    new Exception("Email in list cannot be null"));
+            LOGGER.errorContext(xRequestId, "Email in list cannot be null", exception, null);
+            throw exception;
+        }
+
         final var synchronizedList = Collections.synchronizedList(new UsersList());
 
         emails.stream()
@@ -98,22 +115,29 @@ public class UsersService {
                 .forEach(email -> {
                     try {
                         var userDetails = fetchUserDetailsByEmail(email);
-                        synchronizedList.add(userDetails.orElse(null));
+                        if (Objects.nonNull(userDetails)) {
+                            synchronizedList.add(userDetails);
+                        }
+                    } catch (NotFound exception) {
+                        LOGGER.infoContext(xRequestId, String.format("No user found for email: %s", email), null);
+                        throw new NotFoundRuntimeException(exception.getMessage(), exception);
+                    } catch (BadRequest exception) {
+                        LOGGER.errorContext(xRequestId, String.format("Bad request made when searching for user with email: %s", email), exception, null);
+                        throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
                     } catch (RestClientException exception) {
                         LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, email), exception, null);
+                        throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
                     }
                 });
 
         UsersList usersList = new UsersList();
-        synchronizedList.stream()
-                .filter(Objects::nonNull)
-                .distinct()
-                .forEach(usersList::add);
-
+        if (!synchronizedList.isEmpty()) {
+            usersList.addAll(synchronizedList);
+        }
         return usersList;
     }
 
-    public Optional<User> fetchUserDetailsByEmail(final String email) {
+    public User fetchUserDetailsByEmail(final String email) {
         final var uri = UriComponentsBuilder.newInstance()
                 .path("/users/search")
                 .queryParam("user_email", "{email}")
@@ -124,12 +148,9 @@ public class UsersService {
         final var response = usersRestClient.get()
                 .uri(uri)
                 .retrieve()
-                .onStatus(status -> status.value() == 404, (req, res) -> {
-                    throw new NotFoundRuntimeException(res.getStatusText(), new Exception(res.getStatusText()));
-                })
                 .body(String.class);
 
-        return Optional.ofNullable(parseJsonTo(response, User.class));
+        return parseJsonTo(response, User.class);
     }
 
     public User retrieveUserDetails(final String targetUserId, final String targetUserEmail) {
