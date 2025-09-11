@@ -119,7 +119,7 @@ class UsersServiceTest {
 
     @Test
     void searchUserDetailsWithNullListThrowsIllegalArgumentException(){
-        Assertions.assertThrows( IllegalArgumentException.class, () -> usersService.searchUserDetailsByEmail(null));
+        Assertions.assertThrows( IllegalArgumentException.class, () -> usersService.searchUsersDetailsByEmail(null));
     }
 
     @Test
@@ -127,16 +127,16 @@ class UsersServiceTest {
         final var emails = new ArrayList<String>();
         emails.add( null );
         mockers.mockRestClientForSearchUserDetailsErrorResponse( null, 400 );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetailsByEmail( emails ) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUsersDetailsByEmail( emails ) );
 
         mockers.mockRestClientForSearchUserDetailsErrorResponse( "£$@123", 400 );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetailsByEmail( List.of( "£$@123" ) ) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUsersDetailsByEmail( List.of( "£$@123" ) ) );
     }
 
     @Test
     void searchUserDetailsReturnsUsersList() throws JsonProcessingException {
         mockers.mockRestClientForSearchUserDetails( "111" );
-        final var result = usersService.searchUserDetailsByEmail( List.of( "bruce.wayne@gotham.city" ) );
+        final var result = usersService.searchUsersDetailsByEmail( List.of( "bruce.wayne@gotham.city" ) );
         Assertions.assertEquals( 1, result.size() );
         Assertions.assertEquals( "Batman", result.getFirst().getDisplayName() );
     }
@@ -145,13 +145,13 @@ class UsersServiceTest {
     void searchUserDetailsWithNonexistentEmailReturnsNull() {
         // Why do we want to return null here rather than an empty list?
         mockers.mockRestClientForSearchUserDetailsNonexistentEmail( "404@email.com" );
-        Assertions.assertNull( usersService.searchUserDetailsByEmail( List.of( "404@email.com" ) ) );
+        Assertions.assertNull( usersService.searchUsersDetailsByEmail( List.of( "404@email.com" ) ) );
     }
 
     @Test
     void searchUserDetailsWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
         mockers.mockRestClientForSearchUserDetailsJsonParsingError( "bruce.wayne@gotham.city" );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetailsByEmail( List.of( "bruce.wayne@gotham.city" ) ) );
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUsersDetailsByEmail( List.of( "bruce.wayne@gotham.city" ) ) );
     }
 
     @Test
