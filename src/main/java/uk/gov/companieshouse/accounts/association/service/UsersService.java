@@ -44,6 +44,21 @@ public class UsersService {
     }
 
     public User fetchUserDetails(final String userId, final String xRequestId) {
+        try {
+            return requestUserDetails(userId, xRequestId);
+        } catch (NotFound exception) {
+            LOGGER.infoContext(xRequestId, String.format("No user found for userId: %s", userId), null);
+            throw new NotFoundRuntimeException(exception.getMessage(), exception);
+        } catch (BadRequest exception) {
+            LOGGER.errorContext(xRequestId, String.format("Bad request made when searching for userId: %s", userId), exception, null);
+            throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
+        } catch (RestClientException exception) {
+            LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, userId), exception, null);
+            throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
+        }
+    }
+
+    private User requestUserDetails(final String userId, final String xRequestId) {
         if (StringUtils.isBlank(userId)) {
             NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_USER_ID, new Exception(BLANK_USER_ID));
             LOGGER.errorContext(xRequestId, BLANK_USER_ID, exception, null);
@@ -129,8 +144,9 @@ public class UsersService {
                     }
                 });
 
-        UsersList usersList = new UsersList();
+        UsersList usersList = null;
         if (!synchronizedList.isEmpty()) {
+            usersList = new UsersList();
             usersList.addAll(synchronizedList);
         }
         return usersList;
