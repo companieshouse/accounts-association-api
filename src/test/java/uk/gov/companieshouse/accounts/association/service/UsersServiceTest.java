@@ -69,7 +69,7 @@ class UsersServiceTest {
     }
 
     @Test
-    void BBBfetchUserDetailsReturnsSpecifiedUser() throws JsonProcessingException {
+    void fetchUserDetailsReturnsSpecifiedUser() throws JsonProcessingException {
         mockers.mockWebClientForFetchUserDetails( true,"111" );
         Assertions.assertEquals( "Batman", usersService.fetchUserDetails( "111", "id123" ).getDisplayName() );
     }
@@ -108,7 +108,7 @@ class UsersServiceTest {
     }
 
     @Test
-    void BBBfetchUserDetailsWithStreamReturnsMap() throws JsonProcessingException {
+    void fetchUserDetailsWithStreamReturnsMap() throws JsonProcessingException {
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
         mockers.mockWebClientForFetchUserDetails( true, "111");
         final var users = usersService.fetchUserDetails( Stream.of( associationDao, associationDao ) );
@@ -135,7 +135,7 @@ class UsersServiceTest {
     }
 
     @Test
-    void AAAsearchUserDetailsReturnsUsersList() throws JsonProcessingException {
+    void searchUserDetailsReturnsUsersList() throws JsonProcessingException {
         mockers.mockWebClientForSearchUserDetails( false, "111" );
         final var result = usersService.searchUserDetails( List.of( "bruce.wayne@gotham.city" ) );
         Assertions.assertEquals( 1, result.size() );
@@ -143,7 +143,7 @@ class UsersServiceTest {
     }
 
     @Test
-    void AAAsearchUserDetailsWithNonexistentEmailReturnsNull() {
+    void searchUserDetailsWithNonexistentEmailReturnsNull() {
         mockers.mockWebClientForSearchUserDetailsNonexistentEmail( false, "404@email.com" );
         Assertions.assertNull( usersService.searchUserDetails( List.of( "404@email.com" ) ) );
     }
@@ -187,7 +187,7 @@ class UsersServiceTest {
     }
 
     @Test
-    void BBBfetchUserDetailsWithUserIdAssociationAndDifferentUsersRetrievesUser() throws JsonProcessingException {
+    void fetchUserDetailsWithUserIdAssociationAndDifferentUsersRetrievesUser() throws JsonProcessingException {
         final var requestingUser = testDataManager.fetchUserDtos( "111" ).getFirst();
         final var targetUser = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
         final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
@@ -202,7 +202,7 @@ class UsersServiceTest {
     }
 
     @Test
-    void AAAfetchUserDetailsWithNonexistentUserEmailReturnsNull(){
+    void fetchUserDetailsWithNonexistentUserEmailReturnsNull(){
         final var requestingUser = testDataManager.fetchUserDtos( "111" ).getFirst();
         final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
 
@@ -229,7 +229,7 @@ class UsersServiceTest {
     }
 
     @Test
-    void AAAfetchUserDetailsWithUserEmailAssociationAndDifferentUsersRetrievesUser() throws JsonProcessingException {
+    void fetchUserDetailsWithUserEmailAssociationAndDifferentUsersRetrievesUser() throws JsonProcessingException {
         final var requestingUser = testDataManager.fetchUserDtos( "111" ).getFirst();
         final var targetUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
         final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();

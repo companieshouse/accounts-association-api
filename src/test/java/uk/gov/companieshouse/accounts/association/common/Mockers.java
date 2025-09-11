@@ -38,7 +38,7 @@ public class Mockers {
         this.usersService = usersService;
     }
 
-    private void mockWebClientSuccessResponse( final String uri, final Mono<String> jsonResponse, boolean isUriString) {
+    private void mockWebClientSuccessResponse( final String uri, final Mono<String> jsonResponse, final boolean isUriString) {
         final var requestHeadersUriSpec = Mockito.mock( WebClient.RequestHeadersUriSpec.class );
         final var requestHeadersSpec = Mockito.mock( WebClient.RequestHeadersSpec.class );
         final var responseSpec = Mockito.mock( WebClient.ResponseSpec.class );
