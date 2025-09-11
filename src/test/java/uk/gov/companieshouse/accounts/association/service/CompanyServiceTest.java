@@ -57,7 +57,7 @@ class CompanyServiceTest {
 
     @Test
     void fetchCompanyProfileReturnsSpecifiedCompany() throws JsonProcessingException {
-        mockers.mockWebClientForFetchCompanyProfile( "111111" );
+        mockers.mockWebClientForFetchCompanyProfile( true, "111111" );
         Assertions.assertEquals( "Wayne Enterprises", companyService.fetchCompanyProfile( "111111" ).getCompanyName() );
     }
 
@@ -97,7 +97,7 @@ class CompanyServiceTest {
     @Test
     void fetchCompanyProfilesWithStreamReturnsMap() throws JsonProcessingException {
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
-        mockers.mockWebClientForFetchCompanyProfile( "111111" );
+        mockers.mockWebClientForFetchCompanyProfile( true, "111111" );
         final var companies = companyService.fetchCompanyProfiles( Stream.of( associationDao, associationDao ) );
 
         Assertions.assertEquals( 1, companies.size() );
