@@ -58,51 +58,14 @@ public class UsersService {
         }
     }
 
-    private User requestUserDetails(final String userId, final String xRequestId) {
-        if (StringUtils.isBlank(userId)) {
-            NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_USER_ID, new Exception(BLANK_USER_ID));
-            LOGGER.errorContext(xRequestId, BLANK_USER_ID, exception, null);
-            throw exception;
-        }
-
-        final var uri = UriComponentsBuilder.newInstance()
-                .path("/users/{user}")
-                .buildAndExpand(userId)
-                .toUri();
-
-        LOGGER.infoContext(xRequestId, String.format("Starting request to %s. Attempting to retrieve user details for: %s", uri, userId), null );
-
-        final var response = usersRestClient.get()
-                .uri(uri)
-                .retrieve()
-                .body(String.class);
-
-        LOGGER.infoContext(xRequestId, String.format("Finished request to %s for user: %s.", uri, userId), null);
-
-        return parseJsonTo(response, User.class);
-    }
-
     public Map<String, User> fetchUsersDetails(final Stream<AssociationDao> associations) {
         final var xRequestId = getXRequestId();
         final var userDetailsMap = new ConcurrentHashMap<String, User>();
 
-        associations.parallel()
-                .map(AssociationDao::getUserId)
-                .forEach(userId -> {
-                    try {
-                        final var userDetails = fetchUserDetails(userId, xRequestId);
-                        userDetailsMap.put(userId, userDetails);
-                    } catch (NotFound exception) {
-                        LOGGER.infoContext(xRequestId, String.format("No user found for userId: %s", userId), null);
-                        throw new NotFoundRuntimeException(exception.getMessage(), exception);
-                    } catch (BadRequest exception) {
-                        LOGGER.errorContext(xRequestId, String.format("Bad request made when searching for userId: %s", userId), exception, null);
-                        throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
-                    } catch (RestClientException exception) {
-                        LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, userId), exception, null);
-                        throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
-                    }
-                });
+        associations.parallel().map(AssociationDao::getUserId).forEach(userId -> {
+            final var userDetails = fetchUserDetails(userId, xRequestId);
+            userDetailsMap.put(userId, userDetails);
+        });
 
         return userDetailsMap;
     }
@@ -124,25 +87,12 @@ public class UsersService {
 
         final var synchronizedList = Collections.synchronizedList(new UsersList());
 
-        emails.stream()
-                .parallel()
-                .forEach(email -> {
-                    try {
-                        var userDetails = fetchUserDetailsByEmail(email);
-                        if (Objects.nonNull(userDetails)) {
-                            synchronizedList.add(userDetails);
-                        }
-                    } catch (NotFound exception) {
-                        LOGGER.infoContext(xRequestId, String.format("No user found for email: %s", email), null);
-                        throw new NotFoundRuntimeException(exception.getMessage(), exception);
-                    } catch (BadRequest exception) {
-                        LOGGER.errorContext(xRequestId, String.format("Bad request made when searching for user with email: %s", email), exception, null);
-                        throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
-                    } catch (RestClientException exception) {
-                        LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, email), exception, null);
-                        throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
-                    }
-                });
+        emails.stream().parallel().forEach(email -> {
+            var userDetails = fetchUserDetailsByEmail(email);
+            if (Objects.nonNull(userDetails)) {
+                synchronizedList.add(userDetails);
+            }
+        });
 
         UsersList usersList = null;
         if (!synchronizedList.isEmpty()) {
@@ -153,19 +103,18 @@ public class UsersService {
     }
 
     public User fetchUserDetailsByEmail(final String email) {
-        final var uri = UriComponentsBuilder.newInstance()
-                .path("/users/search")
-                .queryParam("user_email", "{email}")
-                .buildAndExpand(email)
-                .encode()
-                .toUri();
-
-        final var response = usersRestClient.get()
-                .uri(uri)
-                .retrieve()
-                .body(String.class);
-
-        return parseJsonTo(response, User.class);
+        try {
+            return requestUserDetailsByEmail(email);
+        } catch (NotFound exception) {
+            LOGGER.infoContext(getXRequestId(), String.format("No user found for email: %s", email), null);
+            throw new NotFoundRuntimeException(exception.getMessage(), exception);
+        } catch (BadRequest exception) {
+            LOGGER.errorContext(getXRequestId(), String.format("Bad request made when searching for user with email: %s", email), exception, null);
+            throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
+        } catch (RestClientException exception) {
+            LOGGER.errorContext(getXRequestId(), String.format(REST_CLIENT_EXCEPTION, email), exception, null);
+            throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
+        }
     }
 
     public User retrieveUserDetails(final String targetUserId, final String targetUserEmail) {
@@ -196,5 +145,45 @@ public class UsersService {
 
     public User fetchUserDetails(final AssociationDao association) {
         return retrieveUserDetails(association.getUserId(), association.getUserEmail());
+    }
+
+    private User requestUserDetailsByEmail(final String email) {
+        final var uri = UriComponentsBuilder.newInstance()
+                .path("/users/search")
+                .queryParam("user_email", "{email}")
+                .buildAndExpand(email)
+                .encode()
+                .toUri();
+
+        final var response = usersRestClient.get()
+                .uri(uri)
+                .retrieve()
+                .body(String.class);
+
+        return parseJsonTo(response, User.class);
+    }
+
+    private User requestUserDetails(final String userId, final String xRequestId) {
+        if (StringUtils.isBlank(userId)) {
+            NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_USER_ID, new Exception(BLANK_USER_ID));
+            LOGGER.errorContext(xRequestId, BLANK_USER_ID, exception, null);
+            throw exception;
+        }
+
+        final var uri = UriComponentsBuilder.newInstance()
+                .path("/users/{user}")
+                .buildAndExpand(userId)
+                .toUri();
+
+        LOGGER.infoContext(xRequestId, String.format("Starting request to %s. Attempting to retrieve user details for: %s", uri, userId), null );
+
+        final var response = usersRestClient.get()
+                .uri(uri)
+                .retrieve()
+                .body(String.class);
+
+        LOGGER.infoContext(xRequestId, String.format("Finished request to %s for user: %s.", uri, userId), null);
+
+        return parseJsonTo(response, User.class);
     }
 }
