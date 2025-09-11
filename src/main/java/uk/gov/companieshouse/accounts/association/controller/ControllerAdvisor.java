@@ -5,12 +5,14 @@ import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parse
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.APPLICATION_NAMESPACE;
 import static uk.gov.companieshouse.service.rest.err.Err.invalidBodyBuilderWithLocation;
+import static uk.gov.companieshouse.service.rest.err.Err.invalidPathBuilderWithLocation;
 import static uk.gov.companieshouse.service.rest.err.Err.serviceErrBuilder;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -25,8 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-@org.springframework.web.bind.annotation.ControllerAdvice
-public class ControllerAdvice extends ResponseEntityExceptionHandler {
+@ControllerAdvice
+public class ControllerAdvisor extends ResponseEntityExceptionHandler {
 
     private <T extends Exception> Errors mapThrownExceptionsToErrors(final T exception, final HttpServletRequest request){
         final var url = request.getRequestURL().toString();
@@ -81,7 +83,7 @@ public class ControllerAdvice extends ResponseEntityExceptionHandler {
         exception.getConstraintViolations()
                 .stream()
                 .map(constraintViolation -> String.format("%s %s", Optional.of(constraintViolation.getInvalidValue()).orElse(" "), constraintViolation.getMessage()))
-                .map(error -> invalidBodyBuilderWithLocation(APPLICATION_NAMESPACE).withError(error).build())
+                .map(error -> invalidPathBuilderWithLocation(APPLICATION_NAMESPACE).withError(error).build())
                 .forEach(errors::addError);
 
         LOGGER.errorContext(getXRequestId(), String.format("Validation Failed with [%s]", parseJsonFrom(errors, "")), exception, null);

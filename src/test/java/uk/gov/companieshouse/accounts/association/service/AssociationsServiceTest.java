@@ -447,7 +447,7 @@ class AssociationsServiceTest {
 
         Mockito.doReturn(associations).when(associationsRepository).fetchConfirmedAssociations(eq("111111"));
 
-        Assertions.assertEquals("111", associationsService.fetchConfirmedUserIds("111111").blockFirst());
+        Assertions.assertEquals("111", associationsService.fetchConfirmedUserIds("111111"));
     }
 
     @Test
@@ -634,13 +634,13 @@ class AssociationsServiceTest {
     void fetchConfirmedUserIdsCanRetrieveUsers(){
         final var associations = testDataManager.fetchAssociationDaos("MiAssociation003").stream();
         Mockito.doReturn(associations).when(associationsRepository).fetchConfirmedAssociations(eq("MICOMP002"));
-        Assertions.assertEquals("MiUser002", associationsService.fetchConfirmedUserIds("MICOMP002").blockFirst());
+        Assertions.assertEquals("MiUser002", associationsService.fetchConfirmedUserIds("MICOMP002"));
     }
 
     @Test
     void fetchConfirmedUserIdsRetrievesEmptyFluxWhenNoRecordsFound(){
-        Assertions.assertEquals(0, associationsService.fetchConfirmedUserIds("MICOMP002").count().block());
-        Assertions.assertEquals(0, associationsService.fetchConfirmedUserIds(null).count().block());
+        Assertions.assertEquals(0, associationsService.fetchConfirmedUserIds("MICOMP002").count());
+        Assertions.assertEquals(0, associationsService.fetchConfirmedUserIds(null).count());
     }
 
     @Test
