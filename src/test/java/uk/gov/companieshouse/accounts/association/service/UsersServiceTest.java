@@ -64,7 +64,7 @@ class UsersServiceTest {
 
     @Test
     void fetchUserDetailsWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
-        mockers.mockWebClientForFetchUserDetailsJsonParsingError( "111" );
+        mockers.mockWebClientForFetchUserDetailsJsonParsingError( "111", true );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails( "111", "id123" ) );
     }
 
@@ -103,7 +103,7 @@ class UsersServiceTest {
     @Test
     void fetchUserDetailsWithStreamWithArbitraryErrorReturnsInternalServerErrorRuntimeException(){
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
-        mockers.mockWebClientForFetchUserDetailsJsonParsingError( "111" );
+        mockers.mockWebClientForFetchUserDetailsJsonParsingError( "111", true );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails( Stream.of( associationDao ) ) );
     }
 
@@ -127,10 +127,10 @@ class UsersServiceTest {
     void searchUserDetailWithNullOrMalformedUserEmailThrowsInternalServerErrorRuntimeException() {
         final var emails = new ArrayList<String>();
         emails.add( null );
-        mockers.mockWebClientForSearchUserDetailsErrorResponse( null, 400 );
+        mockers.mockWebClientForSearchUserDetailsErrorResponse( null, 400, true );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( emails ) );
 
-        mockers.mockWebClientForSearchUserDetailsErrorResponse( "£$@123", 400 );
+        mockers.mockWebClientForSearchUserDetailsErrorResponse( "£$@123", 400, true );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "£$@123" ) ) );
     }
 
@@ -150,7 +150,7 @@ class UsersServiceTest {
 
     @Test
     void searchUserDetailsWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
-        mockers.mockWebClientForSearchUserDetailsJsonParsingError( "bruce.wayne+@gotham.city" );
+        mockers.mockWebClientForSearchUserDetailsJsonParsingError( false, "bruce.wayne+@gotham.city" );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "bruce.wayne+@gotham.city" ) ) );
     }
 
