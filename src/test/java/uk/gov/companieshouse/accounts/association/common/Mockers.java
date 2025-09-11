@@ -149,14 +149,27 @@ public class Mockers {
         }
     }
 
+    /**
+     * Mocks a WebClient JSON parsing error for the given URI string.
+     * @param uri the URI string to mock the JSON parsing error for
+     */
     private void mockWebClientJsonParsingError(final String uri){
         mockWebClientJsonParsingError(uri, true);
     }
 
+    /**
+     * Mocks a WebClient JSON parsing error for the given URI object.
+     * @param uri the URI object to mock the JSON parsing error for
+     */
     private void mockWebClientJsonParsingError(final URI uri) {
         mockWebClientJsonParsingError(null, uri);
     }
 
+    /**
+     * Mocks a WebClient JSON parsing error for the given UriComponents object.
+     * @param uriComponents the UriComponents object to mock the JSON parsing error for
+     * @param isUriString indicates whether to use the URI string (true) or the URI object (false) from the UriComponents
+     */
     private void mockWebClientJsonParsingError(final UriComponents uriComponents, final boolean isUriString) {
         if (isUriString) {
             mockWebClientJsonParsingError(uriComponents.toUriString());
@@ -214,13 +227,13 @@ public class Mockers {
         mockWebClientSuccessResponse( uri, Mono.empty() );
     }
 
-    public void mockWebClientForSearchUserDetailsJsonParsingError( boolean isUriString, final String... emails ){
+    public void mockWebClientForSearchUserDetailsJsonParsingError(final String email, boolean isUriString) {
         final var uri = UriComponentsBuilder.newInstance()
                 .path("/users/search")
                 .queryParam("user_email", "{emails}")
                 .encode()
-                .buildAndExpand(String.join(",", emails));
-        mockWebClientJsonParsingError( uri, isUriString);
+                .buildAndExpand(email);
+        mockWebClientJsonParsingError(uri, isUriString);
     }
 
     public void mockWebClientForFetchCompanyProfile( final String... companyNumbers ) throws JsonProcessingException {

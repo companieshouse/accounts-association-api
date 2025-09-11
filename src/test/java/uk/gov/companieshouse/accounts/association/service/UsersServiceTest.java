@@ -150,7 +150,7 @@ class UsersServiceTest {
 
     @Test
     void searchUserDetailsWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
-        mockers.mockWebClientForSearchUserDetailsJsonParsingError( false, "bruce.wayne+@gotham.city" );
+        mockers.mockWebClientForSearchUserDetailsJsonParsingError("bruce.wayne+@gotham.city", false);
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "bruce.wayne+@gotham.city" ) ) );
     }
 
