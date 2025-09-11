@@ -38,25 +38,28 @@ public class Mockers {
         this.usersService = usersService;
     }
 
-    private void mockWebClientSuccessResponse( final String uri, final Mono<String> jsonResponse ){
+    private void mockWebClientSuccessResponse( final String uri, final Mono<String> jsonResponse, final boolean isUriString) {
         final var requestHeadersUriSpec = Mockito.mock( WebClient.RequestHeadersUriSpec.class );
         final var requestHeadersSpec = Mockito.mock( WebClient.RequestHeadersSpec.class );
         final var responseSpec = Mockito.mock( WebClient.ResponseSpec.class );
 
-        Mockito.lenient().doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(Mockito.any(URI.class));
+        if( isUriString ){
+            Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri );
+        }else{
+            Mockito.doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(Mockito.any(URI.class));
+        }
 
         Mockito.doReturn( requestHeadersUriSpec ).when(webClient).get();
-        Mockito.lenient().doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri );
         Mockito.doReturn( responseSpec ).when( requestHeadersSpec ).retrieve();
         Mockito.doReturn( jsonResponse ).when( responseSpec ).bodyToMono( String.class );
     }
 
-    public void mockWebClientForFetchUserDetails( final String... userIds ) throws JsonProcessingException {
+    public void mockWebClientForFetchUserDetails( final boolean isUriString, final String... userIds ) throws JsonProcessingException {
         for ( final String userId: userIds ){
             final var user = testDataManager.fetchUserDtos( userId ).getFirst();
             final var uri = String.format( "/users/%s", userId );
             final var jsonResponse = new ObjectMapper().writeValueAsString( user );
-            mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ) );
+            mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ), isUriString );
         }
     }
 
@@ -187,7 +190,7 @@ public class Mockers {
         }
     }
 
-    public void mockWebClientForSearchUserDetails( final String... userIds ) throws JsonProcessingException {
+    public void mockWebClientForSearchUserDetails( final boolean isUriString, final String... userIds ) throws JsonProcessingException {
         final var users = testDataManager.fetchUserDtos( userIds );
         final var uri = UriComponentsBuilder.fromUriString("/users/search")
                 .queryParam("user_email", users.stream().map( User::getEmail ).toList() )
@@ -195,7 +198,7 @@ public class Mockers {
                 .build()
                 .toString();
         final var jsonResponse = new ObjectMapper().writeValueAsString( users );
-        mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ) );
+        mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ), isUriString );
     }
 
     public UriComponents buildUriComponents(final String userEmail){
@@ -217,14 +220,14 @@ public class Mockers {
         }
     }
 
-    public void mockWebClientForSearchUserDetailsNonexistentEmail( final String... emails ) {
+    public void mockWebClientForSearchUserDetailsNonexistentEmail(final boolean isUriString, final String... emails) {
         final var uri = UriComponentsBuilder.newInstance()
                 .path("/users/search")
                 .queryParam("user_email", "{emails}")
                 .encode()
                 .buildAndExpand(String.join(",", emails))
                 .toUriString() ;
-        mockWebClientSuccessResponse( uri, Mono.empty() );
+        mockWebClientSuccessResponse( uri, Mono.empty(), isUriString );
     }
 
     public void mockWebClientForSearchUserDetailsJsonParsingError(final String email, boolean isUriString) {
@@ -236,12 +239,12 @@ public class Mockers {
         mockWebClientJsonParsingError(uri, isUriString);
     }
 
-    public void mockWebClientForFetchCompanyProfile( final String... companyNumbers ) throws JsonProcessingException {
+    public void mockWebClientForFetchCompanyProfile( final boolean isUriString, final String... companyNumbers ) throws JsonProcessingException {
         for ( final String companyNumber: companyNumbers ){
             final var company = testDataManager.fetchCompanyDetailsDtos( companyNumber ).getFirst();
             final var uri = String.format( "/company/%s/company-detail", companyNumber );
             final var jsonResponse = new ObjectMapper().writeValueAsString( company );
-            mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ) );
+            mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ), isUriString );
         }
     }
 
@@ -256,7 +259,7 @@ public class Mockers {
         }
     }
 
-    public void mockWebClientForFetchCompanyProfileJsonParsingError( final String companyNumber, boolean isUriString ){
+    public void mockWebClientForFetchCompanyProfileJsonParsingError( final String companyNumber, final boolean isUriString ){
         final var uri = String.format( "/company/%s/company-detail", companyNumber );
         mockWebClientJsonParsingError( uri, isUriString );
     }

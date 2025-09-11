@@ -70,7 +70,7 @@ class UsersServiceTest {
 
     @Test
     void fetchUserDetailsReturnsSpecifiedUser() throws JsonProcessingException {
-        mockers.mockWebClientForFetchUserDetails( "111" );
+        mockers.mockWebClientForFetchUserDetails( true,"111" );
         Assertions.assertEquals( "Batman", usersService.fetchUserDetails( "111", "id123" ).getDisplayName() );
     }
 
@@ -110,7 +110,7 @@ class UsersServiceTest {
     @Test
     void fetchUserDetailsWithStreamReturnsMap() throws JsonProcessingException {
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
-        mockers.mockWebClientForFetchUserDetails( "111" );
+        mockers.mockWebClientForFetchUserDetails( true, "111");
         final var users = usersService.fetchUserDetails( Stream.of( associationDao, associationDao ) );
 
         Assertions.assertEquals( 1, users.size() );
@@ -136,7 +136,7 @@ class UsersServiceTest {
 
     @Test
     void searchUserDetailsReturnsUsersList() throws JsonProcessingException {
-        mockers.mockWebClientForSearchUserDetails( "111" );
+        mockers.mockWebClientForSearchUserDetails( false, "111" );
         final var result = usersService.searchUserDetails( List.of( "bruce.wayne@gotham.city" ) );
         Assertions.assertEquals( 1, result.size() );
         Assertions.assertEquals( "Batman", result.getFirst().getDisplayName() );
@@ -144,7 +144,7 @@ class UsersServiceTest {
 
     @Test
     void searchUserDetailsWithNonexistentEmailReturnsNull() {
-        mockers.mockWebClientForSearchUserDetailsNonexistentEmail( "404@email.com" );
+        mockers.mockWebClientForSearchUserDetailsNonexistentEmail( false, "404@email.com" );
         Assertions.assertNull( usersService.searchUserDetails( List.of( "404@email.com" ) ) );
     }
 
@@ -196,7 +196,7 @@ class UsersServiceTest {
         request.addHeader( ERIC_IDENTITY, requestingUser.getUserId() );
         RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).build() );
 
-        mockers.mockWebClientForFetchUserDetails( "MKUser002" );
+        mockers.mockWebClientForFetchUserDetails( true, "MKUser002" );
 
         Assertions.assertEquals( targetUser, usersService.fetchUserDetails( targetAssociation ) );
     }
@@ -210,7 +210,7 @@ class UsersServiceTest {
         request.addHeader( ERIC_IDENTITY, requestingUser.getUserId() );
         RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).build() );
 
-        mockers.mockWebClientForSearchUserDetailsNonexistentEmail( "mario@mushroom.kingdom" );
+        mockers.mockWebClientForSearchUserDetailsNonexistentEmail(false,  "mario@mushroom.kingdom" );
 
         Assertions.assertNull( usersService.fetchUserDetails( targetAssociation ) );
     }
@@ -238,9 +238,8 @@ class UsersServiceTest {
         request.addHeader( ERIC_IDENTITY, requestingUser.getUserId() );
         RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).build() );
 
-        mockers.mockWebClientForSearchUserDetails( "MKUser001" );
+        mockers.mockWebClientForSearchUserDetails( false,"MKUser001" );
 
         Assertions.assertEquals( targetUser, usersService.fetchUserDetails( targetAssociation ) );
     }
-
 }
