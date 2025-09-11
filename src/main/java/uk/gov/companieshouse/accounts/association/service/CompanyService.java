@@ -75,9 +75,8 @@ public class CompanyService {
             throw exception;
         }
 
-        CompanyDetails companyDetails;
         try {
-            companyDetails = fetchCompanyProfileRequest(companyNumber, xRequestId);
+            return fetchCompanyProfileRequest(companyNumber, xRequestId);
         } catch (NotFound exception) {
             LOGGER.infoContext(xRequestId, String.format("No company found for email: %s", companyNumber), null);
             throw new NotFoundRuntimeException(exception.getMessage(), exception);
@@ -88,8 +87,6 @@ public class CompanyService {
             LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, companyNumber), exception, null);
             throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
         }
-
-        return companyDetails;
     }
 }
 

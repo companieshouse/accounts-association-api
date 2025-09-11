@@ -118,8 +118,8 @@ class UsersServiceTest {
     }
 
     @Test
-    void searchUserDetailsWithNullListThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> usersService.searchUserDetailsByEmail(null));
+    void searchUserDetailsWithNullListThrowsIllegalArgumentException(){
+        Assertions.assertThrows( IllegalArgumentException.class, () -> usersService.searchUserDetailsByEmail(null));
     }
 
     @Test
