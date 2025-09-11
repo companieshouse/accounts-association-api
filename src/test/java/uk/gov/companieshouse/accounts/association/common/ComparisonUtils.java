@@ -143,6 +143,27 @@ public class ComparisonUtils {
         };
     }
 
+    public ArgumentMatcher<EmailData> invitationCancelledEmailMatcher(final String invitationCancelledRecipientEmail, final String cancelledByDisplayName, final String cancelledUserDisplayName, final String companyName){
+        final var expectedInvitationCancelledEmail = new InvitationCancelledEmailBuilder()
+                .setRecipientEmail( invitationCancelledRecipientEmail )
+                .setCancelledByDisplayName( cancelledByDisplayName )
+                .setCancelledUserDisplayName( cancelledUserDisplayName )
+                .setCompanyName( companyName )
+                .build();
+
+        return emailData -> compare(expectedInvitationCancelledEmail, List.of("personWhoWasCancelled", "companyName", "personWhoCancelledInvite", "to", "subject"), List.of(), Map.of() ).matches(expectedInvitationCancelledEmail);
+    }
+
+    public ArgumentMatcher<EmailData> inviteCancelledEmailMatcher(final String cancelledByDisplayName, final String companyName, final String inviteCancelledRecipientEmail){
+        final var expectedCancelledInviteEmail = new InviteCancelledEmailBuilder()
+                .setRecipientEmail( inviteCancelledRecipientEmail )
+                .setCompanyName( companyName )
+                .setCancelledBy( cancelledByDisplayName )
+                .build();
+
+        return emailData -> compare( expectedCancelledInviteEmail, List.of( "cancelledBy", "companyName", "to", "subject" ), List.of(), Map.of() ).matches(expectedCancelledInviteEmail);
+    }
+
     public ArgumentMatcher<EmailData> invitationCancelledAndInviteCancelledEmailMatcher( final String invitationCancelledRecipientEmail, final String cancelledByDisplayName, final String cancelledUserDisplayName, final String companyName, final String inviteCancelledRecipientEmail ){
         final var expectedInvitationCancelledEmail = new InvitationCancelledEmailBuilder()
                 .setRecipientEmail( invitationCancelledRecipientEmail )

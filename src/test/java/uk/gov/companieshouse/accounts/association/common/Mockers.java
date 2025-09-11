@@ -2,6 +2,7 @@ package uk.gov.companieshouse.accounts.association.common;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -175,10 +176,10 @@ public class Mockers {
         }
     }
 
-    public void mockUsersServiceToFetchUserDetailsRequest( final String... userIds ){
-        for ( final String userId: userIds ){
+    public void mockUsersServiceToFetchUserDetailsRequest(final String... userIds){
+        for (final String userId: userIds){
             final var userDetails = testDataManager.fetchUserDtos( userId ).getFirst();
-            Mockito.doReturn(userDetails).when( usersService ).retrieveUserDetails( eq(userId), any() );
+            Mockito.lenient().doReturn(userDetails).when(usersService).retrieveUserDetails(eq(userId), any());
         }
     }
 
