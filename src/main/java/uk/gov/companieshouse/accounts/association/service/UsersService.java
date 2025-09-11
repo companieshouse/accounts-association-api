@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import java.net.URI;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -68,10 +69,12 @@ public class UsersService {
     public UsersList searchUserDetails( final List<String> emails ) {
         final var xRequestId = getXRequestId();
         return usersWebClient.get()
-                .uri(UriComponentsBuilder.fromUriString("/users/search")
-                        .queryParam("user_email", emails)
+                .uri(URI.create(UriComponentsBuilder.newInstance()
+                        .path("/users/search")
+                        .queryParam("user_email", "{emails}")
                         .encode()
-                        .build().toString())
+                        .buildAndExpand(String.join(",", emails))
+                        .toUriString()))
                 .retrieve()
                 .bodyToMono( String.class )
                 .map( parseJsonTo( UsersList.class ) )
