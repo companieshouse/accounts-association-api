@@ -43,7 +43,7 @@ public class Mockers {
         final var requestHeadersSpec = Mockito.mock( WebClient.RequestHeadersSpec.class );
         final var responseSpec = Mockito.mock( WebClient.ResponseSpec.class );
 
-        if(isUriString){
+        if( isUriString ){
             Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri );
         }else{
             Mockito.doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(Mockito.any(URI.class));
@@ -54,7 +54,7 @@ public class Mockers {
         Mockito.doReturn( jsonResponse ).when( responseSpec ).bodyToMono( String.class );
     }
 
-    public void mockWebClientForFetchUserDetails( boolean isUriString, final String... userIds ) throws JsonProcessingException {
+    public void mockWebClientForFetchUserDetails( final boolean isUriString, final String... userIds ) throws JsonProcessingException {
         for ( final String userId: userIds ){
             final var user = testDataManager.fetchUserDtos( userId ).getFirst();
             final var uri = String.format( "/users/%s", userId );
@@ -190,7 +190,7 @@ public class Mockers {
         }
     }
 
-    public void mockWebClientForSearchUserDetails( boolean isUriString, final String... userIds ) throws JsonProcessingException {
+    public void mockWebClientForSearchUserDetails( final boolean isUriString, final String... userIds ) throws JsonProcessingException {
         final var users = testDataManager.fetchUserDtos( userIds );
         final var uri = UriComponentsBuilder.fromUriString("/users/search")
                 .queryParam("user_email", users.stream().map( User::getEmail ).toList() )
@@ -259,7 +259,7 @@ public class Mockers {
         }
     }
 
-    public void mockWebClientForFetchCompanyProfileJsonParsingError( final String companyNumber, boolean isUriString ){
+    public void mockWebClientForFetchCompanyProfileJsonParsingError( final String companyNumber, final boolean isUriString ){
         final var uri = String.format( "/company/%s/company-detail", companyNumber );
         mockWebClientJsonParsingError( uri, isUriString );
     }
