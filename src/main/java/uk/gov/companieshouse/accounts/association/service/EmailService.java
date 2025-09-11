@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
@@ -56,6 +57,7 @@ import uk.gov.companieshouse.accounts.association.models.email.builders.YourAuth
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.user.model.User;
+import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.model.EmailData;
 import uk.gov.companieshouse.logging.Logger;
@@ -72,15 +74,21 @@ public class EmailService {
 
     private final UsersService usersService;
     private final CompanyService companyService;
-    private final AssociationsService associationsService;
+    private final TransactionalService transactionalService;
     private final EmailProducer emailProducer;
 
     @Autowired
-    public EmailService(final UsersService usersService, final EmailProducer emailProducer, final CompanyService companyService, final AssociationsService associationsService) {
+    public EmailService(final UsersService usersService, final EmailProducer emailProducer, final CompanyService companyService, final TransactionalService transactionalService) {
         this.usersService = usersService;
         this.companyService = companyService;
-        this.associationsService = associationsService;
+        this.transactionalService = transactionalService;
         this.emailProducer = emailProducer;
+    }
+
+    public void sendAddAssociationStatusUpdateEmails(User targetUser, CompanyDetails companyDetails, AssociationDao targetAssociation) {
+        final var companyNumber = companyDetails.getCompanyNumber();
+        transactionalService.fetchConfirmedUserIds(companyNumber).parallel()
+                .forEach(userId -> sendStatusUpdateEmails(targetAssociation, targetUser, CONFIRMED));
     }
 
     public void sendStatusUpdateEmails(final AssociationDao targetAssociation, final User targetUser, final StatusEnum newStatus) {
@@ -91,7 +99,7 @@ public class EmailService {
         final var oldStatus = targetAssociation.getStatus();
 
         final var cachedCompanyName = companyService.fetchCompanyProfile(targetAssociation.getCompanyNumber()).getCompanyName();
-        final var cachedAssociatedUsers = associationsService.fetchConfirmedUserIds(targetAssociation.getCompanyNumber());
+        final var cachedAssociatedUsers = transactionalService.fetchConfirmedUserIds(targetAssociation.getCompanyNumber());
         final var cachedInvitedByDisplayName = targetAssociation.getInvitations().stream()
                 .max((firstInvitation, secondInvitation) -> firstInvitation.getInvitedAt().isAfter(secondInvitation.getInvitedAt()) ? 1 : -1)
                 .map(InvitationDao::getInvitedBy)
@@ -143,7 +151,7 @@ public class EmailService {
         }
     }
 
-    public void sendAuthCodeConfirmationEmailToAssociatedUser(final String xRequestId, final String companyNumber, String companyName, final String displayName) {
+    private void sendAuthCodeConfirmationEmailToAssociatedUser(final String xRequestId, final String companyNumber, String companyName, final String displayName) {
         final var userDetails = usersService.fetchUserDetails(displayName, xRequestId);
         final var emailData = new AuthCodeConfirmationEmailBuilder()
                 .setRecipientEmail(userDetails.getEmail())
@@ -154,7 +162,7 @@ public class EmailService {
         sendEmail(xRequestId, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendAuthorisationRemovedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String removedByDisplayName, final String removedUserDisplayName) {
+    private void sendAuthorisationRemovedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String removedByDisplayName, final String removedUserDisplayName) {
         final var userDetails = usersService.fetchUserDetails(removedByDisplayName, xRequestId);
         final var emailData = new AuthorisationRemovedEmailBuilder()
                 .setRemovedByDisplayName(removedByDisplayName)
@@ -166,7 +174,7 @@ public class EmailService {
         sendEmail(xRequestId, AUTHORISATION_REMOVED_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendAuthorisationRemovedEmailToRemovedUser(final String xRequestId, final String companyNumber, final String companyName, final String removedByDisplayName, final String userId) {
+    private void sendAuthorisationRemovedEmailToRemovedUser(final String xRequestId, final String companyNumber, final String companyName, final String removedByDisplayName, final String userId) {
         final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
         final var emailData = new YourAuthorisationRemovedEmailBuilder()
                 .setRemovedByDisplayName(removedByDisplayName)
@@ -177,7 +185,7 @@ public class EmailService {
         sendEmail(xRequestId, YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInvitationCancelledEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final String cancelledUserDisplayName) {
+    private void sendInvitationCancelledEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final String cancelledUserDisplayName) {
         if (StringUtils.isBlank(companyNumber)) {
             //TODO: temporary, need to handle this better
             throw new NullPointerException("Company number is null or blank");
@@ -193,7 +201,7 @@ public class EmailService {
         sendEmail(xRequestId, INVITATION_CANCELLED_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInvitationEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String inviterDisplayName, final String inviteeDisplayName, final String recipient) {
+    private void sendInvitationEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String inviterDisplayName, final String inviteeDisplayName, final String recipient) {
         final var userDetails = usersService.fetchUserDetails(recipient, xRequestId);
         final var emailData = new InvitationEmailBuilder()
                 .setInviteeDisplayName(inviteeDisplayName)
@@ -205,7 +213,7 @@ public class EmailService {
         sendEmail(xRequestId, INVITATION_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInvitationAcceptedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String invitedByDisplayName, final String inviteeDisplayName, final String recipient) {
+    private void sendInvitationAcceptedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String invitedByDisplayName, final String inviteeDisplayName, final String recipient) {
         final var userDetails = usersService.fetchUserDetails(recipient, xRequestId);
         final var emailData = new InvitationAcceptedEmailBuilder()
                 .setInviteeDisplayName(inviteeDisplayName)
@@ -217,7 +225,7 @@ public class EmailService {
         sendEmail(xRequestId, INVITATION_ACCEPTED_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInvitationRejectedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String inviteeDisplayName, final String recipient) {
+    private void sendInvitationRejectedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String inviteeDisplayName, final String recipient) {
         final var userDetails = usersService.fetchUserDetails(recipient, xRequestId);
         final var emailData = new InvitationRejectedEmailBuilder()
                 .setInviteeDisplayName(inviteeDisplayName)
@@ -228,7 +236,7 @@ public class EmailService {
         sendEmail(xRequestId, INVITATION_REJECTED_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInviteEmail(final String xRequestId, final String companyNumber, final String companyName, final String inviterDisplayName, final String invitationExpiryTimestamp, final String inviteeEmail){
+    private void sendInviteEmail(final String xRequestId, final String companyNumber, final String companyName, final String inviterDisplayName, final String invitationExpiryTimestamp, final String inviteeEmail){
         final var emailData = new InviteEmailBuilder()
                 .setRecipientEmail(inviteeEmail)
                 .setInviterDisplayName(inviterDisplayName)
@@ -240,7 +248,7 @@ public class EmailService {
         sendEmail(xRequestId, INVITE_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInviteCancelledEmail(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final AssociationDao associationDao){
+    private void sendInviteCancelledEmail(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final AssociationDao associationDao){
         sendInviteCancelledEmailToCancelledUser(xRequestId, companyNumber, companyName, cancelledByDisplayName, associationDao);
         sendInviteCancelationEmailToCancellerUser(xRequestId, companyNumber, companyName, cancelledByDisplayName, associationDao);
     }
@@ -271,7 +279,7 @@ public class EmailService {
         sendEmail(xRequestId, INVITATION_CANCELLED_MESSAGE_TYPE, cancellerEmailData, cancellerLogMessageSupplier);
     }
 
-    public void sendDelegatedRemovalOfMigratedEmail(final String xRequestId, final String companyNumber, final String companyName, final String removedBy, final String recipientEmail) {
+    private void sendDelegatedRemovalOfMigratedEmail(final String xRequestId, final String companyNumber, final String companyName, final String removedBy, final String recipientEmail) {
         final var emailData = new DelegatedRemovalOfMigratedEmailBuilder()
                 .setRemovedBy(removedBy)
                 .setRecipientEmail(recipientEmail)
@@ -281,7 +289,7 @@ public class EmailService {
         sendEmail(xRequestId, DELEGATED_REMOVAL_OF_MIGRATED, emailData, logMessageSupplier);
     }
 
-    public void sendRemoveOfOwnMigratedEmail(final String xRequestId, final String companyNumber, final String companyName, final String userId) {
+    private void sendRemoveOfOwnMigratedEmail(final String xRequestId, final String companyNumber, final String companyName, final String userId) {
         final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
         final var emailData = new RemovalOfOwnMigratedEmailBuilder()
                 .setRecipientEmail(userDetails.getEmail())
@@ -291,7 +299,7 @@ public class EmailService {
         sendEmail(xRequestId, REMOVAL_OF_OWN_MIGRATED, emailData, logMessageSupplier);
     }
 
-    public void sendDelegatedRemovalOfMigratedBatchEmail(final String xRequestId, final String companyNumber, final String companyName, final String removedBy, final String removedUser) {
+    private void sendDelegatedRemovalOfMigratedBatchEmail(final String xRequestId, final String companyNumber, final String companyName, final String removedBy, final String removedUser) {
         final var userDetails = usersService.fetchUserDetails(removedUser, xRequestId);
         final var emailData = new DelegatedRemovalOfMigratedBatchEmailBuilder()
                 .setRemovedBy(removedBy)
