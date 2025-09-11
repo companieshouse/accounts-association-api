@@ -14,23 +14,23 @@ class DelegatedRemovalOfMigratedEmailBuilderTest {
     @Test
     void buildInstantiatesEmailData() {
         final var expectedEmailData = new DelegatedRemovalOfMigratedEmailData();
-        expectedEmailData.setTo( "kpatel@companieshouse.gov.uk" );
-        expectedEmailData.setSubject( "Companies House: authorisation to file online for Tesla not restored" );
-        expectedEmailData.setRemovedBy( "Krishna Patel" );
-        expectedEmailData.setCompanyName( "Tesla" );
+        expectedEmailData.setTo("kpatel@companieshouse.gov.uk");
+        expectedEmailData.setSubject("Companies House: authorisation to file online for Tesla not restored");
+        expectedEmailData.setRemovedBy("Krishna Patel");
+        expectedEmailData.setCompanyName("Tesla");
 
         final var actualEmailData = new DelegatedRemovalOfMigratedEmailBuilder()
-                .setRecipientEmail( "kpatel@companieshouse.gov.uk" )
-                .setRemovedBy( "Krishna Patel" )
-                .setCompanyName( "Tesla" )
+                .setRecipientEmail("kpatel@companieshouse.gov.uk")
+                .setRemovedBy("Krishna Patel")
+                .setCompanyName("Tesla")
                 .build();
 
-        Assertions.assertEquals( expectedEmailData, actualEmailData );
+        Assertions.assertEquals(expectedEmailData, actualEmailData);
     }
 
     @Test
     void buildWithNullsThrowsNullPointerException(){
         final var builder = new DelegatedRemovalOfMigratedEmailBuilder();
-        Assertions.assertThrows( NullPointerException.class, builder::build );
+        Assertions.assertThrows(NullPointerException.class, builder::build);
     }
 }

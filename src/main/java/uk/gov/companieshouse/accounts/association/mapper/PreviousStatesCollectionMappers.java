@@ -18,33 +18,33 @@ public class PreviousStatesCollectionMappers {
 
     private static final String endpointUri = "/associations/%s/previous-states?page_index=%d&items_per_page=%d";
 
-    public PreviousStatesCollectionMappers( final PreviousStatesMapper previousStatesMapper ) {
+    public PreviousStatesCollectionMappers(final PreviousStatesMapper previousStatesMapper) {
         this.previousStatesMapper = previousStatesMapper;
     }
 
-    private Function<List<PreviousState>, PreviousStatesList> mapToPreviousStatesList( final String associationId, final int totalResults, final int pageIndex, final int itemsPerPage ){
+    private Function<List<PreviousState>, PreviousStatesList> mapToPreviousStatesList(final String associationId, final int totalResults, final int pageIndex, final int itemsPerPage){
         return items -> {
-            final var totalPages = (int) Math.ceil( (double) totalResults / itemsPerPage );
+            final var totalPages = (int) Math.ceil((double) totalResults / itemsPerPage);
             return new PreviousStatesList()
-                    .items( items )
-                    .pageNumber( pageIndex )
-                    .itemsPerPage( itemsPerPage )
-                    .totalResults( totalResults )
-                    .totalPages( totalPages )
-                    .links( new Links()
-                            .self( String.format( endpointUri, associationId, pageIndex, itemsPerPage ) )
-                            .next( pageIndex + 1 < totalPages ? String.format( endpointUri, associationId, pageIndex + 1, itemsPerPage ) : "" ) );
+                    .items(items)
+                    .pageNumber(pageIndex)
+                    .itemsPerPage(itemsPerPage)
+                    .totalResults(totalResults)
+                    .totalPages(totalPages)
+                    .links(new Links()
+                            .self(String.format(endpointUri, associationId, pageIndex, itemsPerPage))
+                            .next(pageIndex + 1 < totalPages ? String.format(endpointUri, associationId, pageIndex + 1, itemsPerPage) : ""));
         };
     }
 
-    public PreviousStatesList daoToDto( final AssociationDao association, final int pageIndex, final int itemsPerPage ){
+    public PreviousStatesList daoToDto(final AssociationDao association, final int pageIndex, final int itemsPerPage){
         return association.getPreviousStates()
                 .stream()
-                .sorted( Comparator.comparing( PreviousStatesDao::getChangedAt ).reversed() )
-                .skip((long) pageIndex * itemsPerPage )
-                .limit( itemsPerPage )
-                .map( previousStatesMapper::daoToDto )
-                .collect( Collectors.collectingAndThen( Collectors.toList(), mapToPreviousStatesList( association.getId(), association.getPreviousStates().size(), pageIndex, itemsPerPage ) ) );
+                .sorted(Comparator.comparing(PreviousStatesDao::getChangedAt).reversed())
+                .skip((long) pageIndex * itemsPerPage)
+                .limit(itemsPerPage)
+                .map(previousStatesMapper::daoToDto)
+                .collect(Collectors.collectingAndThen(Collectors.toList(), mapToPreviousStatesList(association.getId(), association.getPreviousStates().size(), pageIndex, itemsPerPage)));
     }
 
 }

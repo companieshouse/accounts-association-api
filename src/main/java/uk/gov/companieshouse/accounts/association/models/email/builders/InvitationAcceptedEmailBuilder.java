@@ -10,12 +10,12 @@ public class InvitationAcceptedEmailBuilder extends EmailBuilder<InvitationAccep
 
     private String inviteeDisplayName;
 
-    public InvitationAcceptedEmailBuilder setInviterDisplayName( final String inviterDisplayName ) {
+    public InvitationAcceptedEmailBuilder setInviterDisplayName(final String inviterDisplayName) {
         this.inviterDisplayName = inviterDisplayName;
         return this;
     }
 
-    public InvitationAcceptedEmailBuilder setInviteeDisplayName( final String inviteeDisplayName ) {
+    public InvitationAcceptedEmailBuilder setInviteeDisplayName(final String inviteeDisplayName) {
         this.inviteeDisplayName = inviteeDisplayName;
         return this;
     }

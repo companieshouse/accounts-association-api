@@ -10,12 +10,12 @@ public class InvitationCancelledEmailBuilder extends EmailBuilder<InvitationCanc
 
     private String cancelledUserDisplayName;
 
-    public InvitationCancelledEmailBuilder setCancelledByDisplayName( final String cancelledByDisplayName ) {
+    public InvitationCancelledEmailBuilder setCancelledByDisplayName(final String cancelledByDisplayName) {
         this.cancelledByDisplayName = cancelledByDisplayName;
         return this;
     }
 
-    public InvitationCancelledEmailBuilder setCancelledUserDisplayName( final String cancelledUserDisplayName ) {
+    public InvitationCancelledEmailBuilder setCancelledUserDisplayName(final String cancelledUserDisplayName) {
         this.cancelledUserDisplayName = cancelledUserDisplayName;
         return this;
     }

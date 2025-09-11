@@ -2,7 +2,7 @@
 #
 # Start script for accounts-association-service
 
-export APP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROXY_ARGS=""
 
 if [[ -z "${MESOS_SLAVE_PID}" ]]; then

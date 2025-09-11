@@ -11,13 +11,13 @@ public class InterceptorConfig implements WebMvcConfigurer {
 
     private final UsersService usersService;
 
-    public InterceptorConfig( final UsersService usersService ) {
+    public InterceptorConfig(final UsersService usersService) {
         this.usersService = usersService;
     }
 
     @Override
-    public void addInterceptors( final InterceptorRegistry registry ) {
-        registry.addInterceptor( new RequestLifecycleInterceptor( usersService ) );
+    public void addInterceptors(final InterceptorRegistry registry) {
+        registry.addInterceptor(new RequestLifecycleInterceptor(usersService));
     }
 
 }

@@ -28,63 +28,63 @@ import java.util.Optional;
 @org.springframework.web.bind.annotation.ControllerAdvice
 public class ControllerAdvice extends ResponseEntityExceptionHandler {
 
-    private <T extends Exception> Errors mapThrownExceptionsToErrors( final T exception, final HttpServletRequest request ){
+    private <T extends Exception> Errors mapThrownExceptionsToErrors(final T exception, final HttpServletRequest request){
         final var url = request.getRequestURL().toString();
-        final var queryParams = Objects.nonNull( request.getQueryString() ) ? "?" + request.getQueryString() : "";
-        final var contextMap = new HashMap<String, Object>( Map.of( "url", url, "query-parameters", queryParams ) );
+        final var queryParams = Objects.nonNull(request.getQueryString()) ? "?" + request.getQueryString() : "";
+        final var contextMap = new HashMap<String, Object>(Map.of("url", url, "query-parameters", queryParams));
 
-        LOGGER.errorContext( getXRequestId(), exception.getMessage(), exception, contextMap );
+        LOGGER.errorContext(getXRequestId(), exception.getMessage(), exception, contextMap);
 
-        return new Errors( serviceErrBuilder().withError( exception.getMessage() ).build() );
+        return new Errors(serviceErrBuilder().withError(exception.getMessage()).build());
     }
 
-    @ExceptionHandler( NotFoundRuntimeException.class )
-    @ResponseStatus( HttpStatus.NOT_FOUND )
+    @ExceptionHandler(NotFoundRuntimeException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
-    public Errors onNotFoundRuntimeException( final NotFoundRuntimeException exception, final HttpServletRequest request ) {
-        return mapThrownExceptionsToErrors( exception, request );
+    public Errors onNotFoundRuntimeException(final NotFoundRuntimeException exception, final HttpServletRequest request) {
+        return mapThrownExceptionsToErrors(exception, request);
     }
 
-    @ExceptionHandler( BadRequestRuntimeException.class )
-    @ResponseStatus( HttpStatus.BAD_REQUEST )
+    @ExceptionHandler(BadRequestRuntimeException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public Errors onBadRequestRuntimeException( final BadRequestRuntimeException exception, final HttpServletRequest request ) {
-        return mapThrownExceptionsToErrors( exception, request );
+    public Errors onBadRequestRuntimeException(final BadRequestRuntimeException exception, final HttpServletRequest request) {
+        return mapThrownExceptionsToErrors(exception, request);
     }
 
-    @ExceptionHandler( InternalServerErrorRuntimeException.class )
-    @ResponseStatus( HttpStatus.INTERNAL_SERVER_ERROR )
+    @ExceptionHandler(InternalServerErrorRuntimeException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ResponseBody
-    public Errors onInternalServerErrorRuntimeException( final InternalServerErrorRuntimeException exception, final HttpServletRequest request ) {
-        return mapThrownExceptionsToErrors( exception, request );
+    public Errors onInternalServerErrorRuntimeException(final InternalServerErrorRuntimeException exception, final HttpServletRequest request) {
+        return mapThrownExceptionsToErrors(exception, request);
     }
 
-    @ExceptionHandler( ForbiddenRuntimeException.class )
-    @ResponseStatus( HttpStatus.FORBIDDEN )
+    @ExceptionHandler(ForbiddenRuntimeException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
     @ResponseBody
-    public Errors onForbiddenRuntimeException( final ForbiddenRuntimeException exception, final HttpServletRequest request ) {
-        return mapThrownExceptionsToErrors( exception, request );
+    public Errors onForbiddenRuntimeException(final ForbiddenRuntimeException exception, final HttpServletRequest request) {
+        return mapThrownExceptionsToErrors(exception, request);
     }
 
-    @ExceptionHandler( Exception.class )
-    @ResponseStatus( HttpStatus.INTERNAL_SERVER_ERROR )
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ResponseBody
-    public Errors onException( final Exception exception, final HttpServletRequest request ) {
-        return mapThrownExceptionsToErrors( exception, request );
+    public Errors onException(final Exception exception, final HttpServletRequest request) {
+        return mapThrownExceptionsToErrors(exception, request);
     }
 
-    @ExceptionHandler( ConstraintViolationException.class )
-    @ResponseStatus( HttpStatus.BAD_REQUEST )
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public Errors onConstraintViolationException( final ConstraintViolationException exception ) {
+    public Errors onConstraintViolationException(final ConstraintViolationException exception) {
         final var errors = new Errors();
         exception.getConstraintViolations()
                 .stream()
-                .map( constraintViolation -> String.format( "%s %s", Optional.of( constraintViolation.getInvalidValue() ).orElse(" " ), constraintViolation.getMessage() ) )
-                .map( error -> invalidBodyBuilderWithLocation( APPLICATION_NAMESPACE ).withError( error ).build() )
-                .forEach( errors::addError );
+                .map(constraintViolation -> String.format("%s %s", Optional.of(constraintViolation.getInvalidValue()).orElse(" "), constraintViolation.getMessage()))
+                .map(error -> invalidBodyBuilderWithLocation(APPLICATION_NAMESPACE).withError(error).build())
+                .forEach(errors::addError);
 
-        LOGGER.errorContext( getXRequestId(), String.format( "Validation Failed with [%s]", parseJsonFrom( errors, "" ) ), exception, null );
+        LOGGER.errorContext(getXRequestId(), String.format("Validation Failed with [%s]", parseJsonFrom(errors, "")), exception, null);
 
         return errors;
     }

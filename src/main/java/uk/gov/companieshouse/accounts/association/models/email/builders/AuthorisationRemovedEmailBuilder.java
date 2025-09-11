@@ -9,12 +9,12 @@ public class AuthorisationRemovedEmailBuilder extends EmailBuilder<Authorisation
     private String removedByDisplayName;
     private String removedUserDisplayName;
 
-    public AuthorisationRemovedEmailBuilder setRemovedByDisplayName( final String removedByDisplayName ) {
+    public AuthorisationRemovedEmailBuilder setRemovedByDisplayName(final String removedByDisplayName) {
         this.removedByDisplayName = removedByDisplayName;
         return this;
     }
 
-    public AuthorisationRemovedEmailBuilder setRemovedUserDisplayName( final String removedUserDisplayName ) {
+    public AuthorisationRemovedEmailBuilder setRemovedUserDisplayName(final String removedUserDisplayName) {
         this.removedUserDisplayName = removedUserDisplayName;
         return this;
     }

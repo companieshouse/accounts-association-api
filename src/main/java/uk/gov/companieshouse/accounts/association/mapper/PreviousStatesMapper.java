@@ -5,10 +5,10 @@ import org.mapstruct.Mapping;
 import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousState;
 
-@Mapper( componentModel = "spring" )
+@Mapper(componentModel = "spring")
 public abstract class PreviousStatesMapper {
 
-    @Mapping( target = "status", expression = "java( PreviousState.StatusEnum.fromValue( previousStatesDao.getStatus() ) )" )
-    public abstract PreviousState daoToDto( final PreviousStatesDao previousStatesDao );
+    @Mapping(target = "status", expression = "java(PreviousState.StatusEnum.fromValue(previousStatesDao.getStatus()))")
+    public abstract PreviousState daoToDto(final PreviousStatesDao previousStatesDao);
 
 }

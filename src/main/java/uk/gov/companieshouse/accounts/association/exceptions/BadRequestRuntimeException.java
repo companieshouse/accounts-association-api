@@ -5,9 +5,9 @@ import static uk.gov.companieshouse.accounts.association.utils.RequestContextUti
 
 public class BadRequestRuntimeException extends RuntimeException {
 
-    public BadRequestRuntimeException( final String exceptionMessage, final Exception loggingMessage ) {
-        super( exceptionMessage );
-        LOGGER.errorContext( getXRequestId(), loggingMessage, null );
+    public BadRequestRuntimeException(final String exceptionMessage, final Exception loggingMessage) {
+        super(exceptionMessage);
+        LOGGER.errorContext(getXRequestId(), loggingMessage, null);
     }
 
 }

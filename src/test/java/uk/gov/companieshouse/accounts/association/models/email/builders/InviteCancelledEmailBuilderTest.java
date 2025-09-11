@@ -14,24 +14,24 @@ class InviteCancelledEmailBuilderTest {
     @Test
     void buildInstantiatesEmailData(){
         final var expectedEmailData = new InviteCancelledEmailData();
-        expectedEmailData.setTo( "kpatel@companieshouse.gov.uk" );
-        expectedEmailData.setSubject( "Companies House: authorisation to file online for Tesla cancelled" );
-        expectedEmailData.setCompanyName( "Tesla" );
-        expectedEmailData.setCancelledBy( "Elon Musk" );
+        expectedEmailData.setTo("kpatel@companieshouse.gov.uk");
+        expectedEmailData.setSubject("Companies House: authorisation to file online for Tesla cancelled");
+        expectedEmailData.setCompanyName("Tesla");
+        expectedEmailData.setCancelledBy("Elon Musk");
 
         final var actualEmailData = new InviteCancelledEmailBuilder()
-                .setRecipientEmail( "kpatel@companieshouse.gov.uk" )
-                .setCompanyName( "Tesla" )
-                .setCancelledBy( "Elon Musk" )
+                .setRecipientEmail("kpatel@companieshouse.gov.uk")
+                .setCompanyName("Tesla")
+                .setCancelledBy("Elon Musk")
                 .build();
 
-        Assertions.assertEquals( expectedEmailData, actualEmailData );
+        Assertions.assertEquals(expectedEmailData, actualEmailData);
     }
 
     @Test
     void buildWithNullsThrowsNullPointerException(){
         final var inviteCancelledEmailBuilder = new InviteCancelledEmailBuilder();
-        Assertions.assertThrows( NullPointerException.class, inviteCancelledEmailBuilder::build);
+        Assertions.assertThrows(NullPointerException.class, inviteCancelledEmailBuilder::build);
     }
 
 }

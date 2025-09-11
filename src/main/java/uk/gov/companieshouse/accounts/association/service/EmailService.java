@@ -40,128 +40,128 @@ import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
 @Service
-@ComponentScan( basePackages = "uk.gov.companieshouse.email_producer" )
+@ComponentScan(basePackages = "uk.gov.companieshouse.email_producer")
 public class EmailService {
 
-    @Value( "${invitation.url}" )
+    @Value("${invitation.url}")
     private String invitationLink;
 
-    protected static final Logger LOG = LoggerFactory.getLogger( APPLICATION_NAMESPACE );
+    protected static final Logger LOG = LoggerFactory.getLogger(APPLICATION_NAMESPACE);
 
     private final UsersService usersService;
     private final EmailProducer emailProducer;
 
     @Autowired
-    public EmailService( final UsersService usersService, final EmailProducer emailProducer ) {
+    public EmailService(final UsersService usersService, final EmailProducer emailProducer) {
         this.usersService = usersService;
         this.emailProducer = emailProducer;
     }
 
-    private void sendEmail( final String xRequestId, final MessageType messageType, final EmailData emailData, final EmailNotification logMessageSupplier ){
+    private void sendEmail(final String xRequestId, final MessageType messageType, final EmailData emailData, final EmailNotification logMessageSupplier){
         try {
-            emailProducer.sendEmail( emailData, messageType.getValue() );
-            LOG.infoContext( xRequestId, logMessageSupplier.toMessage(), null );
-        } catch ( Exception exception ){
-            LOG.errorContext( xRequestId, new Exception( logMessageSupplier.toMessageSendingFailureLoggingMessage() ), null );
+            emailProducer.sendEmail(emailData, messageType.getValue());
+            LOG.infoContext(xRequestId, logMessageSupplier.toMessage(), null);
+        } catch (Exception exception){
+            LOG.errorContext(xRequestId, new Exception(logMessageSupplier.toMessageSendingFailureLoggingMessage()), null);
             throw exception;
         }
     }
 
     public void sendAuthCodeConfirmationEmailToAssociatedUser(final String xRequestId, final String companyNumber, String companyName, final String displayName) {
-        final var userDetails = usersService.fetchUserDetails( displayName, xRequestId );
+        final var userDetails = usersService.fetchUserDetails(displayName, xRequestId);
         final var emailData = new AuthCodeConfirmationEmailBuilder()
-                .setRecipientEmail( userDetails.getEmail() )
-                .setDisplayName( displayName )
-                .setCompanyName( companyName )
+                .setRecipientEmail(userDetails.getEmail())
+                .setDisplayName(displayName)
+                .setCompanyName(companyName)
                 .build();
-        final var logMessageSupplier = new EmailNotification( AUTH_CODE_CONFIRMATION_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber );
-        sendEmail( xRequestId, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE, emailData, logMessageSupplier );
+        final var logMessageSupplier = new EmailNotification(AUTH_CODE_CONFIRMATION_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber);
+        sendEmail(xRequestId, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
     public void sendAuthorisationRemovedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String removedByDisplayName, final String removedUserDisplayName) {
-        final var userDetails = usersService.fetchUserDetails( removedByDisplayName, xRequestId );
+        final var userDetails = usersService.fetchUserDetails(removedByDisplayName, xRequestId);
         final var emailData = new AuthorisationRemovedEmailBuilder()
-                .setRemovedByDisplayName( removedByDisplayName )
-                .setRemovedUserDisplayName( removedUserDisplayName )
-                .setRecipientEmail( userDetails.getEmail() )
-                .setCompanyName( companyName )
+                .setRemovedByDisplayName(removedByDisplayName)
+                .setRemovedUserDisplayName(removedUserDisplayName)
+                .setRecipientEmail(userDetails.getEmail())
+                .setCompanyName(companyName)
                 .build();
-        final var logMessageSupplier = new EmailNotification( AUTHORISATION_REMOVED_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber );
-        sendEmail( xRequestId, AUTHORISATION_REMOVED_MESSAGE_TYPE, emailData, logMessageSupplier );
+        final var logMessageSupplier = new EmailNotification(AUTHORISATION_REMOVED_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber);
+        sendEmail(xRequestId, AUTHORISATION_REMOVED_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
     public void sendAuthorisationRemovedEmailToRemovedUser(final String xRequestId, final String companyNumber, final String companyName, final String removedByDisplayName, final String userId) {
-        final var userDetails = usersService.fetchUserDetails( userId, xRequestId );
+        final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
         final var emailData = new YourAuthorisationRemovedEmailBuilder()
-                .setRemovedByDisplayName( removedByDisplayName )
-                .setRecipientEmail( userDetails.getEmail() )
-                .setCompanyName( companyName )
+                .setRemovedByDisplayName(removedByDisplayName)
+                .setRecipientEmail(userDetails.getEmail())
+                .setCompanyName(companyName)
                 .build();
-        final var logMessageSupplier = new EmailNotification( YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE, removedByDisplayName, emailData.getTo(), companyNumber );
-        sendEmail( xRequestId, YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE, emailData, logMessageSupplier );
+        final var logMessageSupplier = new EmailNotification(YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE, removedByDisplayName, emailData.getTo(), companyNumber);
+        sendEmail(xRequestId, YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInvitationCancelledEmailToAssociatedUser( final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final String cancelledUserDisplayName ) {
+    public void sendInvitationCancelledEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final String cancelledUserDisplayName) {
         if (StringUtils.isBlank(companyNumber)) {
             //TODO: temporary, need to handle this better
             throw new NullPointerException("Company number is null or blank");
         }
-        final var userDetails = usersService.fetchUserDetails( cancelledUserDisplayName, xRequestId );
+        final var userDetails = usersService.fetchUserDetails(cancelledUserDisplayName, xRequestId);
         final var emailData = new InvitationCancelledEmailBuilder()
-                .setCancelledByDisplayName( cancelledByDisplayName )
-                .setCancelledUserDisplayName( cancelledUserDisplayName )
-                .setRecipientEmail( userDetails.getEmail() )
-                .setCompanyName( companyName )
+                .setCancelledByDisplayName(cancelledByDisplayName)
+                .setCancelledUserDisplayName(cancelledUserDisplayName)
+                .setRecipientEmail(userDetails.getEmail())
+                .setCompanyName(companyName)
                 .build();
-        final var logMessageSupplier = new EmailNotification( INVITATION_CANCELLED_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber );
-        sendEmail( xRequestId, INVITATION_CANCELLED_MESSAGE_TYPE, emailData, logMessageSupplier );
+        final var logMessageSupplier = new EmailNotification(INVITATION_CANCELLED_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber);
+        sendEmail(xRequestId, INVITATION_CANCELLED_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInvitationEmailToAssociatedUser( final String xRequestId, final String companyNumber, final String companyName, final String inviterDisplayName, final String inviteeDisplayName, final String recipient ) {
-        final var userDetails = usersService.fetchUserDetails( recipient, xRequestId );
+    public void sendInvitationEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String inviterDisplayName, final String inviteeDisplayName, final String recipient) {
+        final var userDetails = usersService.fetchUserDetails(recipient, xRequestId);
         final var emailData = new InvitationEmailBuilder()
-                .setInviteeDisplayName( inviteeDisplayName )
-                .setInviterDisplayName( inviterDisplayName )
-                .setRecipientEmail( userDetails.getEmail() )
-                .setCompanyName( companyName )
+                .setInviteeDisplayName(inviteeDisplayName)
+                .setInviterDisplayName(inviterDisplayName)
+                .setRecipientEmail(userDetails.getEmail())
+                .setCompanyName(companyName)
                 .build();
-        final var logMessageSupplier = new EmailNotification( INVITATION_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber );
-        sendEmail( xRequestId, INVITATION_MESSAGE_TYPE, emailData, logMessageSupplier );
+        final var logMessageSupplier = new EmailNotification(INVITATION_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber);
+        sendEmail(xRequestId, INVITATION_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInvitationAcceptedEmailToAssociatedUser( final String xRequestId, final String companyNumber, final String companyName, final String invitedByDisplayName, final String inviteeDisplayName, final String recipient ) {
-        final var userDetails = usersService.fetchUserDetails( recipient, xRequestId );
+    public void sendInvitationAcceptedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String invitedByDisplayName, final String inviteeDisplayName, final String recipient) {
+        final var userDetails = usersService.fetchUserDetails(recipient, xRequestId);
         final var emailData = new InvitationAcceptedEmailBuilder()
-                .setInviteeDisplayName( inviteeDisplayName )
-                .setInviterDisplayName( invitedByDisplayName )
-                .setRecipientEmail( userDetails.getEmail() )
-                .setCompanyName( companyName )
+                .setInviteeDisplayName(inviteeDisplayName)
+                .setInviterDisplayName(invitedByDisplayName)
+                .setRecipientEmail(userDetails.getEmail())
+                .setCompanyName(companyName)
                 .build();
-        final var logMessageSupplier = new EmailNotification( INVITATION_ACCEPTED_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber );
-        sendEmail( xRequestId, INVITATION_ACCEPTED_MESSAGE_TYPE, emailData, logMessageSupplier );
+        final var logMessageSupplier = new EmailNotification(INVITATION_ACCEPTED_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber);
+        sendEmail(xRequestId, INVITATION_ACCEPTED_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInvitationRejectedEmailToAssociatedUser( final String xRequestId, final String companyNumber, final String companyName, final String inviteeDisplayName, final String recipient ) {
-        final var userDetails = usersService.fetchUserDetails( recipient, xRequestId);
+    public void sendInvitationRejectedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String inviteeDisplayName, final String recipient) {
+        final var userDetails = usersService.fetchUserDetails(recipient, xRequestId);
         final var emailData = new InvitationRejectedEmailBuilder()
-                .setInviteeDisplayName( inviteeDisplayName )
-                .setRecipientEmail( userDetails.getEmail() )
-                .setCompanyName( companyName )
+                .setInviteeDisplayName(inviteeDisplayName)
+                .setRecipientEmail(userDetails.getEmail())
+                .setCompanyName(companyName)
                 .build();
-        final var logMessageSupplier = new EmailNotification( INVITATION_REJECTED_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber );
-        sendEmail( xRequestId, INVITATION_REJECTED_MESSAGE_TYPE, emailData, logMessageSupplier );
+        final var logMessageSupplier = new EmailNotification(INVITATION_REJECTED_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber);
+        sendEmail(xRequestId, INVITATION_REJECTED_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInviteEmail( final String xRequestId, final String companyNumber, final String companyName, final String inviterDisplayName, final String invitationExpiryTimestamp, final String inviteeEmail ){
+    public void sendInviteEmail(final String xRequestId, final String companyNumber, final String companyName, final String inviterDisplayName, final String invitationExpiryTimestamp, final String inviteeEmail){
         final var emailData = new InviteEmailBuilder()
-                .setRecipientEmail( inviteeEmail )
-                .setInviterDisplayName( inviterDisplayName )
-                .setInvitationExpiryTimestamp( invitationExpiryTimestamp )
-                .setInvitationLink( invitationLink )
-                .setCompanyName( companyName )
+                .setRecipientEmail(inviteeEmail)
+                .setInviterDisplayName(inviterDisplayName)
+                .setInvitationExpiryTimestamp(invitationExpiryTimestamp)
+                .setInvitationLink(invitationLink)
+                .setCompanyName(companyName)
                 .build();
-        final var logMessageSupplier = new EmailNotification( INVITE_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber ).setInvitationExpiryTimestamp( invitationExpiryTimestamp );
-        sendEmail( xRequestId, INVITE_MESSAGE_TYPE, emailData, logMessageSupplier );
+        final var logMessageSupplier = new EmailNotification(INVITE_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber).setInvitationExpiryTimestamp(invitationExpiryTimestamp);
+        sendEmail(xRequestId, INVITE_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
     public void sendInviteCancelledEmail(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final AssociationDao associationDao){
@@ -195,35 +195,34 @@ public class EmailService {
         sendEmail(xRequestId, INVITATION_CANCELLED_MESSAGE_TYPE, cancellerEmailData, cancellerLogMessageSupplier);
     }
 
-    public void sendDelegatedRemovalOfMigratedEmail( final String xRequestId, final String companyNumber, final String companyName, final String removedBy, final String recipientEmail ) {
+    public void sendDelegatedRemovalOfMigratedEmail(final String xRequestId, final String companyNumber, final String companyName, final String removedBy, final String recipientEmail) {
         final var emailData = new DelegatedRemovalOfMigratedEmailBuilder()
-                .setRemovedBy( removedBy )
-                .setRecipientEmail( recipientEmail )
-                .setCompanyName( companyName )
+                .setRemovedBy(removedBy)
+                .setRecipientEmail(recipientEmail)
+                .setCompanyName(companyName)
                 .build();
-        final var logMessageSupplier = new EmailNotification( DELEGATED_REMOVAL_OF_MIGRATED, removedBy, emailData.getTo(), companyNumber );
-        sendEmail( xRequestId, DELEGATED_REMOVAL_OF_MIGRATED, emailData, logMessageSupplier );
+        final var logMessageSupplier = new EmailNotification(DELEGATED_REMOVAL_OF_MIGRATED, removedBy, emailData.getTo(), companyNumber);
+        sendEmail(xRequestId, DELEGATED_REMOVAL_OF_MIGRATED, emailData, logMessageSupplier);
     }
 
-    public void sendRemoveOfOwnMigratedEmail( final String xRequestId, final String companyNumber, final String companyName, final String userId ) {
-        final var userDetails = usersService.fetchUserDetails( userId, xRequestId );
+    public void sendRemoveOfOwnMigratedEmail(final String xRequestId, final String companyNumber, final String companyName, final String userId) {
+        final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
         final var emailData = new RemovalOfOwnMigratedEmailBuilder()
-                .setRecipientEmail( userDetails.getEmail() )
-                .setCompanyName( companyName )
+                .setRecipientEmail(userDetails.getEmail())
+                .setCompanyName(companyName)
                 .build();
-        final var logMessageSupplier = new EmailNotification( REMOVAL_OF_OWN_MIGRATED, userDetails.getEmail(), userDetails.getEmail(), companyNumber );
-        sendEmail( xRequestId, REMOVAL_OF_OWN_MIGRATED, emailData, logMessageSupplier );
+        final var logMessageSupplier = new EmailNotification(REMOVAL_OF_OWN_MIGRATED, userDetails.getEmail(), userDetails.getEmail(), companyNumber);
+        sendEmail(xRequestId, REMOVAL_OF_OWN_MIGRATED, emailData, logMessageSupplier);
     }
 
-    public void sendDelegatedRemovalOfMigratedBatchEmail(final String xRequestId, final String companyNumber, final String companyName, final String removedBy, final String removedUser ) {
+    public void sendDelegatedRemovalOfMigratedBatchEmail(final String xRequestId, final String companyNumber, final String companyName, final String removedBy, final String removedUser) {
         final var userDetails = usersService.fetchUserDetails(removedUser, xRequestId);
         final var emailData = new DelegatedRemovalOfMigratedBatchEmailBuilder()
                 .setRemovedBy(removedBy)
                 .setRemovedUser(removedUser)
                 .setRecipientEmail(userDetails.getEmail())
                 .setCompanyName(companyName).build();
-        final var logMessageSupplier = new EmailNotification(DELEGATED_REMOVAL_OF_MIGRATED_BATCH,
-                APPLICATION_NAMESPACE, emailData.getTo(), companyNumber);
+        final var logMessageSupplier = new EmailNotification(DELEGATED_REMOVAL_OF_MIGRATED_BATCH, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber);
         sendEmail(xRequestId, DELEGATED_REMOVAL_OF_MIGRATED_BATCH, emailData, logMessageSupplier);
     }
 }

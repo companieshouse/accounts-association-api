@@ -10,7 +10,7 @@ public class RemovalOfOwnMigratedEmailData extends EmailData {
 
     public RemovalOfOwnMigratedEmailData(){}
 
-    public RemovalOfOwnMigratedEmailData( String companyName ) {
+    public RemovalOfOwnMigratedEmailData(String companyName) {
         this.companyName = companyName;
     }
 

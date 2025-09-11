@@ -32,18 +32,18 @@
 //
 //    @BeforeEach
 //    void setup(){
-//        mockers = new Mockers( null, null, null, usersService );
+//        mockers = new Mockers(null, null, null, usersService);
 //    }
 //
 //    @Test
 //    void daoToDtoMapsInvitationDaoToInvitation(){
-//        mockers.mockUsersServiceFetchUserDetails( "666" );
-//        final var invitationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst().getInvitations().getFirst();
-//        final var invitationDto = invitationsMapper.daoToDto( invitationDao, "1" );
-//        Assertions.assertEquals( "homer.simpson@springfield.com", invitationDto.getInvitedBy() );
-//        Assertions.assertEquals( localDateTimeToNormalisedString( invitationDao.getInvitedAt() ), reduceTimestampResolution( invitationDto.getInvitedAt() ) );
-//        Assertions.assertEquals( "1", invitationDto.getAssociationId() );
-//        Assertions.assertTrue( invitationDto.getIsActive() );
+//        mockers.mockUsersServiceFetchUserDetails("666");
+//        final var invitationDao = testDataManager.fetchAssociationDaos("1").getFirst().getInvitations().getFirst();
+//        final var invitationDto = invitationsMapper.daoToDto(invitationDao, "1");
+//        Assertions.assertEquals("homer.simpson@springfield.com", invitationDto.getInvitedBy());
+//        Assertions.assertEquals(localDateTimeToNormalisedString(invitationDao.getInvitedAt()), reduceTimestampResolution(invitationDto.getInvitedAt()));
+//        Assertions.assertEquals("1", invitationDto.getAssociationId());
+//        Assertions.assertTrue(invitationDto.getIsActive());
 //    }
 //
 //}

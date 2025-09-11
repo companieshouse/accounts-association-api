@@ -26,28 +26,28 @@ import uk.gov.companieshouse.api.filter.CustomCorsFilter;
 @EnableWebSecurity
 public class WebSecurityConfig {
 
-    private static final Supplier<List<String>> externalMethods = () -> List.of( GET.name() );
+    private static final Supplier<List<String>> externalMethods = () -> List.of(GET.name());
 
     @Bean
-    public SecurityFilterChain filterChain( final HttpSecurity http ) throws Exception {
-        http.cors( AbstractHttpConfigurer::disable )
-                .sessionManagement( s -> s.sessionCreationPolicy( SessionCreationPolicy.STATELESS ) )
-                .csrf( AbstractHttpConfigurer::disable )
-                .addFilterBefore( new CustomCorsFilter( externalMethods.get() ), CsrfFilter.class )
-                .addFilterAfter( new UserAuthenticationFilter(), CsrfFilter.class )
-                .authorizeHttpRequests( request -> request
-                        .requestMatchers( GET, "/associations-api/healthcheck" ).permitAll()
-                        .requestMatchers( GET,"/associations" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE ) )
-                        .requestMatchers( POST,"/associations" ).hasAnyRole( getValues( KEY_ROLE ) )
-                        .requestMatchers("/associations/invitations" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE ) )
-                        .requestMatchers( GET,"/associations/*/invitations" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE ) )
-                        .requestMatchers( GET,"/associations/*" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_READ_ROLE, KEY_ROLE ) )
-                        .requestMatchers( GET,"/associations/companies/*" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_READ_ROLE, KEY_ROLE ) )
-                        .requestMatchers( POST,"/associations/companies/*/search" ).hasAnyRole( getValues( KEY_ROLE ) )
-                        .requestMatchers( GET,"/associations/*/previous-states" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_READ_ROLE ) )
-                        .requestMatchers( PATCH,"/associations/*" ).hasAnyRole( getValues( BASIC_OAUTH_ROLE, ADMIN_UPDATE_ROLE, KEY_ROLE ) )
+    public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
+        http.cors(AbstractHttpConfigurer::disable)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(AbstractHttpConfigurer::disable)
+                .addFilterBefore(new CustomCorsFilter(externalMethods.get()), CsrfFilter.class)
+                .addFilterAfter(new UserAuthenticationFilter(), CsrfFilter.class)
+                .authorizeHttpRequests(request -> request
+                        .requestMatchers(GET, "/associations-api/healthcheck").permitAll()
+                        .requestMatchers(GET,"/associations").hasAnyRole(getValues(BASIC_OAUTH_ROLE))
+                        .requestMatchers(POST,"/associations").hasAnyRole(getValues(KEY_ROLE))
+                        .requestMatchers("/associations/invitations").hasAnyRole(getValues(BASIC_OAUTH_ROLE))
+                        .requestMatchers(GET,"/associations/*/invitations").hasAnyRole(getValues(BASIC_OAUTH_ROLE))
+                        .requestMatchers(GET,"/associations/*").hasAnyRole(getValues(BASIC_OAUTH_ROLE, ADMIN_READ_ROLE, KEY_ROLE))
+                        .requestMatchers(GET,"/associations/companies/*").hasAnyRole(getValues(BASIC_OAUTH_ROLE, ADMIN_READ_ROLE, KEY_ROLE))
+                        .requestMatchers(POST,"/associations/companies/*/search").hasAnyRole(getValues(KEY_ROLE))
+                        .requestMatchers(GET,"/associations/*/previous-states").hasAnyRole(getValues(BASIC_OAUTH_ROLE, ADMIN_READ_ROLE))
+                        .requestMatchers(PATCH,"/associations/*").hasAnyRole(getValues(BASIC_OAUTH_ROLE, ADMIN_UPDATE_ROLE, KEY_ROLE))
                         .anyRequest().denyAll()
-                );
+               );
         return http.build();
 
     }

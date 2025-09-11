@@ -8,7 +8,7 @@ public class DelegatedRemovalOfMigratedEmailBuilder extends EmailBuilder<Delegat
 
     private String removedBy;
 
-    public DelegatedRemovalOfMigratedEmailBuilder setRemovedBy( final String removedBy ){
+    public DelegatedRemovalOfMigratedEmailBuilder setRemovedBy(final String removedBy){
         this.removedBy = removedBy;
         return this;
     }

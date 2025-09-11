@@ -8,7 +8,7 @@ public class AuthCodeConfirmationEmailBuilder extends EmailBuilder<AuthCodeConfi
 
     private String displayName;
 
-    public AuthCodeConfirmationEmailBuilder setDisplayName( final String displayName ){
+    public AuthCodeConfirmationEmailBuilder setDisplayName(final String displayName){
         this.displayName = displayName;
         return this;
     }

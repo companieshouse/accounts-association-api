@@ -43,49 +43,49 @@ public class AssociationsListForCompanyController implements AssociationDataForC
     }
 
     @Override
-    public ResponseEntity<AssociationsList> getAssociationsForCompany( final String companyNumber, final Boolean includeRemoved, final Integer pageIndex, final Integer itemsPerPage ) {
-        LOGGER.infoContext( getXRequestId(), String.format( "Received request with company_number=%s, includeRemoved=%b, itemsPerPage=%d, pageIndex=%d.", companyNumber, includeRemoved, itemsPerPage, pageIndex ),null );
+    public ResponseEntity<AssociationsList> getAssociationsForCompany(final String companyNumber, final Boolean includeRemoved, final Integer pageIndex, final Integer itemsPerPage) {
+        LOGGER.infoContext(getXRequestId(), String.format("Received request with company_number=%s, includeRemoved=%b, itemsPerPage=%d, pageIndex=%d.", companyNumber, includeRemoved, itemsPerPage, pageIndex),null);
 
-        if ( pageIndex < 0 || itemsPerPage <= 0 ){
-            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
+        if (pageIndex < 0 || itemsPerPage <= 0){
+            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(PAGINATION_IS_MALFORMED));
         }
 
-        if ( !associationsService.confirmedAssociationExists( companyNumber, getEricIdentity() ) && !hasAdminPrivilege( ADMIN_READ_PERMISSION ) && isOAuth2Request() ){
-            throw new ForbiddenRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user is not permitted to retrieve data." ) );
+        if (!associationsService.confirmedAssociationExists(companyNumber, getEricIdentity()) && !hasAdminPrivilege(ADMIN_READ_PERMISSION) && isOAuth2Request()){
+            throw new ForbiddenRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("Requesting user is not permitted to retrieve data."));
         }
 
-        final var companyProfile = companyService.fetchCompanyProfile( companyNumber );
-        final var statuses = includeRemoved ? fetchAllStatusesWithout( Set.of() ) : fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) );
-        final var associationsList = associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyProfile, statuses, null, null, pageIndex, itemsPerPage );
+        final var companyProfile = companyService.fetchCompanyProfile(companyNumber);
+        final var statuses = includeRemoved ? fetchAllStatusesWithout(Set.of()) : fetchAllStatusesWithout(Set.of(StatusEnum.REMOVED));
+        final var associationsList = associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses(companyProfile, statuses, null, null, pageIndex, itemsPerPage);
 
-        return new ResponseEntity<>( associationsList, OK );
+        return new ResponseEntity<>(associationsList, OK);
     }
 
     @Override
-    public ResponseEntity<Association> getAssociationsForCompanyUserAndStatus( final String companyNumber, final FetchRequestBodyPost requestBodyPost ) {
-        LOGGER.infoContext( getXRequestId(), String.format( "Received request with company_number=%s and user_id=%s. user_email was provided: %b.", companyNumber, requestBodyPost.getUserId(), Objects.nonNull( requestBodyPost.getUserEmail() ) ),null );
+    public ResponseEntity<Association> getAssociationsForCompanyUserAndStatus(final String companyNumber, final FetchRequestBodyPost requestBodyPost) {
+        LOGGER.infoContext(getXRequestId(), String.format("Received request with company_number=%s and user_id=%s. user_email was provided: %b.", companyNumber, requestBodyPost.getUserId(), Objects.nonNull(requestBodyPost.getUserEmail())),null);
 
         final var userId = requestBodyPost.getUserId();
         final var userEmail = requestBodyPost.getUserEmail();
-        final var statuses =  Optional.ofNullable( requestBodyPost.getStatus() )
-                .filter( statusEnums -> !statusEnums.isEmpty() )
-                .orElse( List.of( FetchRequestBodyPost.StatusEnum.CONFIRMED ) )
+        final var statuses =  Optional.ofNullable(requestBodyPost.getStatus())
+                .filter(statusEnums -> !statusEnums.isEmpty())
+                .orElse(List.of(FetchRequestBodyPost.StatusEnum.CONFIRMED))
                 .stream()
-                .map( FetchRequestBodyPost.StatusEnum::getValue )
-                .map( StatusEnum::fromValue )
+                .map(FetchRequestBodyPost.StatusEnum::getValue)
+                .map(StatusEnum::fromValue)
                 .collect(Collectors.toSet());
 
-        if ( Objects.nonNull( userId ) == Objects.nonNull( userEmail ) ){
-            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN,  new Exception( "Only one of user_id or user_email must be present" ) );
+        if (Objects.nonNull(userId) == Objects.nonNull(userEmail)){
+            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN,  new Exception("Only one of user_id or user_email must be present"));
         }
 
-        final var companyProfile = companyService.fetchCompanyProfile( companyNumber );
-        final var user = usersService.retrieveUserDetails( userId, userEmail );
-        final var targetUserEmail =  Objects.nonNull( user ) ? user.getEmail() : userEmail;
+        final var companyProfile = companyService.fetchCompanyProfile(companyNumber);
+        final var user = usersService.retrieveUserDetails(userId, userEmail);
+        final var targetUserEmail =  Objects.nonNull(user) ? user.getEmail() : userEmail;
 
-        return associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( companyProfile, statuses, user, targetUserEmail )
-                .map( association -> new ResponseEntity<>( association, OK ) )
-                .orElseThrow( () -> new NotFoundRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Association not found") ) );
+        return associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses(companyProfile, statuses, user, targetUserEmail)
+                .map(association -> new ResponseEntity<>(association, OK))
+                .orElseThrow(() -> new NotFoundRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("Association not found")));
 
     }
 

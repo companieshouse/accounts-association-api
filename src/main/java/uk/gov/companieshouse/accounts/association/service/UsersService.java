@@ -178,7 +178,7 @@ public class UsersService {
                 .buildAndExpand(userId)
                 .toUri();
 
-        LOGGER.infoContext(xRequestId, String.format("Starting request to %s. Attempting to retrieve user details for: %s", uri, userId), null );
+        LOGGER.infoContext(xRequestId, String.format("Starting request to %s. Attempting to retrieve user details for: %s", uri, userId), null);
 
         final var response = usersRestClient.get()
                 .uri(uri)

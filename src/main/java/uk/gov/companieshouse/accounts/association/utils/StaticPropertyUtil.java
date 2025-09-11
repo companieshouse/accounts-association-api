@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class StaticPropertyUtil {
 
-    @Value( "${spring.application.name}" )
+    @Value("${spring.application.name}")
     private String applicationNameSpace;
 
     public static String APPLICATION_NAMESPACE;
