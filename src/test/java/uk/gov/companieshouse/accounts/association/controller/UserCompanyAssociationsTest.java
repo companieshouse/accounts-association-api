@@ -46,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
@@ -612,9 +613,11 @@ class UserCompanyAssociationsTest {
         final var company = testDataManager.fetchCompanyDetailsDtos("111111").getFirst();
         final var page = new PageImpl<>(List.of(associationDao), PageRequest.of(1,15),15);
 
-        mockers.mockUsersServiceFetchUserDetails("666");
-        mockers.mockCompanyServiceFetchCompanyProfile("111111");
+        Mockito.doReturn(company).when(companyService).fetchCompanyProfile("111111");
+        Mockito.doReturn(user, user).when(usersService).fetchUserDetails(eq("666"), any());
         Mockito.doReturn(page).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(user, "111111",0,15);
+        Mockito.doReturn(Stream.of("5555")).when(associationsService).fetchConfirmedUserIds("111111");
+
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "666")
@@ -625,8 +628,7 @@ class UserCompanyAssociationsTest {
                         .content("{\"company_number\":\"111111\", \"user_id\":\"666\"}"))
                 .andExpect(status().isCreated());
 
-        //TODO: logic problem?
-        Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq("111111"), argThat("Wayne Enterprises"::equals), eq("homer.simpson@springfield.com"));
+        Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq("111111"), eq("Wayne Enterprises"), eq("homer.simpson@springfield.com"));
     }
 
     @Test
@@ -639,6 +641,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(user).when(usersService).fetchUserDetails(eq("5555"), any());
         Mockito.doReturn(company).when(companyService).fetchCompanyProfile("111111");
         Mockito.doReturn(page).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(user,"111111",0,15);
+        Mockito.doReturn(Stream.of("5555")).when(associationsService).fetchConfirmedUserIds("111111");
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "5555")
@@ -649,7 +652,6 @@ class UserCompanyAssociationsTest {
                         .content("{\"company_number\":\"111111\", \"user_id\":\"5555\"}"))
                 .andExpect(status().isCreated());
 
-        //TODO: logic problem?
         Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq("111111"), eq("Wayne Enterprises"), eq("ross@friends.com"));
     }
 
