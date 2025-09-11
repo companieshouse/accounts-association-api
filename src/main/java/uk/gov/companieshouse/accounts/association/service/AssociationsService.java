@@ -1,6 +1,7 @@
 package uk.gov.companieshouse.accounts.association.service;
 
 import java.util.List;
+import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -92,9 +93,9 @@ public class AssociationsService {
     }
 
     @Transactional(readOnly = true)
-    public Flux<String> fetchConfirmedUserIds(final String companyNumber) {
+    public Stream<String> fetchConfirmedUserIds(final String companyNumber) {
         LOGGER.debugContext(getXRequestId(), String.format("Attempting to fetch user_id's for confirmed associations at company %s", companyNumber), null);
-        return Flux.fromStream(associationsRepository.fetchConfirmedAssociations(companyNumber).map(AssociationDao::getUserId));
+        return associationsRepository.fetchConfirmedAssociations(companyNumber).map(AssociationDao::getUserId);
     }
 
     @Transactional(readOnly = true)

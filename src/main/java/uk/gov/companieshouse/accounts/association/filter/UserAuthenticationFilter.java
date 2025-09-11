@@ -17,6 +17,7 @@ import static uk.gov.companieshouse.api.util.security.RequestUtils.getRequestHea
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.ConstraintViolationException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -87,8 +88,13 @@ public class UserAuthenticationFilter extends OncePerRequestFilter {
             setSpringRoles(requestContextData, computeSpringRole(requestContextData));
             filterChain.doFilter(request, response);
         } catch (Exception exception) {
+            if (exception.getCause() instanceof ConstraintViolationException) {
+                LOGGER.errorContext(getRequestHeader(request, X_REQUEST_ID), exception, null);
+                response.setStatus(400);
+            } else {
+                response.setStatus(403);
+            }
             LOGGER.errorContext(getRequestHeader(request, X_REQUEST_ID), exception, null);
-            response.setStatus(403);
         } finally {
             SecurityContextHolder.clearContext();
         }
