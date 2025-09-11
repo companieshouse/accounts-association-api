@@ -49,9 +49,9 @@
 //import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 //import uk.gov.companieshouse.api.accounts.associations.model.Links;
 //
-//@WebMvcTest( UserCompanyInvitations.class )
-//@Import( WebSecurityConfig.class )
-//@Tag( "unit-test" )
+//@WebMvcTest(UserCompanyInvitations.class)
+//@Import(WebSecurityConfig.class)
+//@Tag("unit-test")
 //class UserCompanyInvitationsTest {
 //
 //    @Autowired
@@ -85,101 +85,101 @@
 //
 //    @BeforeEach
 //    public void setup() {
-//        mockers = new Mockers( null, null, companyService, usersService );
-//        mockMvc = MockMvcBuilders.webAppContextSetup( context )
-//                .apply( SecurityMockMvcConfigurers.springSecurity() )
+//        mockers = new Mockers(null, null, companyService, usersService);
+//        mockMvc = MockMvcBuilders.webAppContextSetup(context)
+//                .apply(SecurityMockMvcConfigurers.springSecurity())
 //                .build();
 //    }
 //
 //    @Test
 //    void fetchActiveInvitationsForUserWithoutEricIdentityReturnsForbidden() throws Exception {
-//        mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+//        mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
 //                        .header("X-Request-Id", "theId123")
 //                        .header("ERIC-Identity-Type", "oauth2")
-//                        .header("ERIC-Authorised-Key-Roles", "*") )
-//                .andExpect( status().isForbidden() );
+//                        .header("ERIC-Authorised-Key-Roles", "*"))
+//                .andExpect(status().isForbidden());
 //    }
 //
 //    @Test
 //    void fetchActiveInvitationsForUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetailsNotFound( "$$$$" );
+//        mockers.mockUsersServiceFetchUserDetailsNotFound("$$$$");
 //
-//        mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+//        mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
 //                        .header("X-Request-Id", "theId123")
 //                        .header("Eric-identity", "$$$$")
 //                        .header("ERIC-Identity-Type", "oauth2")
-//                        .header("ERIC-Authorised-Key-Roles", "*") )
-//                .andExpect( status().isForbidden() );
+//                        .header("ERIC-Authorised-Key-Roles", "*"))
+//                .andExpect(status().isForbidden());
 //    }
 //
 //    @Test
 //    void fetchActiveInvitationsForUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetailsNotFound( "9191" );
+//        mockers.mockUsersServiceFetchUserDetailsNotFound("9191");
 //
-//        mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+//        mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
 //                        .header("X-Request-Id", "theId123")
 //                        .header("Eric-identity", "9191")
 //                        .header("ERIC-Identity-Type", "oauth2")
-//                        .header("ERIC-Authorised-Key-Roles", "*") )
-//                .andExpect( status().isForbidden() );
+//                        .header("ERIC-Authorised-Key-Roles", "*"))
+//                .andExpect(status().isForbidden());
 //    }
 //
 //    @Test
 //    void fetchActiveInvitationsForUserWithUnacceptablePageIndexReturnsBadRequest() throws Exception {
-//        mockMvc.perform( get( "/associations/invitations?page_index=-1&items_per_page=1" )
+//        mockMvc.perform(get("/associations/invitations?page_index=-1&items_per_page=1")
 //                        .header("X-Request-Id", "theId123")
 //                        .header("Eric-identity", "9999")
 //                        .header("ERIC-Identity-Type", "oauth2")
-//                        .header("ERIC-Authorised-Key-Roles", "*") )
-//                .andExpect( status().isBadRequest() );
+//                        .header("ERIC-Authorised-Key-Roles", "*"))
+//                .andExpect(status().isBadRequest());
 //    }
 //
 //    @Test
 //    void fetchActiveInvitationsForUserWithUnacceptableItemsPerPageReturnsBadRequest() throws Exception {
-//        mockMvc.perform( get( "/associations/invitations?page_index=0&items_per_page=-1" )
+//        mockMvc.perform(get("/associations/invitations?page_index=0&items_per_page=-1")
 //                        .header("X-Request-Id", "theId123")
 //                        .header("Eric-identity", "9999")
 //                        .header("ERIC-Identity-Type", "oauth2")
-//                        .header("ERIC-Authorised-Key-Roles", "*") )
-//                .andExpect( status().isBadRequest() );
+//                        .header("ERIC-Authorised-Key-Roles", "*"))
+//                .andExpect(status().isBadRequest());
 //    }
 //
 //    @Test
 //    void fetchActiveInvitationsForUserRetrievesActiveInvitationsInCorrectOrderAndPaginatesCorrectly() throws Exception {
-//        final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
+//        final var user = testDataManager.fetchUserDtos("9999").getFirst();
 //
-//        mockers.mockUsersServiceFetchUserDetails( "9999" );
+//        mockers.mockUsersServiceFetchUserDetails("9999");
 //
-//        mockMvc.perform( get( "/associations/invitations?page_index=1&items_per_page=1" )
+//        mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
 //                        .header("X-Request-Id", "theId123")
 //                        .header("Eric-identity", "9999")
 //                        .header("ERIC-Identity-Type", "oauth2")
-//                        .header("ERIC-Authorised-Key-Roles", "*") )
-//                .andExpect( status().isOk() );
+//                        .header("ERIC-Authorised-Key-Roles", "*"))
+//                .andExpect(status().isOk());
 //
-//        Mockito.verify( associationsService ).fetchActiveInvitations( argThat( comparisonUtils.compare( user, List.of( "userId" ), List.of(), Map.of() ) ), eq( 1 ), eq( 1 ) );
+//        Mockito.verify(associationsService).fetchActiveInvitations(argThat(comparisonUtils.compare(user, List.of("userId"), List.of(), Map.of())), eq(1), eq(1));
 //    }
 //
 //    @Test
 //    void fetchActiveInvitationsForUserWithoutPageIndexAndItemsPerPageUsesDefaults() throws Exception {
-//        final var user = testDataManager.fetchUserDtos( "9999" ).getFirst();
+//        final var user = testDataManager.fetchUserDtos("9999").getFirst();
 //
-//        mockers.mockUsersServiceFetchUserDetails( "9999" );
+//        mockers.mockUsersServiceFetchUserDetails("9999");
 //
-//        mockMvc.perform( get( "/associations/invitations" )
+//        mockMvc.perform(get("/associations/invitations")
 //                        .header("X-Request-Id", "theId123")
 //                        .header("Eric-identity", "9999")
 //                        .header("ERIC-Identity-Type", "oauth2")
-//                        .header("ERIC-Authorised-Key-Roles", "*") )
-//                .andExpect( status().isOk() );
+//                        .header("ERIC-Authorised-Key-Roles", "*"))
+//                .andExpect(status().isOk());
 //
-//        Mockito.verify( associationsService ).fetchActiveInvitations( argThat( comparisonUtils.compare( user, List.of( "userId" ), List.of(), Map.of() ) ), eq( 0 ), eq( 15 ) );
+//        Mockito.verify(associationsService).fetchActiveInvitations(argThat(comparisonUtils.compare(user, List.of("userId"), List.of(), Map.of())), eq(0), eq(15));
 //    }
 //
 //    @Test
 //    void fetchActiveInvitationsForUserWithPaginationAndVerifyResponse() throws Exception {
-//        final var user = testDataManager.fetchUserDtos( "000" ).getFirst();
-//        final var invitations = testDataManager.fetchInvitations( "37" );
+//        final var user = testDataManager.fetchUserDtos("000").getFirst();
+//        final var invitations = testDataManager.fetchInvitations("37");
 //
 //        final var mockLinks = new Links()
 //                .self("/associations/invitations?page_index=1&items_per_page=1")
@@ -189,7 +189,7 @@
 //                .items(invitations).links(mockLinks)
 //                .itemsPerPage(1).pageNumber(1).totalResults(2).totalPages(2);
 //
-//        mockers.mockUsersServiceFetchUserDetails( "000" );
+//        mockers.mockUsersServiceFetchUserDetails("000");
 //        when(associationsService.fetchActiveInvitations(user, 1,1)).thenReturn(mockInvitationsList);
 //
 //        final var response = mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
@@ -199,9 +199,9 @@
 //                        .header("ERIC-Authorised-Key-Roles", "*"))
 //                .andExpect(status().isOk());
 //
-//        Mockito.verify(associationsService).fetchActiveInvitations( user,1,1);
+//        Mockito.verify(associationsService).fetchActiveInvitations(user,1,1);
 //
-//        final var invitationsList = parseResponseTo( response, InvitationsList.class );
+//        final var invitationsList = parseResponseTo(response, InvitationsList.class);
 //
 //        assertNotNull(invitationsList);
 //        assertEquals(1, invitationsList.getItemsPerPage().intValue());
@@ -215,7 +215,7 @@
 //
 //    @Test
 //    void inviteUserWithMalformedEricIdentityReturnsBadRequest() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetailsNotFound( "$$$$" );
+//        mockers.mockUsersServiceFetchUserDetailsNotFound("$$$$");
 //
 //        mockMvc.perform(post("/associations/invitations")
 //                        .header("X-Request-Id", "theId123")
@@ -229,7 +229,7 @@
 //
 //    @Test
 //    void inviteUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetailsNotFound( "9191" );
+//        mockers.mockUsersServiceFetchUserDetailsNotFound("9191");
 //
 //        mockMvc.perform(post("/associations/invitations")
 //                        .header("X-Request-Id", "theId123")
@@ -278,8 +278,8 @@
 //
 //    @Test
 //    void inviteUserWithNonexistentCompanyNumberReturnsBadRequest() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetails( "9999" );
-//        mockers.mockCompanyServiceFetchCompanyProfileNotFound( "919191" );
+//        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockCompanyServiceFetchCompanyProfileNotFound("919191");
 //
 //        mockMvc.perform(post("/associations/invitations")
 //                        .header("X-Request-Id", "theId123")
@@ -317,16 +317,16 @@
 //
 //    @Test
 //    void inviteUserWhereAssociationBetweenInviteeEmailAndCompanyNumberExistsAndInviteeUserIsFoundPerformsSwapAndUpdateOperations() throws Exception {
-//        final var associationDao = testDataManager.fetchAssociationDaos( "36" ).getFirst();
-//        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "444444" ).getFirst();
+//        final var associationDao = testDataManager.fetchAssociationDaos("36").getFirst();
+//        final var companyDetails = testDataManager.fetchCompanyDetailsDtos("444444").getFirst();
 //
-//        mockers.mockUsersServiceFetchUserDetails( "9999" );
-//        mockers.mockCompanyServiceFetchCompanyProfile( "444444" );
-//        mockers.mockUsersServiceSearchUserDetails( "000" );
+//        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockCompanyServiceFetchCompanyProfile("444444");
+//        mockers.mockUsersServiceSearchUserDetails("000");
 //        Mockito.doReturn(Optional.of(associationDao)).when(associationsService).fetchAssociationDao("444444", "000", "light.yagami@death.note");
 //        Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
-//        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq( "Scrooge McDuck" ), any( String.class ), eq( "light.yagami@death.note" ) );
-//        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
+//        Mockito.doReturn(Mono.empty()).when(emailService).sendInviteEmail(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), any(String.class), eq("light.yagami@death.note"));
+//        Mockito.doReturn(sendEmailMock).when(emailService).sendInvitationEmailToAssociatedUser(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), eq("light.yagami@death.note"));
 //
 //        mockMvc.perform(post("/associations/invitations")
 //                        .header("X-Request-Id", "theId123")
@@ -337,22 +337,22 @@
 //                        .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}"))
 //                .andExpect(status().isCreated());
 //
-//        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq("Scrooge McDuck"), anyString(), eq( "light.yagami@death.note" ) );
-//        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq("Scrooge McDuck"), eq("light.yagami@death.note") );
+//        Mockito.verify(emailService).sendInviteEmail(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), anyString(), eq("light.yagami@death.note"));
+//        Mockito.verify(emailService).sendInvitationEmailToAssociatedUser(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), eq("light.yagami@death.note"));
 //    }
 //
 //    @Test
 //    void inviteUserWhereAssociationBetweenInviteeEmailAndCompanyNumberExistsAndInviteeUserIsNotFoundDoesNotPerformSwapButDoesPerformUpdateOperation() throws Exception {
-//        final var associationDao = testDataManager.fetchAssociationDaos( "36" ).getFirst();
-//        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "444444" ).getFirst();
+//        final var associationDao = testDataManager.fetchAssociationDaos("36").getFirst();
+//        final var companyDetails = testDataManager.fetchCompanyDetailsDtos("444444").getFirst();
 //
-//        mockers.mockUsersServiceFetchUserDetails( "9999" );
-//        mockers.mockCompanyServiceFetchCompanyProfile( "444444" );
-//        mockers.mockUsersServiceSearchUserDetailsEmptyList( "000" );
+//        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockCompanyServiceFetchCompanyProfile("444444");
+//        mockers.mockUsersServiceSearchUserDetailsEmptyList("000");
 //        Mockito.doReturn(Optional.of(associationDao)).when(associationsService).fetchAssociationDao("444444", null, "light.yagami@death.note");
 //        Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
-//        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq( "Scrooge McDuck" ), any( String.class ), eq( "light.yagami@death.note" ) );
-//        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
+//        Mockito.doReturn(Mono.empty()).when(emailService).sendInviteEmail(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), any(String.class), eq("light.yagami@death.note"));
+//        Mockito.doReturn(sendEmailMock).when(emailService).sendInvitationEmailToAssociatedUser(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), eq("light.yagami@death.note"));
 //
 //        mockMvc.perform(post("/associations/invitations")
 //                        .header("X-Request-Id", "theId123")
@@ -363,22 +363,22 @@
 //                        .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}"))
 //                .andExpect(status().isCreated());
 //
-//        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq("Scrooge McDuck"), anyString(), eq( "light.yagami@death.note" ) );
-//        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUser( eq("theId123"), eq( "444444" ), any( Mono.class ), eq("Scrooge McDuck"), eq("light.yagami@death.note") );
+//        Mockito.verify(emailService).sendInviteEmail(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), anyString(), eq("light.yagami@death.note"));
+//        Mockito.verify(emailService).sendInvitationEmailToAssociatedUser(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), eq("light.yagami@death.note"));
 //    }
 //
 //    @Test
 //    void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberExistsDoesNotPerformSwapButDoesPerformUpdateOperation() throws Exception {
-//        final var targetUserAssociation = testDataManager.fetchAssociationDaos( "36" ).getFirst();
-//        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "444444" ).getFirst();
+//        final var targetUserAssociation = testDataManager.fetchAssociationDaos("36").getFirst();
+//        final var companyDetails = testDataManager.fetchCompanyDetailsDtos("444444").getFirst();
 //
-//        mockers.mockUsersServiceSearchUserDetails( "000" );
-//        mockers.mockCompanyServiceFetchCompanyProfile( "444444" );
-//        mockers.mockUsersServiceFetchUserDetails( "9999" );
+//        mockers.mockUsersServiceSearchUserDetails("000");
+//        mockers.mockCompanyServiceFetchCompanyProfile("444444");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
 //        Mockito.doReturn(Optional.of(targetUserAssociation)).when(associationsService).fetchAssociationDao("444444", "000", "light.yagami@death.note");
 //        Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
-//        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq( "Scrooge McDuck" ), any( String.class ), eq( "light.yagami@death.note" ) );
-//        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
+//        Mockito.doReturn(Mono.empty()).when(emailService).sendInviteEmail(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), any(String.class), eq("light.yagami@death.note"));
+//        Mockito.doReturn(sendEmailMock).when(emailService).sendInvitationEmailToAssociatedUser(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), eq("light.yagami@death.note"));
 //
 //        mockMvc.perform(post("/associations/invitations")
 //                        .header("X-Request-Id", "theId123")
@@ -389,24 +389,24 @@
 //                        .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}"))
 //                .andExpect(status().isCreated());
 //
-//        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq("Scrooge McDuck"), anyString(), eq( "light.yagami@death.note" ) );
-//        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUser( eq("theId123"), eq( "444444" ), any( Mono.class ), eq("Scrooge McDuck"), eq("light.yagami@death.note") );
+//        Mockito.verify(emailService).sendInviteEmail(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), anyString(), eq("light.yagami@death.note"));
+//        Mockito.verify(emailService).sendInvitationEmailToAssociatedUser(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), eq("light.yagami@death.note"));
 //    }
 //
 //    @Test
 //    void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberDoesNotExistCreatesNewAssociation() throws Exception {
-//        final var association = testDataManager.fetchAssociationDaos( "19" ).getFirst();
-//        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "444444" ).getFirst();
+//        final var association = testDataManager.fetchAssociationDaos("19").getFirst();
+//        final var companyDetails = testDataManager.fetchCompanyDetailsDtos("444444").getFirst();
 //
-//        mockers.mockUsersServiceFetchUserDetails( "9999" );
-//        mockers.mockCompanyServiceFetchCompanyProfile( "444444" );
-//        mockers.mockUsersServiceSearchUserDetails( "000" );
+//        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockCompanyServiceFetchCompanyProfile("444444");
+//        mockers.mockUsersServiceSearchUserDetails("000");
 //        Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationDao("444444", null, "light.yagami@death.note");
 //        Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationDao("444444", "000", null);
 //        Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
-//        Mockito.doReturn( association).when( associationsService ).createAssociationWithInvitationApprovalRoute( "444444", "000", null, "9999" );
-//        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq( "Scrooge McDuck" ), any( String.class ), eq( "light.yagami@death.note" ) );
-//        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
+//        Mockito.doReturn(association).when(associationsService).createAssociationWithInvitationApprovalRoute("444444", "000", null, "9999");
+//        Mockito.doReturn(Mono.empty()).when(emailService).sendInviteEmail(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), any(String.class), eq("light.yagami@death.note"));
+//        Mockito.doReturn(sendEmailMock).when(emailService).sendInvitationEmailToAssociatedUser(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), eq("light.yagami@death.note"));
 //
 //        mockMvc.perform(post("/associations/invitations")
 //                        .header("X-Request-Id", "theId123")
@@ -417,24 +417,24 @@
 //                        .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}"))
 //                .andExpect(status().isCreated());
 //
-//        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq("Scrooge McDuck"), anyString(), eq( "light.yagami@death.note" ) );
-//        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUser( eq("theId123"), eq( "444444" ), any( Mono.class ), eq("Scrooge McDuck"), eq("light.yagami@death.note") );
+//        Mockito.verify(emailService).sendInviteEmail(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), anyString(), eq("light.yagami@death.note"));
+//        Mockito.verify(emailService).sendInvitationEmailToAssociatedUser(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), eq("light.yagami@death.note"));
 //    }
 //
 //    @Test
 //    void inviteUserWhereAssociationBetweenInviteeUserEmailAndCompanyNumberDoesNotExistAndInviteeUserIsNotFoundCreatesNewAssociation() throws Exception {
-//        final var newAssociation = testDataManager.fetchAssociationDaos( "36" ).getFirst();
-//        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "444444" ).getFirst();
+//        final var newAssociation = testDataManager.fetchAssociationDaos("36").getFirst();
+//        final var companyDetails = testDataManager.fetchCompanyDetailsDtos("444444").getFirst();
 //
-//        mockers.mockUsersServiceFetchUserDetails( "9999" );
-//        mockers.mockCompanyServiceFetchCompanyProfile( "444444" );
-//        mockers.mockUsersServiceSearchUserDetailsEmptyList( "light.yagami@death.note" );
+//        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockCompanyServiceFetchCompanyProfile("444444");
+//        mockers.mockUsersServiceSearchUserDetailsEmptyList("light.yagami@death.note");
 //        Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationDao("444444", null, "light.yagami@death.note");
 //        Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationDao("444444", "000", null);
 //        Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
-//        Mockito.doReturn( newAssociation).when( associationsService ).createAssociationWithInvitationApprovalRoute( "444444", null, "light.yagami@death.note", "9999" );
-//        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq( "Scrooge McDuck" ), any( String.class ), eq( "light.yagami@death.note" ) );
-//        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq( "Scrooge McDuck" ), eq( "light.yagami@death.note" ) );
+//        Mockito.doReturn(newAssociation).when(associationsService).createAssociationWithInvitationApprovalRoute("444444", null, "light.yagami@death.note", "9999");
+//        Mockito.doReturn(Mono.empty()).when(emailService).sendInviteEmail(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), any(String.class), eq("light.yagami@death.note"));
+//        Mockito.doReturn(sendEmailMock).when(emailService).sendInvitationEmailToAssociatedUser(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), eq("light.yagami@death.note"));
 //
 //        mockMvc.perform(post("/associations/invitations")
 //                        .header("X-Request-Id", "theId123")
@@ -445,19 +445,19 @@
 //                        .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}"))
 //                .andExpect(status().isCreated());
 //
-//        Mockito.verify( emailService ).sendInviteEmail( eq( "theId123" ), eq( "444444" ), any( Mono.class ), eq("Scrooge McDuck"), anyString(), eq( "light.yagami@death.note" ) );
-//        Mockito.verify( emailService ).sendInvitationEmailToAssociatedUser( eq("theId123"), eq( "444444" ), any( Mono.class ), eq("Scrooge McDuck"), eq("light.yagami@death.note") );
+//        Mockito.verify(emailService).sendInviteEmail(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), anyString(), eq("light.yagami@death.note"));
+//        Mockito.verify(emailService).sendInvitationEmailToAssociatedUser(eq("theId123"), eq("444444"), any(Mono.class), eq("Scrooge McDuck"), eq("light.yagami@death.note"));
 //    }
 //
 //    @Test
 //    void inviteUserWhereAssociationBetweenInviteeUserEmailAndCompanyNumberExistAndInviteeUserIsFoundThrowsBadRequest() throws Exception {
-//        final var associationDao = testDataManager.fetchAssociationDaos( "35" ).getFirst();
+//        final var associationDao = testDataManager.fetchAssociationDaos("35").getFirst();
 //
-//        mockers.mockUsersServiceFetchUserDetails( "9999" );
-//        mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
-//        mockers.mockUsersServiceSearchUserDetails( "000" );
+//        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockCompanyServiceFetchCompanyProfile("333333");
+//        mockers.mockUsersServiceSearchUserDetails("000");
 //        Mockito.doReturn(Optional.of(associationDao)).when(associationsService).fetchAssociationDao("333333", "000", "light.yagami@death.note");
-//        Mockito.doThrow(new BadRequestRuntimeException("There is an existing association with Confirmed status for the user", new Exception( "There is an existing association with Confirmed status for the user" ))).when(associationsService).fetchAssociationDao("333333", "000", null);
+//        Mockito.doThrow(new BadRequestRuntimeException("There is an existing association with Confirmed status for the user", new Exception("There is an existing association with Confirmed status for the user"))).when(associationsService).fetchAssociationDao("333333", "000", null);
 //        Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
 //
 //        mockMvc.perform(post("/associations/invitations")
@@ -472,7 +472,7 @@
 //
 //    @Test
 //    void whenConfirmedAssociationDoesNotExist_thenThrowsBadRequestException() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetails( "9999" );
+//        mockers.mockUsersServiceFetchUserDetails("9999");
 //        when(associationsService.confirmedAssociationExists(anyString(), anyString())).thenReturn(false);
 //
 //        mockMvc.perform(post("/associations/invitations")
@@ -487,46 +487,46 @@
 //
 //    @Test
 //    void inviteUserCanBeAppliedToMigratedAssociationsWithUserId() throws Exception {
-//        final var targetCompany = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
-//        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
+//        final var targetCompany = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
+//        final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
 //
-//        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
-//        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-//        mockers.mockUsersServiceSearchUserDetails( "MKUser001" );
-//        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
-//        Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao( "MKCOMP001", "MKUser001", "mario@mushroom.kingdom" );
-//        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), any( String.class ), eq( "mario@mushroom.kingdom" ) );
-//        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), eq( "Mario" ) );
+//        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+//        mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
+//        mockers.mockUsersServiceSearchUserDetails("MKUser001");
+//        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists("MKCOMP001", "MKUser002");
+//        Mockito.doReturn(Optional.of(targetAssociation)).when(associationsService).fetchAssociationDao("MKCOMP001", "MKUser001", "mario@mushroom.kingdom");
+//        Mockito.doReturn(Mono.empty()).when(emailService).sendInviteEmail(eq("theId123"), eq("MKCOMP001"), any(Mono.class), eq("Luigi"), any(String.class), eq("mario@mushroom.kingdom"));
+//        Mockito.doReturn(sendEmailMock).when(emailService).sendInvitationEmailToAssociatedUser(eq("theId123"), eq("MKCOMP001"), any(Mono.class), eq("Luigi"), eq("Mario"));
 //
-//        mockMvc.perform( post( "/associations/invitations" )
-//                        .header( "X-Request-Id", "theId123" )
-//                        .header( "Eric-identity", "MKUser002" )
-//                        .header( "ERIC-Identity-Type", "oauth2" )
-//                        .contentType( MediaType.APPLICATION_JSON )
-//                        .content( "{\"company_number\":\"MKCOMP001\",\"invitee_email_id\":\"mario@mushroom.kingdom\"}" ) )
-//                .andExpect( status().isCreated() );
+//        mockMvc.perform(post("/associations/invitations")
+//                        .header("X-Request-Id", "theId123")
+//                        .header("Eric-identity", "MKUser002")
+//                        .header("ERIC-Identity-Type", "oauth2")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content("{\"company_number\":\"MKCOMP001\",\"invitee_email_id\":\"mario@mushroom.kingdom\"}"))
+//                .andExpect(status().isCreated());
 //    }
 //
 //    @Test
 //    void inviteUserCanBeAppliedToMigratedAssociationsWithUserEmail() throws Exception {
-//        final var targetCompany = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
-//        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst().userId( null ).userEmail( "mario@mushroom.kingdom" );
+//        final var targetCompany = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
+//        final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst().userId(null).userEmail("mario@mushroom.kingdom");
 //
-//        mockers.mockUsersServiceFetchUserDetails( "MKUser002" );
-//        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-//        mockers.mockUsersServiceSearchUserDetails( "MKUser001" );
-//        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
-//        Mockito.doReturn( Optional.of( targetAssociation ) ).when( associationsService ).fetchAssociationDao("MKCOMP001", "MKUser001", "mario@mushroom.kingdom");
-//        Mockito.doReturn( Mono.empty() ).when( emailService ).sendInviteEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), any( String.class ), eq( "mario@mushroom.kingdom" ) );
-//        Mockito.doReturn( sendEmailMock ).when( emailService ).sendInvitationEmailToAssociatedUser( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Luigi" ), eq( "Mario" ) );
+//        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+//        mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
+//        mockers.mockUsersServiceSearchUserDetails("MKUser001");
+//        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists("MKCOMP001", "MKUser002");
+//        Mockito.doReturn(Optional.of(targetAssociation)).when(associationsService).fetchAssociationDao("MKCOMP001", "MKUser001", "mario@mushroom.kingdom");
+//        Mockito.doReturn(Mono.empty()).when(emailService).sendInviteEmail(eq("theId123"), eq("MKCOMP001"), any(Mono.class), eq("Luigi"), any(String.class), eq("mario@mushroom.kingdom"));
+//        Mockito.doReturn(sendEmailMock).when(emailService).sendInvitationEmailToAssociatedUser(eq("theId123"), eq("MKCOMP001"), any(Mono.class), eq("Luigi"), eq("Mario"));
 //
-//        mockMvc.perform( post( "/associations/invitations" )
-//                        .header( "X-Request-Id", "theId123" )
-//                        .header( "Eric-identity", "MKUser002" )
-//                        .header( "ERIC-Identity-Type", "oauth2" )
-//                        .contentType( MediaType.APPLICATION_JSON )
-//                        .content( "{\"company_number\":\"MKCOMP001\",\"invitee_email_id\":\"mario@mushroom.kingdom\"}" ) )
-//                .andExpect( status().isCreated() );
+//        mockMvc.perform(post("/associations/invitations")
+//                        .header("X-Request-Id", "theId123")
+//                        .header("Eric-identity", "MKUser002")
+//                        .header("ERIC-Identity-Type", "oauth2")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content("{\"company_number\":\"MKCOMP001\",\"invitee_email_id\":\"mario@mushroom.kingdom\"}"))
+//                .andExpect(status().isCreated());
 //    }
 //
 //}

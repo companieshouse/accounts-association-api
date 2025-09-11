@@ -15,8 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
 
-@ExtendWith( MockitoExtension.class )
-@Tag( "unit-test" )
+@ExtendWith(MockitoExtension.class)
+@Tag("unit-test")
 class PreviousStatesMapperTest {
 
     private final PreviousStatesMapper previousStatesMapper = new PreviousStatesMapperImpl();
@@ -25,24 +25,24 @@ class PreviousStatesMapperTest {
 
     @Test
     void daoToDtoWithNullDaoReturnsNull(){
-        Assertions.assertNull( previousStatesMapper.daoToDto( null ) );
+        Assertions.assertNull(previousStatesMapper.daoToDto(null));
     }
 
     private static Stream<Arguments> daoToDtoMappingScenarios(){
-        return testDataManager.fetchAssociationDaos( "MKAssociation003" )
+        return testDataManager.fetchAssociationDaos("MKAssociation003")
                 .getFirst()
                 .getPreviousStates()
                 .stream()
-                .map( Arguments::of );
+                .map(Arguments::of);
     }
 
     @ParameterizedTest
-    @MethodSource( "daoToDtoMappingScenarios" )
-    void daoToDtoCorrectlyMapsData( final PreviousStatesDao dao ){
-        final var dto = previousStatesMapper.daoToDto( dao );
-        Assertions.assertEquals( dto.getStatus().getValue(), dao.getStatus() );
-        Assertions.assertEquals( dto.getChangedBy(), dao.getChangedBy() );
-        Assertions.assertEquals( reduceTimestampResolution( dto.getChangedAt() ), localDateTimeToNormalisedString( dao.getChangedAt() ) );
+    @MethodSource("daoToDtoMappingScenarios")
+    void daoToDtoCorrectlyMapsData(final PreviousStatesDao dao){
+        final var dto = previousStatesMapper.daoToDto(dao);
+        Assertions.assertEquals(dto.getStatus().getValue(), dao.getStatus());
+        Assertions.assertEquals(dto.getChangedBy(), dao.getChangedBy());
+        Assertions.assertEquals(reduceTimestampResolution(dto.getChangedAt()), localDateTimeToNormalisedString(dao.getChangedAt()));
     }
 
 }

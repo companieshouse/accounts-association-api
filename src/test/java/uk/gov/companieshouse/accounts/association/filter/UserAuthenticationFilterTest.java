@@ -24,8 +24,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-@ExtendWith( MockitoExtension.class )
-@Tag( "unit-test" )
+@ExtendWith(MockitoExtension.class)
+@Tag("unit-test")
 class UserAuthenticationFilterTest {
 
     private UserAuthenticationFilter userAuthenticationFilter;
@@ -35,125 +35,125 @@ class UserAuthenticationFilterTest {
         userAuthenticationFilter = new UserAuthenticationFilter();
     }
 
-    private ArgumentMatcher<Authentication> springRolesWereAssigned( final List<String> springRoles ){
+    private ArgumentMatcher<Authentication> springRolesWereAssigned(final List<String> springRoles){
         return authentication -> authentication.getAuthorities()
                 .stream()
-                .map( GrantedAuthority::getAuthority )
+                .map(GrantedAuthority::getAuthority)
                 .toList()
-                .containsAll( springRoles );
+                .containsAll(springRoles);
     }
 
     @Test
     void doFilterInternalWithoutEricIdentityDoesNotAddAnyRolesTests() {
         final var request = new MockHttpServletRequest();
-        request.addHeader( "X-Request-Id", "theId123" );
-        request.addHeader( "Eric-Identity-Type","oauth2" );
-        request.addHeader( "ERIC-Authorised-Key-Roles", "*" );
+        request.addHeader("X-Request-Id", "theId123");
+        request.addHeader("Eric-Identity-Type","oauth2");
+        request.addHeader("ERIC-Authorised-Key-Roles", "*");
         final var response = new MockHttpServletResponse();
-        final var filterChain = Mockito.mock( FilterChain.class );
+        final var filterChain = Mockito.mock(FilterChain.class);
 
-        final var securityContext = Mockito.mock( SecurityContext.class );
-        SecurityContextHolder.setContext( securityContext );
+        final var securityContext = Mockito.mock(SecurityContext.class);
+        SecurityContextHolder.setContext(securityContext);
 
-        userAuthenticationFilter.doFilterInternal( request, response, filterChain );
+        userAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        Mockito.verify( securityContext ).setAuthentication( argThat( springRolesWereAssigned( List.of( "ROLE_UNKNOWN" ) ) ) );
+        Mockito.verify(securityContext).setAuthentication(argThat(springRolesWereAssigned(List.of("ROLE_UNKNOWN"))));
     }
 
     @Test
     void doFilterInternalWithoutEricIdentityTypeDoesNotAddAnyRoles() {
         final var request = new MockHttpServletRequest();
-        request.addHeader( "X-Request-Id", "theId123" );
-        request.addHeader( "Eric-Identity", "67ZeMsvAEgkBWs7tNKacdrPvOmQ" );
+        request.addHeader("X-Request-Id", "theId123");
+        request.addHeader("Eric-Identity", "67ZeMsvAEgkBWs7tNKacdrPvOmQ");
         final var response = new MockHttpServletResponse();
-        final var filterChain = Mockito.mock( FilterChain.class );
+        final var filterChain = Mockito.mock(FilterChain.class);
 
-        final var securityContext = Mockito.mock( SecurityContext.class );
-        SecurityContextHolder.setContext( securityContext );
+        final var securityContext = Mockito.mock(SecurityContext.class);
+        SecurityContextHolder.setContext(securityContext);
 
-        userAuthenticationFilter.doFilterInternal( request, response, filterChain );
+        userAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        Mockito.verify( securityContext ).setAuthentication( argThat( springRolesWereAssigned( List.of( "ROLE_UNKNOWN" ) ) ) );
+        Mockito.verify(securityContext).setAuthentication(argThat(springRolesWereAssigned(List.of("ROLE_UNKNOWN"))));
     }
 
     @Test
     void doFilterInternalWithMalformedEricIdentityTypeDoesNotAddAnyRoles() {
         final var request = new MockHttpServletRequest();
-        request.addHeader( "X-Request-Id", "theId123" );
-        request.addHeader( "Eric-Identity", "67ZeMsvAEgkBWs7tNKacdrPvOmQ" );
-        request.addHeader( "Eric-Identity-Type", "magic" );
+        request.addHeader("X-Request-Id", "theId123");
+        request.addHeader("Eric-Identity", "67ZeMsvAEgkBWs7tNKacdrPvOmQ");
+        request.addHeader("Eric-Identity-Type", "magic");
         final var response = new MockHttpServletResponse();
-        final var filterChain = Mockito.mock( FilterChain.class );
+        final var filterChain = Mockito.mock(FilterChain.class);
 
-        final var securityContext = Mockito.mock( SecurityContext.class );
-        SecurityContextHolder.setContext( securityContext );
+        final var securityContext = Mockito.mock(SecurityContext.class);
+        SecurityContextHolder.setContext(securityContext);
 
-        userAuthenticationFilter.doFilterInternal( request, response, filterChain );
+        userAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        Mockito.verify( securityContext ).setAuthentication( argThat( springRolesWereAssigned( List.of( "ROLE_UNKNOWN" ) ) ) );
+        Mockito.verify(securityContext).setAuthentication(argThat(springRolesWereAssigned(List.of("ROLE_UNKNOWN"))));
     }
 
     @Test
     void doFilterInternalWithValidOAuth2RequestRequestAddsBasicOAuthRole() {
         final var request = new MockHttpServletRequest();
-        request.addHeader( "X-Request-Id", "theId123" );
-        request.addHeader( "Eric-Identity", "67ZeMsvAEgkBWs7tNKacdrPvOmQ" );
-        request.addHeader( "Eric-Identity-Type","oauth2" );
+        request.addHeader("X-Request-Id", "theId123");
+        request.addHeader("Eric-Identity", "67ZeMsvAEgkBWs7tNKacdrPvOmQ");
+        request.addHeader("Eric-Identity-Type","oauth2");
         final var response = new MockHttpServletResponse();
-        final var filterChain = Mockito.mock( FilterChain.class );
+        final var filterChain = Mockito.mock(FilterChain.class);
 
-        final var securityContext = Mockito.mock( SecurityContext.class );
-        SecurityContextHolder.setContext( securityContext );
+        final var securityContext = Mockito.mock(SecurityContext.class);
+        SecurityContextHolder.setContext(securityContext);
 
-        userAuthenticationFilter.doFilterInternal( request, response, filterChain );
+        userAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        Mockito.verify( securityContext ).setAuthentication( argThat( springRolesWereAssigned( List.of( "ROLE_BASIC_OAUTH" ) ) ) );
+        Mockito.verify(securityContext).setAuthentication(argThat(springRolesWereAssigned(List.of("ROLE_BASIC_OAUTH"))));
     }
 
     @Test
     void doFilterInternalWithValidAPIKeyRequestAddsKeyRole() {
         final var request = new MockHttpServletRequest();
-        request.addHeader( "X-Request-Id", "theId123" );
-        request.addHeader( "Eric-Identity", "67ZeMsvAEgkBWs7tNKacdrPvOmQ" );
-        request.addHeader( "Eric-Identity-Type","key" );
-        request.addHeader( "ERIC-Authorised-Key-Roles", "*" );
+        request.addHeader("X-Request-Id", "theId123");
+        request.addHeader("Eric-Identity", "67ZeMsvAEgkBWs7tNKacdrPvOmQ");
+        request.addHeader("Eric-Identity-Type","key");
+        request.addHeader("ERIC-Authorised-Key-Roles", "*");
         final var response = new MockHttpServletResponse();
-        final var filterChain = Mockito.mock( FilterChain.class );
+        final var filterChain = Mockito.mock(FilterChain.class);
 
-        final var securityContext = Mockito.mock( SecurityContext.class );
-        SecurityContextHolder.setContext( securityContext );
+        final var securityContext = Mockito.mock(SecurityContext.class);
+        SecurityContextHolder.setContext(securityContext);
 
-        userAuthenticationFilter.doFilterInternal( request, response, filterChain );
+        userAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        Mockito.verify( securityContext ).setAuthentication( argThat( springRolesWereAssigned( List.of( "ROLE_KEY" ) ) ) );
+        Mockito.verify(securityContext).setAuthentication(argThat(springRolesWereAssigned(List.of("ROLE_KEY"))));
     }
 
     private static Stream<Arguments> adminPrivilegeScenarios(){
         return Stream.of(
-                Arguments.of( ADMIN_READ_PERMISSION, List.of( "ROLE_BASIC_OAUTH", "ROLE_ADMIN_READ" ) ),
-                Arguments.of( ADMIN_UPDATE_PERMISSION, List.of( "ROLE_BASIC_OAUTH", "ROLE_ADMIN_UPDATE" ) ),
-                Arguments.of( String.format( "%s %s" , ADMIN_READ_PERMISSION, ADMIN_UPDATE_PERMISSION ), List.of( "ROLE_BASIC_OAUTH", "ROLE_ADMIN_READ", "ROLE_ADMIN_UPDATE" ) ),
-                Arguments.of( String.format( "%s %s /admin/something/else" , ADMIN_READ_PERMISSION, ADMIN_UPDATE_PERMISSION ), List.of( "ROLE_BASIC_OAUTH", "ROLE_ADMIN_READ", "ROLE_ADMIN_UPDATE" ) )
-         );
+                Arguments.of(ADMIN_READ_PERMISSION, List.of("ROLE_BASIC_OAUTH", "ROLE_ADMIN_READ")),
+                Arguments.of(ADMIN_UPDATE_PERMISSION, List.of("ROLE_BASIC_OAUTH", "ROLE_ADMIN_UPDATE")),
+                Arguments.of(String.format("%s %s" , ADMIN_READ_PERMISSION, ADMIN_UPDATE_PERMISSION), List.of("ROLE_BASIC_OAUTH", "ROLE_ADMIN_READ", "ROLE_ADMIN_UPDATE")),
+                Arguments.of(String.format("%s %s /admin/something/else" , ADMIN_READ_PERMISSION, ADMIN_UPDATE_PERMISSION), List.of("ROLE_BASIC_OAUTH", "ROLE_ADMIN_READ", "ROLE_ADMIN_UPDATE"))
+        );
     }
 
     @ParameterizedTest
-    @MethodSource( "adminPrivilegeScenarios" )
-    void doFilterInternalWithValidAdminRequestAddsAdminRoles( final String ericAuthorisedRoles, final List<String> expectedSpringRoles ){
+    @MethodSource("adminPrivilegeScenarios")
+    void doFilterInternalWithValidAdminRequestAddsAdminRoles(final String ericAuthorisedRoles, final List<String> expectedSpringRoles){
         final var request = new MockHttpServletRequest();
-        request.addHeader( "X-Request-Id", "theId123" );
-        request.addHeader( "Eric-Identity", "67ZeMsvAEgkBWs7tNKacdrPvOmQ" );
-        request.addHeader( "Eric-Identity-Type","oauth2" );
-        request.addHeader( "Eric-Authorised-Roles", ericAuthorisedRoles );
+        request.addHeader("X-Request-Id", "theId123");
+        request.addHeader("Eric-Identity", "67ZeMsvAEgkBWs7tNKacdrPvOmQ");
+        request.addHeader("Eric-Identity-Type","oauth2");
+        request.addHeader("Eric-Authorised-Roles", ericAuthorisedRoles);
         final var response = new MockHttpServletResponse();
-        final var filterChain = Mockito.mock( FilterChain.class );
+        final var filterChain = Mockito.mock(FilterChain.class);
 
-        final var securityContext = Mockito.mock( SecurityContext.class );
-        SecurityContextHolder.setContext( securityContext );
+        final var securityContext = Mockito.mock(SecurityContext.class);
+        SecurityContextHolder.setContext(securityContext);
 
-        userAuthenticationFilter.doFilterInternal( request, response, filterChain );
+        userAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        Mockito.verify( securityContext ).setAuthentication( argThat( springRolesWereAssigned( expectedSpringRoles ) ) );
+        Mockito.verify(securityContext).setAuthentication(argThat(springRolesWereAssigned(expectedSpringRoles)));
 
     }
 

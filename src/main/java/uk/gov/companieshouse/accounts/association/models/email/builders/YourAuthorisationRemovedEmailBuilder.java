@@ -8,7 +8,7 @@ public class YourAuthorisationRemovedEmailBuilder extends EmailBuilder<YourAutho
 
     private String removedByDisplayName;
 
-    public YourAuthorisationRemovedEmailBuilder setRemovedByDisplayName(final String removedByDisplayName ) {
+    public YourAuthorisationRemovedEmailBuilder setRemovedByDisplayName(final String removedByDisplayName) {
         this.removedByDisplayName = removedByDisplayName;
         return this;
     }

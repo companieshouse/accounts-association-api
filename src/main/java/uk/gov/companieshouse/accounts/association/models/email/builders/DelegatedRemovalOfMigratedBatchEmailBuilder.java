@@ -9,12 +9,12 @@ public class DelegatedRemovalOfMigratedBatchEmailBuilder extends EmailBuilder<De
     private String removedBy;
     private String removedUser;
 
-    public DelegatedRemovalOfMigratedBatchEmailBuilder setRemovedBy( final String removedBy ) {
+    public DelegatedRemovalOfMigratedBatchEmailBuilder setRemovedBy(final String removedBy) {
         this.removedBy = removedBy;
         return this;
     }
 
-    public DelegatedRemovalOfMigratedBatchEmailBuilder setRemovedUser( final String removedUser ) {
+    public DelegatedRemovalOfMigratedBatchEmailBuilder setRemovedUser(final String removedUser) {
         this.removedUser = removedUser;
         return this;
     }

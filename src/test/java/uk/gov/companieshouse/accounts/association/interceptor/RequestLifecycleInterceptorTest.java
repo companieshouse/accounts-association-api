@@ -25,8 +25,8 @@ import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeExce
 import uk.gov.companieshouse.accounts.association.models.context.RequestContext;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 
-@ExtendWith( MockitoExtension.class )
-@Tag( "unit-test" )
+@ExtendWith(MockitoExtension.class)
+@Tag("unit-test")
 class RequestLifecycleInterceptorTest {
 
     @Mock
@@ -39,81 +39,81 @@ class RequestLifecycleInterceptorTest {
 
     @Test
     void preHandleWithOAuth2RequestSetsRequestContextWithUserAndReturnsTrue(){
-        final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var user = testDataManager.fetchUserDtos("111").getFirst();
 
         final var request = new MockHttpServletRequest();
-        request.addHeader( "X-Request-Id", "theId123" );
-        request.addHeader( "Eric-Identity", user.getUserId() );
-        request.addHeader( "Eric-Identity-Type", "oauth2" );
-        request.addHeader( "Eric-Authorised-Roles", ADMIN_READ_PERMISSION );
+        request.addHeader("X-Request-Id", "theId123");
+        request.addHeader("Eric-Identity", user.getUserId());
+        request.addHeader("Eric-Identity-Type", "oauth2");
+        request.addHeader("Eric-Authorised-Roles", ADMIN_READ_PERMISSION);
 
         final var response = new MockHttpServletResponse();
 
-        Mockito.doReturn( user ).when( usersService ).fetchUserDetails( eq(user.getUserId()), any() );
+        Mockito.doReturn(user).when(usersService).fetchUserDetails(eq(user.getUserId()), any());
 
-        final var result = requestLifecycleInterceptor.preHandle( request, response, null );
+        final var result = requestLifecycleInterceptor.preHandle(request, response, null);
 
-        Assertions.assertTrue( result );
-        Assertions.assertEquals( "theId123", getXRequestId() );
-        Assertions.assertEquals( user.getUserId(), getEricIdentity() );
-        Assertions.assertEquals( "oauth2", getEricIdentityType() );
-        Assertions.assertTrue( hasAdminPrivilege( ADMIN_READ_PERMISSION ) );
-        Assertions.assertEquals( user, getUser() );
-        Assertions.assertEquals( 200, response.getStatus() );
+        Assertions.assertTrue(result);
+        Assertions.assertEquals("theId123", getXRequestId());
+        Assertions.assertEquals(user.getUserId(), getEricIdentity());
+        Assertions.assertEquals("oauth2", getEricIdentityType());
+        Assertions.assertTrue(hasAdminPrivilege(ADMIN_READ_PERMISSION));
+        Assertions.assertEquals(user, getUser());
+        Assertions.assertEquals(200, response.getStatus());
     }
 
     @Test
     void preHandleWithOAuth2RequestWithNonexistentUserDoesNotSetRequestContextAndReturnsFalse(){
-        final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var user = testDataManager.fetchUserDtos("111").getFirst();
 
         final var request = new MockHttpServletRequest();
-        request.addHeader( "X-Request-Id", "theId123" );
-        request.addHeader( "Eric-Identity", user.getUserId() );
-        request.addHeader( "Eric-Identity-Type", "oauth2" );
-        request.setMethod( "GET" );
+        request.addHeader("X-Request-Id", "theId123");
+        request.addHeader("Eric-Identity", user.getUserId());
+        request.addHeader("Eric-Identity-Type", "oauth2");
+        request.setMethod("GET");
 
         final var response = new MockHttpServletResponse();
 
-        Mockito.doThrow( new NotFoundRuntimeException( "Could not find user", new Exception( "Could not find user" )) ).when( usersService ).fetchUserDetails( eq(user.getUserId()), any() );
+        Mockito.doThrow(new NotFoundRuntimeException("Could not find user", new Exception("Could not find user"))).when(usersService).fetchUserDetails(eq(user.getUserId()), any());
 
-        requestLifecycleInterceptor.preHandle( request, response, null );
+        requestLifecycleInterceptor.preHandle(request, response, null);
 
-        Assertions.assertEquals( 403, response.getStatus() );
+        Assertions.assertEquals(403, response.getStatus());
     }
 
     @Test
     void preHandleWithKeyRequestReturnsTrue(){
         final var request = new MockHttpServletRequest();
-        request.addHeader( "X-Request-Id", "theId123" );
-        request.addHeader( "Eric-Identity", "theKey" );
-        request.addHeader( "Eric-Identity-Type", "key" );
-        request.addHeader( "ERIC_Authorised-Key-Roles", "*" );
+        request.addHeader("X-Request-Id", "theId123");
+        request.addHeader("Eric-Identity", "theKey");
+        request.addHeader("Eric-Identity-Type", "key");
+        request.addHeader("ERIC_Authorised-Key-Roles", "*");
 
         final var response = new MockHttpServletResponse();
 
-        Assertions.assertTrue( requestLifecycleInterceptor.preHandle( request, response, null ) );
+        Assertions.assertTrue(requestLifecycleInterceptor.preHandle(request, response, null));
     }
 
     @Test
     void afterCompletionClearsRequestContext(){
         final var request = new MockHttpServletRequest();
-        request.addHeader( "X-Request-Id", "theId123" );
-        request.addHeader( "Eric-Identity", "111" );
-        request.addHeader( "Eric-Identity-Type", "oauth2" );
+        request.addHeader("X-Request-Id", "theId123");
+        request.addHeader("Eric-Identity", "111");
+        request.addHeader("Eric-Identity-Type", "oauth2");
 
         final var response = new MockHttpServletResponse();
 
-        requestLifecycleInterceptor.preHandle( request, response, null );
+        requestLifecycleInterceptor.preHandle(request, response, null);
 
-        Assertions.assertEquals( "theId123", getXRequestId() );
-        Assertions.assertEquals( "111", getEricIdentity() );
-        Assertions.assertEquals( "oauth2", getEricIdentityType() );
+        Assertions.assertEquals("theId123", getXRequestId());
+        Assertions.assertEquals("111", getEricIdentity());
+        Assertions.assertEquals("oauth2", getEricIdentityType());
 
-        requestLifecycleInterceptor.afterCompletion( request, response, null, null );
+        requestLifecycleInterceptor.afterCompletion(request, response, null, null);
 
-        Assertions.assertEquals( "unknown", getXRequestId() );
-        Assertions.assertEquals( "unknown", getEricIdentity() );
-        Assertions.assertEquals( "unknown", getEricIdentityType() );
+        Assertions.assertEquals("unknown", getXRequestId());
+        Assertions.assertEquals("unknown", getEricIdentity());
+        Assertions.assertEquals("unknown", getEricIdentityType());
     }
 
     @AfterEach

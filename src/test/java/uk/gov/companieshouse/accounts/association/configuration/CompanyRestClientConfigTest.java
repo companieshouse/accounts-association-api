@@ -5,12 +5,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.reactive.function.client.WebClient;
 
-@Tag( "unit-test" )
+@Tag("unit-test")
 class CompanyRestClientConfigTest {
 
     @Test
     void webClientIsCreatedCorrectly(){
-        Assertions.assertTrue( WebClient.class.isAssignableFrom( new CompanyRestClientConfig().companyWebClient().getClass() ) );
+        Assertions.assertTrue(WebClient.class.isAssignableFrom(new CompanyRestClientConfig().companyWebClient().getClass()));
     }
 
 }

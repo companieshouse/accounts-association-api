@@ -15,7 +15,7 @@ public class DelegatedRemovalOfMigratedBatchEmailData extends EmailData {
 
     public DelegatedRemovalOfMigratedBatchEmailData(){}
 
-    public DelegatedRemovalOfMigratedBatchEmailData( String removedBy, String removedUser, String companyName ) {
+    public DelegatedRemovalOfMigratedBatchEmailData(String removedBy, String removedUser, String companyName) {
         this.removedBy = removedBy;
         this.removedUser = removedUser;
         this.companyName = companyName;

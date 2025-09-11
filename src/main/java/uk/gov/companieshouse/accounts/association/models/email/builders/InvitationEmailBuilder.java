@@ -9,12 +9,12 @@ public class InvitationEmailBuilder extends EmailBuilder<InvitationEmailBuilder,
 
     private String inviteeDisplayName;
 
-    public InvitationEmailBuilder setInviterDisplayName( final String inviterDisplayName ) {
+    public InvitationEmailBuilder setInviterDisplayName(final String inviterDisplayName) {
         this.inviterDisplayName = inviterDisplayName;
         return this;
     }
 
-    public InvitationEmailBuilder setInviteeDisplayName( final String inviteeDisplayName ) {
+    public InvitationEmailBuilder setInviteeDisplayName(final String inviteeDisplayName) {
         this.inviteeDisplayName = inviteeDisplayName;
         return this;
     }

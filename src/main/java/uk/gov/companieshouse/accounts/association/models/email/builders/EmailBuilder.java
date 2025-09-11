@@ -8,12 +8,12 @@ public abstract class EmailBuilder<T extends EmailBuilder<T, U>, U extends Email
 
     protected String recipientEmail;
 
-    public T setCompanyName( final String companyName ) {
+    public T setCompanyName(final String companyName) {
         this.companyName = companyName;
         return self();
     }
 
-    public T setRecipientEmail( final String recipientEmail ) {
+    public T setRecipientEmail(final String recipientEmail) {
         this.recipientEmail = recipientEmail;
         return self();
     }

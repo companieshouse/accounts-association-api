@@ -14,26 +14,26 @@ class AuthorisationRemovedEmailBuilderTest {
     @Test
     void buildInstantiatesEmailData() {
         final var expectedEmailData = new AuthorisationRemovedEmailData();
-        expectedEmailData.setTo( "kpatel@companieshouse.gov.uk" );
-        expectedEmailData.setSubject( "Companies House: Elon Musk's authorisation removed to file online for Tesla" );
-        expectedEmailData.setPersonWhoRemovedAuthorisation( "Krishna Patel" );
-        expectedEmailData.setPersonWhoWasRemoved( "Elon Musk" );
-        expectedEmailData.setCompanyName( "Tesla" );
+        expectedEmailData.setTo("kpatel@companieshouse.gov.uk");
+        expectedEmailData.setSubject("Companies House: Elon Musk's authorisation removed to file online for Tesla");
+        expectedEmailData.setPersonWhoRemovedAuthorisation("Krishna Patel");
+        expectedEmailData.setPersonWhoWasRemoved("Elon Musk");
+        expectedEmailData.setCompanyName("Tesla");
 
         final var actualEmailData = new AuthorisationRemovedEmailBuilder()
-                .setRecipientEmail( "kpatel@companieshouse.gov.uk" )
-                .setRemovedByDisplayName( "Krishna Patel" )
-                .setRemovedUserDisplayName( "Elon Musk" )
-                .setCompanyName( "Tesla" )
+                .setRecipientEmail("kpatel@companieshouse.gov.uk")
+                .setRemovedByDisplayName("Krishna Patel")
+                .setRemovedUserDisplayName("Elon Musk")
+                .setCompanyName("Tesla")
                 .build();
 
-        Assertions.assertEquals( expectedEmailData, actualEmailData );
+        Assertions.assertEquals(expectedEmailData, actualEmailData);
     }
 
     @Test
     void buildWithNullsThrowsNullPointerException(){
         final var builder = new AuthorisationRemovedEmailBuilder();
-        Assertions.assertThrows( NullPointerException.class, builder::build );
+        Assertions.assertThrows(NullPointerException.class, builder::build);
     }
 
 }

@@ -14,25 +14,25 @@ class DelegatedRemovalOfMigratedBatchEmailBuilderTest {
     @Test
     void buildInstantiatesEmailData() {
         final var expectedEmailData = new DelegatedRemovalOfMigratedBatchEmailData();
-        expectedEmailData.setTo( "kpatel@companieshouse.gov.uk" );
-        expectedEmailData.setSubject( "Companies House: Elon Musk's authorisation removed to file online for Tesla" );
-        expectedEmailData.setRemovedBy( "Krishna Patel" );
-        expectedEmailData.setRemovedUser( "Elon Musk" );
-        expectedEmailData.setCompanyName( "Tesla" );
+        expectedEmailData.setTo("kpatel@companieshouse.gov.uk");
+        expectedEmailData.setSubject("Companies House: Elon Musk's authorisation removed to file online for Tesla");
+        expectedEmailData.setRemovedBy("Krishna Patel");
+        expectedEmailData.setRemovedUser("Elon Musk");
+        expectedEmailData.setCompanyName("Tesla");
 
         final var actualEmailData = new DelegatedRemovalOfMigratedBatchEmailBuilder()
-                .setRecipientEmail( "kpatel@companieshouse.gov.uk" )
-                .setRemovedBy( "Krishna Patel" )
-                .setRemovedUser( "Elon Musk" )
-                .setCompanyName( "Tesla" )
+                .setRecipientEmail("kpatel@companieshouse.gov.uk")
+                .setRemovedBy("Krishna Patel")
+                .setRemovedUser("Elon Musk")
+                .setCompanyName("Tesla")
                 .build();
 
-        Assertions.assertEquals( expectedEmailData, actualEmailData );
+        Assertions.assertEquals(expectedEmailData, actualEmailData);
     }
 
     @Test
     void buildWithNullsThrowsNullPointerException(){
         final var builder = new DelegatedRemovalOfMigratedBatchEmailBuilder();
-        Assertions.assertThrows( NullPointerException.class, builder::build );
+        Assertions.assertThrows(NullPointerException.class, builder::build);
     }
 }

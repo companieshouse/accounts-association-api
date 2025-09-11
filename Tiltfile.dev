@@ -10,7 +10,7 @@ custom_build(
     sync(
       local_path = './target/classes',
       remote_path = '/app/classes'
-    ),
+   ),
     restart_container()
   ],
   deps = ['./target/classes']

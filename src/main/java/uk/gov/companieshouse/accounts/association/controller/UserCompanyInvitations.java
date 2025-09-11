@@ -40,7 +40,7 @@
 //    private final AssociationsService associationsService;
 //    private final EmailService emailService;
 //
-//    public UserCompanyInvitations( final UsersService usersService, final CompanyService companyService, final AssociationsService associationsService, final EmailService emailService ) {
+//    public UserCompanyInvitations(final UsersService usersService, final CompanyService companyService, final AssociationsService associationsService, final EmailService emailService) {
 //        this.usersService = usersService;
 //        this.companyService = companyService;
 //        this.associationsService = associationsService;
@@ -48,67 +48,67 @@
 //    }
 //
 //    @Override
-//    public ResponseEntity<InvitationsList> fetchActiveInvitationsForUser( final Integer pageIndex, final Integer itemsPerPage ) {
-//        LOGGER.infoContext( getXRequestId(), String.format( "Received request with user_id=%s, itemsPerPage=%d, pageIndex=%d.", getEricIdentity(), itemsPerPage, pageIndex ),null );
+//    public ResponseEntity<InvitationsList> fetchActiveInvitationsForUser(final Integer pageIndex, final Integer itemsPerPage) {
+//        LOGGER.infoContext(getXRequestId(), String.format("Received request with user_id=%s, itemsPerPage=%d, pageIndex=%d.", getEricIdentity(), itemsPerPage, pageIndex),null);
 //
-//        if ( pageIndex < 0 || itemsPerPage <= 0 ){
-//            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
+//        if (pageIndex < 0 || itemsPerPage <= 0){
+//            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(PAGINATION_IS_MALFORMED));
 //        }
 //
-//        final var invitations = associationsService.fetchActiveInvitations( getUser(), pageIndex, itemsPerPage );
+//        final var invitations = associationsService.fetchActiveInvitations(getUser(), pageIndex, itemsPerPage);
 //
-//        return new ResponseEntity<>( invitations, OK );
+//        return new ResponseEntity<>(invitations, OK);
 //    }
 //
 //    @Override
-//    public ResponseEntity<ResponseBodyPost> inviteUser( final InvitationRequestBodyPost requestBody ) {
-//        LOGGER.infoContext( getXRequestId(), String.format( "Received request with requesting user_id=%s, company_number=%s.", getEricIdentity(), requestBody.getCompanyNumber() ),null );
+//    public ResponseEntity<ResponseBodyPost> inviteUser(final InvitationRequestBodyPost requestBody) {
+//        LOGGER.infoContext(getXRequestId(), String.format("Received request with requesting user_id=%s, company_number=%s.", getEricIdentity(), requestBody.getCompanyNumber()),null);
 //
-//        final var inviteeEmail = Optional.of( requestBody )
-//                .map( InvitationRequestBodyPost::getInviteeEmailId )
-//                .orElseThrow( () -> new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "invitee_email_id is null." ) ) );
+//        final var inviteeEmail = Optional.of(requestBody)
+//                .map(InvitationRequestBodyPost::getInviteeEmailId)
+//                .orElseThrow(() -> new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("invitee_email_id is null.")));
 //
 //        final var companyNumber = requestBody.getCompanyNumber();
 //        final CompanyDetails companyDetails;
 //        try {
-//            companyDetails = companyService.fetchCompanyProfile( companyNumber );
-//        } catch( NotFoundRuntimeException exception ){
-//            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( exception.getMessage() ) );
+//            companyDetails = companyService.fetchCompanyProfile(companyNumber);
+//        } catch(NotFoundRuntimeException exception){
+//            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(exception.getMessage()));
 //        }
 //
-//        if ( !associationsService.confirmedAssociationExists( companyNumber, getEricIdentity() ) ){
-//            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Requesting user %s does not have a confirmed association at company %s", getEricIdentity(), companyNumber ) ) );
+//        if (!associationsService.confirmedAssociationExists(companyNumber, getEricIdentity())){
+//            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("Requesting user %s does not have a confirmed association at company %s", getEricIdentity(), companyNumber)));
 //        }
 //
 //        final var inviteeUserDetails = Optional
-//                .ofNullable( usersService.searchUserDetails( List.of( inviteeEmail ) ) )
-//                .filter( list -> !list.isEmpty() )
-//                .map( List::getFirst )
-//                .orElse( null );
+//                .ofNullable(usersService.searchUserDetails(List.of(inviteeEmail)))
+//                .filter(list -> !list.isEmpty())
+//                .map(List::getFirst)
+//                .orElse(null);
 //
-//        final var targetAssociation = associationsService.fetchAssociationDao( companyNumber, Objects.nonNull( inviteeUserDetails ) ? inviteeUserDetails.getUserId() : null, inviteeEmail )
-//                .map( association -> {
-//                    LOGGER.debugContext( getXRequestId(), "Mapping association", null );
-//                    if( CONFIRMED.getValue().equals( association.getStatus() ) ) {
-//                        throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "This invitee email address already has a confirmed association at company %s", companyNumber ) ) );
+//        final var targetAssociation = associationsService.fetchAssociationDao(companyNumber, Objects.nonNull(inviteeUserDetails) ? inviteeUserDetails.getUserId() : null, inviteeEmail)
+//                .map(association -> {
+//                    LOGGER.debugContext(getXRequestId(), "Mapping association", null);
+//                    if(CONFIRMED.getValue().equals(association.getStatus())) {
+//                        throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("This invitee email address already has a confirmed association at company %s", companyNumber)));
 //                    }
-//                    associationsService.updateAssociation( association.getId(), mapToInvitationUpdate( association, inviteeUserDetails, getEricIdentity(), now() ) );
-//                    LOGGER.debugContext( getXRequestId(), "Completed update associations", null );
-//                    return association.approvalExpiryAt( now().plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ) );
-//                } )
-//                .orElseGet( () -> {
-//                    final var userId = Objects.nonNull( inviteeUserDetails ) ? inviteeUserDetails.getUserId() : null;
-//                    final var userEmail = Objects.nonNull( inviteeUserDetails ) ? null : inviteeEmail;
-//                    return associationsService.createAssociationWithInvitationApprovalRoute( companyNumber, userId, userEmail, getEricIdentity() );
-//                } );
+//                    associationsService.updateAssociation(association.getId(), mapToInvitationUpdate(association, inviteeUserDetails, getEricIdentity(), now()));
+//                    LOGGER.debugContext(getXRequestId(), "Completed update associations", null);
+//                    return association.approvalExpiryAt(now().plusDays(DAYS_SINCE_INVITE_TILL_EXPIRES));
+//                })
+//                .orElseGet(() -> {
+//                    final var userId = Objects.nonNull(inviteeUserDetails) ? inviteeUserDetails.getUserId() : null;
+//                    final var userEmail = Objects.nonNull(inviteeUserDetails) ? null : inviteeEmail;
+//                    return associationsService.createAssociationWithInvitationApprovalRoute(companyNumber, userId, userEmail, getEricIdentity());
+//                });
 //
-//        emailService.sendInviteEmail( getXRequestId(), companyDetails.getCompanyNumber(), Mono.just( companyDetails.getCompanyName() ), mapToDisplayValue( getUser(), getUser().getEmail() ), targetAssociation.getApprovalExpiryAt().toString(), inviteeEmail ).subscribe();
-//        Mono.just( companyNumber )
-//                .flatMapMany( associationsService::fetchConfirmedUserIds )
-//                .flatMap( emailService.sendInvitationEmailToAssociatedUser( getXRequestId(), companyDetails.getCompanyNumber(), Mono.just( companyDetails.getCompanyName() ), mapToDisplayValue( getUser(), getUser().getEmail() ), mapToDisplayValue( inviteeUserDetails, inviteeEmail ) ) )
+//        emailService.sendInviteEmail(getXRequestId(), companyDetails.getCompanyNumber(), Mono.just(companyDetails.getCompanyName()), mapToDisplayValue(getUser(), getUser().getEmail()), targetAssociation.getApprovalExpiryAt().toString(), inviteeEmail).subscribe();
+//        Mono.just(companyNumber)
+//                .flatMapMany(associationsService::fetchConfirmedUserIds)
+//                .flatMap(emailService.sendInvitationEmailToAssociatedUser(getXRequestId(), companyDetails.getCompanyNumber(), Mono.just(companyDetails.getCompanyName()), mapToDisplayValue(getUser(), getUser().getEmail()), mapToDisplayValue(inviteeUserDetails, inviteeEmail)))
 //                .subscribe();
 //
-//        return new ResponseEntity<>( new ResponseBodyPost().associationLink( String.format( "/associations/%s", targetAssociation.getId() ) ), CREATED );
+//        return new ResponseEntity<>(new ResponseBodyPost().associationLink(String.format("/associations/%s", targetAssociation.getId())), CREATED);
 //    }
 //
 //}

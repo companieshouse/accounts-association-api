@@ -30,7 +30,7 @@ public class CompanyService {
     private static final String BLANK_COMPANY_NUMBER = "Company number cannot be blank";
 
     @Autowired
-    public CompanyService( @Qualifier( "companyRestClient" ) final RestClient companyRestClient) {
+    public CompanyService(@Qualifier("companyRestClient") final RestClient companyRestClient) {
         this.companyRestClient = companyRestClient;
     }
 

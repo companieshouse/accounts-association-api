@@ -14,26 +14,26 @@ class InvitationEmailBuilderTest {
     @Test
     void buildInstantiatesEmailData() {
         final var expectedEmailData = new InvitationEmailData();
-        expectedEmailData.setTo( "kpatel@companieshouse.gov.uk" );
-        expectedEmailData.setSubject( "Companies House: Elon Musk invited to be authorised to file online for Tesla" );
-        expectedEmailData.setPersonWhoCreatedInvite( "Krishna Patel" );
-        expectedEmailData.setInvitee( "Elon Musk" );
-        expectedEmailData.setCompanyName( "Tesla" );
+        expectedEmailData.setTo("kpatel@companieshouse.gov.uk");
+        expectedEmailData.setSubject("Companies House: Elon Musk invited to be authorised to file online for Tesla");
+        expectedEmailData.setPersonWhoCreatedInvite("Krishna Patel");
+        expectedEmailData.setInvitee("Elon Musk");
+        expectedEmailData.setCompanyName("Tesla");
 
         final var actualEmailData = new InvitationEmailBuilder()
-                .setRecipientEmail( "kpatel@companieshouse.gov.uk" )
-                .setInviterDisplayName( "Krishna Patel" )
-                .setInviteeDisplayName( "Elon Musk" )
-                .setCompanyName( "Tesla" )
+                .setRecipientEmail("kpatel@companieshouse.gov.uk")
+                .setInviterDisplayName("Krishna Patel")
+                .setInviteeDisplayName("Elon Musk")
+                .setCompanyName("Tesla")
                 .build();
 
-        Assertions.assertEquals( expectedEmailData, actualEmailData );
+        Assertions.assertEquals(expectedEmailData, actualEmailData);
     }
 
     @Test
     void buildWithNullsThrowsNullPointerException(){
         final var builder = new InvitationEmailBuilder();
-        Assertions.assertThrows( NullPointerException.class, builder::build );
+        Assertions.assertThrows(NullPointerException.class, builder::build);
     }
 
 }

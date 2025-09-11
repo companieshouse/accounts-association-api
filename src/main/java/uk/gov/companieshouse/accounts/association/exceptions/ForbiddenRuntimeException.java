@@ -8,11 +8,11 @@ import uk.gov.companieshouse.logging.LoggerFactory;
 
 public class ForbiddenRuntimeException extends RuntimeException {
 
-    private static final Logger LOG = LoggerFactory.getLogger( APPLICATION_NAMESPACE );
+    private static final Logger LOG = LoggerFactory.getLogger(APPLICATION_NAMESPACE);
 
-    public ForbiddenRuntimeException( final String exceptionMessage, final Exception loggingMessage ) {
-        super( exceptionMessage );
-        LOG.errorContext( getXRequestId(), loggingMessage, null );
+    public ForbiddenRuntimeException(final String exceptionMessage, final Exception loggingMessage) {
+        super(exceptionMessage);
+        LOG.errorContext(getXRequestId(), loggingMessage, null);
     }
 
 }

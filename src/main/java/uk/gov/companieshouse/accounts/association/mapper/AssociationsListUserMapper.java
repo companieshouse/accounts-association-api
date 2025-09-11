@@ -13,22 +13,22 @@ import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
 @Component
-@Mapper( componentModel = "spring" )
+@Mapper(componentModel = "spring")
 public abstract class AssociationsListUserMapper extends AssociationMapper {
 
-    public AssociationsList daoToDto( final Page<AssociationDao> associationsList, final User user ) {
-        if ( Objects.isNull( user ) ){
-            LOGGER.errorContext( getXRequestId(), new Exception( "User cannot be null" ), null );
-            throw new IllegalArgumentException( "User cannot be null" );
+    public AssociationsList daoToDto(final Page<AssociationDao> associationsList, final User user) {
+        if (Objects.isNull(user)){
+            LOGGER.errorContext(getXRequestId(), new Exception("User cannot be null"), null);
+            throw new IllegalArgumentException("User cannot be null");
         }
 
-        final var companies = companyService.fetchCompanyProfiles( associationsList.stream() );
-        final var associations = associationsList.map( associationDao -> {
-            final var company = companies.get( associationDao.getCompanyNumber() );
-            return daoToDto( associationDao, user, company );
-        } );
+        final var companies = companyService.fetchCompanyProfiles(associationsList.stream());
+        final var associations = associationsList.map(associationDao -> {
+            final var company = companies.get(associationDao.getCompanyNumber());
+            return daoToDto(associationDao, user, company);
+        });
 
-        return enrichWithMetadata( associations, "" );
+        return enrichWithMetadata(associations, "");
     }
 
 }

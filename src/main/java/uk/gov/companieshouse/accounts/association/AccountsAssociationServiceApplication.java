@@ -11,12 +11,12 @@ public class AccountsAssociationServiceApplication {
     final StaticPropertyUtil staticPropertyUtil;
 
     @Autowired
-    public AccountsAssociationServiceApplication( final StaticPropertyUtil staticPropertyUtil ) {
+    public AccountsAssociationServiceApplication(final StaticPropertyUtil staticPropertyUtil) {
         this.staticPropertyUtil = staticPropertyUtil;
     }
 
-    public static void main( String[] args ) {
-        SpringApplication.run( AccountsAssociationServiceApplication.class, args );
+    public static void main(String[] args) {
+        SpringApplication.run(AccountsAssociationServiceApplication.class, args);
     }
 
 }

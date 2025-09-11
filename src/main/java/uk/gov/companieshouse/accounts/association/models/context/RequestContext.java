@@ -6,8 +6,8 @@ public final class RequestContext {
 
     private RequestContext(){}
 
-    public static void setRequestContext( final RequestContextData requestContext ){
-        requestContextDataThreadLocal.set( requestContext );
+    public static void setRequestContext(final RequestContextData requestContext){
+        requestContextDataThreadLocal.set(requestContext);
     }
 
     public static RequestContextData getRequestContext(){

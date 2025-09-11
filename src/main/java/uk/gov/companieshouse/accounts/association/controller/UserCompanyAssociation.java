@@ -59,7 +59,7 @@
 //    private final AssociationsService associationsService;
 //    private final EmailService emailService;
 //
-//    public UserCompanyAssociation( final UsersService usersService, final CompanyService companyService, final AssociationsService associationsService, final EmailService emailService ) {
+//    public UserCompanyAssociation(final UsersService usersService, final CompanyService companyService, final AssociationsService associationsService, final EmailService emailService) {
 //        this.usersService = usersService;
 //        this.companyService = companyService;
 //        this.associationsService = associationsService;
@@ -67,157 +67,157 @@
 //    }
 //
 //    @Override
-//    public ResponseEntity<Association> getAssociationForId( final String associationId ) {
-//        LOGGER.infoContext( getXRequestId(), String.format( "Received request with id=%s.", associationId ),null );
-//        return associationsService.fetchAssociationDto( associationId )
-//                .map( association -> new ResponseEntity<>( association, OK ) )
-//                .orElseThrow( () -> new NotFoundRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Cannot find Association for the id: %s" ) ) );
+//    public ResponseEntity<Association> getAssociationForId(final String associationId) {
+//        LOGGER.infoContext(getXRequestId(), String.format("Received request with id=%s.", associationId),null);
+//        return associationsService.fetchAssociationDto(associationId)
+//                .map(association -> new ResponseEntity<>(association, OK))
+//                .orElseThrow(() -> new NotFoundRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("Cannot find Association for the id: %s")));
 //    }
 //
 //    @Override
-//    public ResponseEntity<InvitationsList> getInvitationsForAssociation( final String associationId, final Integer pageIndex, final Integer itemsPerPage ) {
-//        LOGGER.infoContext( getXRequestId(), String.format( "Received request with id=%s, page_index=%d, items_per_page=%d.", associationId, pageIndex, itemsPerPage ),null );
+//    public ResponseEntity<InvitationsList> getInvitationsForAssociation(final String associationId, final Integer pageIndex, final Integer itemsPerPage) {
+//        LOGGER.infoContext(getXRequestId(), String.format("Received request with id=%s, page_index=%d, items_per_page=%d.", associationId, pageIndex, itemsPerPage),null);
 //
-//        if ( pageIndex < 0 || itemsPerPage <= 0 ){
-//            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
+//        if (pageIndex < 0 || itemsPerPage <= 0){
+//            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(PAGINATION_IS_MALFORMED));
 //        }
 //
-//        return associationsService.fetchInvitations( associationId, pageIndex, itemsPerPage )
-//                .map( invitations -> new ResponseEntity<>( invitations, OK ) )
-//                .orElseThrow( () -> new NotFoundRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Could not find association %s.", associationId ) ) ) );
+//        return associationsService.fetchInvitations(associationId, pageIndex, itemsPerPage)
+//                .map(invitations -> new ResponseEntity<>(invitations, OK))
+//                .orElseThrow(() -> new NotFoundRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("Could not find association %s.", associationId))));
 //    }
 //
 //    @Override
-//    public ResponseEntity<PreviousStatesList> getPreviousStatesForAssociation( final String associationId, final Integer pageIndex, final Integer itemsPerPage ){
-//        LOGGER.infoContext( getXRequestId(), String.format( "Received request with id=%s, page_index=%d, items_per_page=%d.", associationId, pageIndex, itemsPerPage ),null );
+//    public ResponseEntity<PreviousStatesList> getPreviousStatesForAssociation(final String associationId, final Integer pageIndex, final Integer itemsPerPage){
+//        LOGGER.infoContext(getXRequestId(), String.format("Received request with id=%s, page_index=%d, items_per_page=%d.", associationId, pageIndex, itemsPerPage),null);
 //
-//        if ( pageIndex < 0 || itemsPerPage <= 0 ) {
-//            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
+//        if (pageIndex < 0 || itemsPerPage <= 0) {
+//            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(PAGINATION_IS_MALFORMED));
 //        }
 //
-//        return associationsService.fetchPreviousStates( associationId, pageIndex, itemsPerPage )
-//                .map( previousStates -> new ResponseEntity<>( previousStates, OK ) )
-//                .orElseThrow( () -> new NotFoundRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Association %s was not found", associationId ) ) ) );
+//        return associationsService.fetchPreviousStates(associationId, pageIndex, itemsPerPage)
+//                .map(previousStates -> new ResponseEntity<>(previousStates, OK))
+//                .orElseThrow(() -> new NotFoundRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("Association %s was not found", associationId))));
 //    }
 //
 //
-//    private Update mapToAPIKeyUpdate( final RequestBodyPut.StatusEnum proposedStatus, final AssociationDao targetAssociation, final User targetUser ){
-//        final var oldStatus = StatusEnum.fromValue( targetAssociation.getStatus() );
-//        return switch ( proposedStatus ){
-//            case CONFIRMED -> Optional.of( CONFIRMED )
-//                    .filter( status -> MIGRATED.equals( oldStatus ) || UNAUTHORISED.equals( oldStatus ) )
-//                    .map( status -> mapToAuthCodeConfirmedUpdated( targetAssociation, targetUser, COMPANIES_HOUSE ) )
-//                    .orElseThrow( () -> new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "API Key cannot change a %s association to confirmed", oldStatus.getValue() ) ) ) );
-//            case REMOVED -> throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Unable to change the association status to removed with API Key" ) );
-//            case UNAUTHORISED -> mapToUnauthorisedUpdate( targetAssociation, targetUser );
+//    private Update mapToAPIKeyUpdate(final RequestBodyPut.StatusEnum proposedStatus, final AssociationDao targetAssociation, final User targetUser){
+//        final var oldStatus = StatusEnum.fromValue(targetAssociation.getStatus());
+//        return switch (proposedStatus){
+//            case CONFIRMED -> Optional.of(CONFIRMED)
+//                    .filter(status -> MIGRATED.equals(oldStatus) || UNAUTHORISED.equals(oldStatus))
+//                    .map(status -> mapToAuthCodeConfirmedUpdated(targetAssociation, targetUser, COMPANIES_HOUSE))
+//                    .orElseThrow(() -> new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("API Key cannot change a %s association to confirmed", oldStatus.getValue()))));
+//            case REMOVED -> throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("Unable to change the association status to removed with API Key"));
+//            case UNAUTHORISED -> mapToUnauthorisedUpdate(targetAssociation, targetUser);
 //        };
 //    }
 //
-//    private Update mapToOAuth2Update( final RequestBodyPut.StatusEnum proposedStatus, final AssociationDao targetAssociation, final User targetUser ){
-//        final var oldStatus = StatusEnum.fromValue( targetAssociation.getStatus() );
-//        if ( isRequestingUser( targetAssociation ) ){
-//            return switch( proposedStatus ){
-//                case CONFIRMED -> Optional.of( CONFIRMED )
-//                        .filter( status -> !( MIGRATED.equals( oldStatus ) || UNAUTHORISED.equals( oldStatus ) ) )
-//                        .map( status -> mapToConfirmedUpdate( targetAssociation, targetUser, getEricIdentity() ) )
-//                        .orElseThrow( () -> new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user cannot change their status from migrated to confirmed" ) ) );
-//                case REMOVED -> mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() );
-//                case UNAUTHORISED -> throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user cannot change their status to unauthorised" ) );
+//    private Update mapToOAuth2Update(final RequestBodyPut.StatusEnum proposedStatus, final AssociationDao targetAssociation, final User targetUser){
+//        final var oldStatus = StatusEnum.fromValue(targetAssociation.getStatus());
+//        if (isRequestingUser(targetAssociation)){
+//            return switch(proposedStatus){
+//                case CONFIRMED -> Optional.of(CONFIRMED)
+//                        .filter(status -> !(MIGRATED.equals(oldStatus) || UNAUTHORISED.equals(oldStatus)))
+//                        .map(status -> mapToConfirmedUpdate(targetAssociation, targetUser, getEricIdentity()))
+//                        .orElseThrow(() -> new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("Requesting user cannot change their status from migrated to confirmed")));
+//                case REMOVED -> mapToRemovedUpdate(targetAssociation, targetUser, getEricIdentity());
+//                case UNAUTHORISED -> throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("Requesting user cannot change their status to unauthorised"));
 //            };
 //        }
-//        return switch ( proposedStatus ){
-//            case CONFIRMED -> Optional.of( CONFIRMED )
-//                    .filter( status -> MIGRATED.equals( oldStatus ) || UNAUTHORISED.equals( oldStatus ) )
-//                    .filter( status -> associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) )
-//                    .map( status -> mapToInvitationUpdate( targetAssociation, targetUser, getEricIdentity(), now() ) )
-//                    .orElseThrow( () -> new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) );
-//            case REMOVED -> Optional.of( REMOVED )
-//                    .filter( status -> associationsService.confirmedAssociationExists( targetAssociation.getCompanyNumber(), getEricIdentity() ) || hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) )
-//                    .map( status -> mapToRemovedUpdate( targetAssociation, targetUser, getEricIdentity() ) )
-//                    .orElseThrow( () -> new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber() ) ) ) );
-//            case UNAUTHORISED -> throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Requesting %s user cannot change another user to unauthorised", getEricIdentity() ) ) );
+//        return switch (proposedStatus){
+//            case CONFIRMED -> Optional.of(CONFIRMED)
+//                    .filter(status -> MIGRATED.equals(oldStatus) || UNAUTHORISED.equals(oldStatus))
+//                    .filter(status -> associationsService.confirmedAssociationExists(targetAssociation.getCompanyNumber(), getEricIdentity()))
+//                    .map(status -> mapToInvitationUpdate(targetAssociation, targetUser, getEricIdentity(), now()))
+//                    .orElseThrow(() -> new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber()))));
+//            case REMOVED -> Optional.of(REMOVED)
+//                    .filter(status -> associationsService.confirmedAssociationExists(targetAssociation.getCompanyNumber(), getEricIdentity()) || hasAdminPrivilege(ADMIN_UPDATE_PERMISSION))
+//                    .map(status -> mapToRemovedUpdate(targetAssociation, targetUser, getEricIdentity()))
+//                    .orElseThrow(() -> new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("Requesting %s user cannot change another user to confirmed or the requesting user is not associated with company %s", getEricIdentity(), targetAssociation.getCompanyNumber()))));
+//            case UNAUTHORISED -> throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("Requesting %s user cannot change another user to unauthorised", getEricIdentity())));
 //        };
 //    }
 //
 //    @Override
-//    public ResponseEntity<Void> updateAssociationStatusForId( final String associationId, final RequestBodyPut requestBody ) {
-//        LOGGER.infoContext( getXRequestId(), String.format( "Received request with id=%s, user_id=%s, status=%s.", associationId, getEricIdentity(), requestBody.getStatus() ),null );
+//    public ResponseEntity<Void> updateAssociationStatusForId(final String associationId, final RequestBodyPut requestBody) {
+//        LOGGER.infoContext(getXRequestId(), String.format("Received request with id=%s, user_id=%s, status=%s.", associationId, getEricIdentity(), requestBody.getStatus()),null);
 //
 //        final var targetAssociation = associationsService
-//                .fetchAssociationDao( associationId )
-//                .orElseThrow( () -> new NotFoundRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Could not find association %s.", associationId ) ) ) );
+//                .fetchAssociationDao(associationId)
+//                .orElseThrow(() -> new NotFoundRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("Could not find association %s.", associationId))));
 //
-//        final var targetUser = usersService.fetchUserDetails( targetAssociation );
+//        final var targetUser = usersService.fetchUserDetails(targetAssociation);
 //
-//        final var update = isAPIKeyRequest() ? mapToAPIKeyUpdate( requestBody.getStatus(), targetAssociation, targetUser ) : mapToOAuth2Update( requestBody.getStatus(), targetAssociation, targetUser );
-//        associationsService.updateAssociation( targetAssociation.getId(), update );
+//        final var update = isAPIKeyRequest() ? mapToAPIKeyUpdate(requestBody.getStatus(), targetAssociation, targetUser) : mapToOAuth2Update(requestBody.getStatus(), targetAssociation, targetUser);
+//        associationsService.updateAssociation(targetAssociation.getId(), update);
 //
-//        final var newStatus = StatusEnum.fromValue( requestBody.getStatus().getValue() );
-//        sendStatusUpdateEmails( targetAssociation, targetUser, newStatus );
+//        final var newStatus = StatusEnum.fromValue(requestBody.getStatus().getValue());
+//        sendStatusUpdateEmails(targetAssociation, targetUser, newStatus);
 //
-//        return new ResponseEntity<>( OK );
+//        return new ResponseEntity<>(OK);
 //    }
 //
-//    private void sendStatusUpdateEmails( final AssociationDao targetAssociation, final User targetUser, final StatusEnum newStatus ) {
+//    private void sendStatusUpdateEmails(final AssociationDao targetAssociation, final User targetUser, final StatusEnum newStatus) {
 //        final var xRequestId = getXRequestId();
-//        final var requestingUserDisplayValue = isAPIKeyRequest() || hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) ? COMPANIES_HOUSE : mapToDisplayValue( getUser(), getUser().getEmail() );
-//        final var targetUserDisplayValue = mapToDisplayValue( targetUser, targetAssociation.getUserEmail() );
-//        final var targetUserEmail = Optional.ofNullable( targetUser ).map( User::getEmail ).orElse( targetAssociation.getUserEmail() );
+//        final var requestingUserDisplayValue = isAPIKeyRequest() || hasAdminPrivilege(ADMIN_UPDATE_PERMISSION) ? COMPANIES_HOUSE : mapToDisplayValue(getUser(), getUser().getEmail());
+//        final var targetUserDisplayValue = mapToDisplayValue(targetUser, targetAssociation.getUserEmail());
+//        final var targetUserEmail = Optional.ofNullable(targetUser).map(User::getEmail).orElse(targetAssociation.getUserEmail());
 //        final var oldStatus = targetAssociation.getStatus();
 //
 //        final var cachedCompanyName = Mono
-//                .just( targetAssociation.getCompanyNumber() )
-//                .map( companyService::fetchCompanyProfile )
-//                .map( CompanyDetails::getCompanyName )
+//                .just(targetAssociation.getCompanyNumber())
+//                .map(companyService::fetchCompanyProfile)
+//                .map(CompanyDetails::getCompanyName)
 //                .cache();
 //
 //        final var cachedAssociatedUsers = Mono
-//                .just( targetAssociation.getCompanyNumber() )
-//                .flatMapMany( associationsService::fetchConfirmedUserIds )
+//                .just(targetAssociation.getCompanyNumber())
+//                .flatMapMany(associationsService::fetchConfirmedUserIds)
 //                .cache();
 //
 //        final var cachedInvitedByDisplayName = Mono
-//                .just( targetAssociation )
-//                .map( AssociationDao::getInvitations )
-//                .flatMapMany( Flux::fromIterable )
-//                .reduce( (firstInvitation, secondInvitation) -> firstInvitation.getInvitedAt().isAfter( secondInvitation.getInvitedAt() ) ? firstInvitation : secondInvitation )
-//                .map( InvitationDao::getInvitedBy )
-//                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
-//                .map( user -> Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() ) )
+//                .just(targetAssociation)
+//                .map(AssociationDao::getInvitations)
+//                .flatMapMany(Flux::fromIterable)
+//                .reduce((firstInvitation, secondInvitation) -> firstInvitation.getInvitedAt().isAfter(secondInvitation.getInvitedAt()) ? firstInvitation : secondInvitation)
+//                .map(InvitationDao::getInvitedBy)
+//                .map(user -> usersService.fetchUserDetails(user, xRequestId))
+//                .map(user -> Optional.ofNullable(user.getDisplayName()).orElse(user.getEmail()))
 //                .cache();
 //
-//        final var isRejectingInvitation = isOAuth2Request() && isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
-//        final var authorisationIsBeingRemoved = isOAuth2Request() && oldStatus.equals( CONFIRMED.getValue() ) && newStatus.equals( REMOVED );
-//        final var isAcceptingInvitation = isOAuth2Request() && isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( CONFIRMED );
-//        final var isCancellingAnotherUsersInvitation = isOAuth2Request() && !isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
-//        final var isRemovingAnotherUsersMigratedAssociation = isOAuth2Request() && !isRequestingUser( targetAssociation ) && oldStatus.equals( MIGRATED.getValue() ) && newStatus.equals( REMOVED );
-//        final var isRemovingOwnMigratedAssociation = isOAuth2Request() && isRequestingUser( targetAssociation ) && oldStatus.equals( MIGRATED.getValue() ) && newStatus.equals( REMOVED );
-//        final var isInvitingUser = isOAuth2Request() && !isRequestingUser( targetAssociation ) && ( oldStatus.equals( MIGRATED.getValue() ) || oldStatus.equals( UNAUTHORISED.getValue() ) && newStatus.equals( CONFIRMED ) );
-//        final var isConfirmingWithAuthCode = isAPIKeyRequest() && ( oldStatus.equals( MIGRATED.getValue() ) || oldStatus.equals( UNAUTHORISED.getValue() ) && newStatus.equals( CONFIRMED ) );
+//        final var isRejectingInvitation = isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED);
+//        final var authorisationIsBeingRemoved = isOAuth2Request() && oldStatus.equals(CONFIRMED.getValue()) && newStatus.equals(REMOVED);
+//        final var isAcceptingInvitation = isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(CONFIRMED);
+//        final var isCancellingAnotherUsersInvitation = isOAuth2Request() && !isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED);
+//        final var isRemovingAnotherUsersMigratedAssociation = isOAuth2Request() && !isRequestingUser(targetAssociation) && oldStatus.equals(MIGRATED.getValue()) && newStatus.equals(REMOVED);
+//        final var isRemovingOwnMigratedAssociation = isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(MIGRATED.getValue()) && newStatus.equals(REMOVED);
+//        final var isInvitingUser = isOAuth2Request() && !isRequestingUser(targetAssociation) && (oldStatus.equals(MIGRATED.getValue()) || oldStatus.equals(UNAUTHORISED.getValue()) && newStatus.equals(CONFIRMED));
+//        final var isConfirmingWithAuthCode = isAPIKeyRequest() && (oldStatus.equals(MIGRATED.getValue()) || oldStatus.equals(UNAUTHORISED.getValue()) && newStatus.equals(CONFIRMED));
 //
 //        var emails = Flux.empty();
-//        if ( isRejectingInvitation ) {
-//            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationRejectedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue ) ) );
-//        } else if ( authorisationIsBeingRemoved ) {
-//            emails = emails.concatWith( emailService.sendAuthorisationRemovedEmailToRemovedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation.getUserId() ) );
-//            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendAuthorisationRemovedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-//        } else if ( isAcceptingInvitation ) {
-//            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationAcceptedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, cachedInvitedByDisplayName, requestingUserDisplayValue ) ) );
-//        } else if ( isCancellingAnotherUsersInvitation ) {
-//            emails = emails.concatWith( emailService.sendInviteCancelledEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation ) );
-//            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationCancelledEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-//        } else if ( isRemovingAnotherUsersMigratedAssociation ) {
-//            emails = emails.concatWith( emailService.sendDelegatedRemovalOfMigratedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserEmail ) );
-//            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendDelegatedRemovalOfMigratedBatchEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-//        } else if ( isRemovingOwnMigratedAssociation ) {
-//            emails = emails.concatWith( emailService.sendRemoveOfOwnMigratedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, getEricIdentity() ) );
-//            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendDelegatedRemovalOfMigratedBatchEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-//        } else if ( isInvitingUser ) {
-//            final var invitationExpiryTimestamp = LocalDateTime.now().plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ).toString();
-//            emails = emails.concatWith( emailService.sendInviteEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, invitationExpiryTimestamp, targetUserEmail ) );
-//            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-//        } else if ( isConfirmingWithAuthCode ){
-//            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendAuthCodeConfirmationEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, targetUserDisplayValue ) ) );
+//        if (isRejectingInvitation) {
+//            emails = emails.concatWith(cachedAssociatedUsers.flatMap(emailService.sendInvitationRejectedEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue)));
+//        } else if (authorisationIsBeingRemoved) {
+//            emails = emails.concatWith(emailService.sendAuthorisationRemovedEmailToRemovedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation.getUserId()));
+//            emails = emails.concatWith(cachedAssociatedUsers.flatMap(emailService.sendAuthorisationRemovedEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue)));
+//        } else if (isAcceptingInvitation) {
+//            emails = emails.concatWith(cachedAssociatedUsers.flatMap(emailService.sendInvitationAcceptedEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, cachedInvitedByDisplayName, requestingUserDisplayValue)));
+//        } else if (isCancellingAnotherUsersInvitation) {
+//            emails = emails.concatWith(emailService.sendInviteCancelledEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation));
+//            emails = emails.concatWith(cachedAssociatedUsers.flatMap(emailService.sendInvitationCancelledEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue)));
+//        } else if (isRemovingAnotherUsersMigratedAssociation) {
+//            emails = emails.concatWith(emailService.sendDelegatedRemovalOfMigratedEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserEmail));
+//            emails = emails.concatWith(cachedAssociatedUsers.flatMap(emailService.sendDelegatedRemovalOfMigratedBatchEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue)));
+//        } else if (isRemovingOwnMigratedAssociation) {
+//            emails = emails.concatWith(emailService.sendRemoveOfOwnMigratedEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, getEricIdentity()));
+//            emails = emails.concatWith(cachedAssociatedUsers.flatMap(emailService.sendDelegatedRemovalOfMigratedBatchEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue)));
+//        } else if (isInvitingUser) {
+//            final var invitationExpiryTimestamp = LocalDateTime.now().plusDays(DAYS_SINCE_INVITE_TILL_EXPIRES).toString();
+//            emails = emails.concatWith(emailService.sendInviteEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, invitationExpiryTimestamp, targetUserEmail));
+//            emails = emails.concatWith(cachedAssociatedUsers.flatMap(emailService.sendInvitationEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue)));
+//        } else if (isConfirmingWithAuthCode){
+//            emails = emails.concatWith(cachedAssociatedUsers.flatMap(emailService.sendAuthCodeConfirmationEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, targetUserDisplayValue)));
 //        }
 //        emails.subscribe();
 //    }

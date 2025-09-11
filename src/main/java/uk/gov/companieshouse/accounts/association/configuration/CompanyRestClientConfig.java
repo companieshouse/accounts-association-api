@@ -9,17 +9,17 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class CompanyRestClientConfig {
 
-    @Value( "${private.api.url}" )
+    @Value("${private.api.url}")
     private String privateApiUrl;
 
-    @Value( "${chs.internal.api.key}" )
+    @Value("${chs.internal.api.key}")
     private String chsInternalApiKey;
 
     @Bean
     public RestClient companyWebClient(){
         return RestClient.builder()
-                .baseUrl( privateApiUrl )
-                .defaultHeader( "Authorization", chsInternalApiKey )
+                .baseUrl(privateApiUrl)
+                .defaultHeader("Authorization", chsInternalApiKey)
                 .build();
     }
 

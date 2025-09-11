@@ -14,24 +14,24 @@ class InvitationRejectedEmailBuilderTest {
     @Test
     void buildInstantiatesEmailData() {
         final var expectedEmailData = new InvitationRejectedEmailData();
-        expectedEmailData.setTo( "kpatel@companieshouse.gov.uk" );
-        expectedEmailData.setSubject( "Companies House: Elon Musk has declined to be digitally authorised to file online for Tesla" );
-        expectedEmailData.setPersonWhoDeclined( "Elon Musk" );
-        expectedEmailData.setCompanyName( "Tesla" );
+        expectedEmailData.setTo("kpatel@companieshouse.gov.uk");
+        expectedEmailData.setSubject("Companies House: Elon Musk has declined to be digitally authorised to file online for Tesla");
+        expectedEmailData.setPersonWhoDeclined("Elon Musk");
+        expectedEmailData.setCompanyName("Tesla");
 
         final var actualEmailData = new InvitationRejectedEmailBuilder()
-                .setRecipientEmail( "kpatel@companieshouse.gov.uk" )
-                .setInviteeDisplayName( "Elon Musk" )
-                .setCompanyName( "Tesla" )
+                .setRecipientEmail("kpatel@companieshouse.gov.uk")
+                .setInviteeDisplayName("Elon Musk")
+                .setCompanyName("Tesla")
                 .build();
 
-        Assertions.assertEquals( expectedEmailData, actualEmailData );
+        Assertions.assertEquals(expectedEmailData, actualEmailData);
     }
 
     @Test
     void buildWithNullsThrowsNullPointerException(){
         final var builder = new InvitationRejectedEmailBuilder();
-        Assertions.assertThrows( NullPointerException.class, builder::build );
+        Assertions.assertThrows(NullPointerException.class, builder::build);
     }
 
 }

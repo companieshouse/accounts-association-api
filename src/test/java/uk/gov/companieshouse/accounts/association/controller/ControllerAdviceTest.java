@@ -31,7 +31,7 @@
 //
 //@Tag("unit-test")
 //@Import(WebSecurityConfig.class)
-//@WebMvcTest( UserCompanyAssociations.class )
+//@WebMvcTest(UserCompanyAssociations.class)
 //class ControllerAdviceTest {
 //
 //    @Autowired
@@ -60,38 +60,38 @@
 //
 //    @BeforeEach
 //    void setup() {
-//        mockMvc = MockMvcBuilders.webAppContextSetup( context )
-//                .apply( SecurityMockMvcConfigurers.springSecurity() )
+//        mockMvc = MockMvcBuilders.webAppContextSetup(context)
+//                .apply(SecurityMockMvcConfigurers.springSecurity())
 //                .build();
 //    }
 //
 //    @Test
 //    void testNotFoundRuntimeError() throws Exception {
-//        Mockito.doThrow(new NotFoundRuntimeException( "Couldn't find association", new Exception( "Couldn't find association" ) ))
+//        Mockito.doThrow(new NotFoundRuntimeException("Couldn't find association", new Exception("Couldn't find association")))
 //                .when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
 //
 //        mockMvc.perform(get("/associations")
 //                        .header("X-Request-Id", "theId123")
 //                        .header("ERIC-Identity", "111")
-//                        .header( "ERIC-Identity-Type", "oauth2" ))
+//                        .header("ERIC-Identity-Type", "oauth2"))
 //                .andExpect(status().isNotFound());
 //    }
 //
 //    @Test
 //    void testBadRequestRuntimeError() throws Exception {
-//        mockMvc.perform(get( "/associations?page_index=-1" )
+//        mockMvc.perform(get("/associations?page_index=-1")
 //                        .header("X-Request-Id", "theId123")
 //                        .header("ERIC-Identity", "111")
-//                        .header( "ERIC-Identity-Type", "oauth2" ))
+//                        .header("ERIC-Identity-Type", "oauth2"))
 //                .andExpect(status().isBadRequest());
 //    }
 //
 //    @Test
 //    void testConstraintViolationError() throws Exception {
-//        mockMvc.perform(get( "/associations?company_number=&&" )
+//        mockMvc.perform(get("/associations?company_number=&&")
 //                        .header("X-Request-Id", "theId123")
 //                        .header("ERIC-Identity", "111")
-//                        .header( "ERIC-Identity-Type", "oauth2" ))
+//                        .header("ERIC-Identity-Type", "oauth2"))
 //                .andExpect(status().isBadRequest());
 //    }
 //
@@ -103,7 +103,7 @@
 //        mockMvc.perform(get("/associations?company_number=123445")
 //                        .header("X-Request-Id", "theId123")
 //                        .header("ERIC-Identity", "111")
-//                        .header( "ERIC-Identity-Type", "oauth2" ))
+//                        .header("ERIC-Identity-Type", "oauth2"))
 //                .andExpect(status().isInternalServerError());
 //    }
 //
@@ -115,20 +115,20 @@
 //        mockMvc.perform(get("/associations")
 //                        .header("X-Request-Id", "theId123")
 //                        .header("ERIC-Identity", "111")
-//                        .header( "ERIC-Identity-Type", "oauth2" ))
+//                        .header("ERIC-Identity-Type", "oauth2"))
 //                .andExpect(status().isInternalServerError());
 //    }
 //
 //    @Test
 //    void testOnForbiddenRuntimeException() throws Exception {
-//        Mockito.doThrow( new ForbiddenRuntimeException( "Forbidden", new Exception( "Forbidden" ) ) )
-//                .when( associationsService ).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses( any(), any(), anySet(), anyInt(), anyInt() );
+//        Mockito.doThrow(new ForbiddenRuntimeException("Forbidden", new Exception("Forbidden")))
+//                .when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(), any(), anySet(), anyInt(), anyInt());
 //
-//        mockMvc.perform( get( "/associations" )
-//                        .header( "X-Request-Id", "theId123" )
-//                        .header( "ERIC-Identity", "111" )
-//                        .header( "ERIC-Identity-Type", "oauth2" ) )
-//                .andExpect( status().isForbidden() );
+//        mockMvc.perform(get("/associations")
+//                        .header("X-Request-Id", "theId123")
+//                        .header("ERIC-Identity", "111")
+//                        .header("ERIC-Identity-Type", "oauth2"))
+//                .andExpect(status().isForbidden());
 //    }
 //
 //}

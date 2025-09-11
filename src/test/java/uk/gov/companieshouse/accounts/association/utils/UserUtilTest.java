@@ -20,51 +20,51 @@ import uk.gov.companieshouse.accounts.association.models.context.RequestContext;
 import uk.gov.companieshouse.accounts.association.models.context.RequestContextData.RequestContextDataBuilder;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
-@ExtendWith( MockitoExtension.class )
-@Tag( "unit-test" )
+@ExtendWith(MockitoExtension.class)
+@Tag("unit-test")
 class UserUtilTest {
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
     private static Stream<Arguments> mapToDisplayValueScenarios(){
         return Stream.of(
-                Arguments.of( null, null, null ),
-                Arguments.of( null, "Not provided", "Not provided" ),
-                Arguments.of( testDataManager.fetchUserDtos( "MKUser001" ).getFirst(), "Not provided", "Mario" ),
-                Arguments.of( testDataManager.fetchUserDtos( "222" ).getFirst(), "Not provided", "the.joker@gotham.city" ) );
+                Arguments.of(null, null, null),
+                Arguments.of(null, "Not provided", "Not provided"),
+                Arguments.of(testDataManager.fetchUserDtos("MKUser001").getFirst(), "Not provided", "Mario"),
+                Arguments.of(testDataManager.fetchUserDtos("222").getFirst(), "Not provided", "the.joker@gotham.city"));
     }
 
     @ParameterizedTest
-    @MethodSource( "mapToDisplayValueScenarios" )
-    void mapToDisplayValueCorrectlyDerivesDisplayValue( final User user, final String defaultValue, final String expectedOutcome ){
-        Assertions.assertEquals( expectedOutcome, mapToDisplayValue( user, defaultValue ) );
+    @MethodSource("mapToDisplayValueScenarios")
+    void mapToDisplayValueCorrectlyDerivesDisplayValue(final User user, final String defaultValue, final String expectedOutcome){
+        Assertions.assertEquals(expectedOutcome, mapToDisplayValue(user, defaultValue));
     }
 
     @Test
     void isRequestingUserWithNullInputsReturnsFalse(){
-        Assertions.assertFalse( isRequestingUser( null ) );
-        Assertions.assertFalse( isRequestingUser( new AssociationDao() ) );
+        Assertions.assertFalse(isRequestingUser(null));
+        Assertions.assertFalse(isRequestingUser(new AssociationDao()));
     }
 
     private static Stream<Arguments> isRequestingUserCorrectlyClassifiesTargetAssociationScenarios(){
         return Stream.of(
-                Arguments.of( new AssociationDao().userId( "111" ), true ),
-                Arguments.of( new AssociationDao().userId( "222" ), false ),
-                Arguments.of( new AssociationDao().userEmail( "bruce.wayne@gotham.city" ), true ),
-                Arguments.of( new AssociationDao().userEmail( "joker@gotham.city" ), false )
-        );
+                Arguments.of(new AssociationDao().userId("111"), true),
+                Arguments.of(new AssociationDao().userId("222"), false),
+                Arguments.of(new AssociationDao().userEmail("bruce.wayne@gotham.city"), true),
+                Arguments.of(new AssociationDao().userEmail("joker@gotham.city"), false)
+       );
     }
 
     @ParameterizedTest
-    @MethodSource( "isRequestingUserCorrectlyClassifiesTargetAssociationScenarios" )
-    void isRequestingUserCorrectlyClassifiesTargetAssociation( final AssociationDao targetAssociation, final boolean expectedOutcome ){
-        final var requestingUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+    @MethodSource("isRequestingUserCorrectlyClassifiesTargetAssociationScenarios")
+    void isRequestingUserCorrectlyClassifiesTargetAssociation(final AssociationDao targetAssociation, final boolean expectedOutcome){
+        final var requestingUser = testDataManager.fetchUserDtos("111").getFirst();
 
         final var request = new MockHttpServletRequest();
-        request.addHeader( ERIC_IDENTITY, requestingUser.getUserId() );
-        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).build() );
+        request.addHeader(ERIC_IDENTITY, requestingUser.getUserId());
+        RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setUser(requestingUser).build());
 
-        Assertions.assertEquals( expectedOutcome, isRequestingUser( targetAssociation ) );
+        Assertions.assertEquals(expectedOutcome, isRequestingUser(targetAssociation));
     }
 
 }
