@@ -1,5 +1,25 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -19,7 +39,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
@@ -34,24 +53,12 @@ import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
-import uk.gov.companieshouse.api.accounts.associations.model.*;
+import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.Links;
+import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 
 @WebMvcTest(UserCompanyAssociations.class)
 @Import(WebSecurityConfig.class)
@@ -548,7 +555,6 @@ class UserCompanyAssociationsTest {
     @Test
     void addAssociationCreatesNewAssociationCorrectlyAndReturnsAssociationIdWithCreatedHttpStatus() throws Exception {
         final var associationDao = testDataManager.fetchAssociationDaos("1").getFirst();
-        final var company = testDataManager.fetchCompanyDetailsDtos("111111").getFirst();
 
         mockers.mockUsersServiceFetchUserDetails("111");
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
@@ -585,7 +591,6 @@ class UserCompanyAssociationsTest {
     @Test
     void addAssociationWithUserThatHasNoDisplayNameSetsDisplayNameToEmailAddress() throws Exception {
         final var associationDao = testDataManager.fetchAssociationDaos("6").getFirst();
-        final var company = testDataManager.fetchCompanyDetailsDtos("333333").getFirst();
 
         mockers.mockUsersServiceFetchUserDetails("666");
         mockers.mockCompanyServiceFetchCompanyProfile("333333");
@@ -617,7 +622,6 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn(user, user).when(usersService).fetchUserDetails(eq("666"), any());
         Mockito.doReturn(page).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(user, "111111",0,15);
         Mockito.doReturn(Stream.of("5555")).when(associationsService).fetchConfirmedUserIds("111111");
-
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "666")
@@ -658,7 +662,6 @@ class UserCompanyAssociationsTest {
     @Test
     void addAssociationWithUserThatHasDisplayNameUsesDisplayName() throws Exception {
         final var associationDao = testDataManager.fetchAssociationDaos("18").getFirst();
-        final var company = testDataManager.fetchCompanyDetailsDtos("333333").getFirst();
 
         mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("333333");
@@ -682,7 +685,6 @@ class UserCompanyAssociationsTest {
     @Test
     void addAssociationCanBeAppliedToMigratedAssociation() throws Exception {
         final var originalAssociationDao = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
-        final var company = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
         final var updatedAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst()
                 .status("confirmed")
                 .previousStates(new ArrayList<>(List.of(new PreviousStatesDao().status("migrated").changedBy("MKUser001").changedAt(LocalDateTime.now()))))
@@ -714,5 +716,4 @@ class UserCompanyAssociationsTest {
         Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq("MKCOMP001"), argThat(
                 "Mushroom Kingdom"::equals), eq("Mario"));
     }
-
 }
