@@ -62,22 +62,23 @@ public class UsersService {
         final var xRequestId = getXRequestId();
         final var userDetailsMap = new ConcurrentHashMap<String, User>();
 
-        associations.parallel().map(AssociationDao::getUserId).forEach(userId -> {
-            final var userDetails = fetchUserDetails(userId, xRequestId);
-            userDetailsMap.put(userId, userDetails);
-        });
+        associations.parallel()
+                .map(AssociationDao::getUserId)
+                .forEach(userId -> {
+                    final var userDetails = fetchUserDetails(userId, xRequestId);
+                    userDetailsMap.put(userId, userDetails);
+                });
 
         return userDetailsMap;
     }
 
-    public UsersList searchUserDetailsByEmail(final List<String> emails) {
+    public UsersList searchUsersDetailsByEmail(final List<String> emails) {
         final var xRequestId = getXRequestId();
         if (emails == null) {
             IllegalArgumentException exception = new IllegalArgumentException("Emails cannot be null");
             LOGGER.errorContext(xRequestId, "Emails cannot be null", exception, null);
             throw exception;
         }
-
         if (emails.stream().anyMatch(Objects::isNull)) {
             InternalServerErrorRuntimeException exception = new InternalServerErrorRuntimeException(EMAIL_IN_LIST_CANNOT_BE_NULL,
                     new Exception(EMAIL_IN_LIST_CANNOT_BE_NULL));
@@ -87,12 +88,14 @@ public class UsersService {
 
         final var synchronizedList = Collections.synchronizedList(new UsersList());
 
-        emails.stream().parallel().forEach(email -> {
-            var userDetails = fetchUserDetailsByEmail(email);
-            if (Objects.nonNull(userDetails)) {
-                synchronizedList.add(userDetails);
-            }
-        });
+        emails.stream()
+                .parallel()
+                .forEach(email -> {
+                    var userDetails = fetchUserDetailsByEmail(email);
+                    if (Objects.nonNull(userDetails)) {
+                        synchronizedList.add(userDetails);
+                    }
+                });
 
         UsersList usersList = null;
         if (!synchronizedList.isEmpty()) {
@@ -131,16 +134,16 @@ public class UsersService {
 
         return Optional.ofNullable(targetUserEmail)
                 .map(userEmail -> {
-            if (isOAuth2Request() && userEmail.equals(getUser().getEmail())) {
-                return getUser();
-            }
-            return Optional.of(userEmail)
-                    .map(List::of)
-                    .map(this::searchUserDetailsByEmail)
-                    .filter(list -> !list.isEmpty())
-                    .map(List::getFirst)
-                    .orElse(null);
-        }).orElse(null);
+                    if (isOAuth2Request() && userEmail.equals(getUser().getEmail())) {
+                        return getUser();
+                    }
+                    return Optional.of(userEmail)
+                            .map(List::of)
+                            .map(this::searchUsersDetailsByEmail)
+                            .filter(list -> !list.isEmpty())
+                            .map(List::getFirst)
+                            .orElse(null);
+                }).orElse(null);
     }
 
     public User fetchUserDetails(final AssociationDao association) {

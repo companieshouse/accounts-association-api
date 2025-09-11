@@ -10,14 +10,9 @@ import java.util.Arrays;
 import java.util.List;
 import org.mockito.Mockito;
 import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpClientErrorException.BadRequest;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientResponseException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -193,13 +188,13 @@ public class Mockers {
             final var userEmails = List.of( userDetails.getEmail() );
             final var usersList = new UsersList();
             usersList.add( userDetails );
-            Mockito.doReturn( usersList ).when( usersService ).searchUserDetailsByEmail(userEmails);
+            Mockito.doReturn( usersList ).when( usersService ).searchUsersDetailsByEmail(userEmails);
         }
     }
 
     public void mockUsersServiceSearchUserDetailsEmptyList( final String... userEmails ){
         for ( final String userEmail: userEmails ) {
-            Mockito.doReturn( new UsersList() ).when( usersService ).searchUserDetailsByEmail( List.of( userEmail ) );
+            Mockito.doReturn( new UsersList() ).when( usersService ).searchUsersDetailsByEmail( List.of( userEmail ) );
         }
     }
 
