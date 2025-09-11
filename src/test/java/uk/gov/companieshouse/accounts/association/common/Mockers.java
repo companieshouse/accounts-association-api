@@ -1,23 +1,26 @@
 package uk.gov.companieshouse.accounts.association.common;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Arrays;
-import java.util.List;
+import java.net.URI;
 import org.mockito.Mockito;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.EmailSendingException;
-import uk.gov.companieshouse.api.accounts.user.model.User;
+
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 public class Mockers {
 
@@ -40,8 +43,10 @@ public class Mockers {
         final var requestHeadersSpec = Mockito.mock( WebClient.RequestHeadersSpec.class );
         final var responseSpec = Mockito.mock( WebClient.ResponseSpec.class );
 
+        Mockito.lenient().doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(Mockito.any(URI.class));
+
         Mockito.doReturn( requestHeadersUriSpec ).when(webClient).get();
-        Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri );
+        Mockito.lenient().doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri );
         Mockito.doReturn( responseSpec ).when( requestHeadersSpec ).retrieve();
         Mockito.doReturn( jsonResponse ).when( responseSpec ).bodyToMono( String.class );
     }
@@ -55,15 +60,47 @@ public class Mockers {
         }
     }
 
-    private void mockWebClientErrorResponse( final String uri, int responseCode ){
-        final var requestHeadersUriSpec = Mockito.mock( WebClient.RequestHeadersUriSpec.class );
-        final var requestHeadersSpec = Mockito.mock( WebClient.RequestHeadersSpec.class );
-        final var responseSpec = Mockito.mock( WebClient.ResponseSpec.class );
+    /**
+     * Mocks a WebClient error response for the given URI string or URI object. <br>
+     * <br>
+     * Please note that the URI can be mocked using either a String or a {@linkplain java.net.URI URI} object, but not both. <br>
+     * If both are provided, the URI string will take precedence.
+     * @param uriString the URI string to mock the error response for (should be null if uriUri is provided)
+     * @param uriUri the URI object to mock the error response for (should be null if uriString is provided)
+     * @param responseCode the HTTP response code to simulate
+     */
+    private void mockWebClientErrorResponse(final String uriString, final URI uriUri, int responseCode) {
+        final var requestHeadersUriSpec = Mockito.mock(WebClient.RequestHeadersUriSpec.class);
+        final var requestHeadersSpec = Mockito.mock(WebClient.RequestHeadersSpec.class);
+        final var responseSpec = Mockito.mock(WebClient.ResponseSpec.class);
 
-        Mockito.doReturn( requestHeadersUriSpec ).when(webClient).get();
-        Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri );
-        Mockito.doReturn( responseSpec ).when( requestHeadersSpec ).retrieve();
-        Mockito.doReturn( Mono.error( new WebClientResponseException( responseCode, "Error", null, null, null ) ) ).when( responseSpec ).bodyToMono( String.class );
+        Mockito.doReturn(requestHeadersUriSpec).when(webClient).get();
+        if (uriString != null) {
+            Mockito.doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(uriString);
+        } else {
+            Mockito.doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(uriUri);
+        }
+        Mockito.doReturn(responseSpec).when(requestHeadersSpec).retrieve();
+        Mockito.doReturn(Mono.error(new WebClientResponseException(responseCode, "Error", null, null, null))).when(responseSpec)
+                .bodyToMono(String.class);
+    }
+
+    /**
+     * Mocks a WebClient error response for the given URI string.
+     * @param uri the URI string to mock the error response for
+     * @param responseCode the HTTP response code to simulate
+     */
+    private void mockWebClientErrorResponse(final String uri, int responseCode) {
+        mockWebClientErrorResponse(uri, null, responseCode);
+    }
+
+    /**
+     * Mocks a WebClient error response for the given URI object.
+     * @param uri the URI object to mock the error response for
+     * @param responseCode the HTTP response code to simulate
+     */
+    private void mockWebClientErrorResponse( final URI uri, int responseCode ){
+        mockWebClientErrorResponse(null, uri, responseCode);
     }
 
     public void mockWebClientForFetchUserDetailsErrorResponse( final String userId, int responseCode ){
@@ -77,42 +114,126 @@ public class Mockers {
         }
     }
 
-    private void mockWebClientJsonParsingError( final String uri ){
-        final var requestHeadersUriSpec = Mockito.mock( WebClient.RequestHeadersUriSpec.class );
-        final var requestHeadersSpec = Mockito.mock( WebClient.RequestHeadersSpec.class );
-        final var responseSpec = Mockito.mock( WebClient.ResponseSpec.class );
+    /**
+     * Mocks a WebClient JSON parsing error for the given URI string or URI object. <br>
+     * <br>
+     * Please note that the URI can be mocked using either a String or a URI object, but not both.
+     * @param uriString the URI string to mock the JSON parsing error for (should be null if uriUri is provided)
+     * @param uriUri the URI object to mock the JSON parsing error for (should be null if uriString is provided)
+     */
+    private void mockWebClientJsonParsingError(final String uriString, final URI uriUri) {
+        final var requestHeadersUriSpec = Mockito.mock(WebClient.RequestHeadersUriSpec.class);
+        final var requestHeadersSpec = Mockito.mock(WebClient.RequestHeadersSpec.class);
+        final var responseSpec = Mockito.mock(WebClient.ResponseSpec.class);
 
-        Mockito.doReturn( requestHeadersUriSpec ).when(webClient).get();
-        Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri );
-        Mockito.doReturn( responseSpec ).when( requestHeadersSpec ).retrieve();
-        Mockito.doReturn( Mono.just( "}{" ) ).when( responseSpec ).bodyToMono( String.class );
+        Mockito.doReturn(requestHeadersUriSpec).when(webClient).get();
+        if(uriString != null){
+            Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uriString );
+        }else{
+            Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uriUri );
+        }
+        Mockito.doReturn(responseSpec).when(requestHeadersSpec).retrieve();
+        Mockito.doReturn(Mono.just("}{")).when(responseSpec).bodyToMono(String.class);
     }
 
-    public void mockWebClientForFetchUserDetailsJsonParsingError( final String userId ){
-        final var uri = String.format( "/users/%s", userId );
-        mockWebClientJsonParsingError( uri );
+    /**
+     * Mocks a WebClient JSON parsing error for the given URI string or URI object. <br>
+     * @param uri the URI string or URI object to mock the JSON parsing error for
+     * @param isUriString indicates whether the uri parameter is a String (true) or a {@linkplain java.net.URI URI} object. (false)
+     */
+    private void mockWebClientJsonParsingError(final String uri, final boolean isUriString) {
+        if (isUriString) {
+            mockWebClientJsonParsingError(uri, null);
+        } else {
+            mockWebClientJsonParsingError(null, URI.create(uri));
+        }
+    }
+
+    /**
+     * Mocks a WebClient JSON parsing error for the given URI string.
+     * @param uri the URI string to mock the JSON parsing error for
+     */
+    private void mockWebClientJsonParsingError(final String uri){
+        mockWebClientJsonParsingError(uri, true);
+    }
+
+    /**
+     * Mocks a WebClient JSON parsing error for the given URI object.
+     * @param uri the URI object to mock the JSON parsing error for
+     */
+    private void mockWebClientJsonParsingError(final URI uri) {
+        mockWebClientJsonParsingError(null, uri);
+    }
+
+    /**
+     * Mocks a WebClient JSON parsing error for the given UriComponents object.
+     * @param uriComponents the UriComponents object to mock the JSON parsing error for
+     * @param isUriString indicates whether to use the URI string (true) or the URI object (false) from the UriComponents
+     */
+    private void mockWebClientJsonParsingError(final UriComponents uriComponents, final boolean isUriString) {
+        if (isUriString) {
+            mockWebClientJsonParsingError(uriComponents.toUriString());
+        } else {
+            mockWebClientJsonParsingError(uriComponents.toUri());
+        }
+    }
+
+    public void mockWebClientForFetchUserDetailsJsonParsingError(final String userId, boolean isUriString) {
+        final String path = String.format("/users/%s", userId);
+        if (isUriString) {
+            mockWebClientJsonParsingError(path);
+        } else {
+            mockWebClientJsonParsingError(URI.create(path));
+        }
     }
 
     public void mockWebClientForSearchUserDetails( final String... userIds ) throws JsonProcessingException {
         final var users = testDataManager.fetchUserDtos( userIds );
-        final var uri = String.format( "/users/search?user_email=" + String.join( "&user_email=", users.stream().map( User::getEmail ).toList() ) );
+        final var uri = UriComponentsBuilder.fromUriString("/users/search")
+                .queryParam("user_email", users.stream().map( User::getEmail ).toList() )
+                .encode()
+                .build()
+                .toString();
         final var jsonResponse = new ObjectMapper().writeValueAsString( users );
         mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ) );
     }
 
-    public void mockWebClientForSearchUserDetailsErrorResponse( final String userEmail, int responseCode ){
-        final var uri = String.format( "/users/search?user_email=%s", userEmail );
-        mockWebClientErrorResponse( uri, responseCode );
+    public UriComponents buildUriComponents(final String userEmail){
+        final var validatedUserEmail = userEmail == null ? "null" : userEmail;
+
+        return UriComponentsBuilder.newInstance()
+                .path("/users/search")
+                .queryParam("user_email", "{emails}")
+                .encode()
+                .buildAndExpand(validatedUserEmail);
+    }
+
+    public void mockWebClientForSearchUserDetailsErrorResponse( final String userEmail, int responseCode, boolean isURI ){
+        final var uriComponents = buildUriComponents(userEmail);
+        if(isURI){
+            mockWebClientErrorResponse( uriComponents.toUri(), responseCode );
+        }else{
+            mockWebClientErrorResponse( uriComponents.toString(), responseCode );
+        }
     }
 
     public void mockWebClientForSearchUserDetailsNonexistentEmail( final String... emails ) {
-        final var uri = String.format( "/users/search?user_email=" + String.join( "&user_email=", Arrays.stream( emails ).toList() ) );
+        final var uri = UriComponentsBuilder.newInstance()
+                .path("/users/search")
+                .queryParam("user_email", "{emails}")
+                .encode()
+                .buildAndExpand(String.join(",", emails))
+                .toUriString() ;
         mockWebClientSuccessResponse( uri, Mono.empty() );
     }
 
-    public void mockWebClientForSearchUserDetailsJsonParsingError( final String... emails ){
-        final var uri = String.format( "/users/search?user_email=" + String.join( "&user_email=", Arrays.stream( emails ).toList() ) );
-        mockWebClientJsonParsingError( uri );
+    public void mockWebClientForSearchUserDetailsJsonParsingError(final String email, boolean isUriString) {
+        final var uri = UriComponentsBuilder.newInstance()
+                .path("/users/search")
+                .queryParam("user_email", "{emails}")
+                .encode()
+                .buildAndExpand(email);
+        mockWebClientJsonParsingError(uri, isUriString);
     }
 
     public void mockWebClientForFetchCompanyProfile( final String... companyNumbers ) throws JsonProcessingException {
@@ -135,9 +256,9 @@ public class Mockers {
         }
     }
 
-    public void mockWebClientForFetchCompanyProfileJsonParsingError( final String companyNumber ){
+    public void mockWebClientForFetchCompanyProfileJsonParsingError( final String companyNumber, boolean isUriString ){
         final var uri = String.format( "/company/%s/company-detail", companyNumber );
-        mockWebClientJsonParsingError( uri );
+        mockWebClientJsonParsingError( uri, isUriString );
     }
 
     public void mockEmailSendingFailure( final String messageType ){

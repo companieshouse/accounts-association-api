@@ -51,7 +51,7 @@ class CompanyServiceTest {
 
     @Test
     void fetchCompanyProfileWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
-        mockers.mockWebClientForFetchCompanyProfileJsonParsingError( "111111" );
+        mockers.mockWebClientForFetchCompanyProfileJsonParsingError( "111111", true );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> companyService.fetchCompanyProfile( "111111" ) );
     }
 
@@ -90,7 +90,7 @@ class CompanyServiceTest {
     @Test
     void fetchCompanyProfilesWithStreamWithArbitraryErrorReturnsInternalServerErrorRuntimeException(){
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
-        mockers.mockWebClientForFetchCompanyProfileJsonParsingError( "111111" );
+        mockers.mockWebClientForFetchCompanyProfileJsonParsingError( "111111", true );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> companyService.fetchCompanyProfiles( Stream.of( associationDao ) ) );
     }
 

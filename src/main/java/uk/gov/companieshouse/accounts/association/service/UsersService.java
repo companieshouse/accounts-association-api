@@ -1,20 +1,11 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
-import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonTo;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.*;
-
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Stream;
+import java.net.URI;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
@@ -22,6 +13,18 @@ import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeExce
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
+import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonTo;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.*;
 
 @Service
 public class UsersService {
@@ -66,7 +69,12 @@ public class UsersService {
     public UsersList searchUserDetails( final List<String> emails ) {
         final var xRequestId = getXRequestId();
         return usersWebClient.get()
-                .uri( "/users/search?user_email=" + String.join( "&user_email=", emails ) )
+                .uri(URI.create(UriComponentsBuilder.newInstance()
+                        .path("/users/search")
+                        .queryParam("user_email", "{emails}")
+                        .encode()
+                        .buildAndExpand(String.join(",", emails))
+                        .toUriString()))
                 .retrieve()
                 .bodyToMono( String.class )
                 .map( parseJsonTo( UsersList.class ) )
