@@ -34,32 +34,17 @@ public class CompanyService {
         this.companyRestClient = companyRestClient;
     }
 
-    private CompanyDetails fetchCompanyProfileRequest(final String companyNumber, final String xRequestId) {
-        final var uri = UriComponentsBuilder.newInstance()
-                .path("/company/{companyNumber}/company-detail")
-                .buildAndExpand(companyNumber)
-                .toUri();
-
-        LOGGER.infoContext(xRequestId, String.format("Starting request to %s. Attempting to retrieve company profile for company: %s", uri, companyNumber), null);
-
-        final var response = companyRestClient.get()
-                .uri(uri)
-                .retrieve()
-                .body(String.class);
-
-        LOGGER.infoContext(xRequestId, String.format("Finished request to %s for company: %s.", uri, companyNumber), null);
-
-        return parseJsonTo(response, CompanyDetails.class);
-    }
-
     public Map<String, CompanyDetails> fetchCompanyProfiles(final Stream<AssociationDao> associations) {
         final var xRequestId = getXRequestId();
         final var companyDetailsMap = new ConcurrentHashMap<String, CompanyDetails>();
 
-        associations.parallel().map(AssociationDao::getCompanyNumber).forEach(companyNumber -> {
-            final var companyDetails = fetchCompanyProfile(companyNumber, xRequestId);
-            companyDetailsMap.put(companyNumber, companyDetails);
-        });
+        associations.parallel()
+                .map(AssociationDao::getCompanyNumber)
+                .forEach(companyNumber -> {
+                    final var companyDetails = fetchCompanyProfile(companyNumber, xRequestId);
+                    companyDetailsMap.put(companyNumber, companyDetails);
+                });
+
         return companyDetailsMap;
     }
 
@@ -87,6 +72,24 @@ public class CompanyService {
             LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, companyNumber), exception, null);
             throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
         }
+    }
+
+    private CompanyDetails fetchCompanyProfileRequest(final String companyNumber, final String xRequestId) {
+        final var uri = UriComponentsBuilder.newInstance()
+                .path("/company/{companyNumber}/company-detail")
+                .buildAndExpand(companyNumber)
+                .toUri();
+
+        LOGGER.infoContext(xRequestId, String.format("Starting request to %s. Attempting to retrieve company profile for company: %s", uri, companyNumber), null);
+
+        final var response = companyRestClient.get()
+                .uri(uri)
+                .retrieve()
+                .body(String.class);
+
+        LOGGER.infoContext(xRequestId, String.format("Finished request to %s for company: %s.", uri, companyNumber), null);
+
+        return parseJsonTo(response, CompanyDetails.class);
     }
 }
 
