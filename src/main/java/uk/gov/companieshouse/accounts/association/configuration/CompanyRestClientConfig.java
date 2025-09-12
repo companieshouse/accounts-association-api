@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 public class CompanyRestClientConfig {
@@ -15,8 +14,8 @@ public class CompanyRestClientConfig {
     @Value("${chs.internal.api.key}")
     private String chsInternalApiKey;
 
-    @Bean
-    public RestClient companyWebClient(){
+    @Bean(name = "companyRestClient")
+    public RestClient companyRestClient(){
         return RestClient.builder()
                 .baseUrl(privateApiUrl)
                 .defaultHeader("Authorization", chsInternalApiKey)

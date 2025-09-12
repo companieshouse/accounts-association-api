@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
+import uk.gov.companieshouse.accounts.association.exceptions.EmailFailedBeforeSendingException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
@@ -137,9 +138,9 @@ public class EmailService {
         try {
             emailProducer.sendEmail(emailData, messageType.getValue());
             LOG.infoContext(xRequestId, logMessageSupplier.toMessage(), null);
-        } catch (Exception exception){
+        } catch (Exception exception) {
             LOG.errorContext(xRequestId, new Exception(logMessageSupplier.toMessageSendingFailureLoggingMessage()), null);
-            throw exception;
+            throw new EmailFailedBeforeSendingException(exception.getMessage());
         }
     }
 

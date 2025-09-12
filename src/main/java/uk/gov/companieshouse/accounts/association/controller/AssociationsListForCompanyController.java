@@ -5,13 +5,17 @@ import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
+import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.hasAdminPrivilege;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isOAuth2Request;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
@@ -25,9 +29,6 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.FetchRequestBodyPost;
-
-import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.*;
 
 @RestController
 public class AssociationsListForCompanyController implements AssociationDataForCompanyInterface {

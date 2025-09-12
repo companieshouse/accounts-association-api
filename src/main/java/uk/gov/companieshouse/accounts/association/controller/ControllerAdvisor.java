@@ -4,13 +4,15 @@ import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGE
 import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonFrom;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.APPLICATION_NAMESPACE;
-import static uk.gov.companieshouse.service.rest.err.Err.invalidBodyBuilderWithLocation;
 import static uk.gov.companieshouse.service.rest.err.Err.invalidPathBuilderWithLocation;
 import static uk.gov.companieshouse.service.rest.err.Err.serviceErrBuilder;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,14 +20,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.EmailFailedBeforeSendingException;
 import uk.gov.companieshouse.accounts.association.exceptions.ForbiddenRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.service.rest.err.Errors;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 
 @ControllerAdvice
 public class ControllerAdvisor extends ResponseEntityExceptionHandler {
@@ -68,6 +67,14 @@ public class ControllerAdvisor extends ResponseEntityExceptionHandler {
         return mapThrownExceptionsToErrors(exception, request);
     }
 
+    @ExceptionHandler(EmailFailedBeforeSendingException.class)
+    @ResponseStatus(HttpStatus.CREATED)
+    @ResponseBody
+    public Errors onEmailNotSentOutException(final EmailFailedBeforeSendingException exception, final HttpServletRequest request) {
+        //TODO: confirm this is only thrown when email fails during creation of an association
+        return mapThrownExceptionsToErrors(exception, request);
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ResponseBody
@@ -90,5 +97,4 @@ public class ControllerAdvisor extends ResponseEntityExceptionHandler {
 
         return errors;
     }
-
 }
