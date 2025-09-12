@@ -240,7 +240,7 @@ class UserCompanyAssociationTest {
 
     @Test
     void updateAssociationStatusForIdWithMalformedAssociationIdReturnsBadRequest() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails( "9999");
+        mockers.mockUsersServiceFetchUserDetails("9999");
 
         mockMvc.perform(patch("/associations/$$$")
                         .header("X-Request-Id", "theId123")
@@ -254,7 +254,7 @@ class UserCompanyAssociationTest {
 
     @Test
     void updateAssociationStatusForIdWithoutRequestBodyReturnsBadRequest() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails( "9999");
+        mockers.mockUsersServiceFetchUserDetails("9999");
 
         mockMvc.perform(patch("/associations/18")
                         .header("X-Request-Id", "theId123")
@@ -267,7 +267,7 @@ class UserCompanyAssociationTest {
 
     @Test
     void updateAssociationStatusForIdWithoutStatusReturnsBadRequest() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails( "9999");
+        mockers.mockUsersServiceFetchUserDetails("9999");
 
         mockMvc.perform(patch("/associations/18")
                         .header("X-Request-Id", "theId123")
@@ -281,7 +281,7 @@ class UserCompanyAssociationTest {
 
     @Test
     void updateAssociationStatusForIdWithMalformedStatusReturnsBadRequest() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails( "9999");
+        mockers.mockUsersServiceFetchUserDetails("9999");
 
         mockMvc.perform(patch("/associations/18")
                         .header("X-Request-Id", "theId123")
@@ -295,7 +295,7 @@ class UserCompanyAssociationTest {
 
     @Test
     void updateAssociationStatusForIdWithNonexistentAssociationIdReturnsNotFound() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails( "9999");
+        mockers.mockUsersServiceFetchUserDetails("9999");
 
         mockMvc.perform(patch("/associations/9191")
                         .header("X-Request-Id", "theId123")
@@ -312,7 +312,7 @@ class UserCompanyAssociationTest {
         final var oldAssociationData = testDataManager.fetchAssociationDaos("18").getFirst();
 
         associationsRepository.insert(oldAssociationData);
-        mockers.mockUsersServiceFetchUserDetails( "9999");
+        mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("333333");
         Mockito.doReturn(testDataManager.fetchUserDtos("9999").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
 
@@ -338,8 +338,10 @@ class UserCompanyAssociationTest {
     void updateAssociationStatusForIdWithConfirmedUpdatesAssociationStatus() throws Exception {
         final var oldAssociationData = testDataManager.fetchAssociationDaos("18").getFirst();
 
+
+
         associationsRepository.insert(oldAssociationData);
-        mockers.mockUsersServiceFetchUserDetails( "9999");
+        mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("333333");
         Mockito.doReturn(testDataManager.fetchUserDtos("9999").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
 
@@ -475,7 +477,7 @@ class UserCompanyAssociationTest {
 
         latch.await(10, TimeUnit.SECONDS);
 
-        Mockito.verify(emailProducer).sendEmail(argThat(comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher("null", "Batman", "null", "Wayne Enterprises", "light.yagami@death.note" )), eq(INVITE_CANCELLED_MESSAGE_TYPE.getValue()));
+        Mockito.verify(emailProducer).sendEmail(argThat(comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher("null", "Batman", "null", "Wayne Enterprises", "light.yagami@death.note")), eq(INVITE_CANCELLED_MESSAGE_TYPE.getValue()));
     }
 
     @Test
@@ -499,7 +501,7 @@ class UserCompanyAssociationTest {
                 .andExpect(status().isOk());
 
         latch.await(10, TimeUnit.SECONDS);
-        Mockito.verify(emailProducer).sendEmail(argThat(comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher("null", "Batman", "null", "Wayne Enterprises",  "light.yagami@death.note" )), eq(INVITE_CANCELLED_MESSAGE_TYPE.getValue()));
+        Mockito.verify(emailProducer).sendEmail(argThat(comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher("null", "Batman", "null", "Wayne Enterprises",  "light.yagami@death.note")), eq(INVITE_CANCELLED_MESSAGE_TYPE.getValue()));
     }
 
     @Test
@@ -546,7 +548,7 @@ class UserCompanyAssociationTest {
 
         setEmailProducerCountDownLatch(3);
 
-        mockMvc.perform(patch("/associations/6" )
+        mockMvc.perform(patch("/associations/6")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "666")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -572,7 +574,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails("MKUser001");
         Mockito.doReturn(testDataManager.fetchUserDtos("MKUser001").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
 
-        mockMvc.perform(patch("/associations/MKAssociation001" )
+        mockMvc.perform(patch("/associations/MKAssociation001")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "MKUser001")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -588,7 +590,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails("MKUser001");
         Mockito.doReturn(testDataManager.fetchUserDtos("MKUser001").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
 
-        mockMvc.perform(patch("/associations/MKAssociation001" )
+        mockMvc.perform(patch("/associations/MKAssociation001")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "MKUser001")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -604,7 +606,7 @@ class UserCompanyAssociationTest {
         Assertions.assertEquals(1, updatedAssociation.getPreviousStates().size());
         Assertions.assertEquals("migrated", updatedAssociation.getPreviousStates().getFirst().getStatus());
         Assertions.assertEquals("MKUser001", updatedAssociation.getPreviousStates().getFirst().getChangedBy());
-        Assertions.assertNotNull( updatedAssociation.getPreviousStates().getFirst().getChangedAt());
+        Assertions.assertNotNull(updatedAssociation.getPreviousStates().getFirst().getChangedAt());
         Assertions.assertNull(updatedAssociation.getUserEmail());
         Assertions.assertEquals("MKUser001", updatedAssociation.getUserId());
     }
@@ -616,7 +618,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails("MKUser002");
         Mockito.doReturn(testDataManager.fetchUserDtos("MKUser001").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
 
-        mockMvc.perform(patch("/associations/MKAssociation001" )
+        mockMvc.perform(patch("/associations/MKAssociation001")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "MKUser002")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -631,7 +633,7 @@ class UserCompanyAssociationTest {
         Assertions.assertEquals(1, updatedAssociation.getPreviousStates().size());
         Assertions.assertEquals("migrated", updatedAssociation.getPreviousStates().getFirst().getStatus());
         Assertions.assertEquals("MKUser002", updatedAssociation.getPreviousStates().getFirst().getChangedBy());
-        Assertions.assertNotNull( updatedAssociation.getPreviousStates().getFirst().getChangedAt());
+        Assertions.assertNotNull(updatedAssociation.getPreviousStates().getFirst().getChangedAt());
         Assertions.assertEquals("MKUser001", updatedAssociation.getUserId());
         Assertions.assertNull(updatedAssociation.getUserEmail());
         Assertions.assertEquals("MKUser002", invitation.getInvitedBy());
@@ -648,7 +650,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails("MKUser002");
         Mockito.doReturn(testDataManager.fetchUserDtos("MKUser001").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
 
-        mockMvc.perform(patch("/associations/MKAssociation001" )
+        mockMvc.perform(patch("/associations/MKAssociation001")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "MKUser002")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -664,7 +666,7 @@ class UserCompanyAssociationTest {
         Assertions.assertEquals(1, updatedAssociation.getPreviousStates().size());
         Assertions.assertEquals("migrated", updatedAssociation.getPreviousStates().getFirst().getStatus());
         Assertions.assertEquals("MKUser002", updatedAssociation.getPreviousStates().getFirst().getChangedBy());
-        Assertions.assertNotNull( updatedAssociation.getPreviousStates().getFirst().getChangedAt());
+        Assertions.assertNotNull(updatedAssociation.getPreviousStates().getFirst().getChangedAt());
         Assertions.assertNull(updatedAssociation.getUserEmail());
         Assertions.assertEquals("MKUser001", updatedAssociation.getUserId());
     }
@@ -676,7 +678,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails("MKUser002");
         Mockito.doReturn(null).when(usersService).fetchUserDetails(any(AssociationDao.class));
 
-        mockMvc.perform(patch("/associations/MKAssociation001" )
+        mockMvc.perform(patch("/associations/MKAssociation001")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "MKUser002")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -695,7 +697,7 @@ class UserCompanyAssociationTest {
         Assertions.assertEquals(1, updatedAssociation.getPreviousStates().size());
         Assertions.assertEquals("migrated", updatedAssociation.getPreviousStates().getFirst().getStatus());
         Assertions.assertEquals("MKUser002", updatedAssociation.getPreviousStates().getFirst().getChangedBy());
-        Assertions.assertNotNull( updatedAssociation.getPreviousStates().getFirst().getChangedAt());
+        Assertions.assertNotNull(updatedAssociation.getPreviousStates().getFirst().getChangedAt());
         Assertions.assertEquals("mario@mushroom.kingdom", updatedAssociation.getUserEmail());
         Assertions.assertNull(updatedAssociation.getUserId());
     }
@@ -707,7 +709,7 @@ class UserCompanyAssociationTest {
         mockers.mockUsersServiceFetchUserDetails("MKUser002");
         Mockito.doReturn(null).when(usersService).fetchUserDetails(any(AssociationDao.class));
 
-        mockMvc.perform(patch("/associations/MKAssociation001" )
+        mockMvc.perform(patch("/associations/MKAssociation001")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "MKUser002")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -723,7 +725,7 @@ class UserCompanyAssociationTest {
         Assertions.assertEquals(1, updatedAssociation.getPreviousStates().size());
         Assertions.assertEquals("migrated", updatedAssociation.getPreviousStates().getFirst().getStatus());
         Assertions.assertEquals("MKUser002", updatedAssociation.getPreviousStates().getFirst().getChangedBy());
-        Assertions.assertNotNull( updatedAssociation.getPreviousStates().getFirst().getChangedAt());
+        Assertions.assertNotNull(updatedAssociation.getPreviousStates().getFirst().getChangedAt());
         Assertions.assertEquals("mario@mushroom.kingdom", updatedAssociation.getUserEmail());
         Assertions.assertNull(updatedAssociation.getUserId());
     }
@@ -738,7 +740,7 @@ class UserCompanyAssociationTest {
 
         setEmailProducerCountDownLatch(2);
 
-        mockMvc.perform(patch("/associations/1" )
+        mockMvc.perform(patch("/associations/1")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -766,7 +768,7 @@ class UserCompanyAssociationTest {
 
         setEmailProducerCountDownLatch(2);
 
-        mockMvc.perform(patch("/associations/6" )
+        mockMvc.perform(patch("/associations/6")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -814,7 +816,7 @@ class UserCompanyAssociationTest {
         return Stream.of(
                 Arguments.of("confirmed"),
                 Arguments.of("removed")
-       );
+      );
     }
 
     @ParameterizedTest
@@ -840,7 +842,7 @@ class UserCompanyAssociationTest {
         return Stream.of(
                 Arguments.of("MKAssociation004", "MKUser004"),
                 Arguments.of("MKAssociation001", "MKUser001")
-       );
+      );
     }
 
     @ParameterizedTest
@@ -877,7 +879,7 @@ class UserCompanyAssociationTest {
         return Stream.of(
                 Arguments.of("confirmed"),
                 Arguments.of("unauthorised")
-       );
+      );
     }
 
     @ParameterizedTest
@@ -1133,7 +1135,7 @@ class UserCompanyAssociationTest {
                 Arguments.of("/associations/$$$/previous-states"),
                 Arguments.of("/associations/MKAssociation003/previous-states?page_index=-1"),
                 Arguments.of("/associations/MKAssociation003/previous-states?items_per_page=-1")
-       );
+      );
     }
 
     @ParameterizedTest

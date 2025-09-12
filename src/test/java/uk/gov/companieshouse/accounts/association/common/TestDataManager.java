@@ -914,7 +914,7 @@ public class TestDataManager {
                         new PreviousStatesDao().status("removed").changedBy("MKUser002").changedAt(now.minusDays(8L)),
                         new PreviousStatesDao().status("awaiting-approval").changedBy("MKUser003").changedAt(now.minusDays(7L)),
                         new PreviousStatesDao().status("confirmed").changedBy("MKUser003").changedAt(now.minusDays(6L))
-               ))
+              ))
                 .etag(generateEtag());
         associationDaoSuppliers.put("MKAssociation003", peachAssociation);
 
@@ -936,7 +936,7 @@ public class TestDataManager {
                         new PreviousStatesDao().status("removed").changedBy("MKUser002").changedAt(now.minusDays(8L)),
                         new PreviousStatesDao().status("awaiting-approval").changedBy("MKUser004").changedAt(now.minusDays(7L)),
                         new PreviousStatesDao().status("confirmed").changedBy("Companies House").changedAt(now.minusDays(6L))
-               ))
+              ))
                 .etag(generateEtag());
         associationDaoSuppliers.put("MKAssociation004", bowserAssociation);
 
@@ -959,7 +959,7 @@ public class TestDataManager {
                         new PreviousStatesDao().status("awaiting-approval").changedBy("MKUser005").changedAt(now.minusDays(7L)),
                         new PreviousStatesDao().status("confirmed").changedBy("Companies House").changedAt(now.minusDays(6L)),
                         new PreviousStatesDao().status("unauthorised").changedBy("MKUser005").changedAt(now.minusDays(3L))
-               ))
+              ))
                 .etag(generateEtag());
         associationDaoSuppliers.put("MKAssociation005", bowsetteAssociation);
 
@@ -1161,7 +1161,7 @@ public class TestDataManager {
                 .userId("MiUser009")
                 .status("removed")
                 .approvalRoute("auth_code")
-                .removedAt(LocalDateTime.parse( "2000-05-01T10:30:00.000000"))
+                .removedAt(LocalDateTime.parse("2000-05-01T10:30:00.000000"))
                 .etag(generateEtag());
         associationDaoSuppliers.put("MiAssociation018", MiAssociation018);
 
@@ -1171,7 +1171,7 @@ public class TestDataManager {
                 .userEmail("haggis.mcmutton.monkey.island@inugami-example.com")
                 .status("removed")
                 .approvalRoute("auth_code")
-                .removedAt(LocalDateTime.parse( "2001-05-01T10:30:00.000000"))
+                .removedAt(LocalDateTime.parse("2001-05-01T10:30:00.000000"))
                 .etag(generateEtag());
         associationDaoSuppliers.put("MiAssociation019", MiAssociation019);
 
@@ -1183,7 +1183,7 @@ public class TestDataManager {
                 .approvalRoute("invitation")
                 .invitations(List.of(new InvitationDao().invitedBy("MiUser001").invitedAt(LocalDateTime.parse("1992-05-01T10:30:00.000000"))))
                 .approvalExpiryAt(LocalDateTime.parse("1992-05-08T10:30:00.000000"))
-                .removedAt(LocalDateTime.parse( "1992-05-04T10:30:00.000000"))
+                .removedAt(LocalDateTime.parse("1992-05-04T10:30:00.000000"))
                 .etag(generateEtag());
         associationDaoSuppliers.put("MiAssociation020", MiAssociation020);
 
@@ -1554,21 +1554,21 @@ public class TestDataManager {
         instantiateCompanyDtoSuppliers();
     }
 
-    public List<AssociationDao> fetchAssociationDaos(final String... ids ){
+    public List<AssociationDao> fetchAssociationDaos(final String... ids){
         return Arrays.stream(ids)
                 .map(associationDaoSuppliers::get)
                 .map(Supplier::get)
                 .collect(Collectors.toList());
     }
 
-    public List<User> fetchUserDtos(final String... ids ){
+    public List<User> fetchUserDtos(final String... ids){
         return Arrays.stream(ids)
                 .map(userDtoSuppliers::get)
                 .map(Supplier::get)
                 .collect(Collectors.toList());
     }
 
-    public List<CompanyDetails> fetchCompanyDetailsDtos(final String... ids ){
+    public List<CompanyDetails> fetchCompanyDetailsDtos(final String... ids){
         return Arrays.stream(ids)
                 .map(companyDetailsDtoSuppliers::get)
                 .map(Supplier::get)
@@ -1583,7 +1583,7 @@ public class TestDataManager {
         associationDto.setId(associationDao.getId());
         associationDto.setUserId(user.getUserId());
         associationDto.setUserEmail(user.getEmail());
-        associationDto.setDisplayName(Optional.ofNullable(user.getDisplayName()).orElse("Not provided") );
+        associationDto.setDisplayName(Optional.ofNullable(user.getDisplayName()).orElse("Not provided"));
         associationDto.setCompanyNumber(associationDao.getCompanyNumber());
         associationDto.setCompanyName(companyDetails.getCompanyName());
         associationDto.setCompanyStatus(companyDetails.getCompanyStatus());

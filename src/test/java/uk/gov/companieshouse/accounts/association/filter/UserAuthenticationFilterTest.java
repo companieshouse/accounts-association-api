@@ -134,7 +134,7 @@ class UserAuthenticationFilterTest {
                 Arguments.of(ADMIN_UPDATE_PERMISSION, List.of("ROLE_BASIC_OAUTH", "ROLE_ADMIN_UPDATE")),
                 Arguments.of(String.format("%s %s" , ADMIN_READ_PERMISSION, ADMIN_UPDATE_PERMISSION), List.of("ROLE_BASIC_OAUTH", "ROLE_ADMIN_READ", "ROLE_ADMIN_UPDATE")),
                 Arguments.of(String.format("%s %s /admin/something/else" , ADMIN_READ_PERMISSION, ADMIN_UPDATE_PERMISSION), List.of("ROLE_BASIC_OAUTH", "ROLE_ADMIN_READ", "ROLE_ADMIN_UPDATE"))
-        );
+       );
     }
 
     @ParameterizedTest

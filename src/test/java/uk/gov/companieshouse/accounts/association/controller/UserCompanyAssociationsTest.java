@@ -421,7 +421,7 @@ class UserCompanyAssociationsTest {
     void fetchAssociationsByCanFetchMigratedAssociation() throws Exception {
         final var user = testDataManager.fetchUserDtos("MKUser001").getFirst();
         final var expectedAssociationsList = new AssociationsList()
-                .items(List.of(testDataManager.fetchAssociationDto("MKAssociation001", user )))
+                .items(List.of(testDataManager.fetchAssociationDto("MKAssociation001", user)))
                 .links(new Links().self("/associations?page_index=0&items_per_page=15").next(""))
                 .itemsPerPage(15).pageNumber(0).totalPages(1).totalResults(1);
 
@@ -448,7 +448,7 @@ class UserCompanyAssociationsTest {
     void fetchAssociationsByCanFetchUnauthorisedAssociation() throws Exception {
         final var user = testDataManager.fetchUserDtos("MKUser004").getFirst();
         final var expectedAssociationsList = new AssociationsList()
-                .items(List.of(testDataManager.fetchAssociationDto("MKAssociation004", user )))
+                .items(List.of(testDataManager.fetchAssociationDto("MKAssociation004", user)))
                 .links(new Links().self("/associations?page_index=0&items_per_page=15").next(""))
                 .itemsPerPage(15).pageNumber(0).totalPages(1).totalResults(1);
 

@@ -56,7 +56,7 @@ class AssociationMapperTest {
         associationMapper = new AssociationMapperImpl();
         associationMapper.usersService = usersService;
         associationMapper.companyService = companyService;
-        mockers = new Mockers( null, null, companyService, usersService);
+        mockers = new Mockers(null, null, companyService, usersService);
     }
 
     @Test
@@ -154,7 +154,7 @@ class AssociationMapperTest {
                 Arguments.of(associationDao, expectedAssociation, userDto, null),
                 Arguments.of(associationDao, expectedAssociation, null, companyDto),
                 Arguments.of(associationDao, expectedAssociation, userDto, companyDto)
-       );
+      );
     }
 
     @ParameterizedTest

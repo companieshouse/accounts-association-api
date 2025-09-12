@@ -50,7 +50,7 @@ class AssociationsUtilTest {
         Assertions.assertNotNull(documentSet.get("etag"));
         Assertions.assertEquals("migrated", previousStates.getStatus());
         Assertions.assertEquals("MKUser002", previousStates.getChangedBy());
-        Assertions.assertNotNull( previousStates.getChangedAt());
+        Assertions.assertNotNull(previousStates.getChangedAt());
         Assertions.assertNull(documentSet.get("user_email"));
         Assertions.assertEquals("MKUser001", documentSet.get("user_id"));
     }
@@ -72,7 +72,7 @@ class AssociationsUtilTest {
         Assertions.assertNotNull(documentSet.get("etag"));
         Assertions.assertEquals("migrated", previousStates.getStatus());
         Assertions.assertEquals("MKUser002", previousStates.getChangedBy());
-        Assertions.assertNotNull( previousStates.getChangedAt());
+        Assertions.assertNotNull(previousStates.getChangedAt());
     }
 
     @Test
@@ -128,7 +128,7 @@ class AssociationsUtilTest {
     void fetchAllStatusesWithoutRetrievesSpecifiedStatuses(){
         final var statuses = fetchAllStatusesWithout(Set.of(StatusEnum.CONFIRMED, StatusEnum.REMOVED, StatusEnum.AWAITING_APPROVAL, StatusEnum.UNAUTHORISED));
         Assertions.assertEquals(1, statuses.size());
-        Assertions.assertTrue( statuses.contains(StatusEnum.MIGRATED));
+        Assertions.assertTrue(statuses.contains(StatusEnum.MIGRATED));
     }
 
 }

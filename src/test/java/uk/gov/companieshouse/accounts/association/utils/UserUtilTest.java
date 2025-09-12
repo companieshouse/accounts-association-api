@@ -52,7 +52,7 @@ class UserUtilTest {
                 Arguments.of(new AssociationDao().userId("222"), false),
                 Arguments.of(new AssociationDao().userEmail("bruce.wayne@gotham.city"), true),
                 Arguments.of(new AssociationDao().userEmail("joker@gotham.city"), false)
-       );
+      );
     }
 
     @ParameterizedTest

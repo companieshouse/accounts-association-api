@@ -168,7 +168,7 @@ class AssociationsListForCompanyControllerTest {
                         .map(uk.gov.companieshouse.api.accounts.associations.model.Association::getId)
                         .toList();
 
-        Assertions.assertTrue(items.contains( "MKAssociation001"));
+        Assertions.assertTrue(items.contains("MKAssociation001"));
     }
 
     @Test
@@ -441,7 +441,7 @@ class AssociationsListForCompanyControllerTest {
                 Arguments.of(", \"status\":[]"),
                 Arguments.of("")
 
-       );
+      );
     }
 
     @ParameterizedTest
@@ -476,7 +476,7 @@ class AssociationsListForCompanyControllerTest {
                         .header("ERIC-Identity-Type", "key")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content( "{\"user_email\":\"mario@mushroom.kingdom\" , \"status\":[\"migrated\"] }"))
+                        .content("{\"user_email\":\"mario@mushroom.kingdom\" , \"status\":[\"migrated\"] }"))
                 .andExpect(status().isOk());
 
         final var association = parseResponseTo(response, Association.class);
@@ -489,7 +489,7 @@ class AssociationsListForCompanyControllerTest {
                 Arguments.of("MKUser002" ,"$$$$$", ", \"status\":[\"confirmed\", \"removed\"]"),
                 Arguments.of("MKUser002" ,"MKCOMP001", ", \"status\":[\"$$$$$$\", \"removed\"]")
 
-       );
+      );
     }
 
     @ParameterizedTest
@@ -507,7 +507,7 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyUserAndStatusWithMalformedEmailReturnsBadRequest() throws Exception {
-        mockMvc.perform(post("/associations/companies/MKCOMP001/search" )
+        mockMvc.perform(post("/associations/companies/MKCOMP001/search")
                         .header("X-Request-Id", "theId123")
                         .header("ERIC-Identity", "test")
                         .header("ERIC-Identity-Type", "key")
@@ -544,9 +544,9 @@ class AssociationsListForCompanyControllerTest {
     static Stream<Arguments> getAssociationsForCompanyMalformedBodyScenarios(){
         return Stream.of(
                 Arguments.of(""),
-                Arguments.of("{ \"user_email\":\"111@mushroom.kingdom\", \"user_id\":\"111\" }" )
+                Arguments.of("{ \"user_email\":\"111@mushroom.kingdom\", \"user_id\":\"111\" }")
 
-       );
+      );
     }
 
     @ParameterizedTest

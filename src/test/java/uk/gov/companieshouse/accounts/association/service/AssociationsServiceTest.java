@@ -371,7 +371,7 @@ class AssociationsServiceTest {
                 Arguments.of("111111", null),
                 Arguments.of("111111", "$$$"),
                 Arguments.of("111111", "9191")
-       );
+      );
     }
 
     @ParameterizedTest
@@ -535,7 +535,7 @@ class AssociationsServiceTest {
         return Stream.of(
                 Arguments.of("111", null),
                 Arguments.of(null, "bruce.wayne@gotham.city")
-       );
+      );
     }
 
     @ParameterizedTest
@@ -551,7 +551,7 @@ class AssociationsServiceTest {
                 .invitations(List.of(new InvitationDao()
                         .invitedBy("222")
                         .invitedAt(LocalDateTime.now())
-               ))
+              ))
                 .etag(generateEtag());
 
 
@@ -582,7 +582,7 @@ class AssociationsServiceTest {
                 Arguments.of(new CompanyDetails().companyNumber("MKAssociation002"), Set.of(), user, user.getEmail()),
                 Arguments.of(new CompanyDetails().companyNumber("MKAssociation002") , Set.of(StatusEnum.CONFIRMED), null, "404User@Email.com"),
                 Arguments.of(new CompanyDetails().companyNumber("MKAssociation002") , Set.of(StatusEnum.CONFIRMED), null, null)
-       );
+      );
     }
 
     @ParameterizedTest
