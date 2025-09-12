@@ -11,6 +11,7 @@ import uk.gov.companieshouse.accounts.association.exceptions.InternalServerError
 public class ParsingUtil {
 
     public static <T> T parseJsonTo(final String json, final Class<T> clazz) {
+        LOGGER.trace(String.format("Attempting to parse JSON:%n%s%nto class: %s", json, clazz.getSimpleName()));
         if (json == null) {
             return null;
         }
@@ -18,13 +19,15 @@ public class ParsingUtil {
         objectMapper.registerModule(new JavaTimeModule());
         try {
             return objectMapper.readValue(json, clazz);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new InternalServerErrorRuntimeException("Unable to parse json", e);
 
         }
     }
 
     public static <T> String parseJsonFrom(final T object, final String fallback) {
+        LOGGER.trace(String.format("Attempting to parse JSON from:%n%s", object.toString()));
         final var objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         try {
