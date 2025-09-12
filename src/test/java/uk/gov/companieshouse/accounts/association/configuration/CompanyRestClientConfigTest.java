@@ -10,7 +10,7 @@ class CompanyRestClientConfigTest {
 
     @Test
     void webClientIsCreatedCorrectly(){
-        Assertions.assertTrue(WebClient.class.isAssignableFrom(new CompanyRestClientConfig().companyWebClient().getClass()));
+        Assertions.assertTrue(WebClient.class.isAssignableFrom(new CompanyRestClientConfig().companyRestClient().getClass()));
     }
 
 }
