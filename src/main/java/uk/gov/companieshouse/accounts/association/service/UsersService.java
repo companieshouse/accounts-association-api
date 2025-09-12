@@ -7,6 +7,7 @@ import static uk.gov.companieshouse.accounts.association.utils.RequestContextUti
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isOAuth2Request;
 
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -93,7 +94,7 @@ public class UsersService {
                 .forEach(email -> {
                     var userDetails = fetchUserDetailsByEmail(email);
                     if (Objects.nonNull(userDetails)) {
-                        synchronizedList.add(userDetails);
+                        synchronizedList.addAll(userDetails);
                     }
                 });
 
@@ -105,7 +106,7 @@ public class UsersService {
         return usersList;
     }
 
-    public User fetchUserDetailsByEmail(final String email) {
+    public UsersList fetchUserDetailsByEmail(final String email) {
         try {
             return requestUserDetailsByEmail(email);
         } catch (NotFound exception) {
@@ -150,20 +151,22 @@ public class UsersService {
         return retrieveUserDetails(association.getUserId(), association.getUserEmail());
     }
 
-    private User requestUserDetailsByEmail(final String email) {
+    private UsersList requestUserDetailsByEmail(final String email) {
         final var uri = UriComponentsBuilder.newInstance()
                 .path("/users/search")
                 .queryParam("user_email", "{email}")
-                .buildAndExpand(email)
                 .encode()
+                .buildAndExpand(email)
                 .toUri();
+
+        LOGGER.traceContext(getXRequestId(), String.format("Starting request to %s. Attempting to retrieve user details for email: %s", uri, email), null);
 
         final var response = usersRestClient.get()
                 .uri(uri)
                 .retrieve()
                 .body(String.class);
 
-        return parseJsonTo(response, User.class);
+        return parseJsonTo(response, UsersList.class);
     }
 
     private User requestUserDetails(final String userId, final String xRequestId) {

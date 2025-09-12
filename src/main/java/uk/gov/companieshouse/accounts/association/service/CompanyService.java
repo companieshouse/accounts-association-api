@@ -61,7 +61,7 @@ public class CompanyService {
         }
 
         try {
-            return fetchCompanyProfileRequest(companyNumber, xRequestId);
+            return requestCompanyProfile(companyNumber, xRequestId);
         } catch (NotFound exception) {
             LOGGER.infoContext(xRequestId, String.format("No company found for email: %s", companyNumber), null);
             throw new NotFoundRuntimeException(exception.getMessage(), exception);
@@ -74,7 +74,7 @@ public class CompanyService {
         }
     }
 
-    private CompanyDetails fetchCompanyProfileRequest(final String companyNumber, final String xRequestId) {
+    private CompanyDetails requestCompanyProfile(final String companyNumber, final String xRequestId) {
         final var uri = UriComponentsBuilder.newInstance()
                 .path("/company/{companyNumber}/company-detail")
                 .buildAndExpand(companyNumber)
