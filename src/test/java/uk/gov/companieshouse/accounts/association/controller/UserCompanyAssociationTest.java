@@ -520,7 +520,7 @@ class UserCompanyAssociationTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendStatusUpdateEmails(association, user, StatusEnum.REMOVED);
+        Mockito.verify(emailService).sendAuthorisationRemovedEmailToAssociatedUser(eq("theId123"), eq("333333"), any(), eq("Scrooge McDuck"), eq("light.yagami@death.note"));
     }
 
     @Test
@@ -543,7 +543,7 @@ class UserCompanyAssociationTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendStatusUpdateEmails(association, user, StatusEnum.REMOVED);
+        Mockito.verify(emailService).sendInvitationCancelledEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), eq("Batman"), eq("light.yagami@death.note"));
     }
 
     @Test
@@ -567,7 +567,6 @@ class UserCompanyAssociationTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendStatusUpdateEmails(association, user, StatusEnum.REMOVED);
         Mockito.verify(emailService).sendInvitationCancelledEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), eq("Batman"), eq("light.yagami@death.note"));
     }
 
@@ -618,7 +617,7 @@ class UserCompanyAssociationTest {
                         .content("{\"status\":\"confirmed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendStatusUpdateEmails(association, user, StatusEnum.CONFIRMED);
+        Mockito.verify(emailService).sendInvitationAcceptedEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), any(), eq("homer.simpson@springfield.com"), any());
     }
 
     @Test
@@ -660,7 +659,7 @@ class UserCompanyAssociationTest {
                         .content("{\"status\":\"confirmed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendStatusUpdateEmails(association, null, StatusEnum.CONFIRMED);
+        Mockito.verify(emailService).sendInvitationAcceptedEmailToAssociatedUser(eq("theId123"), eq("x222222"), any(), any(), eq("Scrooge McDuck"), any());
     }
 
     @Test
@@ -684,7 +683,7 @@ class UserCompanyAssociationTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendStatusUpdateEmails(association, user, StatusEnum.REMOVED);
+        Mockito.verify(emailService).sendInvitationCancelledEmailToAssociatedUser(eq("theId123"), eq("x222222"), any(), eq("the.joker@gotham.city"), eq("Scrooge McDuck"));
 
     }
 
@@ -708,8 +707,7 @@ class UserCompanyAssociationTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendStatusUpdateEmails(association, user, StatusEnum.REMOVED);
-
+        Mockito.verify(emailService).sendInvitationRejectedEmailToAssociatedUser(eq("theId123"), eq("x222222"), any(), eq("Scrooge McDuck"), any());
     }
 
     public static Stream<Arguments> updateAssociationStatusForIdMigratedScenarios(){
@@ -721,7 +719,7 @@ class UserCompanyAssociationTest {
                 Arguments.of("MKUser002", "confirmed", false, status().isOk()),
                 Arguments.of("MKUser002", "removed", false, status().isOk())
 
-       );
+      );
     }
 
     @ParameterizedTest
@@ -741,7 +739,7 @@ class UserCompanyAssociationTest {
         Mockito.doReturn(Optional.of(targetAssociation)).when(associationsService).fetchAssociationDao("MKAssociation001");
         Mockito.doReturn(true).when(associationsService).confirmedAssociationExists(any(), any());
 
-        mockMvc.perform(patch("/associations/MKAssociation001" )
+        mockMvc.perform(patch("/associations/MKAssociation001")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", requestingUserId)
                         .header("ERIC-Identity-Type", "oauth2")
@@ -761,7 +759,7 @@ class UserCompanyAssociationTest {
         Mockito.doReturn(Optional.of(association)).when(associationsService).fetchAssociationDao("1");
         Mockito.doReturn(Stream.of("222")).when(associationsService).fetchConfirmedUserIds("111111");
 
-        mockMvc.perform(patch("/associations/1" )
+        mockMvc.perform(patch("/associations/1")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -770,7 +768,8 @@ class UserCompanyAssociationTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendStatusUpdateEmails(association, user, StatusEnum.REMOVED);
+        Mockito.verify(emailService).sendAuthorisationRemovedEmailToRemovedUser(eq("theId123"), eq("111111"), any(), eq("Companies House"), eq("111"));
+        Mockito.verify(emailService).sendAuthorisationRemovedEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), eq("Companies House"), eq("Batman"));
     }
 
     @Test
@@ -783,7 +782,7 @@ class UserCompanyAssociationTest {
         Mockito.doReturn(Optional.of(association)).when(associationsService).fetchAssociationDao("6");
         Mockito.doReturn(Stream.of("222")).when(associationsService).fetchConfirmedUserIds("111111");
 
-        mockMvc.perform(patch("/associations/6" )
+        mockMvc.perform(patch("/associations/6")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "9999")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -793,7 +792,8 @@ class UserCompanyAssociationTest {
                 .andExpect(status().isOk());
 
 
-        Mockito.verify(emailService).sendStatusUpdateEmails(association, user, StatusEnum.REMOVED);
+        Mockito.verify(emailService).sendInviteCancelledEmail(eq("theId123"), eq("111111"), any(), eq("Companies House"), any(AssociationDao.class));
+        Mockito.verify(emailService).sendInvitationCancelledEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), eq("Companies House"), eq("homer.simpson@springfield.com"));
     }
 
     @Test
@@ -816,7 +816,8 @@ class UserCompanyAssociationTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendStatusUpdateEmails(targetAssociation, targetUser, StatusEnum.REMOVED);
+        Mockito.verify(emailService).sendDelegatedRemovalOfMigratedEmail(eq("theId123"), eq("MKCOMP001"), any(), eq("Luigi"), eq("mario@mushroom.kingdom"));
+        Mockito.verify(emailService).sendDelegatedRemovalOfMigratedBatchEmail(eq("theId123"), eq("MKCOMP001"), any(), eq("Luigi"), eq("Mario"));
     }
 
     @Test
@@ -839,7 +840,8 @@ class UserCompanyAssociationTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendStatusUpdateEmails(targetAssociation, targetUser, StatusEnum.REMOVED);
+        Mockito.verify(emailService).sendRemoveOfOwnMigratedEmail(eq("theId123"), eq("MKCOMP001"), any(), eq("MKUser001"));
+        Mockito.verify(emailService).sendDelegatedRemovalOfMigratedBatchEmail(eq("theId123"), eq("MKCOMP001"), any(), eq("Mario"), eq("Mario"));
     }
 
     @Test
@@ -862,7 +864,8 @@ class UserCompanyAssociationTest {
                         .content("{\"status\":\"confirmed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendStatusUpdateEmails(targetAssociation, targetUser, StatusEnum.CONFIRMED);
+        Mockito.verify(emailService).sendInviteEmail(eq("theId123"), eq("MKCOMP001"), any(), eq("Luigi"), anyString(), eq("mario@mushroom.kingdom"));
+        Mockito.verify(emailService).sendInvitationEmailToAssociatedUser(eq("theId123"), eq("MKCOMP001"), any(), eq("Luigi"), eq("Mario"), any());
     }
 
     @Test
@@ -885,7 +888,8 @@ class UserCompanyAssociationTest {
                         .content("{\"status\":\"confirmed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendStatusUpdateEmails(targetAssociation, targetUser, StatusEnum.CONFIRMED);
+        Mockito.verify(emailService).sendInviteEmail(eq("theId123"), eq("MKCOMP001"), any(), eq("Luigi"), anyString(), eq("bowser@mushroom.kingdom"));
+        Mockito.verify(emailService).sendInvitationEmailToAssociatedUser(eq("theId123"), eq("MKCOMP001"), any(), eq("Luigi"), eq("Bowser"), any());
     }
 
     @Test
@@ -995,7 +999,7 @@ class UserCompanyAssociationTest {
         return Stream.of(
                 Arguments.of("confirmed"),
                 Arguments.of("removed")
-       );
+      );
     }
 
     @ParameterizedTest
@@ -1021,7 +1025,7 @@ class UserCompanyAssociationTest {
         return Stream.of(
                 Arguments.of("MKAssociation004", "MKUser004"),
                 Arguments.of("MKAssociation001", "MKUser001")
-       );
+      );
     }
 
     @ParameterizedTest
@@ -1045,14 +1049,14 @@ class UserCompanyAssociationTest {
                 .andExpect(status().isOk());
 
         Mockito.verify(associationsService).updateAssociation(eq(associations.getId()), any(Update.class));
-        Mockito.verify(emailService).sendStatusUpdateEmails(associations, targetUser, StatusEnum.CONFIRMED);
+        Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq(associations.getCompanyNumber()), any(), eq(targetUser.getDisplayName()));
     }
 
     private static Stream<Arguments> updateAssociationStatusForIdSameUserUnauthorisedBadRequestScenarios(){
         return Stream.of(
                 Arguments.of("confirmed"),
                 Arguments.of("unauthorised")
-       );
+      );
     }
 
     @ParameterizedTest
@@ -1150,7 +1154,7 @@ class UserCompanyAssociationTest {
                 Arguments.of("/associations/$$$/previous-states"),
                 Arguments.of("/associations/MKAssociation003/previous-states?page_index=-1"),
                 Arguments.of("/associations/MKAssociation003/previous-states?items_per_page=-1")
-       );
+      );
     }
 
     @ParameterizedTest

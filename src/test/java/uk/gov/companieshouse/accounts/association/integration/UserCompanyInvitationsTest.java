@@ -137,7 +137,7 @@ class UserCompanyInvitationsTest {
     @Test
     void fetchActiveInvitationsForUserRetrievesActiveInvitationsInCorrectOrderAndPaginatesCorrectly() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("37", "38"));
-        mockers.mockUsersServiceFetchUserDetails( "000", "444");
+        mockers.mockUsersServiceFetchUserDetails("000", "444");
 
         final var response =
                 mockMvc.perform(get("/associations/invitations?page_index=0&items_per_page=1")
@@ -159,7 +159,7 @@ class UserCompanyInvitationsTest {
 
     @Test
     void fetchActiveInvitationsForUserWithoutActiveInvitationsReturnsEmptyList() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails( "111");
+        mockers.mockUsersServiceFetchUserDetails("111");
 
         final var response =
                 mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
@@ -525,7 +525,7 @@ class UserCompanyInvitationsTest {
          return Stream.of(
                  Arguments.of(testDataManager.fetchAssociationDaos("MKAssociation001").getFirst()),
                  Arguments.of(testDataManager.fetchAssociationDaos("MKAssociation001").getFirst().userId(null).userEmail("mario@mushroom.kingdom"))
-        );
+       );
     }
 
     @ParameterizedTest

@@ -94,7 +94,7 @@ class RequestContextUtilTest {
                 Arguments.of(String.format("%s %s" , ADMIN_READ_PERMISSION, ADMIN_UPDATE_PERMISSION), ADMIN_READ_PERMISSION),
                 Arguments.of(String.format("%s %s /admin/something/else" , ADMIN_READ_PERMISSION, ADMIN_UPDATE_PERMISSION), ADMIN_UPDATE_PERMISSION),
                 Arguments.of(String.format("%s %s /admin/something/else" , ADMIN_READ_PERMISSION, ADMIN_UPDATE_PERMISSION), "/admin/Permission/404")
-       );
+      );
     }
 
     @ParameterizedTest

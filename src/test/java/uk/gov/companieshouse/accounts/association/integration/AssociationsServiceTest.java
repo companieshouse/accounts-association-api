@@ -134,14 +134,14 @@ class AssociationsServiceTest {
         final var user = testDataManager.fetchUserDtos("MiUser002").getFirst();
         final var associations = associationsService.fetchAssociationsForUserAndPartialCompanyNumber(user, null, 1, 2).map(AssociationDao :: getId).getContent();
         Assertions.assertEquals(2, associations.size());
-        Assertions.assertTrue( associations.containsAll(List.of ("MiAssociation004" , "MiAssociation006")));
+        Assertions.assertTrue(associations.containsAll(List.of ("MiAssociation004" , "MiAssociation006")));
     }
 
     private static Stream<Arguments> fetchAssociationsForUserAndPartialCompanyNumberEmptyTestData(){
         return Stream.of(
                 Arguments.of(testDataManager.fetchUserDtos("MiUser003").getFirst(), "ICOMP001"),
                 Arguments.of(testDataManager.fetchUserDtos("MiUser002").getFirst(), "test")
-       );
+      );
     }
 
     @ParameterizedTest
@@ -189,7 +189,7 @@ class AssociationsServiceTest {
     void fetchUnexpiredAssociationsForCompanyAndStatusesWithIncludeRemovedTrueDoesNotApplyFilter(){
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos("111111").getFirst();
         associationsRepository.insert(testDataManager.fetchAssociationDaos("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"));
-        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout(Set.of()), null, null, 0, 20);
+        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses(companyDetails, fetchAllStatusesWithout(Set.of()), null, null, 0, 20);
         final var expectedAssociationIds = List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16");
         Mockito.verify(associationsListCompanyMapper).daoToDto(argThat(comparisonUtils.associationsPageMatches(16, 1, 16, expectedAssociationIds)), eq(companyDetails));
     }
@@ -198,7 +198,7 @@ class AssociationsServiceTest {
     void fetchUnexpiredAssociationsForCompanyAndStatusesWithIncludeRemovedFalseAppliesFilter(){
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos("111111").getFirst();
         associationsRepository.insert(testDataManager.fetchAssociationDaos("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"));
-        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses( companyDetails, fetchAllStatusesWithout(Set.of(StatusEnum.REMOVED)), null, null, 0, 20);
+        associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses(companyDetails, fetchAllStatusesWithout(Set.of(StatusEnum.REMOVED)), null, null, 0, 20);
         final var expectedAssociationIds = List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13");
         Mockito.verify(associationsListCompanyMapper).daoToDto(argThat(comparisonUtils.associationsPageMatches(13, 1, 13, expectedAssociationIds)), eq(companyDetails));
     }
@@ -490,7 +490,7 @@ class AssociationsServiceTest {
         return Stream.of(
                 Arguments.of("111", null),
                 Arguments.of(null, "bruce.wayne@gotham.city")
-       );
+      );
     }
 
     @ParameterizedTest
@@ -529,7 +529,7 @@ class AssociationsServiceTest {
                 Arguments.of(new CompanyDetails().companyNumber("MKAssociation002"), Set.of(), user, user.getEmail()),
                 Arguments.of(new CompanyDetails().companyNumber("MKAssociation002") , Set.of(StatusEnum.CONFIRMED), null, "404User@Email.com"),
                 Arguments.of(new CompanyDetails().companyNumber("MKAssociation002") , Set.of(StatusEnum.CONFIRMED), null, null)
-       );
+      );
     }
 
     @ParameterizedTest

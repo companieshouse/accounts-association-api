@@ -114,7 +114,7 @@ class UserCompanyAssociationsTest {
                 Arguments.of("/associations"),
                 Arguments.of("/associations/1"),
                 Arguments.of("/associations/invitations?page_index=1&items_per_page=1")
-       );
+      );
     }
     @Test
     void fetchAssociationsByWithoutEricIdentityReturnsForbidden() throws Exception {
@@ -133,7 +133,7 @@ class UserCompanyAssociationsTest {
                 Arguments.of("/associations/$"),
                 Arguments.of("/associations/invitations?page_index=-1&items_per_page=1"),
                 Arguments.of("/associations/invitations?page_index=0&items_per_page=-1")
-       );
+      );
     }
 
     @ParameterizedTest

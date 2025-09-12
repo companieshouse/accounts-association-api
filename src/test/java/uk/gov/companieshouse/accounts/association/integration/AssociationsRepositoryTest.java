@@ -255,7 +255,7 @@ class AssociationsRepositoryTest {
                 Arguments.of("MICOMP001", Set.of("confirmed"), "404User", "404User@inugami-example.com"),
                 Arguments.of("MICOMP001", Set.of("confirmed"), null, null),
                 Arguments.of("MICOMP003", Set.of("awaiting-approval"), "MiUser002", "lechuck.monkey.island@inugami-example.com")
-       );
+      );
     }
 
     @ParameterizedTest
@@ -308,7 +308,7 @@ class AssociationsRepositoryTest {
                 Arguments.of("111111", null),
                 Arguments.of("111111", "$$$"),
                 Arguments.of("111111", "9191")
-       );
+      );
     }
 
     @ParameterizedTest
@@ -388,7 +388,7 @@ class AssociationsRepositoryTest {
                 Arguments.of("K001", "madonna@singer.com", "K000001", "K002", "micahel.jackson@singer.com", "K000001", false),
                 Arguments.of("K001", null, "K000001", "K001", null, "K000002", false),
                 Arguments.of(null, "madonna@singer.com", "K000001", null, "madonna@singer.com", "K000002", false)
-       );
+      );
     }
 
     @ParameterizedTest
@@ -487,7 +487,7 @@ class AssociationsRepositoryTest {
                 Arguments.of("$$$"),
                 Arguments.of("404COMP"),
                 Arguments.of("111111")
-       );
+      );
     }
 
     @ParameterizedTest
