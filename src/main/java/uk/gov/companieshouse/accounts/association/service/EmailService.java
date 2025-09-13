@@ -37,7 +37,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
-import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.EmailBatchException;
+import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.NullRequiredEmailDataException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.models.email.EmailNotification;
@@ -53,6 +55,7 @@ import uk.gov.companieshouse.accounts.association.models.email.builders.InviteCa
 import uk.gov.companieshouse.accounts.association.models.email.builders.InviteEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.RemovalOfOwnMigratedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.YourAuthorisationRemovedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.utils.EmailBatchType;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.user.model.User;
@@ -68,7 +71,12 @@ public class EmailService {
     @Value("${invitation.url}")
     private String invitationLink;
 
-    protected static final Logger LOG = LoggerFactory.getLogger(APPLICATION_NAMESPACE);
+    private static final String ASSOCIATION_DAO_OR_USER_IS_NULL = "AssociationDao or userID is null";
+    private static final String ASSOCIATED_USER_OR_EMAIL_IS_NULL = "Associated user or their email is null";
+    private static final String REQUESTING_USER_OR_EMAIL_IS_NULL = "Cancelled user or their email are null";
+    private static final String IMPACTED_USER_OR_EMAIL_IS_NULL = "Impacted user or their email are null";
+
+    protected static final Logger LOGGER = LoggerFactory.getLogger(APPLICATION_NAMESPACE);
 
     private final UsersService usersService;
     private final CompanyService companyService;
@@ -86,9 +94,9 @@ public class EmailService {
     private void sendEmail(final String xRequestId, final MessageType messageType, final EmailData emailData, final EmailNotification logMessageSupplier){
         try {
             emailProducer.sendEmail(emailData, messageType.getValue());
-            LOG.infoContext(xRequestId, logMessageSupplier.toMessage(), null);
+            LOGGER.infoContext(xRequestId, logMessageSupplier.toMessage(), null);
         } catch (Exception exception) {
-            LOG.errorContext(xRequestId, exception, null);
+            LOGGER.errorContext(xRequestId, exception, null);
             throw exception;
         }
     }
@@ -98,7 +106,6 @@ public class EmailService {
         final var requestingUserDisplayValue = isAPIKeyRequest() || hasAdminPrivilege(ADMIN_UPDATE_PERMISSION) ? COMPANIES_HOUSE : mapToDisplayValue(getUser(), getUser().getEmail());
         final var targetUserDisplayValue = mapToDisplayValue(targetUser, targetAssociation.getUserEmail());
         final var targetUserEmail = Optional.ofNullable(targetUser).map(User::getEmail).orElse(targetAssociation.getUserEmail());
-        final var oldStatus = targetAssociation.getStatus();
 
         final var cachedCompanyName = companyService.fetchCompanyProfile(targetAssociation.getCompanyNumber()).getCompanyName();
         final var cachedAssociatedUsers = associationsTransactionService.fetchConfirmedUserIds(targetAssociation.getCompanyNumber());
@@ -106,45 +113,50 @@ public class EmailService {
                 .max((firstInvitation, secondInvitation) -> firstInvitation.getInvitedAt().isAfter(secondInvitation.getInvitedAt()) ? 1 : -1)
                 .map(InvitationDao::getInvitedBy)
                 .map(user -> usersService.fetchUserDetails(user, xRequestId))
-                .map(user -> Optional.ofNullable(user.getDisplayName()).orElse(user.getEmail()))
-                .orElseThrow(() -> new NotFoundRuntimeException("Inviting user not found", new Exception("Inviting user not found")));
+                .map(user -> Optional.ofNullable(user.getDisplayName()).orElse(user.getEmail()));
 
-        final var isRejectingInvitation = isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED);
-        final var authorisationIsBeingRemoved = isOAuth2Request() && oldStatus.equals(CONFIRMED.getValue()) && newStatus.equals(REMOVED);
-        final var isAcceptingInvitation = isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(CONFIRMED);
-        final var isCancellingAnotherUsersInvitation = isOAuth2Request() && !isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED);
-        final var isRemovingAnotherUsersMigratedAssociation = isOAuth2Request() && !isRequestingUser(targetAssociation) && oldStatus.equals(MIGRATED.getValue()) && newStatus.equals(REMOVED);
-        final var isRemovingOwnMigratedAssociation = isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(MIGRATED.getValue()) && newStatus.equals(REMOVED);
-        final var isInvitingUser = isOAuth2Request() && !isRequestingUser(targetAssociation) && (oldStatus.equals(MIGRATED.getValue()) || oldStatus.equals(UNAUTHORISED.getValue()) && newStatus.equals(CONFIRMED));
-        final var isConfirmingWithAuthCode = isAPIKeyRequest() && (oldStatus.equals(MIGRATED.getValue()) || oldStatus.equals(UNAUTHORISED.getValue()) && newStatus.equals(CONFIRMED));
+        final var emailBatch = determineEmailBatchType(xRequestId, targetAssociation, newStatus);
 
-        if (isRejectingInvitation) {
-            cachedAssociatedUsers.parallel().forEach(email -> sendInvitationRejectedEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, email));
-        } else if (authorisationIsBeingRemoved) {
-            sendAuthorisationRemovedEmailToRemovedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation.getUserId());
-            cachedAssociatedUsers.parallel().forEach(email -> sendAuthorisationRemovedEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue));
-        } else if (isAcceptingInvitation) {
-            cachedAssociatedUsers.parallel().forEach(email -> sendInvitationAcceptedEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, cachedInvitedByDisplayName, requestingUserDisplayValue, email));
-        } else if (isCancellingAnotherUsersInvitation) {
-            sendInviteCancelledEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation);
-            cachedAssociatedUsers.parallel().forEach(email -> sendInvitationCancelledEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue));
-        } else if (isRemovingAnotherUsersMigratedAssociation) {
-            sendDelegatedRemovalOfMigratedEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserEmail);
-            cachedAssociatedUsers.parallel().forEach(email -> sendDelegatedRemovalOfMigratedBatchEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue));
-        } else if (isRemovingOwnMigratedAssociation) {
-            sendRemoveOfOwnMigratedEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, getEricIdentity());
-            cachedAssociatedUsers.parallel().forEach(email -> sendDelegatedRemovalOfMigratedBatchEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue));
-        } else if (isInvitingUser) {
-            final var invitationExpiryTimestamp = LocalDateTime.now().plusDays(DAYS_SINCE_INVITE_TILL_EXPIRES).toString();
-            sendInviteEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, invitationExpiryTimestamp, targetUserEmail);
-            cachedAssociatedUsers.parallel().forEach(email -> sendInvitationEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue, email));
-        } else if (isConfirmingWithAuthCode){
-            cachedAssociatedUsers.parallel().forEach(email -> sendAuthCodeConfirmationEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, targetUserDisplayValue));
+        switch (emailBatch) {
+            case REJECTING_INVITATION -> cachedAssociatedUsers.parallel().forEach(userId -> sendInvitationRejectedEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, userId));
+            case AUTHORISATION_IS_BEING_REMOVED -> {
+                sendAuthorisationRemovedEmailToRemovedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation.getUserId());
+                cachedAssociatedUsers.parallel().forEach(userId -> sendAuthorisationRemovedEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue, userId));
+            }
+            case ACCEPTING_INVITATION -> cachedAssociatedUsers.parallel().forEach(userId -> sendInvitationAcceptedEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, cachedInvitedByDisplayName, requestingUserDisplayValue, userId));
+            case CANCELLING_ANOTHER_USERS_INVITATION -> {
+                sendInviteCancelledEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation);
+                cachedAssociatedUsers.parallel().forEach(userId -> sendInvitationCancelledEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue, userId));
+            }
+            case REMOVING_ANOTHER_USERS_MIGRATED_ASSOCIATION -> {
+                sendDelegatedRemovalOfMigratedEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserEmail);
+                cachedAssociatedUsers.parallel().forEach(userId -> sendDelegatedRemovalOfMigratedBatchEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue, userId));
+            }
+            case REMOVING_OWN_MIGRATED_ASSOCIATION -> {
+                sendRemoveOfOwnMigratedEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, getEricIdentity());
+                cachedAssociatedUsers.parallel().forEach(userId -> sendDelegatedRemovalOfMigratedBatchEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue, userId));
+            }
+            case INVITING_USER -> {
+                final var invitationExpiryTimestamp = LocalDateTime.now().plusDays(DAYS_SINCE_INVITE_TILL_EXPIRES).toString();
+                sendInviteEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, invitationExpiryTimestamp, targetUserEmail);
+                cachedAssociatedUsers.parallel().forEach(userId -> sendInvitationEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue, userId));
+            }
+            case CONFIRMING_WITH_AUTH_CODE -> cachedAssociatedUsers.parallel().forEach(userId -> sendAuthCodeConfirmationEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, targetUserDisplayValue, userId));
+            // TODO: feels wrong
+            case NONE -> {
+            }
+            default -> throw new InternalServerErrorRuntimeException("Issue during email batch processing - default case triggered", new Exception("Issue during email batch processing - default case triggered"));
         }
     }
 
-    public void sendAuthCodeConfirmationEmailToAssociatedUser(final String xRequestId, final String companyNumber, String companyName, final String displayName) {
-        final var userDetails = usersService.fetchUserDetails(displayName, xRequestId);
+    public void sendAuthCodeConfirmationEmailToAssociatedUser(final String xRequestId, final String companyNumber, String companyName, final String displayName, final String userId)
+            throws NullRequiredEmailDataException {
+        final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
+        if (userDetails == null || StringUtils.isBlank(userDetails.getEmail())) {
+            LOGGER.infoContext(xRequestId, REQUESTING_USER_OR_EMAIL_IS_NULL, null);
+            throw new NullRequiredEmailDataException(ASSOCIATED_USER_OR_EMAIL_IS_NULL, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE);
+        }
+
         final var emailData = new AuthCodeConfirmationEmailBuilder()
                 .setRecipientEmail(userDetails.getEmail())
                 .setDisplayName(displayName)
@@ -154,8 +166,14 @@ public class EmailService {
         sendEmail(xRequestId, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendAuthorisationRemovedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String removedByDisplayName, final String removedUserDisplayName) {
-        final var userDetails = usersService.fetchUserDetails(removedByDisplayName, xRequestId);
+    public void sendAuthorisationRemovedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String removedByDisplayName, final String removedUserDisplayName, final String userId)
+            throws NullRequiredEmailDataException {
+        final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
+        if (userDetails == null || StringUtils.isBlank(userDetails.getEmail())) {
+            LOGGER.infoContext(xRequestId, ASSOCIATED_USER_OR_EMAIL_IS_NULL, null);
+            throw new NullRequiredEmailDataException(ASSOCIATED_USER_OR_EMAIL_IS_NULL, AUTHORISATION_REMOVED_MESSAGE_TYPE);
+        }
+
         final var emailData = new AuthorisationRemovedEmailBuilder()
                 .setRemovedByDisplayName(removedByDisplayName)
                 .setRemovedUserDisplayName(removedUserDisplayName)
@@ -166,8 +184,14 @@ public class EmailService {
         sendEmail(xRequestId, AUTHORISATION_REMOVED_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendAuthorisationRemovedEmailToRemovedUser(final String xRequestId, final String companyNumber, final String companyName, final String removedByDisplayName, final String userId) {
+    public void sendAuthorisationRemovedEmailToRemovedUser(final String xRequestId, final String companyNumber, final String companyName, final String removedByDisplayName, final String userId)
+            throws NullRequiredEmailDataException {
         final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
+        if (userDetails == null || StringUtils.isBlank(userDetails.getEmail())) {
+            LOGGER.infoContext(xRequestId, IMPACTED_USER_OR_EMAIL_IS_NULL, null);
+            throw new NullRequiredEmailDataException(IMPACTED_USER_OR_EMAIL_IS_NULL, YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE);
+        }
+
         final var emailData = new YourAuthorisationRemovedEmailBuilder()
                 .setRemovedByDisplayName(removedByDisplayName)
                 .setRecipientEmail(userDetails.getEmail())
@@ -177,12 +201,14 @@ public class EmailService {
         sendEmail(xRequestId, YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInvitationCancelledEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final String cancelledUserDisplayName) {
-        if (StringUtils.isBlank(companyNumber)) {
-            //TODO: temporary, need to handle this better
-            throw new NullPointerException("Company number is null or blank");
+    public void sendInvitationCancelledEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final String cancelledUserDisplayName, final String userId)
+            throws NullRequiredEmailDataException {
+        final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
+        if (userDetails == null || StringUtils.isBlank(userDetails.getEmail())) {
+            LOGGER.infoContext(xRequestId, ASSOCIATED_USER_OR_EMAIL_IS_NULL, null);
+            throw new NullRequiredEmailDataException(ASSOCIATED_USER_OR_EMAIL_IS_NULL, INVITATION_CANCELLED_MESSAGE_TYPE);
         }
-        final var userDetails = usersService.fetchUserDetails(cancelledUserDisplayName, xRequestId);
+
         final var emailData = new InvitationCancelledEmailBuilder()
                 .setCancelledByDisplayName(cancelledByDisplayName)
                 .setCancelledUserDisplayName(cancelledUserDisplayName)
@@ -193,8 +219,14 @@ public class EmailService {
         sendEmail(xRequestId, INVITATION_CANCELLED_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInvitationEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String inviterDisplayName, final String inviteeDisplayName, final String recipient) {
-        final var userDetails = usersService.fetchUserDetails(recipient, xRequestId);
+    public void sendInvitationEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String inviterDisplayName, final String inviteeDisplayName, final String userId)
+            throws NullRequiredEmailDataException {
+        final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
+        if (userDetails == null || StringUtils.isBlank(userDetails.getEmail())) {
+            LOGGER.infoContext(xRequestId, ASSOCIATED_USER_OR_EMAIL_IS_NULL, null);
+            throw new NullRequiredEmailDataException(ASSOCIATED_USER_OR_EMAIL_IS_NULL, INVITATION_MESSAGE_TYPE);
+        }
+
         final var emailData = new InvitationEmailBuilder()
                 .setInviteeDisplayName(inviteeDisplayName)
                 .setInviterDisplayName(inviterDisplayName)
@@ -205,11 +237,17 @@ public class EmailService {
         sendEmail(xRequestId, INVITATION_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInvitationAcceptedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String invitedByDisplayName, final String inviteeDisplayName, final String recipient) {
-        final var userDetails = usersService.fetchUserDetails(recipient, xRequestId);
+    public void sendInvitationAcceptedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final Optional<String> invitedByDisplayName, final String inviteeDisplayName, final String userId)
+            throws NullRequiredEmailDataException {
+        final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
+        if (userDetails == null || StringUtils.isBlank(userDetails.getEmail())) {
+            LOGGER.infoContext(xRequestId, ASSOCIATED_USER_OR_EMAIL_IS_NULL, null);
+            throw new NullRequiredEmailDataException(ASSOCIATED_USER_OR_EMAIL_IS_NULL, INVITATION_ACCEPTED_MESSAGE_TYPE);
+        }
+
         final var emailData = new InvitationAcceptedEmailBuilder()
                 .setInviteeDisplayName(inviteeDisplayName)
-                .setInviterDisplayName(invitedByDisplayName)
+                .setInviterDisplayName(invitedByDisplayName.orElse(null))
                 .setRecipientEmail(userDetails.getEmail())
                 .setCompanyName(companyName)
                 .build();
@@ -217,8 +255,14 @@ public class EmailService {
         sendEmail(xRequestId, INVITATION_ACCEPTED_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInvitationRejectedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String inviteeDisplayName, final String recipient) {
-        final var userDetails = usersService.fetchUserDetails(recipient, xRequestId);
+    public void sendInvitationRejectedEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String inviteeDisplayName, final String userId)
+            throws NullRequiredEmailDataException {
+        final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
+        if (userDetails == null || StringUtils.isBlank(userDetails.getEmail())) {
+            LOGGER.infoContext(xRequestId, ASSOCIATED_USER_OR_EMAIL_IS_NULL, null);
+            throw new NullRequiredEmailDataException(ASSOCIATED_USER_OR_EMAIL_IS_NULL, INVITATION_REJECTED_MESSAGE_TYPE);
+        }
+
         final var emailData = new InvitationRejectedEmailBuilder()
                 .setInviteeDisplayName(inviteeDisplayName)
                 .setRecipientEmail(userDetails.getEmail())
@@ -240,14 +284,26 @@ public class EmailService {
         sendEmail(xRequestId, INVITE_MESSAGE_TYPE, emailData, logMessageSupplier);
     }
 
-    public void sendInviteCancelledEmail(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final AssociationDao associationDao){
+    public void sendInviteCancelledEmail(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final AssociationDao associationDao)
+            throws NullRequiredEmailDataException {
         sendInviteCancelledEmailToCancelledUser(xRequestId, companyNumber, companyName, cancelledByDisplayName, associationDao);
         sendInviteCancelationEmailToCancellerUser(xRequestId, companyNumber, companyName, cancelledByDisplayName, associationDao);
     }
 
-    private void sendInviteCancelledEmailToCancelledUser(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final AssociationDao associationDao) {
+    private void sendInviteCancelledEmailToCancelledUser(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final AssociationDao associationDao)
+            throws NullRequiredEmailDataException {
+        if (associationDao == null || StringUtils.isBlank(associationDao.getUserId())) {
+            LOGGER.infoContext(xRequestId, ASSOCIATION_DAO_OR_USER_IS_NULL, null);
+            throw new NullRequiredEmailDataException(IMPACTED_USER_OR_EMAIL_IS_NULL, INVITE_CANCELLED_MESSAGE_TYPE);
+        }
+
         final var cancelledUserDetails = usersService.fetchUserDetails(associationDao.getUserId(), xRequestId);
-        final var cancelledUserEmail = cancelledUserDetails.getEmail() != null ? cancelledUserDetails.getEmail() : associationDao.getUserEmail();
+        if (cancelledUserDetails == null || StringUtils.isBlank(cancelledUserDetails.getEmail())) {
+            LOGGER.infoContext(xRequestId, IMPACTED_USER_OR_EMAIL_IS_NULL, null);
+            throw new NullRequiredEmailDataException(IMPACTED_USER_OR_EMAIL_IS_NULL, INVITE_CANCELLED_MESSAGE_TYPE);
+        }
+
+        final var cancelledUserEmail = cancelledUserDetails.getEmail();
         final var cancelledEmailData = new InviteCancelledEmailBuilder()
                 .setRecipientEmail(cancelledUserEmail)
                 .setCancelledBy(cancelledByDisplayName)
@@ -257,9 +313,24 @@ public class EmailService {
         sendEmail(xRequestId, INVITE_CANCELLED_MESSAGE_TYPE, cancelledEmailData, cancelledLogMessageSupplier);
     }
 
-    private void sendInviteCancelationEmailToCancellerUser(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final AssociationDao associationDao) {
+    private void sendInviteCancelationEmailToCancellerUser(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final AssociationDao associationDao)
+            throws NullPointerException, NullRequiredEmailDataException {
+        if (associationDao == null || StringUtils.isBlank(associationDao.getUserId())) {
+            LOGGER.infoContext(xRequestId, ASSOCIATION_DAO_OR_USER_IS_NULL, null);
+            throw new NullRequiredEmailDataException(IMPACTED_USER_OR_EMAIL_IS_NULL, INVITATION_CANCELLED_MESSAGE_TYPE);
+        }
+
         final var cancelledUserDetails = usersService.fetchUserDetails(associationDao.getUserId(), xRequestId);
+        if (cancelledUserDetails == null || StringUtils.isBlank(cancelledUserDetails.getEmail())) {
+            LOGGER.infoContext(xRequestId, IMPACTED_USER_OR_EMAIL_IS_NULL, null);
+            throw new NullRequiredEmailDataException(IMPACTED_USER_OR_EMAIL_IS_NULL, INVITATION_CANCELLED_MESSAGE_TYPE);
+        }
         final var cancellerUserDetails = usersService.fetchUserDetails(cancelledByDisplayName, xRequestId);
+        if (cancellerUserDetails == null || StringUtils.isBlank(cancellerUserDetails.getEmail())) {
+            LOGGER.infoContext(xRequestId, REQUESTING_USER_OR_EMAIL_IS_NULL, null);
+            throw new NullRequiredEmailDataException(IMPACTED_USER_OR_EMAIL_IS_NULL, INVITATION_CANCELLED_MESSAGE_TYPE);
+        }
+
         final var cancellerUserEmail = cancellerUserDetails.getEmail();
         final var cancellerEmailData = new InvitationCancelledEmailBuilder()
                 .setCancelledByDisplayName(cancelledByDisplayName)
@@ -281,8 +352,14 @@ public class EmailService {
         sendEmail(xRequestId, DELEGATED_REMOVAL_OF_MIGRATED, emailData, logMessageSupplier);
     }
 
-    public void sendRemoveOfOwnMigratedEmail(final String xRequestId, final String companyNumber, final String companyName, final String userId) {
+    public void sendRemoveOfOwnMigratedEmail(final String xRequestId, final String companyNumber, final String companyName, final String userId)
+            throws NullRequiredEmailDataException {
         final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
+        if (userDetails == null || StringUtils.isBlank(userDetails.getEmail())) {
+            LOGGER.infoContext(xRequestId, REQUESTING_USER_OR_EMAIL_IS_NULL, null);
+            throw new NullRequiredEmailDataException(REQUESTING_USER_OR_EMAIL_IS_NULL, REMOVAL_OF_OWN_MIGRATED);
+        }
+
         final var emailData = new RemovalOfOwnMigratedEmailBuilder()
                 .setRecipientEmail(userDetails.getEmail())
                 .setCompanyName(companyName)
@@ -291,8 +368,14 @@ public class EmailService {
         sendEmail(xRequestId, REMOVAL_OF_OWN_MIGRATED, emailData, logMessageSupplier);
     }
 
-    public void sendDelegatedRemovalOfMigratedBatchEmail(final String xRequestId, final String companyNumber, final String companyName, final String removedBy, final String removedUser) {
-        final var userDetails = usersService.fetchUserDetails(removedUser, xRequestId);
+    public void sendDelegatedRemovalOfMigratedBatchEmail(final String xRequestId, final String companyNumber, final String companyName, final String removedBy, final String removedUser, final String userId)
+            throws NullRequiredEmailDataException {
+        final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
+        if (userDetails == null || StringUtils.isBlank(userDetails.getEmail())) {
+            LOGGER.infoContext(xRequestId, IMPACTED_USER_OR_EMAIL_IS_NULL, null);
+            throw new NullRequiredEmailDataException(IMPACTED_USER_OR_EMAIL_IS_NULL, DELEGATED_REMOVAL_OF_MIGRATED_BATCH);
+        }
+
         final var emailData = new DelegatedRemovalOfMigratedBatchEmailBuilder()
                 .setRemovedBy(removedBy)
                 .setRemovedUser(removedUser)
@@ -300,5 +383,37 @@ public class EmailService {
                 .setCompanyName(companyName).build();
         final var logMessageSupplier = new EmailNotification(DELEGATED_REMOVAL_OF_MIGRATED_BATCH, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber);
         sendEmail(xRequestId, DELEGATED_REMOVAL_OF_MIGRATED_BATCH, emailData, logMessageSupplier);
+    }
+
+    private EmailBatchType determineEmailBatchType(final String xRequestId, final AssociationDao targetAssociation, final StatusEnum newStatus) {
+        final var oldStatus = targetAssociation.getStatus();
+
+        if (isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED)) {
+            return EmailBatchType.REJECTING_INVITATION;
+        }
+        if (isOAuth2Request() && oldStatus.equals(CONFIRMED.getValue()) && newStatus.equals(REMOVED)) {
+            return EmailBatchType.AUTHORISATION_IS_BEING_REMOVED;
+        }
+        if (isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(CONFIRMED)) {
+            return EmailBatchType.ACCEPTING_INVITATION;
+        }
+        if (isOAuth2Request() && !isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED)) {
+            return EmailBatchType.CANCELLING_ANOTHER_USERS_INVITATION;
+        }
+        if (isOAuth2Request() && !isRequestingUser(targetAssociation) && oldStatus.equals(MIGRATED.getValue()) && newStatus.equals(REMOVED)) {
+            return EmailBatchType.REMOVING_ANOTHER_USERS_MIGRATED_ASSOCIATION;
+        }
+        if (isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(MIGRATED.getValue()) && newStatus.equals(REMOVED)) {
+            return EmailBatchType.REMOVING_OWN_MIGRATED_ASSOCIATION;
+        }
+        if (isOAuth2Request() && !isRequestingUser(targetAssociation) && (oldStatus.equals(MIGRATED.getValue()) || oldStatus.equals(UNAUTHORISED.getValue()) && newStatus.equals(CONFIRMED))) {
+            return EmailBatchType.INVITING_USER;
+        }
+        if (isAPIKeyRequest() && (oldStatus.equals(MIGRATED.getValue()) || oldStatus.equals(UNAUTHORISED.getValue()) && newStatus.equals(CONFIRMED))) {
+            return EmailBatchType.CONFIRMING_WITH_AUTH_CODE;
+        }
+        final var loggedException = new EmailBatchException(String.format("Unable to determine batch type, defaulting to NONE - isOAuth2Request: %s, isAPIKeyRequest: %s, isRequestingUser: %s, oldStatus: %s, newStatus: %s", isOAuth2Request(), isAPIKeyRequest(), isRequestingUser(targetAssociation), oldStatus, newStatus));
+        LOGGER.errorContext (xRequestId, loggedException, null);
+        return EmailBatchType.NONE;
     }
 }

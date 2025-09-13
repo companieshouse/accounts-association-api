@@ -91,7 +91,7 @@ public class UserCompanyAssociationsController implements UserCompanyAssociation
 
         associationsTransactionService.fetchConfirmedUserIds(companyNumber)
                 .parallel()
-                .forEach(confirmedUserId -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser(getXRequestId(), companyDetails.getCompanyNumber(), companyDetails.getCompanyName(), mapToDisplayValue(targetUser, targetUser.getEmail())));
+                .forEach(confirmedUserId -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser(getXRequestId(), companyDetails.getCompanyNumber(), companyDetails.getCompanyName(), mapToDisplayValue(targetUser, targetUser.getEmail()), confirmedUserId));
 
         return new ResponseEntity<>(new ResponseBodyPost().associationLink(String.format("/associations/%s", targetAssociationId)), CREATED);
     }
