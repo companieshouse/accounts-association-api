@@ -36,7 +36,7 @@ import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfig;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
-import uk.gov.companieshouse.accounts.association.service.AssociationsService;
+import uk.gov.companieshouse.accounts.association.service.AssociationsTransactionService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -44,10 +44,10 @@ import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.Links;
 
-@WebMvcTest(UserCompanyInvitations.class)
+@WebMvcTest(UserCompanyInvitationsController.class)
 @Import(WebSecurityConfig.class)
 @Tag("unit-test")
-class UserCompanyInvitationsTest {
+class UserCompanyInvitationsControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -65,7 +65,7 @@ class UserCompanyInvitationsTest {
     private CompanyService companyService;
 
     @MockitoBean
-    private AssociationsService associationsService;
+    private AssociationsTransactionService associationsTransactionService;
 
     @MockitoBean
     private EmailService emailService;
@@ -152,7 +152,7 @@ class UserCompanyInvitationsTest {
                         .header("ERIC-Authorised-Key-Roles", "*"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(associationsService).fetchActiveInvitations(argThat(comparisonUtils.compare(user, List.of("userId"), List.of(), Map.of())), eq(1), eq(1));
+        Mockito.verify(associationsTransactionService).fetchActiveInvitations(argThat(comparisonUtils.compare(user, List.of("userId"), List.of(), Map.of())), eq(1), eq(1));
     }
 
     @Test
@@ -168,7 +168,7 @@ class UserCompanyInvitationsTest {
                         .header("ERIC-Authorised-Key-Roles", "*"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(associationsService).fetchActiveInvitations(argThat(comparisonUtils.compare(user, List.of("userId"), List.of(), Map.of())), eq(0), eq(15));
+        Mockito.verify(associationsTransactionService).fetchActiveInvitations(argThat(comparisonUtils.compare(user, List.of("userId"), List.of(), Map.of())), eq(0), eq(15));
     }
 
     @Test
@@ -185,7 +185,7 @@ class UserCompanyInvitationsTest {
                 .itemsPerPage(1).pageNumber(1).totalResults(2).totalPages(2);
 
         mockers.mockUsersServiceFetchUserDetails("000");
-        when(associationsService.fetchActiveInvitations(user, 1,1)).thenReturn(mockInvitationsList);
+        when(associationsTransactionService.fetchActiveInvitations(user, 1,1)).thenReturn(mockInvitationsList);
 
         final var response = mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
                         .header("X-Request-Id", "theId123")
@@ -194,7 +194,7 @@ class UserCompanyInvitationsTest {
                         .header("ERIC-Authorised-Key-Roles", "*"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(associationsService).fetchActiveInvitations(user,1,1);
+        Mockito.verify(associationsTransactionService).fetchActiveInvitations(user,1,1);
 
         final var invitationsList = parseResponseTo(response, InvitationsList.class);
 
@@ -318,9 +318,10 @@ class UserCompanyInvitationsTest {
         mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
         mockers.mockUsersServiceSearchUserDetails("000");
-        Mockito.doReturn(Optional.of(associationDao)).when(associationsService).fetchAssociationDao("444444", "000", "light.yagami@death.note");
-        Mockito.doReturn(Stream.of("000")).when(associationsService).fetchConfirmedUserIds("444444");
-        Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.doReturn(Optional.of(associationDao)).when(associationsTransactionService).fetchAssociationDao("444444", "000", "light.yagami@death.note");
+        Mockito.doReturn(Stream.of("000")).when(associationsTransactionService).fetchConfirmedUserIds("444444");
+        Mockito.when(
+                associationsTransactionService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -343,9 +344,10 @@ class UserCompanyInvitationsTest {
         mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
         mockers.mockUsersServiceSearchUserDetailsEmptyList("000");
-        Mockito.doReturn(Optional.of(associationDao)).when(associationsService).fetchAssociationDao("444444", null, "light.yagami@death.note");
-        Mockito.doReturn(Stream.of("9999")).when(associationsService).fetchConfirmedUserIds("444444");
-        Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.doReturn(Optional.of(associationDao)).when(associationsTransactionService).fetchAssociationDao("444444", null, "light.yagami@death.note");
+        Mockito.doReturn(Stream.of("9999")).when(associationsTransactionService).fetchConfirmedUserIds("444444");
+        Mockito.when(
+                associationsTransactionService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -367,9 +369,10 @@ class UserCompanyInvitationsTest {
         mockers.mockUsersServiceSearchUserDetails("000");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
         mockers.mockUsersServiceFetchUserDetails("9999");
-        Mockito.doReturn(Optional.of(targetUserAssociation)).when(associationsService).fetchAssociationDao("444444", "000", "light.yagami@death.note");
-        Mockito.doReturn(Stream.of("000")).when(associationsService).fetchConfirmedUserIds("444444");
-        Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.doReturn(Optional.of(targetUserAssociation)).when(associationsTransactionService).fetchAssociationDao("444444", "000", "light.yagami@death.note");
+        Mockito.doReturn(Stream.of("000")).when(associationsTransactionService).fetchConfirmedUserIds("444444");
+        Mockito.when(
+                associationsTransactionService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -392,11 +395,12 @@ class UserCompanyInvitationsTest {
         mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
         mockers.mockUsersServiceSearchUserDetails("000");
-        Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationDao("444444", null, "light.yagami@death.note");
-        Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationDao("444444", "000", null);
-        Mockito.doReturn(Stream.of("000")).when(associationsService).fetchConfirmedUserIds("444444");
-        Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
-        Mockito.doReturn(association).when(associationsService).createAssociationWithInvitationApprovalRoute("444444", "000", null, "9999");
+        Mockito.doReturn(Optional.empty()).when(associationsTransactionService).fetchAssociationDao("444444", null, "light.yagami@death.note");
+        Mockito.doReturn(Optional.empty()).when(associationsTransactionService).fetchAssociationDao("444444", "000", null);
+        Mockito.doReturn(Stream.of("000")).when(associationsTransactionService).fetchConfirmedUserIds("444444");
+        Mockito.when(
+                associationsTransactionService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.doReturn(association).when(associationsTransactionService).createAssociationWithInvitationApprovalRoute("444444", "000", null, "9999");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -419,11 +423,12 @@ class UserCompanyInvitationsTest {
         mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
         mockers.mockUsersServiceSearchUserDetailsEmptyList("light.yagami@death.note");
-        Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationDao("444444", null, "light.yagami@death.note");
-        Mockito.doReturn(Optional.empty()).when(associationsService).fetchAssociationDao("444444", "000", null);
-        Mockito.doReturn(Stream.of("000")).when(associationsService).fetchConfirmedUserIds("444444");
-        Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
-        Mockito.doReturn(newAssociation).when(associationsService).createAssociationWithInvitationApprovalRoute("444444", null, "light.yagami@death.note", "9999");
+        Mockito.doReturn(Optional.empty()).when(associationsTransactionService).fetchAssociationDao("444444", null, "light.yagami@death.note");
+        Mockito.doReturn(Optional.empty()).when(associationsTransactionService).fetchAssociationDao("444444", "000", null);
+        Mockito.doReturn(Stream.of("000")).when(associationsTransactionService).fetchConfirmedUserIds("444444");
+        Mockito.when(
+                associationsTransactionService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.doReturn(newAssociation).when(associationsTransactionService).createAssociationWithInvitationApprovalRoute("444444", null, "light.yagami@death.note", "9999");
 
 
         mockMvc.perform(post("/associations/invitations")
@@ -446,9 +451,11 @@ class UserCompanyInvitationsTest {
         mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("333333");
         mockers.mockUsersServiceSearchUserDetails("000");
-        Mockito.doReturn(Optional.of(associationDao)).when(associationsService).fetchAssociationDao("333333", "000", "light.yagami@death.note");
-        Mockito.doThrow(new BadRequestRuntimeException("There is an existing association with Confirmed status for the user", new Exception("There is an existing association with Confirmed status for the user"))).when(associationsService).fetchAssociationDao("333333", "000", null);
-        Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.doReturn(Optional.of(associationDao)).when(associationsTransactionService).fetchAssociationDao("333333", "000", "light.yagami@death.note");
+        Mockito.doThrow(new BadRequestRuntimeException("There is an existing association with Confirmed status for the user", new Exception("There is an existing association with Confirmed status for the user"))).when(
+                associationsTransactionService).fetchAssociationDao("333333", "000", null);
+        Mockito.when(
+                associationsTransactionService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -463,7 +470,7 @@ class UserCompanyInvitationsTest {
     @Test
     void whenConfirmedAssociationDoesNotExist_thenThrowsBadRequestException() throws Exception {
         mockers.mockUsersServiceFetchUserDetails("9999");
-        when(associationsService.confirmedAssociationExists(anyString(), anyString())).thenReturn(false);
+        when(associationsTransactionService.confirmedAssociationExists(anyString(), anyString())).thenReturn(false);
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -483,8 +490,8 @@ class UserCompanyInvitationsTest {
         mockers.mockUsersServiceFetchUserDetails("MKUser002");
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
         mockers.mockUsersServiceSearchUserDetails("MKUser001");
-        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists("MKCOMP001", "MKUser002");
-        Mockito.doReturn(Optional.of(targetAssociation)).when(associationsService).fetchAssociationDao("MKCOMP001", "MKUser001", "mario@mushroom.kingdom");
+        Mockito.doReturn(true).when(associationsTransactionService).confirmedAssociationExists("MKCOMP001", "MKUser002");
+        Mockito.doReturn(Optional.of(targetAssociation)).when(associationsTransactionService).fetchAssociationDao("MKCOMP001", "MKUser001", "mario@mushroom.kingdom");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -503,8 +510,8 @@ class UserCompanyInvitationsTest {
         mockers.mockUsersServiceFetchUserDetails("MKUser002");
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
         mockers.mockUsersServiceSearchUserDetails("MKUser001");
-        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists("MKCOMP001", "MKUser002");
-        Mockito.doReturn(Optional.of(targetAssociation)).when(associationsService).fetchAssociationDao("MKCOMP001", "MKUser001", "mario@mushroom.kingdom");
+        Mockito.doReturn(true).when(associationsTransactionService).confirmedAssociationExists("MKCOMP001", "MKUser002");
+        Mockito.doReturn(Optional.of(targetAssociation)).when(associationsTransactionService).fetchAssociationDao("MKCOMP001", "MKUser001", "mario@mushroom.kingdom");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")

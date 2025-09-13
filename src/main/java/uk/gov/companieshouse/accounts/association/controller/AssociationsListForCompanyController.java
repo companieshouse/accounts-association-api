@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.ForbiddenRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
-import uk.gov.companieshouse.accounts.association.service.AssociationsService;
+import uk.gov.companieshouse.accounts.association.service.AssociationsTransactionService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.api.AssociationDataForCompanyInterface;
@@ -34,12 +34,12 @@ import uk.gov.companieshouse.api.accounts.associations.model.FetchRequestBodyPos
 public class AssociationsListForCompanyController implements AssociationDataForCompanyInterface {
 
     private final CompanyService companyService;
-    private final AssociationsService associationsService;
+    private final AssociationsTransactionService associationsTransactionService;
     private final UsersService usersService;
 
-    public AssociationsListForCompanyController(final CompanyService companyService, final AssociationsService associationsService, final UsersService usersService) {
+    public AssociationsListForCompanyController(final CompanyService companyService, final AssociationsTransactionService associationsTransactionService, final UsersService usersService) {
         this.companyService = companyService;
-        this.associationsService = associationsService;
+        this.associationsTransactionService = associationsTransactionService;
         this.usersService = usersService;
     }
 
@@ -51,13 +51,13 @@ public class AssociationsListForCompanyController implements AssociationDataForC
             throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(PAGINATION_IS_MALFORMED));
         }
 
-        if (!associationsService.confirmedAssociationExists(companyNumber, getEricIdentity()) && !hasAdminPrivilege(ADMIN_READ_PERMISSION) && isOAuth2Request()){
+        if (!associationsTransactionService.confirmedAssociationExists(companyNumber, getEricIdentity()) && !hasAdminPrivilege(ADMIN_READ_PERMISSION) && isOAuth2Request()){
             throw new ForbiddenRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("Requesting user is not permitted to retrieve data."));
         }
 
         final var companyProfile = companyService.fetchCompanyProfile(companyNumber);
         final var statuses = includeRemoved ? fetchAllStatusesWithout(Set.of()) : fetchAllStatusesWithout(Set.of(StatusEnum.REMOVED));
-        final var associationsList = associationsService.fetchUnexpiredAssociationsForCompanyAndStatuses(companyProfile, statuses, null, null, pageIndex, itemsPerPage);
+        final var associationsList = associationsTransactionService.fetchUnexpiredAssociationsForCompanyAndStatuses(companyProfile, statuses, null, null, pageIndex, itemsPerPage);
 
         return new ResponseEntity<>(associationsList, OK);
     }
@@ -84,7 +84,7 @@ public class AssociationsListForCompanyController implements AssociationDataForC
         final var user = usersService.retrieveUserDetails(userId, userEmail);
         final var targetUserEmail =  Objects.nonNull(user) ? user.getEmail() : userEmail;
 
-        return associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses(companyProfile, statuses, user, targetUserEmail)
+        return associationsTransactionService.fetchUnexpiredAssociationsForCompanyUserAndStatuses(companyProfile, statuses, user, targetUserEmail)
                 .map(association -> new ResponseEntity<>(association, OK))
                 .orElseThrow(() -> new NotFoundRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("Association not found")));
 

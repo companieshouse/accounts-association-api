@@ -23,7 +23,7 @@ import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfi
 import uk.gov.companieshouse.accounts.association.exceptions.ForbiddenRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
-import uk.gov.companieshouse.accounts.association.service.AssociationsService;
+import uk.gov.companieshouse.accounts.association.service.AssociationsTransactionService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -31,7 +31,7 @@ import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 
 @Tag("unit-test")
 @Import(WebSecurityConfig.class)
-@WebMvcTest(UserCompanyAssociations.class)
+@WebMvcTest(UserCompanyAssociationsController.class)
 class ControllerAdviceTest {
 
     @Autowired
@@ -41,7 +41,7 @@ class ControllerAdviceTest {
     private WebApplicationContext context;
 
     @MockitoBean
-    private AssociationsService associationsService;
+    private AssociationsTransactionService associationsTransactionService;
 
     @MockitoBean
     private UsersService usersService;
@@ -68,7 +68,7 @@ class ControllerAdviceTest {
     @Test
     void testNotFoundRuntimeError() throws Exception {
         Mockito.doThrow(new NotFoundRuntimeException("Couldn't find association", new Exception("Couldn't find association")))
-                .when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
+                .when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
 
         mockMvc.perform(get("/associations")
                         .header("X-Request-Id", "theId123")
@@ -98,7 +98,7 @@ class ControllerAdviceTest {
     @Test
     void testOnInternalServerError() throws Exception {
         Mockito.doThrow(new NullPointerException("Couldn't find association"))
-                .when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
+                .when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
 
         mockMvc.perform(get("/associations?company_number=123445")
                         .header("X-Request-Id", "theId123")
@@ -110,7 +110,7 @@ class ControllerAdviceTest {
     @Test
     void testOnInternalServerErrorRuntimeException() throws Exception {
         Mockito.doThrow(new InternalServerErrorRuntimeException("Couldn't find association", new Exception("Couldn't find association")))
-                .when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
+                .when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
 
         mockMvc.perform(get("/associations")
                         .header("X-Request-Id", "theId123")
@@ -122,7 +122,7 @@ class ControllerAdviceTest {
     @Test
     void testOnForbiddenRuntimeException() throws Exception {
         Mockito.doThrow(new ForbiddenRuntimeException("Forbidden", new Exception("Forbidden")))
-                .when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(), any(), anySet(), anyInt(), anyInt());
+                .when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(), any(), anySet(), anyInt(), anyInt());
 
         mockMvc.perform(get("/associations")
                         .header("X-Request-Id", "theId123")

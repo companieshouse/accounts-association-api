@@ -1,5 +1,7 @@
 package uk.gov.companieshouse.accounts.association.models;
 
+import javax.print.DocFlavor.STRING;
+
 public class Constants {
 
     public static final String X_REQUEST_ID = "X-Request-Id";
@@ -13,6 +15,10 @@ public class Constants {
     public static final String ADMIN_READ_PERMISSION = "/admin/user-company-associations/read";
     public static final String ADMIN_UPDATE_PERMISSION = "/admin/user-company-associations/update";
     public static final String COMPANIES_HOUSE =  "Companies House";
+
+    public static final String REST_CLIENT_EXCEPTION = "Encountered rest client exception when calling: %s";
+    public static final String REST_CLIENT_START = "Starting request to %s";
+    public static final String REST_CLIENT_FINISH = "Finished request to %s";
 
 
 }
