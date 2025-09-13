@@ -72,14 +72,14 @@ public class EmailService {
 
     private final UsersService usersService;
     private final CompanyService companyService;
-    private final AssociationsService associationsService;
+    private final AssociationsTransactionService associationsTransactionService;
     private final EmailProducer emailProducer;
 
     @Autowired
-    public EmailService(final UsersService usersService, final EmailProducer emailProducer, final CompanyService companyService, final AssociationsService associationsService) {
+    public EmailService(final UsersService usersService, final EmailProducer emailProducer, final CompanyService companyService, final AssociationsTransactionService associationsTransactionService) {
         this.usersService = usersService;
         this.companyService = companyService;
-        this.associationsService = associationsService;
+        this.associationsTransactionService = associationsTransactionService;
         this.emailProducer = emailProducer;
     }
 
@@ -90,6 +90,56 @@ public class EmailService {
         } catch (Exception exception) {
             LOG.errorContext(xRequestId, exception, null);
             throw exception;
+        }
+    }
+
+    public void sendStatusUpdateEmails(final AssociationDao targetAssociation, final User targetUser, final StatusEnum newStatus) {
+        final var xRequestId = getXRequestId();
+        final var requestingUserDisplayValue = isAPIKeyRequest() || hasAdminPrivilege(ADMIN_UPDATE_PERMISSION) ? COMPANIES_HOUSE : mapToDisplayValue(getUser(), getUser().getEmail());
+        final var targetUserDisplayValue = mapToDisplayValue(targetUser, targetAssociation.getUserEmail());
+        final var targetUserEmail = Optional.ofNullable(targetUser).map(User::getEmail).orElse(targetAssociation.getUserEmail());
+        final var oldStatus = targetAssociation.getStatus();
+
+        final var cachedCompanyName = companyService.fetchCompanyProfile(targetAssociation.getCompanyNumber()).getCompanyName();
+        final var cachedAssociatedUsers = associationsTransactionService.fetchConfirmedUserIds(targetAssociation.getCompanyNumber());
+        final var cachedInvitedByDisplayName = targetAssociation.getInvitations().stream()
+                .max((firstInvitation, secondInvitation) -> firstInvitation.getInvitedAt().isAfter(secondInvitation.getInvitedAt()) ? 1 : -1)
+                .map(InvitationDao::getInvitedBy)
+                .map(user -> usersService.fetchUserDetails(user, xRequestId))
+                .map(user -> Optional.ofNullable(user.getDisplayName()).orElse(user.getEmail()))
+                .orElseThrow(() -> new NotFoundRuntimeException("Inviting user not found", new Exception("Inviting user not found")));
+
+        final var isRejectingInvitation = isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED);
+        final var authorisationIsBeingRemoved = isOAuth2Request() && oldStatus.equals(CONFIRMED.getValue()) && newStatus.equals(REMOVED);
+        final var isAcceptingInvitation = isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(CONFIRMED);
+        final var isCancellingAnotherUsersInvitation = isOAuth2Request() && !isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED);
+        final var isRemovingAnotherUsersMigratedAssociation = isOAuth2Request() && !isRequestingUser(targetAssociation) && oldStatus.equals(MIGRATED.getValue()) && newStatus.equals(REMOVED);
+        final var isRemovingOwnMigratedAssociation = isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(MIGRATED.getValue()) && newStatus.equals(REMOVED);
+        final var isInvitingUser = isOAuth2Request() && !isRequestingUser(targetAssociation) && (oldStatus.equals(MIGRATED.getValue()) || oldStatus.equals(UNAUTHORISED.getValue()) && newStatus.equals(CONFIRMED));
+        final var isConfirmingWithAuthCode = isAPIKeyRequest() && (oldStatus.equals(MIGRATED.getValue()) || oldStatus.equals(UNAUTHORISED.getValue()) && newStatus.equals(CONFIRMED));
+
+        if (isRejectingInvitation) {
+            cachedAssociatedUsers.parallel().forEach(email -> sendInvitationRejectedEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, email));
+        } else if (authorisationIsBeingRemoved) {
+            sendAuthorisationRemovedEmailToRemovedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation.getUserId());
+            cachedAssociatedUsers.parallel().forEach(email -> sendAuthorisationRemovedEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue));
+        } else if (isAcceptingInvitation) {
+            cachedAssociatedUsers.parallel().forEach(email -> sendInvitationAcceptedEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, cachedInvitedByDisplayName, requestingUserDisplayValue, email));
+        } else if (isCancellingAnotherUsersInvitation) {
+            sendInviteCancelledEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation);
+            cachedAssociatedUsers.parallel().forEach(email -> sendInvitationCancelledEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue));
+        } else if (isRemovingAnotherUsersMigratedAssociation) {
+            sendDelegatedRemovalOfMigratedEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserEmail);
+            cachedAssociatedUsers.parallel().forEach(email -> sendDelegatedRemovalOfMigratedBatchEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue));
+        } else if (isRemovingOwnMigratedAssociation) {
+            sendRemoveOfOwnMigratedEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, getEricIdentity());
+            cachedAssociatedUsers.parallel().forEach(email -> sendDelegatedRemovalOfMigratedBatchEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue));
+        } else if (isInvitingUser) {
+            final var invitationExpiryTimestamp = LocalDateTime.now().plusDays(DAYS_SINCE_INVITE_TILL_EXPIRES).toString();
+            sendInviteEmail(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, invitationExpiryTimestamp, targetUserEmail);
+            cachedAssociatedUsers.parallel().forEach(email -> sendInvitationEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue, email));
+        } else if (isConfirmingWithAuthCode){
+            cachedAssociatedUsers.parallel().forEach(email -> sendAuthCodeConfirmationEmailToAssociatedUser(xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, targetUserDisplayValue));
         }
     }
 

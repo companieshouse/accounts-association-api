@@ -24,6 +24,7 @@ import org.springframework.web.client.HttpClientErrorException.NotFound;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
+import uk.gov.companieshouse.accounts.association.client.UserClient;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
@@ -33,30 +34,24 @@ import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 @Service
 public class UsersService {
 
-    private final RestClient usersRestClient;
+    private final UserClient userClient;
 
-    private static final String REST_CLIENT_EXCEPTION = "Encountered rest client exception when fetching user details for: %s";
     private static final String BLANK_USER_ID = "UserID cannot be blank";
     private static final String EMAIL_IN_LIST_CANNOT_BE_NULL = "Email in list cannot be null";
 
     @Autowired
-    private UsersService(@Qualifier("usersRestClient") final RestClient usersRestClient) {
-        this.usersRestClient = usersRestClient;
+    private UsersService(final UserClient userClient) {
+        this.userClient = userClient;
     }
 
     public User fetchUserDetails(final String userId, final String xRequestId) {
-        try {
-            return requestUserDetails(userId, xRequestId);
-        } catch (NotFound exception) {
-            LOGGER.infoContext(xRequestId, String.format("No user found for userId: %s", userId), null);
-            throw new NotFoundRuntimeException(exception.getMessage(), exception);
-        } catch (BadRequest exception) {
-            LOGGER.errorContext(xRequestId, String.format("Bad request made when searching for userId: %s", userId), exception, null);
-            throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
-        } catch (RestClientException exception) {
-            LOGGER.errorContext(xRequestId, String.format(REST_CLIENT_EXCEPTION, userId), exception, null);
-            throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
-        }
+//        if (StringUtils.isBlank(userId)) {
+//            NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_USER_ID, new Exception(BLANK_USER_ID));
+//            LOGGER.errorContext(xRequestId, BLANK_USER_ID, exception, null);
+//            throw exception;
+//        }
+
+        return userClient.requestUserDetails(userId, xRequestId);
     }
 
     public Map<String, User> fetchUsersDetails(final Stream<AssociationDao> associations) {
@@ -92,7 +87,7 @@ public class UsersService {
         emails.stream()
                 .parallel()
                 .forEach(email -> {
-                    var userDetails = fetchUserDetailsByEmail(email);
+                    var userDetails = fetchUserDetailsByEmail(email, xRequestId);
                     if (Objects.nonNull(userDetails)) {
                         synchronizedList.addAll(userDetails);
                     }
@@ -106,19 +101,8 @@ public class UsersService {
         return usersList;
     }
 
-    public UsersList fetchUserDetailsByEmail(final String email) {
-        try {
-            return requestUserDetailsByEmail(email);
-        } catch (NotFound exception) {
-            LOGGER.infoContext(getXRequestId(), String.format("No user found for email: %s", email), null);
-            throw new NotFoundRuntimeException(exception.getMessage(), exception);
-        } catch (BadRequest exception) {
-            LOGGER.errorContext(getXRequestId(), String.format("Bad request made when searching for user with email: %s", email), exception, null);
-            throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
-        } catch (RestClientException exception) {
-            LOGGER.errorContext(getXRequestId(), String.format(REST_CLIENT_EXCEPTION, email), exception, null);
-            throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
-        }
+    public UsersList fetchUserDetailsByEmail(final String email, final String xRequestId) {
+        return userClient.requestUserDetailsByEmail(email, xRequestId);
     }
 
     public User retrieveUserDetails(final String targetUserId, final String targetUserEmail) {
@@ -149,47 +133,5 @@ public class UsersService {
 
     public User fetchUserDetails(final AssociationDao association) {
         return retrieveUserDetails(association.getUserId(), association.getUserEmail());
-    }
-
-    private UsersList requestUserDetailsByEmail(final String email) {
-        final var uri = UriComponentsBuilder.newInstance()
-                .path("/users/search")
-                .queryParam("user_email", "{email}")
-                .encode()
-                .buildAndExpand(email)
-                .toUri();
-
-        LOGGER.traceContext(getXRequestId(), String.format("Starting request to %s. Attempting to retrieve user details for email: %s", uri, email), null);
-
-        final var response = usersRestClient.get()
-                .uri(uri)
-                .retrieve()
-                .body(String.class);
-
-        return parseJsonTo(response, UsersList.class);
-    }
-
-    private User requestUserDetails(final String userId, final String xRequestId) {
-        if (StringUtils.isBlank(userId)) {
-            NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_USER_ID, new Exception(BLANK_USER_ID));
-            LOGGER.errorContext(xRequestId, BLANK_USER_ID, exception, null);
-            throw exception;
-        }
-
-        final var uri = UriComponentsBuilder.newInstance()
-                .path("/users/{user}")
-                .buildAndExpand(userId)
-                .toUri();
-
-        LOGGER.infoContext(xRequestId, String.format("Starting request to %s. Attempting to retrieve user details for: %s", uri, userId), null);
-
-        final var response = usersRestClient.get()
-                .uri(uri)
-                .retrieve()
-                .body(String.class);
-
-        LOGGER.infoContext(xRequestId, String.format("Finished request to %s for user: %s.", uri, userId), null);
-
-        return parseJsonTo(response, User.class);
     }
 }

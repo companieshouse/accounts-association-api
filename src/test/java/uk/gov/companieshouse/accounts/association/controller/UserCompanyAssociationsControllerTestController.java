@@ -48,7 +48,7 @@ import uk.gov.companieshouse.accounts.association.exceptions.InternalServerError
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.PreviousStatesDao;
-import uk.gov.companieshouse.accounts.association.service.AssociationsService;
+import uk.gov.companieshouse.accounts.association.service.AssociationsTransactionService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -60,10 +60,10 @@ import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.Links;
 import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 
-@WebMvcTest(UserCompanyAssociations.class)
+@WebMvcTest(UserCompanyAssociationsController.class)
 @Import(WebSecurityConfig.class)
 @Tag("unit-test")
-class UserCompanyAssociationsTest {
+class UserCompanyAssociationsControllerTestController {
 
     @Autowired
     private MockMvc mockMvc;
@@ -81,7 +81,7 @@ class UserCompanyAssociationsTest {
     private CompanyService companyService;
 
     @MockitoBean
-    private AssociationsService associationsService;
+    private AssociationsTransactionService associationsTransactionService;
 
     @MockitoBean
     private EmailService emailService;
@@ -127,7 +127,8 @@ class UserCompanyAssociationsTest {
         final var user = testDataManager.fetchUserDtos("000").getFirst();
 
         mockers.mockUsersServiceFetchUserDetails("000");
-        Mockito.doReturn(new AssociationsList().items(List.of())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(eq(user), isNull(), eq(Set.of(StatusEnum.CONFIRMED.getValue())), eq(0), eq(15));
+        Mockito.doReturn(new AssociationsList().items(List.of())).when(
+                associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(eq(user), isNull(), eq(Set.of(StatusEnum.CONFIRMED.getValue())), eq(0), eq(15));
 
         final var response = mockMvc.perform(get("/associations")
                 .header("Eric-identity", "000")
@@ -146,7 +147,7 @@ class UserCompanyAssociationsTest {
         final var associationsList = new AssociationsList().itemsPerPage(15).pageNumber(0).totalPages(1).totalResults(1).items(List.of());
 
         mockers.mockUsersServiceFetchUserDetails("111");
-        when(associationsService.fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user,"111111", Set.of(StatusEnum.CONFIRMED.getValue()), 0, 15)).thenReturn(associationsList);
+        when(associationsTransactionService.fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user,"111111", Set.of(StatusEnum.CONFIRMED.getValue()), 0, 15)).thenReturn(associationsList);
 
         final var response = mockMvc.perform(get("/associations?page_index=0&items_per_page=15&company_number=111111")
                 .header("Eric-identity", "111")
@@ -205,7 +206,8 @@ class UserCompanyAssociationsTest {
         final var user = testDataManager.fetchUserDtos("111").getFirst();
 
         mockers.mockUsersServiceFetchUserDetails("111");
-        Mockito.doThrow(new NotFoundRuntimeException("Not found", new Exception("Not found"))).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, null, Set.of(StatusEnum.CONFIRMED.getValue()), 0, 15);
+        Mockito.doThrow(new NotFoundRuntimeException("Not found", new Exception("Not found"))).when(
+                associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, null, Set.of(StatusEnum.CONFIRMED.getValue()), 0, 15);
 
         mockMvc.perform(get("/associations")
                         .header("X-Request-Id", "theId123")
@@ -220,7 +222,8 @@ class UserCompanyAssociationsTest {
         final var user = testDataManager.fetchUserDtos("9999").getFirst();
 
         mockers.mockUsersServiceFetchUserDetails("9999");
-        Mockito.doReturn(new AssociationsList().totalResults(0).items(List.of())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, null,Set.of("$$$$"), 0, 15);
+        Mockito.doReturn(new AssociationsList().totalResults(0).items(List.of())).when(
+                associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, null,Set.of("$$$$"), 0, 15);
 
         mockMvc.perform(get("/associations?status=$$$$")
                         .header("X-Request-Id", "theId123")
@@ -239,7 +242,7 @@ class UserCompanyAssociationsTest {
                 .itemsPerPage(15).pageNumber(0).totalPages(1).totalResults(1);
 
         mockers.mockUsersServiceFetchUserDetails("9999");
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user,null, Set.of(StatusEnum.CONFIRMED.getValue()), 0, 15);
+        Mockito.doReturn(expectedAssociationsList).when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user,null, Set.of(StatusEnum.CONFIRMED.getValue()), 0, 15);
 
         final var response = mockMvc.perform(get("/associations")
                         .header("X-Request-Id", "theId123")
@@ -269,7 +272,7 @@ class UserCompanyAssociationsTest {
                 .itemsPerPage(15).pageNumber(0).totalPages(1).totalResults(1);
 
         mockers.mockUsersServiceFetchUserDetails("9999");
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user,null, Set.of(StatusEnum.REMOVED.getValue()), 0, 15);
+        Mockito.doReturn(expectedAssociationsList).when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user,null, Set.of(StatusEnum.REMOVED.getValue()), 0, 15);
 
         final var response = mockMvc.perform(get("/associations?status=removed")
                         .header("X-Request-Id", "theId123")
@@ -299,7 +302,7 @@ class UserCompanyAssociationsTest {
                 .itemsPerPage(15).pageNumber(0).totalPages(1).totalResults(2);
 
         mockers.mockUsersServiceFetchUserDetails("9999");
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, null,Set.of(StatusEnum.CONFIRMED.getValue(), StatusEnum.REMOVED.getValue()), 0, 15);
+        Mockito.doReturn(expectedAssociationsList).when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, null,Set.of(StatusEnum.CONFIRMED.getValue(), StatusEnum.REMOVED.getValue()), 0, 15);
 
         final var response = mockMvc.perform(get("/associations?status=confirmed&status=removed")
                         .header("X-Request-Id", "theId123")
@@ -329,7 +332,7 @@ class UserCompanyAssociationsTest {
                 .itemsPerPage(1).pageNumber(1).totalPages(2).totalResults(2);
 
         mockers.mockUsersServiceFetchUserDetails("9999");
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user,null, Set.of(StatusEnum.CONFIRMED.getValue(), StatusEnum.REMOVED.getValue()), 1, 1);
+        Mockito.doReturn(expectedAssociationsList).when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user,null, Set.of(StatusEnum.CONFIRMED.getValue(), StatusEnum.REMOVED.getValue()), 1, 1);
 
         final var response = mockMvc.perform(get("/associations?status=confirmed&status=removed&page_index=1&items_per_page=1")
                         .header("X-Request-Id", "theId123")
@@ -359,7 +362,7 @@ class UserCompanyAssociationsTest {
                 .itemsPerPage(15).pageNumber(0).totalPages(1).totalResults(1);
 
         mockers.mockUsersServiceFetchUserDetails("9999");
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user,"444444",Set.of(StatusEnum.CONFIRMED.getValue()), 0, 15);
+        Mockito.doReturn(expectedAssociationsList).when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user,"444444",Set.of(StatusEnum.CONFIRMED.getValue()), 0, 15);
 
         final var response = mockMvc.perform(get("/associations?company_number=444444")
                         .header("X-Request-Id", "theId123")
@@ -389,7 +392,7 @@ class UserCompanyAssociationsTest {
                 .itemsPerPage(15).pageNumber(0).totalPages(1).totalResults(1);
 
         mockers.mockUsersServiceFetchUserDetails("9999");
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user,null, Set.of(StatusEnum.CONFIRMED.getValue()), 0, 15);
+        Mockito.doReturn(expectedAssociationsList).when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user,null, Set.of(StatusEnum.CONFIRMED.getValue()), 0, 15);
 
         final var response = mockMvc.perform(get("/associations")
                         .header("X-Request-Id", "theId123")
@@ -426,7 +429,7 @@ class UserCompanyAssociationsTest {
                 .itemsPerPage(15).pageNumber(0).totalPages(1).totalResults(1);
 
         mockers.mockUsersServiceFetchUserDetails("MKUser001");
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, null,Set.of(StatusEnum.MIGRATED.getValue()), 0, 15);
+        Mockito.doReturn(expectedAssociationsList).when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, null,Set.of(StatusEnum.MIGRATED.getValue()), 0, 15);
 
         final var response =
                 mockMvc.perform(get("/associations?status=migrated")
@@ -453,7 +456,7 @@ class UserCompanyAssociationsTest {
                 .itemsPerPage(15).pageNumber(0).totalPages(1).totalResults(1);
 
         mockers.mockUsersServiceFetchUserDetails("MKUser004");
-        Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, null,Set.of(StatusEnum.UNAUTHORISED.getValue()), 0, 15);
+        Mockito.doReturn(expectedAssociationsList).when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, null,Set.of(StatusEnum.UNAUTHORISED.getValue()), 0, 15);
 
         final var response =
                 mockMvc.perform(get("/associations?status=unauthorised")
@@ -525,7 +528,7 @@ class UserCompanyAssociationsTest {
         final var page = new PageImpl<>(List.of(association), PageRequest.of(1,15),15);
 
         mockers.mockUsersServiceFetchUserDetails("9999");
-        Mockito.doReturn(page).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(user, "111111", 0,15);
+        Mockito.doReturn(page).when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumber(user, "111111", 0,15);
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "9999")
@@ -558,8 +561,9 @@ class UserCompanyAssociationsTest {
 
         mockers.mockUsersServiceFetchUserDetails("111");
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
-        Mockito.doReturn(associationDao).when(associationsService).createAssociationWithAuthCodeApprovalRoute("111111", "111");
-        Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
+        Mockito.doReturn(associationDao).when(associationsTransactionService).createAssociationWithAuthCodeApprovalRoute("111111", "111");
+        Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(
+                associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
 
         final var response = mockMvc.perform(post("/associations")
                         .header("X-Request-Id", "theId123")
@@ -594,9 +598,10 @@ class UserCompanyAssociationsTest {
 
         mockers.mockUsersServiceFetchUserDetails("666");
         mockers.mockCompanyServiceFetchCompanyProfile("333333");
-        Mockito.doReturn(associationDao).when(associationsService).createAssociationWithAuthCodeApprovalRoute("333333", "666");
-        Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
-        Mockito.doReturn(Stream.of("666")).when(associationsService).fetchConfirmedUserIds("333333");
+        Mockito.doReturn(associationDao).when(associationsTransactionService).createAssociationWithAuthCodeApprovalRoute("333333", "666");
+        Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(
+                associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
+        Mockito.doReturn(Stream.of("666")).when(associationsTransactionService).fetchConfirmedUserIds("333333");
 
         mockMvc.perform(post("/associations")
                         .header("X-Request-Id", "theId123")
@@ -620,8 +625,8 @@ class UserCompanyAssociationsTest {
 
         Mockito.doReturn(company).when(companyService).fetchCompanyProfile("111111");
         Mockito.doReturn(user, user).when(usersService).fetchUserDetails(eq("666"), any());
-        Mockito.doReturn(page).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(user, "111111",0,15);
-        Mockito.doReturn(Stream.of("5555")).when(associationsService).fetchConfirmedUserIds("111111");
+        Mockito.doReturn(page).when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumber(user, "111111",0,15);
+        Mockito.doReturn(Stream.of("5555")).when(associationsTransactionService).fetchConfirmedUserIds("111111");
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "666")
@@ -644,8 +649,8 @@ class UserCompanyAssociationsTest {
 
         Mockito.doReturn(user).when(usersService).fetchUserDetails(eq("5555"), any());
         Mockito.doReturn(company).when(companyService).fetchCompanyProfile("111111");
-        Mockito.doReturn(page).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(user,"111111",0,15);
-        Mockito.doReturn(Stream.of("5555")).when(associationsService).fetchConfirmedUserIds("111111");
+        Mockito.doReturn(page).when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumber(user,"111111",0,15);
+        Mockito.doReturn(Stream.of("5555")).when(associationsTransactionService).fetchConfirmedUserIds("111111");
 
         mockMvc.perform(post("/associations")
                         .header("Eric-identity", "5555")
@@ -665,9 +670,10 @@ class UserCompanyAssociationsTest {
 
         mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("333333");
-        Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
-        Mockito.doReturn(Stream.of("000")).when(associationsService).fetchConfirmedUserIds("333333");
-        Mockito.doReturn(associationDao).when(associationsService).createAssociationWithAuthCodeApprovalRoute("333333", "9999");
+        Mockito.doReturn(new PageImpl<AssociationDao>(new ArrayList<>())).when(
+                associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumber(any(),anyString(),anyInt(),anyInt());
+        Mockito.doReturn(Stream.of("000")).when(associationsTransactionService).fetchConfirmedUserIds("333333");
+        Mockito.doReturn(associationDao).when(associationsTransactionService).createAssociationWithAuthCodeApprovalRoute("333333", "9999");
 
         mockMvc.perform(post("/associations")
                         .header("X-Request-Id", "theId123")
@@ -693,8 +699,9 @@ class UserCompanyAssociationsTest {
 
         mockers.mockUsersServiceFetchUserDetails("MKUser001");
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
-        Mockito.doReturn(new PageImpl<>(new ArrayList<>(List.of(originalAssociationDao)))).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumber(any(), anyString(),anyInt(),anyInt());
-        Mockito.doReturn(Stream.of("MKUser002")).when(associationsService).fetchConfirmedUserIds("MKCOMP001");
+        Mockito.doReturn(new PageImpl<>(new ArrayList<>(List.of(originalAssociationDao)))).when(
+                associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumber(any(), anyString(),anyInt(),anyInt());
+        Mockito.doReturn(Stream.of("MKUser002")).when(associationsTransactionService).fetchConfirmedUserIds("MKCOMP001");
 
         mockMvc.perform(post("/associations")
                         .header("X-Request-Id", "theId123")

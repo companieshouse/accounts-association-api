@@ -24,7 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
-import uk.gov.companieshouse.accounts.association.service.AssociationsService;
+import uk.gov.companieshouse.accounts.association.service.AssociationsTransactionService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -35,17 +35,17 @@ import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPost;
 import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 
 @RestController
-public class UserCompanyAssociations implements UserCompanyAssociationsInterface {
+public class UserCompanyAssociationsController implements UserCompanyAssociationsInterface {
 
     private final CompanyService companyService;
-    private final AssociationsService associationsService;
+    private final AssociationsTransactionService associationsTransactionService;
     private final UsersService usersService;
     private final EmailService emailService;
 
     @Autowired
-    public UserCompanyAssociations(final CompanyService companyService, final AssociationsService associationsService, final UsersService usersService, final EmailService emailService) {
+    public UserCompanyAssociationsController(final CompanyService companyService, final AssociationsTransactionService associationsTransactionService, final UsersService usersService, final EmailService emailService) {
         this.companyService = companyService;
-        this.associationsService = associationsService;
+        this.associationsTransactionService = associationsTransactionService;
         this.usersService = usersService;
         this.emailService = emailService;
     }
@@ -76,7 +76,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
         final var targetUser = usersService.fetchUserDetails(userId, getXRequestId());
         final var companyDetails = companyService.fetchCompanyProfile(companyNumber);
 
-        final var targetAssociationId = Optional.of(associationsService.fetchAssociationsForUserAndPartialCompanyNumber(targetUser, companyNumber, 0, 15))
+        final var targetAssociationId = Optional.of(associationsTransactionService.fetchAssociationsForUserAndPartialCompanyNumber(targetUser, companyNumber, 0, 15))
                 .filter(Page::hasContent)
                 .map(Page::getContent)
                 .map(List::getFirst)
@@ -84,12 +84,12 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                     if (CONFIRMED.getValue().equals(targetAssociation.getStatus())){
                         throw new BadRequestRuntimeException("Association already exists.", new Exception(String.format("Association between user_id %s and company_number %s already exists.", userId, companyNumber)));
                     }
-                    associationsService.updateAssociation(targetAssociation.getId(), mapToAuthCodeConfirmedUpdated(targetAssociation, targetUser, COMPANIES_HOUSE));
+                    associationsTransactionService.updateAssociation(targetAssociation.getId(), mapToAuthCodeConfirmedUpdated(targetAssociation, targetUser, COMPANIES_HOUSE));
                     return targetAssociation.getId();
                 })
-                .orElseGet(() -> associationsService.createAssociationWithAuthCodeApprovalRoute(companyNumber, userId).getId());
+                .orElseGet(() -> associationsTransactionService.createAssociationWithAuthCodeApprovalRoute(companyNumber, userId).getId());
 
-        associationsService.fetchConfirmedUserIds(companyNumber)
+        associationsTransactionService.fetchConfirmedUserIds(companyNumber)
                 .parallel()
                 .forEach(confirmedUserId -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser(getXRequestId(), companyDetails.getCompanyNumber(), companyDetails.getCompanyName(), mapToDisplayValue(targetUser, targetUser.getEmail())));
 
@@ -109,7 +109,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
             throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(PAGINATION_IS_MALFORMED));
         }
 
-        final var associationsList = associationsService.fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(getUser(), companyNumber, new HashSet<>(status), pageIndex, itemsPerPage);
+        final var associationsList = associationsTransactionService.fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(getUser(), companyNumber, new HashSet<>(status), pageIndex, itemsPerPage);
 
         return new ResponseEntity<>(associationsList, OK);
     }
