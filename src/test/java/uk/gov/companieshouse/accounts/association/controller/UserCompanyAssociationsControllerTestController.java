@@ -613,7 +613,7 @@ class UserCompanyAssociationsControllerTestController {
                 .andExpect(status().isCreated());
 
         Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq("333333"), argThat(
-                "Tesco"::equals), eq("homer.simpson@springfield.com"));
+                "Tesco"::equals), eq("homer.simpson@springfield.com"), "111");
     }
 
     @Test
@@ -637,7 +637,7 @@ class UserCompanyAssociationsControllerTestController {
                         .content("{\"company_number\":\"111111\", \"user_id\":\"666\"}"))
                 .andExpect(status().isCreated());
 
-        Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq("111111"), eq("Wayne Enterprises"), eq("homer.simpson@springfield.com"));
+        Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq("111111"), eq("Wayne Enterprises"), eq("homer.simpson@springfield.com"), "111");
     }
 
     @Test
@@ -661,7 +661,7 @@ class UserCompanyAssociationsControllerTestController {
                         .content("{\"company_number\":\"111111\", \"user_id\":\"5555\"}"))
                 .andExpect(status().isCreated());
 
-        Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq("111111"), eq("Wayne Enterprises"), eq("ross@friends.com"));
+        Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq("111111"), eq("Wayne Enterprises"), eq("ross@friends.com"), "111");
     }
 
     @Test
@@ -685,7 +685,7 @@ class UserCompanyAssociationsControllerTestController {
                 .andExpect(status().isCreated());
 
         Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq("333333"), argThat(
-                "Tesco"::equals), eq("Scrooge McDuck"));
+                "Tesco"::equals), eq("Scrooge McDuck"), "111");
     }
 
     @Test
@@ -721,6 +721,6 @@ class UserCompanyAssociationsControllerTestController {
         Assertions.assertNotNull(updatedAssociation.getPreviousStates().getFirst().getChangedAt());
 
         Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq("MKCOMP001"), argThat(
-                "Mushroom Kingdom"::equals), eq("Mario"));
+                "Mushroom Kingdom"::equals), eq("Mario"), "111");
     }
 }

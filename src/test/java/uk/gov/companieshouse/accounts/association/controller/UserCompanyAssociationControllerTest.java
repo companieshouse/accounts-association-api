@@ -48,6 +48,7 @@ import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfig;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.AssociationsTransactionService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
@@ -82,6 +83,9 @@ class UserCompanyAssociationControllerTest {
 
     @MockitoBean
     private AssociationsTransactionService associationsTransactionService;
+
+    @MockitoBean
+    private AssociationsService associationsService;
 
     @MockitoBean
     private EmailService emailService;
@@ -522,7 +526,7 @@ class UserCompanyAssociationControllerTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendAuthorisationRemovedEmailToAssociatedUser(eq("theId123"), eq("333333"), any(), eq("Scrooge McDuck"), eq("light.yagami@death.note"));
+        Mockito.verify(emailService).sendAuthorisationRemovedEmailToAssociatedUser(eq("theId123"), eq("333333"), any(), eq("Scrooge McDuck"), eq("light.yagami@death.note"), "111");
     }
 
     @Test
@@ -546,7 +550,7 @@ class UserCompanyAssociationControllerTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendInvitationCancelledEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), eq("Batman"), eq("light.yagami@death.note"));
+        Mockito.verify(emailService).sendInvitationCancelledEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), eq("Batman"), eq("light.yagami@death.note"), "111");
     }
 
     @Test
@@ -571,7 +575,7 @@ class UserCompanyAssociationControllerTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendInvitationCancelledEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), eq("Batman"), eq("light.yagami@death.note"));
+        Mockito.verify(emailService).sendInvitationCancelledEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), eq("Batman"), eq("light.yagami@death.note"), "111");
     }
 
     @Test
@@ -597,7 +601,7 @@ class UserCompanyAssociationControllerTest {
                 .andExpect(status().isOk());
 
         Mockito.verify(emailService).sendAuthorisationRemovedEmailToRemovedUser(eq("theId123"), eq("111111"), any(), eq("Harleen Quinzel"), eq("444"));
-        Mockito.verify(emailService).sendAuthorisationRemovedEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), eq("Harleen Quinzel"), eq("Boy Wonder"));
+        Mockito.verify(emailService).sendAuthorisationRemovedEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), eq("Harleen Quinzel"), eq("Boy Wonder"), "111");
     }
 
     @Test
@@ -688,7 +692,7 @@ class UserCompanyAssociationControllerTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendInvitationCancelledEmailToAssociatedUser(eq("theId123"), eq("x222222"), any(), eq("the.joker@gotham.city"), eq("Scrooge McDuck"));
+        Mockito.verify(emailService).sendInvitationCancelledEmailToAssociatedUser(eq("theId123"), eq("x222222"), any(), eq("the.joker@gotham.city"), eq("Scrooge McDuck"), "111");
 
     }
 
@@ -774,7 +778,7 @@ class UserCompanyAssociationControllerTest {
                 .andExpect(status().isOk());
 
         Mockito.verify(emailService).sendAuthorisationRemovedEmailToRemovedUser(eq("theId123"), eq("111111"), any(), eq("Companies House"), eq("111"));
-        Mockito.verify(emailService).sendAuthorisationRemovedEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), eq("Companies House"), eq("Batman"));
+        Mockito.verify(emailService).sendAuthorisationRemovedEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), eq("Companies House"), eq("Batman"), "111");
     }
 
     @Test
@@ -798,7 +802,7 @@ class UserCompanyAssociationControllerTest {
 
 
         Mockito.verify(emailService).sendInviteCancelledEmail(eq("theId123"), eq("111111"), any(), eq("Companies House"), any(AssociationDao.class));
-        Mockito.verify(emailService).sendInvitationCancelledEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), eq("Companies House"), eq("homer.simpson@springfield.com"));
+        Mockito.verify(emailService).sendInvitationCancelledEmailToAssociatedUser(eq("theId123"), eq("111111"), any(), eq("Companies House"), eq("homer.simpson@springfield.com"), "111");
     }
 
     @Test
@@ -822,7 +826,7 @@ class UserCompanyAssociationControllerTest {
                 .andExpect(status().isOk());
 
         Mockito.verify(emailService).sendDelegatedRemovalOfMigratedEmail(eq("theId123"), eq("MKCOMP001"), any(), eq("Luigi"), eq("mario@mushroom.kingdom"));
-        Mockito.verify(emailService).sendDelegatedRemovalOfMigratedBatchEmail(eq("theId123"), eq("MKCOMP001"), any(), eq("Luigi"), eq("Mario"));
+        Mockito.verify(emailService).sendDelegatedRemovalOfMigratedBatchEmail(eq("theId123"), eq("MKCOMP001"), any(), eq("Luigi"), eq("Mario"), "111");
     }
 
     @Test
@@ -846,7 +850,7 @@ class UserCompanyAssociationControllerTest {
                 .andExpect(status().isOk());
 
         Mockito.verify(emailService).sendRemoveOfOwnMigratedEmail(eq("theId123"), eq("MKCOMP001"), any(), eq("MKUser001"));
-        Mockito.verify(emailService).sendDelegatedRemovalOfMigratedBatchEmail(eq("theId123"), eq("MKCOMP001"), any(), eq("Mario"), eq("Mario"));
+        Mockito.verify(emailService).sendDelegatedRemovalOfMigratedBatchEmail(eq("theId123"), eq("MKCOMP001"), any(), eq("Mario"), eq("Mario"), "111");
     }
 
     @Test
@@ -1055,7 +1059,7 @@ class UserCompanyAssociationControllerTest {
                 .andExpect(status().isOk());
 
         Mockito.verify(associationsTransactionService).updateAssociation(eq(associations.getId()), any(Update.class));
-        Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq(associations.getCompanyNumber()), any(), eq(targetUser.getDisplayName()));
+        Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq(associations.getCompanyNumber()), any(), eq(targetUser.getDisplayName()), "111");
     }
 
     private static Stream<Arguments> updateAssociationStatusForIdSameUserUnauthorisedBadRequestScenarios(){
