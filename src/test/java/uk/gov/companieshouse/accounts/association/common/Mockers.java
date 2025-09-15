@@ -282,7 +282,6 @@ public class Mockers {
                 .path("/users/{user}")
                 .encode()
                 .buildAndExpand(userId);
-        // Robert
         mockWebClientJsonParsingError(uri, uriType);
     }
 
@@ -292,7 +291,6 @@ public class Mockers {
                 .queryParam("user_email", "{emails}")
                 .encode()
                 .buildAndExpand(email);
-        // Robert
         mockWebClientJsonParsingError(uri, uriType);
     }
 
