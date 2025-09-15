@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
@@ -99,14 +100,21 @@ public class UserCompanyAssociationsController implements UserCompanyAssociation
     @Override
     public ResponseEntity<AssociationsList> fetchAssociationsBy(final List<String> status, final Integer pageIndex, final Integer itemsPerPage, final String companyNumber) {
         LOGGER.infoContext(getXRequestId(), String.format("Received request with user_id=%s, status=%s, page_index=%d, items_per_page=%d, company_number=%s.", getEricIdentity(), String.join(",", status), pageIndex, itemsPerPage, companyNumber),null);
+        final var allStatuses = fetchAllStatusesWithout(Set.of()).stream()
+                .map(Association.StatusEnum::toString)
+                .collect(Collectors.toSet());
 
-        final var allStatuses = fetchAllStatusesWithout(Set.of()).stream().map(Association.StatusEnum::toString).collect(Collectors.toSet());
         if (!allStatuses.containsAll(status)) {
             throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("Status is invalid"));
         }
 
         if (pageIndex < 0 || itemsPerPage <= 0){
             throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(PAGINATION_IS_MALFORMED));
+        }
+
+        final var nullableUser = getUser();
+        if (nullableUser == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         final var associationsList = associationsTransactionService.fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(getUser(), companyNumber, new HashSet<>(status), pageIndex, itemsPerPage);
