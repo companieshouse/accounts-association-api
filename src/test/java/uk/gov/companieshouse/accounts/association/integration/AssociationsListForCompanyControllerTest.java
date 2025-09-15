@@ -44,10 +44,8 @@ import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
 @AutoConfigureMockMvc
-@SpringBootTest
 @ExtendWith(MockitoExtension.class)
-@Tag("integration-test")
-class AssociationsListForCompanyControllerTest {
+class AssociationsListForCompanyControllerTest extends AbstractBaseIntegrationTest {
 
     @Autowired
     private MongoTemplate mongoTemplate;
