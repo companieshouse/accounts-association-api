@@ -37,7 +37,7 @@ public class UsersService {
 
     public Mono<User> toFetchUserDetailsRequest( final String userId, final String xRequestId ) {
         return usersWebClient.get()
-                .uri( String.format( "/users/%s", userId ) )
+                .uri(URI.create(String.format( "/users/%s", userId ) ))
                 .retrieve()
                 .bodyToMono( String.class )
                 .map( parseJsonTo( User.class ) )
@@ -69,12 +69,12 @@ public class UsersService {
     public UsersList searchUserDetails( final List<String> emails ) {
         final var xRequestId = getXRequestId();
         return usersWebClient.get()
-                .uri(URI.create(UriComponentsBuilder.newInstance()
+                .uri(uriBuilder -> UriComponentsBuilder.fromUri(uriBuilder.build())
                         .path("/users/search")
                         .queryParam("user_email", "{emails}")
                         .encode()
                         .buildAndExpand(String.join(",", emails))
-                        .toUriString()))
+                        .toUri())
                 .retrieve()
                 .bodyToMono( String.class )
                 .map( parseJsonTo( UsersList.class ) )
