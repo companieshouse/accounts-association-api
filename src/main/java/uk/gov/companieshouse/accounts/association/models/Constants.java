@@ -1,7 +1,5 @@
 package uk.gov.companieshouse.accounts.association.models;
 
-import javax.print.DocFlavor.STRING;
-
 public class Constants {
 
     public static final String X_REQUEST_ID = "X-Request-Id";

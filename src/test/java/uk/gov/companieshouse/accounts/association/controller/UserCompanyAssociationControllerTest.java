@@ -209,7 +209,7 @@ class UserCompanyAssociationControllerTest {
         final var user = testDataManager.fetchUserDtos("MKUser004").getFirst();
         final var proposedAssociation = testDataManager.fetchAssociationDto("MKAssociation004", user);
 
-        mockers.mockUsersServiceFetchUserDetails("111");
+//      // mockers.mockUsersServiceFetchUserDetails("111");
         Mockito.doReturn(Optional.of(proposedAssociation)).when(associationsTransactionService).fetchAssociationDto("MKAssociation004");
 
         final var response =
@@ -392,7 +392,7 @@ class UserCompanyAssociationControllerTest {
 
     @Test
     void updateAssociationStatusForIdWithNonexistentAssociationIdReturnsNotFound() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//      // mockers.mockUsersServiceFetchUserDetails("9999");
         Mockito.doReturn(Optional.empty()).when(associationsTransactionService).fetchAssociationDto("9191");
 
         mockMvc.perform(patch("/associations/9191")
@@ -409,8 +409,8 @@ class UserCompanyAssociationControllerTest {
     void updateAssociationStatusForIdWithRemovedUpdatesAssociationStatus() throws Exception {
         final var association = testDataManager.fetchAssociationDaos("35").getFirst();
 
-        Mockito.doReturn(testDataManager.fetchUserDtos("000").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        Mockito.doReturn(testDataManager.fetchUserDtos("000").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
+        //      // mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("333333");
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("35");
         Mockito.when(
@@ -432,7 +432,7 @@ class UserCompanyAssociationControllerTest {
     void updateAssociationStatusForIdWithConfirmedUpdatesWithNoUserFoundShouldThrow404AssociationStatus() throws Exception {
         final var association = testDataManager.fetchAssociationDaos("36").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("9999");
+      // mockers.mockUsersServiceFetchUserDetails("9999");
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("36");
         Mockito.doReturn(null).when(usersService).searchUsersDetailsByEmail(List.of("light.yagami@death.note"));
 
@@ -450,8 +450,8 @@ class UserCompanyAssociationControllerTest {
     void updateAssociationStatusForIdWithNullUserIdAndExistingUserAndConfirmedUpdatesAssociationStatus() throws Exception {
         final var association = testDataManager.fetchAssociationDaos("36").getFirst();
 
-        Mockito.doReturn(testDataManager.fetchUserDtos("000").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
-        mockers.mockUsersServiceFetchUserDetails("000");
+//        Mockito.doReturn(testDataManager.fetchUserDtos("000").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
+      // mockers.mockUsersServiceFetchUserDetails("000");
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("36");
 
         mockMvc.perform(patch("/associations/36")
@@ -470,8 +470,8 @@ class UserCompanyAssociationControllerTest {
     void updateAssociationStatusForIdWithNullUserIdAndExistingUserAndRemovedUpdatesAssociationStatus() throws Exception {
         final var association = testDataManager.fetchAssociationDaos("34").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("000");
-        Mockito.doReturn(testDataManager.fetchUserDtos("000").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
+      // mockers.mockUsersServiceFetchUserDetails("000");
+//        Mockito.doReturn(testDataManager.fetchUserDtos("000").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("34");
 
         mockMvc.perform(patch("/associations/34")
@@ -490,8 +490,8 @@ class UserCompanyAssociationControllerTest {
     void updateAssociationStatusForIdWithNullUserIdAndNonexistentUserAndRemovedUpdatesAssociationStatus() throws Exception {
         final var association = testDataManager.fetchAssociationDaos("34").getFirst();
 
-        Mockito.doReturn(null).when(usersService).fetchUserDetails(any(AssociationDao.class));
-        mockers.mockUsersServiceFetchUserDetails("000");
+//        Mockito.doReturn(null).when(usersService).fetchUserDetails(any(AssociationDao.class));
+      // mockers.mockUsersServiceFetchUserDetails("000");
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("34");
 
         mockMvc.perform(patch("/associations/34")
@@ -511,7 +511,7 @@ class UserCompanyAssociationControllerTest {
         final var association = testDataManager.fetchAssociationDaos("35").getFirst();
         final var user = testDataManager.fetchUserDtos("000").getFirst();
 
-        Mockito.doReturn(user).when(usersService).fetchUserDetails(any(AssociationDao.class));
+//        Mockito.doReturn(user).when(usersService).fetchUserDetails(any(AssociationDao.class));
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("35");
         Mockito.doReturn(Stream.of("9999")).when(associationsTransactionService).fetchConfirmedUserIds("333333");
         Mockito.when(
@@ -535,7 +535,7 @@ class UserCompanyAssociationControllerTest {
         final var association = testDataManager.fetchAssociationDaos("34").getFirst();
         final var user = testDataManager.fetchUserDtos("000").getFirst();
 
-        Mockito.doReturn(user).when(usersService).fetchUserDetails(any(AssociationDao.class));
+//        Mockito.doReturn(user).when(usersService).fetchUserDetails(any(AssociationDao.class));
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("34");
         Mockito.doReturn(Stream.of("111")).when(associationsTransactionService).fetchConfirmedUserIds("111111");
         Mockito.when(
@@ -559,7 +559,7 @@ class UserCompanyAssociationControllerTest {
         final var association = testDataManager.fetchAssociationDaos("34").getFirst();
         final var user = testDataManager.fetchUserDtos("111").getFirst();
 
-        Mockito.doReturn(null).when(usersService).fetchUserDetails(any(AssociationDao.class));
+//        Mockito.doReturn(null).when(usersService).fetchUserDetails(any(AssociationDao.class));
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("34");
         Mockito.doReturn(Stream.of("000")).when(associationsTransactionService).fetchConfirmedUserIds("111111");
@@ -585,7 +585,7 @@ class UserCompanyAssociationControllerTest {
         final var user = testDataManager.fetchUserDtos("333").getFirst();
 
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
-        Mockito.doReturn(testDataManager.fetchUserDtos("444").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
+//        Mockito.doReturn(testDataManager.fetchUserDtos("444").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("4");
         Mockito.doReturn(Stream.of("333")).when(associationsTransactionService).fetchConfirmedUserIds("111111");
         Mockito.when(
@@ -610,8 +610,8 @@ class UserCompanyAssociationControllerTest {
         final var user = testDataManager.fetchUserDtos("666").getFirst();
 
 
-        mockers.mockUsersServiceFetchUserDetails("666", "222");
-        Mockito.doReturn(testDataManager.fetchUserDtos("666").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
+      // mockers.mockUsersServiceFetchUserDetails("666", "222");
+//        Mockito.doReturn(testDataManager.fetchUserDtos("666").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("6");
         Mockito.doReturn(Stream.of("222", "444")).when(associationsTransactionService).fetchConfirmedUserIds("111111");
@@ -633,7 +633,7 @@ class UserCompanyAssociationControllerTest {
     void confirmUserStatusRequestForExistingAssociationWithoutOneLoginUserAndDifferentRequestingUserShouldThrow400BadRequest() throws Exception {
         final var association = testDataManager.fetchAssociationDaos("6").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("666", "222");
+      // mockers.mockUsersServiceFetchUserDetails("666", "222");
         mockers.mockUsersServiceSearchUserDetailsEmptyList("homer.simpson@springfield.com");
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("6");
@@ -653,8 +653,8 @@ class UserCompanyAssociationControllerTest {
     void updateAssociationStatusForIdUserAcceptedInvitationNotificationsUsesDisplayNamesWhenAvailable() throws Exception {
         final var association = testDataManager.fetchAssociationDaos("38").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("9999", "444");
-        Mockito.doReturn(null).when(usersService).fetchUserDetails(any(AssociationDao.class));
+      // mockers.mockUsersServiceFetchUserDetails("9999", "444");
+//        Mockito.doReturn(null).when(usersService).fetchUserDetails(any(AssociationDao.class));
         mockers.mockCompanyServiceFetchCompanyProfile("x222222");
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("38");
         Mockito.doReturn(Stream.of("111", "222", "444")).when(associationsTransactionService).fetchConfirmedUserIds("x222222");
@@ -676,8 +676,8 @@ class UserCompanyAssociationControllerTest {
         final var association = testDataManager.fetchAssociationDaos("38").getFirst();
         final var user = testDataManager.fetchUserDtos("9999").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("9999", "222");
-        Mockito.doReturn(testDataManager.fetchUserDtos("9999").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
+      // mockers.mockUsersServiceFetchUserDetails("9999", "222");
+//        Mockito.doReturn(testDataManager.fetchUserDtos("9999").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
         mockers.mockCompanyServiceFetchCompanyProfile("x222222");
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("38");
         Mockito.doReturn(Stream.of("111", "222", "444")).when(associationsTransactionService).fetchConfirmedUserIds("x222222");
@@ -701,8 +701,8 @@ class UserCompanyAssociationControllerTest {
         final var association = testDataManager.fetchAssociationDaos("38").getFirst();
         final User user = null;
 
-        mockers.mockUsersServiceFetchUserDetails("9999");
-        Mockito.doReturn(null).when(usersService).fetchUserDetails(any(AssociationDao.class));
+      // mockers.mockUsersServiceFetchUserDetails("9999");
+//        Mockito.doReturn(null).when(usersService).fetchUserDetails(any(AssociationDao.class));
         mockers.mockCompanyServiceFetchCompanyProfile("x222222");
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("38");
         Mockito.doReturn(Stream.of("111", "222", "444")).when(associationsTransactionService).fetchConfirmedUserIds("x222222");
@@ -736,12 +736,12 @@ class UserCompanyAssociationControllerTest {
     void updateAssociationStatusForIdSupportsMigratedAssociation(final String requestingUserId, final String newStatus, final boolean targetUserExists, final ResultMatcher expectedOutcome) throws Exception {
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001", "MKAssociation002").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails(requestingUserId);
+      // mockers.mockUsersServiceFetchUserDetails(requestingUserId);
 
         if (targetUserExists) {
-            Mockito.doReturn(testDataManager.fetchUserDtos("MKUser001").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
+//            Mockito.doReturn(testDataManager.fetchUserDtos("MKUser001").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
         } else {
-            Mockito.doReturn(null).when(usersService).fetchUserDetails(any(AssociationDao.class));
+//            Mockito.doReturn(null).when(usersService).fetchUserDetails(any(AssociationDao.class));
         }
 
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
@@ -762,9 +762,9 @@ class UserCompanyAssociationControllerTest {
         final var association = testDataManager.fetchAssociationDaos("1").getFirst();
         final var user = testDataManager.fetchUserDtos("111").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("9999");
+      // mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
-        Mockito.doReturn(testDataManager.fetchUserDtos("111").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
+//        Mockito.doReturn(testDataManager.fetchUserDtos("111").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("1");
         Mockito.doReturn(Stream.of("222")).when(associationsTransactionService).fetchConfirmedUserIds("111111");
 
@@ -785,9 +785,9 @@ class UserCompanyAssociationControllerTest {
     void updateAssociationStatusForIdAllowsAdminUserToCancelInvitation() throws Exception {
         final var association = testDataManager.fetchAssociationDaos("6").getFirst();
         final var user = testDataManager.fetchUserDtos("666").getFirst();
-        mockers.mockUsersServiceFetchUserDetails("9999");
+      // mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
-        Mockito.doReturn(testDataManager.fetchUserDtos("666").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
+//        Mockito.doReturn(testDataManager.fetchUserDtos("666").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
         Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("6");
         Mockito.doReturn(Stream.of("222")).when(associationsTransactionService).fetchConfirmedUserIds("111111");
 
@@ -810,10 +810,10 @@ class UserCompanyAssociationControllerTest {
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
         final var targetUser = testDataManager.fetchUserDtos("MKUser001").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+      // mockers.mockUsersServiceFetchUserDetails("MKUser002");
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
         Mockito.doReturn(true).when(associationsTransactionService).confirmedAssociationExists("MKCOMP001", "MKUser002");
-        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(any(AssociationDao.class));
+//        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(any(AssociationDao.class));
         Mockito.doReturn(Optional.of(targetAssociation)).when(associationsTransactionService).fetchAssociationDao("MKAssociation001");
         Mockito.doReturn(Stream.of("MKUser002")).when(associationsTransactionService).fetchConfirmedUserIds("MKCOMP001");
 
@@ -834,10 +834,10 @@ class UserCompanyAssociationControllerTest {
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
         final var targetUser = testDataManager.fetchUserDtos("MKUser001").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("MKUser001", "MKUser002");
+      // mockers.mockUsersServiceFetchUserDetails("MKUser001", "MKUser002");
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
         Mockito.doReturn(true).when(associationsTransactionService).confirmedAssociationExists("MKCOMP001", "MKUser002");
-        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(any(AssociationDao.class));
+//        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(any(AssociationDao.class));
         Mockito.doReturn(Optional.of(targetAssociation)).when(associationsTransactionService).fetchAssociationDao("MKAssociation001");
         Mockito.doReturn(Stream.of("MKUser002")).when(associationsTransactionService).fetchConfirmedUserIds("MKCOMP001");
 
@@ -858,10 +858,10 @@ class UserCompanyAssociationControllerTest {
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
         final var targetUser = testDataManager.fetchUserDtos("MKUser001").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+      // mockers.mockUsersServiceFetchUserDetails("MKUser002");
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
         Mockito.doReturn(true).when(associationsTransactionService).confirmedAssociationExists("MKCOMP001", "MKUser002");
-        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(any(AssociationDao.class));
+//        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(any(AssociationDao.class));
         Mockito.doReturn(Optional.of(targetAssociation)).when(associationsTransactionService).fetchAssociationDao("MKAssociation001");
         Mockito.doReturn(Stream.of("MKUser002")).when(associationsTransactionService).fetchConfirmedUserIds("MKCOMP001");
 
@@ -882,10 +882,10 @@ class UserCompanyAssociationControllerTest {
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation004").getFirst();
         final var targetUser = testDataManager.fetchUserDtos("MKUser004").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+      // mockers.mockUsersServiceFetchUserDetails("MKUser002");
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
         Mockito.doReturn(true).when(associationsTransactionService).confirmedAssociationExists("MKCOMP001", "MKUser002");
-        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(any(AssociationDao.class));
+//        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(any(AssociationDao.class));
         Mockito.doReturn(Optional.of(targetAssociation)).when(associationsTransactionService).fetchAssociationDao("MKAssociation004");
         Mockito.doReturn(Stream.of("MKUser002")).when(associationsTransactionService).fetchConfirmedUserIds("MKCOMP001");
 
@@ -913,7 +913,7 @@ class UserCompanyAssociationControllerTest {
 
         final var now = LocalDateTime.now();
 
-        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+      // mockers.mockUsersServiceFetchUserDetails("MKUser002");
         Mockito.doReturn(Optional.of(previousStatesList)).when(associationsTransactionService).fetchPreviousStates("MKAssociation003", 1, 1);
 
         final var response = mockMvc.perform(get("/associations/MKAssociation003/previous-states?page_index=1&items_per_page=1")
@@ -952,7 +952,7 @@ class UserCompanyAssociationControllerTest {
 
         final var now = LocalDateTime.now();
 
-        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+      // mockers.mockUsersServiceFetchUserDetails("MKUser002");
         Mockito.doReturn(Optional.of(proposedPreviousStatesList)).when(
                 associationsTransactionService).fetchPreviousStates("MKAssociation005", 0, 2);
 
@@ -989,7 +989,7 @@ class UserCompanyAssociationControllerTest {
         final var targetUser = testDataManager.fetchUserDtos("MKUser002").getFirst();
 
         Mockito.doReturn(Optional.of(targetAssociation)).when(associationsTransactionService).fetchAssociationDao("MKAssociation002");
-        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(targetAssociation);
+//        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(targetAssociation);
 
         mockMvc.perform(patch("/associations/MKAssociation002")
                         .header("X-Request-Id", "theId123")
@@ -1019,7 +1019,7 @@ class UserCompanyAssociationControllerTest {
         final var targetUser = testDataManager.fetchUserDtos("MKUser002").getFirst();
 
         Mockito.doReturn(Optional.of(targetAssociation)).when(associationsTransactionService).fetchAssociationDao("MKAssociation002");
-        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(targetAssociation);
+//        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(targetAssociation);
 
         mockMvc.perform(patch("/associations/MKAssociation002")
                         .header("X-Request-Id", "theId123")
@@ -1045,9 +1045,9 @@ class UserCompanyAssociationControllerTest {
         final var targetUser = testDataManager.fetchUserDtos(targetUserId).getFirst();
 
         Mockito.doReturn(Optional.of(associations)).when(associationsTransactionService).fetchAssociationDao(targetAssociationId);
-        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(any(AssociationDao.class));
+//        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(any(AssociationDao.class));
         mockers.mockCompanyServiceFetchCompanyProfile(associations.getCompanyNumber());
-        mockers.mockUsersServiceFetchUserDetails(targetUserId);
+      // mockers.mockUsersServiceFetchUserDetails(targetUserId);
 
         mockMvc.perform(patch(String.format("/associations/%s", targetAssociationId))
                         .header("X-Request-Id", "theId123")
@@ -1076,7 +1076,7 @@ class UserCompanyAssociationControllerTest {
         final var targetUser = testDataManager.fetchUserDtos("MKUser004").getFirst();
 
         Mockito.doReturn(Optional.of(targetAssociation)).when(associationsTransactionService).fetchAssociationDao("MKAssociation004");
-        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(targetAssociation);
+//        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(targetAssociation);
 
         mockMvc.perform(patch("/associations/MKAssociation004")
                         .header("X-Request-Id", "theId123")
@@ -1092,9 +1092,9 @@ class UserCompanyAssociationControllerTest {
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation004").getFirst();
         final var targetUser = testDataManager.fetchUserDtos("MKUser004").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+      // mockers.mockUsersServiceFetchUserDetails("MKUser002");
         Mockito.doReturn(Optional.of(targetAssociation)).when(associationsTransactionService).fetchAssociationDao("MKAssociation004");
-        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(targetAssociation);
+//        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(targetAssociation);
         Mockito.doReturn(true).when(associationsTransactionService).confirmedAssociationExists("MKCOMP001", "MKUser002");
 
         mockMvc.perform(patch("/associations/MKAssociation004")
@@ -1113,9 +1113,9 @@ class UserCompanyAssociationControllerTest {
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation004").getFirst();
         final var targetUser = testDataManager.fetchUserDtos("MKUser004").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+      // mockers.mockUsersServiceFetchUserDetails("MKUser002");
         Mockito.doReturn(Optional.of(targetAssociation)).when(associationsTransactionService).fetchAssociationDao("MKAssociation004");
-        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(targetAssociation);
+//        Mockito.doReturn(targetUser).when(usersService).fetchUserDetails(targetAssociation);
         Mockito.doReturn(true).when(associationsTransactionService).confirmedAssociationExists("MKCOMP001", "MKUser002");
 
         mockMvc.perform(patch("/associations/MKAssociation004")
@@ -1137,7 +1137,7 @@ class UserCompanyAssociationControllerTest {
                 .totalResults(0)
                 .totalPages(0);
 
-        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+      // mockers.mockUsersServiceFetchUserDetails("MKUser002");
         Mockito.doReturn(Optional.of(previousStatesList)).when(associationsTransactionService).fetchPreviousStates("MKAssociation001", 0, 15);
 
         final var response = mockMvc.perform(get("/associations/MKAssociation001/previous-states")
@@ -1170,7 +1170,7 @@ class UserCompanyAssociationControllerTest {
     @ParameterizedTest
     @MethodSource("getPreviousStatesForAssociationMalformedScenarios")
     void getPreviousStatesForAssociationWithMalformedAssociationIdReturnsBadRequest(final String uri) throws Exception {
-        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+      // mockers.mockUsersServiceFetchUserDetails("MKUser002");
         mockMvc.perform(get(uri)
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "MKUser002")
@@ -1180,7 +1180,7 @@ class UserCompanyAssociationControllerTest {
 
     @Test
     void getPreviousStatesForAssociationWithNonexistentAssociationReturnsNotFound() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+      // mockers.mockUsersServiceFetchUserDetails("MKUser002");
         Mockito.doReturn(Optional.empty()).when(associationsTransactionService).fetchPreviousStates("404MKAssociation", 0, 15);
 
         mockMvc.perform(get("/associations/404MKAssociation/previous-states")
@@ -1200,7 +1200,7 @@ class UserCompanyAssociationControllerTest {
                 .totalResults(0)
                 .totalPages(0);
 
-        mockers.mockUsersServiceFetchUserDetails("111");
+      // mockers.mockUsersServiceFetchUserDetails("111");
         Mockito.doReturn(Optional.of(previousStatesList)).when(associationsTransactionService).fetchPreviousStates("MKAssociation001", 0, 15);
 
         mockMvc.perform(get("/associations/MKAssociation001/previous-states")

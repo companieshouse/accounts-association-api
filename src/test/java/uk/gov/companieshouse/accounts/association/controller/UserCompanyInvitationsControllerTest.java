@@ -97,7 +97,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void fetchActiveInvitationsForUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
-        mockers.mockUsersServiceFetchUserDetailsNotFound("$$$$");
+//        mockers.mockUsersServiceFetchUserDetailsNotFound("$$$$");
 
         mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
                         .header("X-Request-Id", "theId123")
@@ -109,7 +109,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void fetchActiveInvitationsForUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
-        mockers.mockUsersServiceFetchUserDetailsNotFound("9191");
+//        mockers.mockUsersServiceFetchUserDetailsNotFound("9191");
 
         mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
                         .header("X-Request-Id", "theId123")
@@ -143,7 +143,7 @@ class UserCompanyInvitationsControllerTest {
     void fetchActiveInvitationsForUserRetrievesActiveInvitationsInCorrectOrderAndPaginatesCorrectly() throws Exception {
         final var user = testDataManager.fetchUserDtos("9999").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
 
         mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
                         .header("X-Request-Id", "theId123")
@@ -159,7 +159,7 @@ class UserCompanyInvitationsControllerTest {
     void fetchActiveInvitationsForUserWithoutPageIndexAndItemsPerPageUsesDefaults() throws Exception {
         final var user = testDataManager.fetchUserDtos("9999").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
 
         mockMvc.perform(get("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -184,7 +184,7 @@ class UserCompanyInvitationsControllerTest {
                 .items(invitations).links(mockLinks)
                 .itemsPerPage(1).pageNumber(1).totalResults(2).totalPages(2);
 
-        mockers.mockUsersServiceFetchUserDetails("000");
+//        mockers.mockUsersServiceFetchUserDetails("000");
         when(associationsTransactionService.fetchActiveInvitations(user, 1,1)).thenReturn(mockInvitationsList);
 
         final var response = mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
@@ -210,7 +210,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithMalformedEricIdentityReturnsBadRequest() throws Exception {
-        mockers.mockUsersServiceFetchUserDetailsNotFound("$$$$");
+//        mockers.mockUsersServiceFetchUserDetailsNotFound("$$$$");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -224,7 +224,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
-        mockers.mockUsersServiceFetchUserDetailsNotFound("9191");
+//        mockers.mockUsersServiceFetchUserDetailsNotFound("9191");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -273,7 +273,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithNonexistentCompanyNumberReturnsBadRequest() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfileNotFound("919191");
 
         mockMvc.perform(post("/associations/invitations")
@@ -315,7 +315,7 @@ class UserCompanyInvitationsControllerTest {
         final var associationDao = testDataManager.fetchAssociationDaos("36").getFirst();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos("444444").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
         mockers.mockUsersServiceSearchUserDetails("000");
         Mockito.doReturn(Optional.of(associationDao)).when(associationsTransactionService).fetchAssociationDao("444444", "000", "light.yagami@death.note");
@@ -341,7 +341,7 @@ class UserCompanyInvitationsControllerTest {
         final var associationDao = testDataManager.fetchAssociationDaos("36").getFirst();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos("444444").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
         mockers.mockUsersServiceSearchUserDetailsEmptyList("000");
         Mockito.doReturn(Optional.of(associationDao)).when(associationsTransactionService).fetchAssociationDao("444444", null, "light.yagami@death.note");
@@ -368,7 +368,7 @@ class UserCompanyInvitationsControllerTest {
 
         mockers.mockUsersServiceSearchUserDetails("000");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
         Mockito.doReturn(Optional.of(targetUserAssociation)).when(associationsTransactionService).fetchAssociationDao("444444", "000", "light.yagami@death.note");
         Mockito.doReturn(Stream.of("000")).when(associationsTransactionService).fetchConfirmedUserIds("444444");
         Mockito.when(
@@ -392,7 +392,7 @@ class UserCompanyInvitationsControllerTest {
         final var association = testDataManager.fetchAssociationDaos("19").getFirst();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos("444444").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
         mockers.mockUsersServiceSearchUserDetails("000");
         Mockito.doReturn(Optional.empty()).when(associationsTransactionService).fetchAssociationDao("444444", null, "light.yagami@death.note");
@@ -420,7 +420,7 @@ class UserCompanyInvitationsControllerTest {
         final var newAssociation = testDataManager.fetchAssociationDaos("36").getFirst();
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos("444444").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
         mockers.mockUsersServiceSearchUserDetailsEmptyList("light.yagami@death.note");
         Mockito.doReturn(Optional.empty()).when(associationsTransactionService).fetchAssociationDao("444444", null, "light.yagami@death.note");
@@ -448,7 +448,7 @@ class UserCompanyInvitationsControllerTest {
     void inviteUserWhereAssociationBetweenInviteeUserEmailAndCompanyNumberExistAndInviteeUserIsFoundThrowsBadRequest() throws Exception {
         final var associationDao = testDataManager.fetchAssociationDaos("35").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("333333");
         mockers.mockUsersServiceSearchUserDetails("000");
         Mockito.doReturn(Optional.of(associationDao)).when(associationsTransactionService).fetchAssociationDao("333333", "000", "light.yagami@death.note");
@@ -469,7 +469,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void whenConfirmedAssociationDoesNotExist_thenThrowsBadRequestException() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
         when(associationsTransactionService.confirmedAssociationExists(anyString(), anyString())).thenReturn(false);
 
         mockMvc.perform(post("/associations/invitations")
@@ -487,7 +487,7 @@ class UserCompanyInvitationsControllerTest {
         final var targetCompany = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
 
-        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+//        mockers.mockUsersServiceFetchUserDetails("MKUser002");
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
         mockers.mockUsersServiceSearchUserDetails("MKUser001");
         Mockito.doReturn(true).when(associationsTransactionService).confirmedAssociationExists("MKCOMP001", "MKUser002");
@@ -507,7 +507,7 @@ class UserCompanyInvitationsControllerTest {
         final var targetCompany = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst().userId(null).userEmail("mario@mushroom.kingdom");
 
-        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+//        mockers.mockUsersServiceFetchUserDetails("MKUser002");
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
         mockers.mockUsersServiceSearchUserDetails("MKUser001");
         Mockito.doReturn(true).when(associationsTransactionService).confirmedAssociationExists("MKCOMP001", "MKUser002");

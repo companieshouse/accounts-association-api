@@ -87,7 +87,7 @@ class AssociationMapperTest {
         final var user = testDataManager.fetchUserDtos("111").getFirst();
         final var associationPreprocessed = testDataManager.fetchAssociationDto("1", user).userEmail(null).displayName(null);
 
-        mockers.mockUsersServiceFetchUserDetails("111");
+//        mockers.mockUsersServiceFetchUserDetails("111");
 
         associationMapper.enrichWithUserDetails(associationPreprocessed, null);
 
@@ -161,7 +161,7 @@ class AssociationMapperTest {
     @MethodSource("daoToDtoTestData")
     void daoToDtoPerformsMappingRegardlessOfAvailableData(final AssociationDao associationDao, final Association expectedAssociation, final User userDto, final CompanyDetails companyDto){
         if (Objects.isNull(userDto)) {
-            mockers.mockUsersServiceFetchUserDetails("111");
+//            mockers.mockUsersServiceFetchUserDetails("111");
         }
 
         if (Objects.isNull(companyDto)) {

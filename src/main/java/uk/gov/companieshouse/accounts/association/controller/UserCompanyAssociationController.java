@@ -8,6 +8,7 @@ import static uk.gov.companieshouse.accounts.association.utils.RequestContextUti
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isAPIKeyRequest;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
@@ -74,13 +75,14 @@ public class UserCompanyAssociationController implements UserCompanyAssociationI
 
     @Override
     public ResponseEntity<Void> updateAssociationStatusForId(final String associationId, final RequestBodyPut requestBody) {
+        final var xRequestId = getXRequestId();
         LOGGER.infoContext(getXRequestId(), String.format("Received request with id=%s, user_id=%s, status=%s.", associationId, getEricIdentity(), requestBody.getStatus()),null);
 
         final var targetAssociation = associationsTransactionService
                 .fetchAssociationDao(associationId)
                 .orElseThrow(() -> new NotFoundRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("Could not find association %s.", associationId))));
 
-        final var targetUser = usersService.fetchUserDetails(targetAssociation);
+        final var targetUser = usersService.fetchUserDetails(xRequestId, targetAssociation);
 
         final var update = isAPIKeyRequest() ? associationsService.mapToAPIKeyUpdate(requestBody.getStatus(), targetAssociation, targetUser) : associationsService.mapToOAuth2Update(requestBody.getStatus(), targetAssociation, targetUser);
         associationsTransactionService.updateAssociation(targetAssociation.getId(), update);

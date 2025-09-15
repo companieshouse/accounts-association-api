@@ -106,7 +106,7 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWithoutQueryParamsUsesDefaults() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17"));
-        mockers.mockUsersServiceFetchUserDetails("111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777");
+//        mockers.mockUsersServiceFetchUserDetails("111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777");
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
 
         final var response =
@@ -136,7 +136,7 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanySupportsRequestsFromAdminUsers() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("MKAssociation001"));
-        mockers.mockUsersServiceFetchUserDetails("MKUser001");
+//        mockers.mockUsersServiceFetchUserDetails("MKUser001");
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
 
         mockMvc.perform(get("/associations/companies/MKCOMP001")
@@ -150,7 +150,7 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanySupportsRequestsFromAPIKey() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("MKAssociation001"));
-        mockers.mockUsersServiceFetchUserDetails("MKUser001");
+//        mockers.mockUsersServiceFetchUserDetails("MKUser001");
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
 
         final var response = mockMvc.perform(get("/associations/companies/MKCOMP001")
@@ -174,7 +174,7 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWithIncludeRemovedFalseAppliesFilter() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17"));
-        mockers.mockUsersServiceFetchUserDetails("111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777");
+//        mockers.mockUsersServiceFetchUserDetails("111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777");
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
 
         final var response =
@@ -205,7 +205,7 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWithIncludeRemovedTrueDoesNotApplyFilter() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17"));
-        mockers.mockUsersServiceFetchUserDetails("111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777");
+//        mockers.mockUsersServiceFetchUserDetails("111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777");
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
 
         final var response =
@@ -236,7 +236,7 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyPaginatesCorrectly() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17"));
-        mockers.mockUsersServiceFetchUserDetails("111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777");
+//        mockers.mockUsersServiceFetchUserDetails("111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777");
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
 
         final var response =
@@ -270,8 +270,8 @@ class AssociationsListForCompanyControllerTest {
         associations.add(testDataManager.fetchAssociationDaos("18").getFirst().companyNumber("111111"));
 
         associationsRepository.insert(associations);
-        mockers.mockUsersServiceFetchUserDetails("9999");
-        mockers.mockUsersServiceFetchUserDetailsNotFound("111");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetailsNotFound("111");
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
 
         mockMvc.perform(get("/associations/companies/111111")
@@ -284,7 +284,7 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWhereCompanyProfileEndpointCannotFindCompanyReturnsNotFound() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("1"));
-        mockers.mockUsersServiceFetchUserDetails("111");
+//        mockers.mockUsersServiceFetchUserDetails("111");
         mockers.mockCompanyServiceFetchCompanyProfileNotFound("111111");
 
         mockMvc.perform(get("/associations/companies/111111")
@@ -297,7 +297,7 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyDoesMappingCorrectly() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17"));
-        mockers.mockUsersServiceFetchUserDetails("111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777");
+//        mockers.mockUsersServiceFetchUserDetails("111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777");
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
 
         final var response =
@@ -352,7 +352,7 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyFetchesAssociation() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17"));
-        mockers.mockUsersServiceFetchUserDetails("111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777");
+//        mockers.mockUsersServiceFetchUserDetails("111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777");
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
 
         final var response =
@@ -370,7 +370,7 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyCanRetrieveMigratedAssociations() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("MKAssociation001", "MKAssociation002", "MKAssociation003"));
-        mockers.mockUsersServiceFetchUserDetails("MKUser001", "MKUser002", "MKUser003");
+//        mockers.mockUsersServiceFetchUserDetails("MKUser001", "MKUser002", "MKUser003");
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
 
         final var response = mockMvc.perform(get("/associations/companies/MKCOMP001?include_removed=true")
@@ -406,7 +406,7 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyReturnsForbiddenWhenCalledByAUserThatIsNotAMemberOfCompanyOrAdmin() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11","12","13","14","15","16","17"));
-        mockers.mockUsersServiceFetchUserDetails("111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777", "MKUser001");
+//        mockers.mockUsersServiceFetchUserDetails("111", "222", "333", "444", "555", "666", "777", "888", "999" ,"1111", "2222", "3333", "4444", "5555", "6666", "7777", "MKUser001");
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
 
         mockMvc.perform(get("/associations/companies/111111")
@@ -420,7 +420,7 @@ class AssociationsListForCompanyControllerTest {
     void getAssociationsForCompanyUserAndStatusWithUserIdFetchesAssociations() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("MKAssociation002"));
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
-        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails("MKUser002", null);
+//        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails("MKUser002", null);
 
         final var response = mockMvc.perform(post("/associations/companies/MKCOMP001/search")
                         .header("X-Request-Id", "theId123")
@@ -449,7 +449,7 @@ class AssociationsListForCompanyControllerTest {
     void getAssociationsForCompanyUserAndStatusWithUserEmailFetchesAssociations(final String status) throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("MKAssociation002"));
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
-        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails(null, "luigi@mushroom.kingdom");
+//        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails(null, "luigi@mushroom.kingdom");
 
         final var response = mockMvc.perform(post("/associations/companies/MKCOMP001/search")
                         .header("X-Request-Id", "theId123")
@@ -468,7 +468,7 @@ class AssociationsListForCompanyControllerTest {
     void getAssociationsForCompanyUserWithNonExistentUserEmailFetchesAssociations() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("MKAssociation001"));
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
-        Mockito.doReturn(null).when(usersService).retrieveUserDetails(null, "mario@mushroom.kingdom");
+//        Mockito.doReturn(null).when(usersService).retrieveUserDetails(null, "mario@mushroom.kingdom");
 
         final var response = mockMvc.perform(post("/associations/companies/MKCOMP001/search")
                         .header("X-Request-Id", "theId123")
@@ -566,7 +566,7 @@ class AssociationsListForCompanyControllerTest {
     void getAssociationsForCompanyWithNonExistentCompanyNumberReturnsNotFound() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("MKAssociation002"));
         mockers.mockCompanyServiceFetchCompanyProfileNotFound("MKCOMP001");
-        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails("MKUser002", null);
+//        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails("MKUser002", null);
 
         mockMvc.perform(post("/associations/companies/MKCOMP001/search")
                         .header("X-Request-Id", "theId123")
@@ -582,7 +582,7 @@ class AssociationsListForCompanyControllerTest {
     void getAssociationsForCompanyWithNonExistentUserIdReturnsNotFound() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("MKAssociation002"));
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
-        Mockito.doThrow(new NotFoundRuntimeException("Test", new Exception())).when(usersService).retrieveUserDetails("MKUser002", null);
+//        Mockito.doThrow(new NotFoundRuntimeException("Test", new Exception())).when(usersService).retrieveUserDetails("MKUser002", null);
 
         mockMvc.perform(post("/associations/companies/MKCOMP001/search")
                         .header("X-Request-Id", "theId123")
@@ -597,7 +597,7 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyNonExistentAssociationsReturnsNotFound() throws Exception {
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
-        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails("MKUser002", null);
+//        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails("MKUser002", null);
 
         mockMvc.perform(post("/associations/companies/MKCOMP001/search")
                         .header("X-Request-Id", "theId123")

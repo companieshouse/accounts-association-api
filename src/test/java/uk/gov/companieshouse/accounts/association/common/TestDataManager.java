@@ -3,6 +3,8 @@ package uk.gov.companieshouse.accounts.association.common;
 
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToOffsetDateTime;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -22,9 +24,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association.Approva
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
-import uk.gov.companieshouse.api.accounts.associations.model.Links;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousState;
-import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
@@ -37,6 +37,54 @@ public class TestDataManager {
             instance = new TestDataManager();
         }
         return instance;
+    }
+
+    // Common test data
+    public enum REQUEST_HEADERS {
+        X_REQUEST_ID("X-Request-ID", "theId123"),
+        ERIC_IDENTITY("ERIC-Identity"),
+        ERIC_IDENTITY_TYPE_OAUTH("ERIC-Identity-Type", "oauth2"),
+        ERIC_IDENTITY_TYPE_API_KEY("ERIC-Identity-Type", "key"),
+        ERIC_AUTHORISED_KEY_ROLES("ERIC-Authorised-Key-Roles", "*"),
+        ERIC_ADMIN_UPDATE_PERMISSION("Eric-Authorised-Roles", ADMIN_UPDATE_PERMISSION),
+        ERIC_ADMIN_READ_PERMISSION("Eric-Authorised-Roles", ADMIN_READ_PERMISSION);;
+
+        public final String key;
+        public final String value;
+
+        REQUEST_HEADERS(String key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+        REQUEST_HEADERS(String key) {
+            this.key = key;
+            this.value = null;
+        }
+
+    }
+
+    public enum REQUEST_BODY_ASSOCIATION_STATUS {
+        CONFIRMED("""
+                {"status": "confirmed"}
+                """),
+        REMOVED("""
+                {"status": "removed"}
+                """),
+        MIGRATED("""
+                {"status": "migrated"}
+                """),
+        AWAITING_APPROVAL("""
+                {"status": "awaiting-approval"}
+                """),
+        UNAUTHORISED("""
+                {"status": "unauthorised"}
+                """);
+
+        REQUEST_BODY_ASSOCIATION_STATUS(String value) {
+            this.value = value;
+        }
+
+        public final String value;
     }
 
     private final LocalDateTime now = LocalDateTime.now();

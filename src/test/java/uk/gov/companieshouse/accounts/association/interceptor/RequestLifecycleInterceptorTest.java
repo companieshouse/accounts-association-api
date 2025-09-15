@@ -49,7 +49,7 @@ class RequestLifecycleInterceptorTest {
 
         final var response = new MockHttpServletResponse();
 
-        Mockito.doReturn(user).when(usersService).fetchUserDetails(eq(user.getUserId()), any());
+//        Mockito.doReturn(user).when(usersService).fetchUserDetails(eq(user.getUserId()), any());
 
         final var result = requestLifecycleInterceptor.preHandle(request, response, null);
 
@@ -74,7 +74,7 @@ class RequestLifecycleInterceptorTest {
 
         final var response = new MockHttpServletResponse();
 
-        Mockito.doThrow(new NotFoundRuntimeException("Could not find user", new Exception("Could not find user"))).when(usersService).fetchUserDetails(eq(user.getUserId()), any());
+//        Mockito.doThrow(new NotFoundRuntimeException("Could not find user", new Exception("Could not find user"))).when(usersService).fetchUserDetails(eq(user.getUserId()), any());
 
         requestLifecycleInterceptor.preHandle(request, response, null);
 

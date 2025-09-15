@@ -112,7 +112,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void fetchActiveInvitationsForUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
-        mockers.mockUsersServiceFetchUserDetailsNotFound("$$$$");
+//        mockers.mockUsersServiceFetchUserDetailsNotFound("$$$$");
 
         mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
                         .header("X-Request-Id", "theId123")
@@ -124,7 +124,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void fetchActiveInvitationsForUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
-        mockers.mockUsersServiceFetchUserDetailsNotFound("9191");
+//        mockers.mockUsersServiceFetchUserDetailsNotFound("9191");
 
         mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
                         .header("X-Request-Id", "theId123")
@@ -137,7 +137,7 @@ class UserCompanyInvitationsControllerTest {
     @Test
     void fetchActiveInvitationsForUserRetrievesActiveInvitationsInCorrectOrderAndPaginatesCorrectly() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("37", "38"));
-        mockers.mockUsersServiceFetchUserDetails("000", "444");
+//        mockers.mockUsersServiceFetchUserDetails("000", "444");
 
         final var response =
                 mockMvc.perform(get("/associations/invitations?page_index=0&items_per_page=1")
@@ -159,7 +159,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void fetchActiveInvitationsForUserWithoutActiveInvitationsReturnsEmptyList() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails("111");
+//        mockers.mockUsersServiceFetchUserDetails("111");
 
         final var response =
                 mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
@@ -175,7 +175,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithoutXRequestIdReturnsBadRequest() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("Eric-identity", "9999")
@@ -199,9 +199,9 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
-        mockers.mockUsersServiceFetchUserDetailsNotFound("$$$$");
-
+//        mockers.mockUsersServiceFetchUserDetailsNotFound("$$$$");
         mockMvc.perform(post("/associations/invitations")
+
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "$$$$")
                         .header("ERIC-Identity-Type", "oauth2")
@@ -213,7 +213,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
-        mockers.mockUsersServiceFetchUserDetailsNotFound("9191");
+//        mockers.mockUsersServiceFetchUserDetailsNotFound("9191");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -227,7 +227,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithoutRequestBodyReturnsBadRequest() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -240,7 +240,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithoutCompanyNumberReturnsBadRequest() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -254,7 +254,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithMalformedCompanyNumberReturnsBadRequest() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -268,7 +268,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithNonexistentCompanyNumberReturnsBadRequest() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfileNotFound("919191");
 
         mockMvc.perform(post("/associations/invitations")
@@ -283,7 +283,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithoutInviteeEmailIdReturnsBadRequest() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -297,7 +297,7 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithMalformedInviteeEmailIdReturnsBadRequest() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -312,7 +312,7 @@ class UserCompanyInvitationsControllerTest {
     @Test
     void inviteUserWhereAssociationBetweenInviteeEmailAndCompanyNumberExistsAndInviteeUserIsFoundPerformsSwapAndUpdateOperations() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("19", "36"));
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockUsersServiceSearchUserDetails("000");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
 
@@ -343,8 +343,8 @@ class UserCompanyInvitationsControllerTest {
     @Test
     void inviteUserWhereAssociationBetweenInviteeEmailAndCompanyNumberExistsAndInviteeUserIsNotFoundDoesNotPerformSwapButDoesPerformUpdateOperation() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("19", "36"));
-        mockers.mockUsersServiceFetchUserDetails("9999");
-        mockers.mockUsersServiceToFetchUserDetailsRequest("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceToFetchUserDetailsRequest("9999");
         mockers.mockUsersServiceSearchUserDetailsEmptyList("light.yagami@death.note");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
 
@@ -380,8 +380,8 @@ class UserCompanyInvitationsControllerTest {
     @Test
     void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberExistsDoesNotPerformSwapButDoesPerformUpdateOperation() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("19", "36"));
-        mockers.mockUsersServiceFetchUserDetails("9999");
-        mockers.mockUsersServiceToFetchUserDetailsRequest("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceToFetchUserDetailsRequest("9999");
         mockers.mockUsersServiceSearchUserDetails("000");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
 
@@ -417,7 +417,7 @@ class UserCompanyInvitationsControllerTest {
     @Test
     void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberDoesNotExistCreatesNewAssociation() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("19"));
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockUsersServiceSearchUserDetails("000");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
 
@@ -447,8 +447,8 @@ class UserCompanyInvitationsControllerTest {
     @Test
     void inviteUserWhereAssociationBetweenInviteeUserEmailAndCompanyNumberDoesNotExistAndInviteeUserIsNotFoundCreatesNewAssociation() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("19"));
-        mockers.mockUsersServiceFetchUserDetails("9999");
-        mockers.mockUsersServiceToFetchUserDetailsRequest("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceToFetchUserDetailsRequest("9999");
         mockers.mockUsersServiceSearchUserDetailsEmptyList("light.yagami@death.note");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
 
@@ -483,7 +483,7 @@ class UserCompanyInvitationsControllerTest {
     @Test
     void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberExistsDoesNotPerformSwapButThrowsBadRequest() throws Exception {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("18", "35"));
-        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockUsersServiceSearchUserDetails("000");
         mockers.mockCompanyServiceFetchCompanyProfile("333333");
 
@@ -501,8 +501,8 @@ class UserCompanyInvitationsControllerTest {
     void inviteUserWithUserThatHasDisplayNameUsesDisplayName()  throws Exception {
 
         associationsRepository.insert(testDataManager.fetchAssociationDaos("19"));
-        mockers.mockUsersServiceFetchUserDetails("9999");
-        mockers.mockUsersServiceToFetchUserDetailsRequest("9999");
+//        mockers.mockUsersServiceFetchUserDetails("9999");
+//        mockers.mockUsersServiceToFetchUserDetailsRequest("9999");
         mockers.mockUsersServiceSearchUserDetails("111");
         mockers.mockCompanyServiceFetchCompanyProfile("444444");
 
@@ -534,7 +534,7 @@ class UserCompanyInvitationsControllerTest {
         final var requestingAssociation = testDataManager.fetchAssociationDaos("MKAssociation002").getFirst();
 
         associationsRepository.insert(List.of(requestingAssociation, targetAssociation));
-        mockers.mockUsersServiceFetchUserDetails("MKUser002");
+//        mockers.mockUsersServiceFetchUserDetails("MKUser002");
         mockers.mockUsersServiceSearchUserDetails("MKUser001");
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
 

@@ -64,7 +64,8 @@ public class AssociationsListForCompanyController implements AssociationDataForC
 
     @Override
     public ResponseEntity<Association> getAssociationsForCompanyUserAndStatus(final String companyNumber, final FetchRequestBodyPost requestBodyPost) {
-        LOGGER.infoContext(getXRequestId(), String.format("Received request with company_number=%s and user_id=%s. user_email was provided: %b.", companyNumber, requestBodyPost.getUserId(), Objects.nonNull(requestBodyPost.getUserEmail())),null);
+        final var xRequestId = getXRequestId();
+        LOGGER.infoContext(xRequestId, String.format("Received request with company_number=%s and user_id=%s. user_email was provided: %b.", companyNumber, requestBodyPost.getUserId(), Objects.nonNull(requestBodyPost.getUserEmail())),null);
 
         final var userId = requestBodyPost.getUserId();
         final var userEmail = requestBodyPost.getUserEmail();
@@ -81,7 +82,7 @@ public class AssociationsListForCompanyController implements AssociationDataForC
         }
 
         final var companyProfile = companyService.fetchCompanyProfile(companyNumber);
-        final var user = usersService.retrieveUserDetails(userId, userEmail);
+        final var user = usersService.retrieveUserDetails(xRequestId, userId, userEmail);
         final var targetUserEmail =  Objects.nonNull(user) ? user.getEmail() : userEmail;
 
         return associationsTransactionService.fetchUnexpiredAssociationsForCompanyUserAndStatuses(companyProfile, statuses, user, targetUserEmail)

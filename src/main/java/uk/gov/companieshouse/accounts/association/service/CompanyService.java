@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import uk.gov.companieshouse.accounts.association.client.CompanyClient;
+import uk.gov.companieshouse.accounts.association.service.client.CompanyClient;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.api.company.CompanyDetails;
@@ -45,6 +45,7 @@ public class CompanyService {
 
     public CompanyDetails fetchCompanyProfile(final String companyNumber, String xRequestId) {
         xRequestId = xRequestId != null ? xRequestId : getXRequestId();
+        LOGGER.debugContext(xRequestId, "Searching for company by number: " + companyNumber, null);
         if (StringUtils.isBlank(companyNumber)) {
             NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_COMPANY_NUMBER, new Exception(BLANK_COMPANY_NUMBER));
             LOGGER.errorContext(xRequestId, BLANK_COMPANY_NUMBER, exception, null);

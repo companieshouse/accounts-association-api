@@ -2,7 +2,6 @@ package uk.gov.companieshouse.accounts.association.common;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,19 +9,17 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import org.mockito.Mockito;
-import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.EmailSendingException;
-import uk.gov.companieshouse.api.accounts.user.model.User;
 
-@RestClientTest
 public class Mockers {
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
@@ -169,19 +166,19 @@ public class Mockers {
         }
     }
 
-    public void mockUsersServiceFetchUserDetails(final String... userIds){
-        for (final String userId: userIds){
-            final var userDetails = testDataManager.fetchUserDtos(userId).getFirst();
-            Mockito.doReturn(userDetails).when(usersService).fetchUserDetails(eq(userId), any());
-        }
-    }
+//    public void mockUsersServiceFetchUserDetails(final String... userIds){
+//        for (final String userId: userIds){
+//            final var userDetails = testDataManager.fetchUserDtos(userId).getFirst();
+//            Mockito.doReturn(userDetails).when(usersService).fetchUserDetails( eq(userId), any());
+//        }
+//    }
 
-    public void mockUsersServiceToFetchUserDetailsRequest(final String... userIds){
-        for (final String userId: userIds){
-            final var userDetails = testDataManager.fetchUserDtos(userId).getFirst();
-            Mockito.lenient().doReturn(userDetails).when(usersService).retrieveUserDetails(eq(userId), any());
-        }
-    }
+//    public void mockUsersServiceToFetchUserDetailsRequest(final String... userIds){
+//        for (final String userId: userIds){
+//            final var userDetails = testDataManager.fetchUserDtos(userId).getFirst();
+//            Mockito.lenient().doReturn(userDetails).when(usersService).retrieveUserDetails(eq(userId), any());
+//        }
+//    }
 
     public void mockUsersServiceSearchUserDetails(final String... userIds){
         for (final String userId: userIds){
@@ -199,10 +196,10 @@ public class Mockers {
         }
     }
 
-    public void mockUsersServiceFetchUserDetailsNotFound(final String... userIds){
-        for (final String userId: userIds){
-            Mockito.doThrow(new NotFoundRuntimeException("Not found.", new Exception("Not found."))).when(usersService).fetchUserDetails(eq(userId), any());
-        }
-    }
+//    public void mockUsersServiceFetchUserDetailsNotFound(final String... userIds){
+//        for (final String userId: userIds){
+//            Mockito.doThrow(new NotFoundRuntimeException("Not found.", new Exception("Not found."))).when(usersService).fetchUserDetails(eq(userId), any());
+//        }
+//    }
 
 }

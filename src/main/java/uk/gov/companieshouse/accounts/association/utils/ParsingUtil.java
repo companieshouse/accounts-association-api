@@ -26,6 +26,10 @@ public class ParsingUtil {
         }
     }
 
+    public static <T> String parseJsonFrom(final T object) {
+        return parseJsonFrom(object, "");
+    }
+
     public static <T> String parseJsonFrom(final T object, final String fallback) {
         LOGGER.trace(String.format("Attempting to parse JSON from:%n%s", object.toString()));
         final var objectMapper = new ObjectMapper();

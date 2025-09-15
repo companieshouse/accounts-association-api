@@ -64,7 +64,7 @@ class InvitationsCollectionMappersTest {
         final var association = testDataManager.fetchAssociationDaos("38").getFirst();
         association.getInvitations().getLast().invitedAt(LocalDateTime.now().minusDays(30));
 
-        mockers.mockUsersServiceFetchUserDetails("111", "222", "444");
+//        mockers.mockUsersServiceFetchUserDetails("111", "222", "444");
 
         final var invitations = invitationsCollectionMappers.daoToDto(association, 0, 15);
         final var invitation0 = invitations.getItems().getFirst();
@@ -96,7 +96,7 @@ class InvitationsCollectionMappersTest {
         final var association = testDataManager.fetchAssociationDaos("38").getFirst();
         association.getInvitations().getLast().invitedAt(LocalDateTime.now().minusDays(8));
 
-        mockers.mockUsersServiceFetchUserDetails("222");
+//        mockers.mockUsersServiceFetchUserDetails("222");
 
         final var invitations = invitationsCollectionMappers.daoToDto(association, 1, 1);
         final var invitation = invitations.getItems().getFirst();
@@ -136,7 +136,7 @@ class InvitationsCollectionMappersTest {
         associations.getFirst().approvalExpiryAt(LocalDateTime.now().plusDays(30));
         associations.getFirst().getInvitations().getLast().invitedAt(LocalDateTime.now().minusDays(31));
 
-        mockers.mockUsersServiceFetchUserDetails("9999", "444");
+//        mockers.mockUsersServiceFetchUserDetails("9999", "444");
 
         final var invitations = invitationsCollectionMappers.daoToDto(associations, 0, 15);
         final var invitation0 = invitations.getItems().getFirst();
@@ -166,7 +166,7 @@ class InvitationsCollectionMappersTest {
         associations.getFirst().approvalExpiryAt(LocalDateTime.now().plusDays(7));
         associations.getFirst().getInvitations().getLast().invitedAt(LocalDateTime.now().minusDays(8));
 
-        mockers.mockUsersServiceFetchUserDetails("444");
+//        mockers.mockUsersServiceFetchUserDetails("444");
 
         final var invitations = invitationsCollectionMappers.daoToDto(associations, 0, 1);
         final var invitation = invitations.getItems().getFirst();

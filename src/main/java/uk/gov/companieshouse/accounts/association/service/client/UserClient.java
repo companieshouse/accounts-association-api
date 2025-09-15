@@ -1,4 +1,4 @@
-package uk.gov.companieshouse.accounts.association.client;
+package uk.gov.companieshouse.accounts.association.service.client;
 
 import static uk.gov.companieshouse.accounts.association.models.Constants.REST_CLIENT_EXCEPTION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.REST_CLIENT_FINISH;
@@ -18,43 +18,54 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
-import uk.gov.companieshouse.api.company.CompanyDetails;
+import uk.gov.companieshouse.api.accounts.user.model.User;
+import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 
 @Component
-public class CompanyClient {
-
-    private final RestClient companyRestClient;
+public class UserClient {
+    private final RestClient usersRestClient;
 
     @Autowired
-    public CompanyClient(@Qualifier("companyRestClient") RestClient companyRestClient) {
-        this.companyRestClient = companyRestClient;
+    public UserClient(@Qualifier("usersRestClient") RestClient usersRestClient) {
+        this.usersRestClient = usersRestClient;
     }
 
-    public CompanyDetails requestCompanyProfile(final String companyNumber, final String xRequestId) {
+    public UsersList requestUserDetailsByEmail(final String email, String xRequestId) {
         final var uri = UriComponentsBuilder.newInstance()
-                .path("/company/{companyNumber}/company-detail")
-                .buildAndExpand(companyNumber)
+                .path("/users/search")
+                .queryParam("user_email", "{email}")
+                .encode()
+                .buildAndExpand(email)
                 .toUri();
-        return parseJsonTo(sendRequest(uri, xRequestId), CompanyDetails.class);
+
+        return parseJsonTo(sendRequest(uri, xRequestId), UsersList.class);
     }
 
-    private String sendRequest(final URI uri, final String xRequestId) {
+    public User requestUserDetails(final String userId, final String xRequestId) {
+        final var uri = UriComponentsBuilder.newInstance()
+                .path("/users/{user}")
+                .buildAndExpand(userId)
+                .toUri();
+
+        return parseJsonTo(sendRequest(uri, xRequestId), User.class);
+    }
+
+    private String sendRequest(URI uri, String xRequestId) {
         try {
             LOGGER.infoContext(xRequestId, String.format(REST_CLIENT_START, uri), null);
-            var response = companyRestClient.get().uri(uri).retrieve().body(String.class);
+            var response = usersRestClient.get().uri(uri).retrieve().body(String.class);
             LOGGER.infoContext(xRequestId, String.format(REST_CLIENT_FINISH, uri), null);
             return response;
         } catch (NotFound exception) {
             LOGGER.infoContext(getXRequestId(), String.format("No user found: %s", uri), null);
             throw new NotFoundRuntimeException(exception.getMessage(), exception);
         } catch (BadRequest exception) {
-            LOGGER.errorContext(getXRequestId(), String.format("Bad request made: %s", uri),
-                    exception, null);
+            LOGGER.errorContext(getXRequestId(), String.format("Bad request made: %s", uri), exception, null);
             throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
         } catch (RestClientException exception) {
-            LOGGER.errorContext(getXRequestId(), String.format(REST_CLIENT_EXCEPTION, uri),
-                    exception, null);
+            LOGGER.errorContext(getXRequestId(), String.format(REST_CLIENT_EXCEPTION, uri), exception, null);
             throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
         }
     }
+
 }
