@@ -1446,5 +1446,4 @@ class UserCompanyAssociationControllerTest extends AbstractBaseIntegrationTest {
     public void after() {
         associationsRepository.deleteAll();
     }
-
 }
