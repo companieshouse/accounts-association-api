@@ -19,8 +19,6 @@ import static uk.gov.companieshouse.accounts.association.common.TestDataManager.
 import static uk.gov.companieshouse.accounts.association.common.TestDataManager.REQUEST_HEADERS.ERIC_IDENTITY_TYPE_API_KEY;
 import static uk.gov.companieshouse.accounts.association.common.TestDataManager.REQUEST_HEADERS.ERIC_IDENTITY_TYPE_OAUTH;
 import static uk.gov.companieshouse.accounts.association.common.TestDataManager.REQUEST_HEADERS.X_REQUEST_ID;
-import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
-import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
@@ -63,8 +61,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import uk.gov.companieshouse.accounts.association.service.client.CompanyClient;
-import uk.gov.companieshouse.accounts.association.service.client.UserClient;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager.REQUEST_BODY_ASSOCIATION_STATUS;
@@ -73,6 +69,8 @@ import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepos
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.accounts.association.service.client.CompanyClient;
+import uk.gov.companieshouse.accounts.association.service.client.UserClient;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
@@ -244,7 +242,7 @@ class UserCompanyAssociationControllerTest extends AbstractBaseIntegrationTest {
                         .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
                         .header(ERIC_IDENTITY.key, userId)
                         .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
-                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ADMIN_READ_PERMISSION))
+                        .header(ERIC_ADMIN_READ_PERMISSION.key, ERIC_ADMIN_READ_PERMISSION.value))
                 .andExpect(status().isOk());
     }
 
@@ -266,7 +264,7 @@ class UserCompanyAssociationControllerTest extends AbstractBaseIntegrationTest {
                         .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
                         .header(ERIC_IDENTITY.key, "111")
                         .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
-                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ADMIN_READ_PERMISSION))
+                        .header(ERIC_ADMIN_READ_PERMISSION.key, ERIC_ADMIN_READ_PERMISSION.value))
                 .andExpect(status().isOk());
 
         final var association = parseResponseTo(response, Association.class);
@@ -552,7 +550,6 @@ class UserCompanyAssociationControllerTest extends AbstractBaseIntegrationTest {
         associationsRepository.insert(testDataManager.fetchAssociationDaos(firstAssociationId, secondAssociationId));
 
         when(userClient.requestUserDetails(userId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(userId).getFirst());
-//        when(userClient.requestUserDetails(targetUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(targetUserId).getFirst());
         when(userClient.requestUserDetailsByEmail(targetUserDetails.getEmail(), X_REQUEST_ID.value)).thenReturn(targetUsersList);
         when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchCompanyDetailsDtos(companyNumber).getFirst());
 
@@ -1074,7 +1071,7 @@ class UserCompanyAssociationControllerTest extends AbstractBaseIntegrationTest {
 
         setEmailProducerCountDownLatch(1);
 
-        mockMvc.perform(patch(String.format(ASSOCIATIONS_URL + targetAssociationId))
+        mockMvc.perform(patch(ASSOCIATIONS_URL + targetAssociationId)
                         .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
                         .header(ERIC_IDENTITY.key, requestingUserId)
                         .header(ERIC_IDENTITY_TYPE_API_KEY.key, ERIC_IDENTITY_TYPE_API_KEY.value)
