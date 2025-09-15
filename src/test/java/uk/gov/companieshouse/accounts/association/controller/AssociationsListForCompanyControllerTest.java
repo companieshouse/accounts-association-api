@@ -1,7 +1,25 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.CONFIRMED;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.REMOVED;
+
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -27,30 +45,15 @@ import org.springframework.web.context.WebApplicationContext;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfig;
-import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsTransactionService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
-import uk.gov.companieshouse.api.accounts.associations.model.*;
+import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-
-import static org.mockito.ArgumentMatchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
-import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
-import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
-import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.*;
+import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.Links;
 
 @AutoConfigureMockMvc
 @WebMvcTest(AssociationsListForCompanyController.class)
