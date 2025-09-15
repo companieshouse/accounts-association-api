@@ -57,15 +57,21 @@ public class Mockers {
         Mockito.doReturn( jsonResponse ).when( responseSpec ).bodyToMono( String.class );
     }
 
-    private void mockWebClientSuccessResponse( final String uri, final Mono<String> jsonResponse, final boolean isUriString) {
+    private void mockWebClientSuccessResponse( final String uri, final Mono<String> jsonResponse, final UriType uriType) {
         final var requestHeadersUriSpec = Mockito.mock( WebClient.RequestHeadersUriSpec.class );
         final var requestHeadersSpec = Mockito.mock( WebClient.RequestHeadersSpec.class );
         final var responseSpec = Mockito.mock( WebClient.ResponseSpec.class );
 
-        if( isUriString ){
-            Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri );
-        }else{
-            Mockito.doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(Mockito.any(URI.class));
+        switch (uriType) {
+            case URI -> {
+                Mockito.doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(Mockito.any(URI.class));
+            }
+            case STRING -> {
+                Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uri );
+            }
+            case FUNCTION -> {
+                Mockito.doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(Mockito.any(Function.class));
+            }
         }
 
         Mockito.doReturn( requestHeadersUriSpec ).when(webClient).get();
@@ -79,7 +85,7 @@ public class Mockers {
             final var user = testDataManager.fetchUserDtos( userId ).getFirst();
             final var uri = String.format( "/users/%s", userId );
             final var jsonResponse = new ObjectMapper().writeValueAsString( user );
-            mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ), isUriString );
+            mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ), UriType.FUNCTION );
         }
     }
 
@@ -130,13 +136,13 @@ public class Mockers {
      * @param uri the URI object to mock the error response for
      * @param responseCode the HTTP response code to simulate
      */
-    private void mockWebClientErrorResponse( final URI uri, int responseCode ){
-        mockWebClientErrorResponse(null, uri, responseCode, UriType.URI);
+    private void mockWebClientErrorResponse( final URI uri, int responseCode, final UriType uriType){
+        mockWebClientErrorResponse(null, uri, responseCode, uriType);
     }
 
     public void mockWebClientForFetchUserDetailsErrorResponse( final String userId, int responseCode ){
         final var uri = URI.create( String.format( "/users/%s", userId ) );
-        mockWebClientErrorResponse( uri, responseCode );
+        mockWebClientErrorResponse( uri, responseCode, UriType.FUNCTION );
     }
 
     public void mockWebClientForFetchUserDetailsNotFound( final String... userIds ){
@@ -223,12 +229,7 @@ public class Mockers {
     }
 
     public void mockWebClientForFetchUserDetailsJsonParsingError(final String userId, boolean isUriString) {
-        final String path = String.format("/users/%s", userId);
-        if (isUriString) {
-            mockWebClientJsonParsingError(path);
-        } else {
-            mockWebClientJsonParsingError(URI.create(path));
-        }
+        mockWebClientUserDetailsJsonParsingError(userId, UriType.FUNCTION);
     }
 
     public void mockWebClientForSearchUserDetails( final boolean isUriString, final String... userIds )
@@ -254,7 +255,7 @@ public class Mockers {
 
         switch (uriType) {
             case URI -> {
-                mockWebClientErrorResponse( uriComponents.toUri(), responseCode );
+                mockWebClientErrorResponse( uriComponents.toUriString(), responseCode );
             }
             case STRING -> {
                 mockWebClientErrorResponse( uriComponents.toString(), responseCode );
@@ -276,6 +277,15 @@ public class Mockers {
         mockWebClientSuccessResponse( uri, Mono.empty());
     }
 
+    public void mockWebClientUserDetailsJsonParsingError(final String userId, UriType uriType) {
+        final var uri = UriComponentsBuilder.newInstance()
+                .path("/users/{user}")
+                .encode()
+                .buildAndExpand(userId);
+        // Robert
+        mockWebClientJsonParsingError(uri, uriType);
+    }
+
     public void mockWebClientForSearchUserDetailsJsonParsingError(final String email, UriType uriType) {
         final var uri = UriComponentsBuilder.newInstance()
                 .path("/users/search")
@@ -291,7 +301,13 @@ public class Mockers {
             final var company = testDataManager.fetchCompanyDetailsDtos( companyNumber ).getFirst();
             final var uri = String.format( "/company/%s/company-detail", companyNumber );
             final var jsonResponse = new ObjectMapper().writeValueAsString( company );
-            mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ), isUriString );
+            UriType uriType;
+            if (isUriString) {
+                uriType = UriType.STRING;
+            } else {
+                uriType = UriType.FUNCTION;
+            }
+            mockWebClientSuccessResponse( uri, Mono.just( jsonResponse ), uriType );
         }
     }
 

@@ -37,7 +37,10 @@ public class UsersService {
 
     public Mono<User> toFetchUserDetailsRequest( final String userId, final String xRequestId ) {
         return usersWebClient.get()
-                .uri(URI.create(String.format( "/users/%s", userId ) ))
+                .uri(uriBuilder -> UriComponentsBuilder.fromUri(uriBuilder.build())
+                        .path("/users/{user}")
+                        .buildAndExpand(userId)
+                        .toUri())
                 .retrieve()
                 .bodyToMono( String.class )
                 .map( parseJsonTo( User.class ) )
