@@ -45,7 +45,7 @@ public class CompanyClient {
             LOGGER.infoContext(xRequestId, String.format(REST_CLIENT_FINISH, uri), null);
             return response;
         } catch (NotFound exception) {
-            LOGGER.infoContext(getXRequestId(), String.format("No user found: %s", uri), null);
+            LOGGER.infoContext(getXRequestId(), String.format("No company found: %s", uri), null);
             throw new NotFoundRuntimeException(exception.getMessage(), exception);
         } catch (BadRequest exception) {
             LOGGER.errorContext(getXRequestId(), String.format("Bad request made: %s", uri),
