@@ -8,13 +8,12 @@ import static uk.gov.companieshouse.accounts.association.models.context.RequestC
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.function.Function;
-import uk.gov.companieshouse.accounts.association.models.context.RequestContext;
 import uk.gov.companieshouse.accounts.association.models.context.RequestContextData;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 
-public final class RequestContextUtil {
+public final class ReactiveRequestContextUtil {
 
-    private RequestContextUtil(){}
+    private ReactiveRequestContextUtil(){}
 
     private static <T> T getFieldFromRequestContext(final Function<RequestContextData, T> getterMethod, final T defaultValue){
         return Optional.ofNullable(getRequestContext()).map(getterMethod).orElse(defaultValue);
@@ -46,10 +45,6 @@ public final class RequestContextUtil {
 
     public static boolean isAPIKeyRequest(){
         return KEY.equals(getEricIdentityType());
-    }
-
-    public static RequestContextData getRequestcontext() {
-        return RequestContext.getRequestContext();
     }
 
 }

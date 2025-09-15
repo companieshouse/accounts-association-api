@@ -1,13 +1,11 @@
 package uk.gov.companieshouse.accounts.association.service;
 
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
-import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonTo;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isOAuth2Request;
 
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -17,14 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException.BadRequest;
-import org.springframework.web.client.HttpClientErrorException.NotFound;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.util.UriComponentsBuilder;
-import uk.gov.companieshouse.accounts.association.client.UserClient;
+import uk.gov.companieshouse.accounts.association.service.client.UserClient;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
@@ -45,6 +37,7 @@ public class UsersService {
     }
 
     public User fetchUserDetails(final String userId, final String xRequestId) {
+        LOGGER.debugContext(xRequestId, "Searching for users by userId: " + userId, null);
         if (StringUtils.isBlank(userId)) {
             NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_USER_ID, new Exception(BLANK_USER_ID));
             LOGGER.errorContext(xRequestId, BLANK_USER_ID, exception, null);
@@ -102,10 +95,12 @@ public class UsersService {
     }
 
     public UsersList fetchUserDetailsByEmail(final String email, final String xRequestId) {
+        LOGGER.debugContext(xRequestId, "Searching for users by email: " + String.join(",", email), null);
         return userClient.requestUserDetailsByEmail(email, xRequestId);
     }
 
-    public User retrieveUserDetails(final String targetUserId, final String targetUserEmail) {
+    public User retrieveUserDetails(final String xRequestId, final String targetUserId, final String targetUserEmail) {
+        LOGGER.traceContext(xRequestId, "Attempting to fetch user by id: " + targetUserId, null);
         final var fetchedByUserId = Optional.ofNullable(targetUserId).map(userId -> {
             if (isOAuth2Request() && userId.equals(getEricIdentity())) {
                 return getUser();
@@ -116,7 +111,9 @@ public class UsersService {
         if (Objects.nonNull(fetchedByUserId)) {
             return fetchedByUserId;
         }
+        LOGGER.traceContext(xRequestId, "Fetching user by id: " + targetUserId + " failed", null);
 
+        LOGGER.traceContext(xRequestId, "Attempting to fetch user by email: " + targetUserEmail, null);
         return Optional.ofNullable(targetUserEmail)
                 .map(userEmail -> {
                     if (isOAuth2Request() && userEmail.equals(getUser().getEmail())) {
@@ -129,9 +126,10 @@ public class UsersService {
                             .map(List::getFirst)
                             .orElse(null);
                 }).orElse(null);
+
     }
 
-    public User fetchUserDetails(final AssociationDao association) {
-        return retrieveUserDetails(association.getUserId(), association.getUserEmail());
+    public User fetchUserDetails(final String xRequestId, final AssociationDao association) {
+        return retrieveUserDetails(xRequestId, association.getUserId(), association.getUserEmail());
     }
 }

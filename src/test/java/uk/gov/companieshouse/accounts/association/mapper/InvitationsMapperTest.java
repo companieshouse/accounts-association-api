@@ -37,7 +37,7 @@ class InvitationsMapperTest {
 
     @Test
     void daoToDtoMapsInvitationDaoToInvitation(){
-        mockers.mockUsersServiceFetchUserDetails("666");
+//        mockers.mockUsersServiceFetchUserDetails("666");
         final var invitationDao = testDataManager.fetchAssociationDaos("1").getFirst().getInvitations().getFirst();
         final var invitationDto = invitationsMapper.daoToDto(invitationDao, "1");
         Assertions.assertEquals("homer.simpson@springfield.com", invitationDto.getInvitedBy());

@@ -190,7 +190,7 @@ class EmailServiceTest {
                 .setInviterDisplayName("Harleen Quinzel")
                 .setInviteeDisplayName("Batman")
                 .setCompanyName("Wayne Enterprises");
-        mockers.mockUsersServiceToFetchUserDetailsRequest("333");
+//        mockers.mockUsersServiceToFetchUserDetailsRequest("333");
 
         when(usersService.fetchUserDetails("Batman", "theId12345")).thenReturn(testDataManager.fetchUserDtos("111").getFirst());
         when(usersService.fetchUserDetails("Joker", "theId12345")).thenReturn(testDataManager.fetchUserDtos("222").getFirst());
