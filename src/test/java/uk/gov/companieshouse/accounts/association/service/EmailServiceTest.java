@@ -66,14 +66,14 @@ class EmailServiceTest {
         ReflectionTestUtils.setField(emailService, "invitationLink", COMPANY_INVITATIONS_URL);
     }
     @Test
-    void sendAuthCodeConfirmationEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNameOrNullUsersThrowsNullPointerException(){
+    void sendAuthCodeConfirmationEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNameOrNullUsersThrowsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser("theId12345", "111111", "Wayne Enterprises",null, "1"));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser("theId12345","111111", null,  "Harleen Quinzel", "1"));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser("theId12345","111111", "Wayne Enterprises", "Harleen Quinzel", null));
     }
 
     @Test
-    void sendAuthCodeConfirmationEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
+    void sendAuthCodeConfirmationEmailToAssociatedUsersThrowsEmailOnKafkaQueue() {
         when(usersService.fetchUserDetails("Harleen Quinzel", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
 
         emailService.sendAuthCodeConfirmationEmailToAssociatedUser("theId12345", "111111",  "Wayne Enterprises", "Harleen Quinzel", "111");
@@ -81,7 +81,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendAuthCodeConfirmationEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendAuthCodeConfirmationEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException() {
         when(usersService.fetchUserDetails("Harleen Quinzel", getXRequestId())).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
         doThrow(new EmailSendingException("Failed to send email", new Exception())).when(emailProducer).sendEmail(any(), eq(AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue()));
 
@@ -89,7 +89,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendAuthorisationRemovedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
+    void sendAuthorisationRemovedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUser("theId12345", "111111", null,"Harleen Quinzel", "Batman", "111"));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUser("theId12345", "111111", "Wayne Enterprises", null, "Batman", "111"));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUser("theId12345", "111111",  "Wayne Enterprises", "Harleen Quinzel", null, "111"));
@@ -97,21 +97,21 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendAuthorisationRemovedEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
+    void sendAuthorisationRemovedEmailToAssociatedUsersThrowsEmailOnKafkaQueue() {
         when(usersService.fetchUserDetails("Harleen Quinzel", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
         emailService.sendAuthorisationRemovedEmailToAssociatedUser("theId12345", "111111", "Wayne Enterprises", "Harleen Quinzel", "Batman", "111");
         Mockito.verify(emailProducer).sendEmail(argThat(comparisonUtils.authorisationRemovedAndYourAuthorisationRemovedEmailMatcher("Harleen Quinzel", "Batman", "Wayne Enterprises", "harley.quinn@gotham.city", "null")), eq(AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue()));
     }
 
     @Test
-    void sendAuthorisationRemovedEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendAuthorisationRemovedEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException() {
         when(usersService.fetchUserDetails("Harleen Quinzel", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
         mockers.mockEmailSendingFailure(AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue());
         Assertions.assertThrows(EmailSendingException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUser("theId12345", "111111", "Wayne Enterprises", "Harleen Quinzel", "Batman", "111"));
     }
 
     @Test
-    void sendInvitationCancelledEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
+    void sendInvitationCancelledEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException() {
         when(usersService.fetchUserDetails("Batman", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUser("theId12345", "111111", null, "Harleen Quinzel", "Batman", "111"));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUser("theId12345", "111111", "Wayne Enterprises", null, "Batman", "111"));
@@ -120,21 +120,21 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendInvitationCancelledEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
+    void sendInvitationCancelledEmailToAssociatedUsersThrowsEmailOnKafkaQueue() {
         when(usersService.fetchUserDetails("Batman", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
         emailService.sendInvitationCancelledEmailToAssociatedUser("theId12345", "111111",  "Wayne Enterprises", "Harleen Quinzel", "Batman", "111");
         Mockito.verify(emailProducer).sendEmail(argThat(comparisonUtils.invitationCancelledAndInviteCancelledEmailMatcher("harley.quinn@gotham.city", "Harleen Quinzel", "Batman", "Wayne Enterprises", "null")), eq(INVITATION_CANCELLED_MESSAGE_TYPE.getValue()));
     }
 
     @Test
-    void sendInvitationCancelledEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendInvitationCancelledEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException() {
         when(usersService.fetchUserDetails("Batman", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
         mockers.mockEmailSendingFailure(INVITATION_CANCELLED_MESSAGE_TYPE.getValue());
         Assertions.assertThrows(EmailSendingException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUser("theId12345", "111111",  "Wayne Enterprises", "Harleen Quinzel", "Batman", "111"));
     }
 
     @Test
-    void sendInvitationEmailToAssociatedUsersNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
+    void sendInvitationEmailToAssociatedUsersNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException() {
         when(usersService.fetchUserDetails("Batman", "theId12345")).thenReturn(testDataManager.fetchUserDtos("111").getFirst());
         when(usersService.fetchUserDetails("Joker", "theId12345")).thenReturn(testDataManager.fetchUserDtos("222").getFirst());
         when(usersService.fetchUserDetails("Harleen Quinzel", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
@@ -146,7 +146,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendInvitationEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
+    void sendInvitationEmailToAssociatedUsersThrowsEmailOnKafkaQueue() {
         when(usersService.fetchUserDetails("Batman", "theId12345")).thenReturn(testDataManager.fetchUserDtos("111").getFirst());
         when(usersService.fetchUserDetails("Joker", "theId12345")).thenReturn(testDataManager.fetchUserDtos("222").getFirst());
         when(usersService.fetchUserDetails("Harleen Quinzel", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
@@ -161,7 +161,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendInvitationEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendInvitationEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException() {
         when(usersService.fetchUserDetails("Batman", "theId12345")).thenReturn(testDataManager.fetchUserDtos("111").getFirst());
         when(usersService.fetchUserDetails("Joker", "theId12345")).thenReturn(testDataManager.fetchUserDtos("222").getFirst());
         when(usersService.fetchUserDetails("Harleen Quinzel", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
@@ -173,7 +173,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendInvitationAcceptedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException(){
+    void sendInvitationAcceptedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException() {
         when(usersService.fetchUserDetails("Batman", "theId12345")).thenReturn(testDataManager.fetchUserDtos("111").getFirst());
         when(usersService.fetchUserDetails("Joker", "theId12345")).thenReturn(testDataManager.fetchUserDtos("222").getFirst());
         when(usersService.fetchUserDetails("Harleen Quinzel", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
@@ -185,7 +185,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendInvitationAcceptedEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
+    void sendInvitationAcceptedEmailToAssociatedUsersThrowsEmailOnKafkaQueue() {
         final var expectedBaseEmail = new InvitationAcceptedEmailBuilder()
                 .setInviterDisplayName("Harleen Quinzel")
                 .setInviteeDisplayName("Batman")
@@ -205,7 +205,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendInvitationAcceptedEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendInvitationAcceptedEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException() {
         when(usersService.fetchUserDetails("Batman", "theId12345")).thenReturn(testDataManager.fetchUserDtos("111").getFirst());
         when(usersService.fetchUserDetails("Joker", "theId12345")).thenReturn(testDataManager.fetchUserDtos("222").getFirst());
         when(usersService.fetchUserDetails("Harleen Quinzel", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
@@ -218,7 +218,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendInvitationRejectedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNameOrNullRequestsThrowsNullPointerException(){
+    void sendInvitationRejectedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNameOrNullRequestsThrowsNullPointerException() {
         when(usersService.fetchUserDetails("Harleen Quinzel", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
 
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendInvitationRejectedEmailToAssociatedUser("theId12345", "111111", null, "Batman", "Harleen Quinzel"));
@@ -226,7 +226,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendInvitationRejectedEmailToAssociatedUsersThrowsEmailOnKafkaQueue(){
+    void sendInvitationRejectedEmailToAssociatedUsersThrowsEmailOnKafkaQueue() {
         when(usersService.fetchUserDetails("Harleen Quinzel", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
 
         emailService.sendInvitationRejectedEmailToAssociatedUser("theId12345", "111111", "Wayne Enterprises", "Batman", "Harleen Quinzel");
@@ -234,7 +234,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendInvitationRejectedEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendInvitationRejectedEmailToAssociatedUsersWithUnexpectedIssueThrowsEmailSendingException() {
         when(usersService.fetchUserDetails("Harleen Quinzel", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
 
         mockers.mockEmailSendingFailure(INVITATION_REJECTED_MESSAGE_TYPE.getValue());
@@ -242,7 +242,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendInviteEmailWithNullCompanyDetailsOrNullCompanyNameOrNullInviterDisplayNameOrNullInvitationExpiryTimestampOrNullInvitationLinkOrNullInviteeEmailThrowsNullPointerException(){
+    void sendInviteEmailWithNullCompanyDetailsOrNullCompanyNameOrNullInviterDisplayNameOrNullInvitationExpiryTimestampOrNullInvitationLinkOrNullInviteeEmailThrowsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendInviteEmail("theId12345", "111111", null, "Batman", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk"));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendInviteEmail("theId12345", "111111", "Wayne Enterprises", null, "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk"));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendInviteEmail("theId12345", "111111", "Wayne Enterprises", "Batman", null, "kpatel@companieshouse.gov.uk"));
@@ -250,19 +250,19 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendInviteEmailThrowsEmailOnKafkaQueue(){
+    void sendInviteEmailThrowsEmailOnKafkaQueue() {
         emailService.sendInviteEmail("theId12345", "111111", "Wayne Enterprises", "Batman", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk");
         Mockito.verify(emailProducer).sendEmail(argThat(comparisonUtils.invitationAndInviteEmailDataMatcher("bruce.wayne@gotham.city", "Batman", "kpatel@companieshouse.gov.uk", "Krishna Patel", "Wayne Enterprises", COMPANY_INVITATIONS_URL)), eq(INVITE_MESSAGE_TYPE.getValue()));
     }
 
     @Test
-    void sendInviteEmailWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendInviteEmailWithUnexpectedIssueThrowsEmailSendingException() {
         mockers.mockEmailSendingFailure(INVITE_MESSAGE_TYPE.getValue());
         Assertions.assertThrows(EmailSendingException.class, () -> emailService.sendInviteEmail("theId12345", "111111", "Wayne Enterprises", "Krishna Patel", "1992-05-01T10:30:00.000000", "kpatel@companieshouse.gov.uk"));
     }
 
     @Test
-    void sendInviteCancelledEmailWithoutCompanyDetailsOrCompanyNameOrCancelledByDisplayNameOrInviteeUserSupplierOrEmailThrowsNullPointerException(){
+    void sendInviteCancelledEmailWithoutCompanyDetailsOrCompanyNameOrCancelledByDisplayNameOrInviteeUserSupplierOrEmailThrowsNullPointerException() {
         final var association = testDataManager.fetchAssociationDaos("34").getFirst();
 
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendInviteCancelledEmail("theId12345", "111111", null, "Batman", association));
@@ -271,7 +271,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendInviteCancelledEmailSendsEmail(){
+    void sendInviteCancelledEmailSendsEmail() {
         final var association = testDataManager.fetchAssociationDaos("34").getFirst();
         when(usersService.fetchUserDetails(association.getUserId(), "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
         when(usersService.fetchUserDetails("Batman", "theId12345")).thenReturn(testDataManager.fetchUserDtos("111").getFirst());
@@ -282,7 +282,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendDelegatedRemovalOfMigratedBatchWithNullCompanyNameOrNullRemovedByOrNullRemovedUsersThrowsNullPointerException(){
+    void sendDelegatedRemovalOfMigratedBatchWithNullCompanyNameOrNullRemovedByOrNullRemovedUsersThrowsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedBatchEmail("theId12345", "111111", null, "Batman", "Ronald", "111"));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedBatchEmail("theId12345", "111111", "McDonalds", null, "Ronald", "111"));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedBatchEmail("theId12345", "111111", "McDonalds", "Batman", null, "111"));
@@ -290,7 +290,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendDelegatedRemovalOfMigratedBatchThrowsEmailOnKafkaQueue(){
+    void sendDelegatedRemovalOfMigratedBatchThrowsEmailOnKafkaQueue() {
         when(usersService.fetchUserDetails("Harleen Quinzel", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
 
         emailService.sendDelegatedRemovalOfMigratedBatchEmail("theId12345", "111111", "McDonalds", "Batman", "Harleen Quinzel", null);
@@ -298,7 +298,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendDelegatedRemovalOfMigratedBatchWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendDelegatedRemovalOfMigratedBatchWithUnexpectedIssueThrowsEmailSendingException() {
         when(usersService.fetchUserDetails("Harleen Quinzel", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
         mockers.mockEmailSendingFailure(DELEGATED_REMOVAL_OF_MIGRATED_BATCH.getValue());
 
@@ -307,30 +307,30 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendDelegatedRemovalOfMigratedWithNullCompanyNameOrNullRemovedByThrowsNullPointerException(){
+    void sendDelegatedRemovalOfMigratedWithNullCompanyNameOrNullRemovedByThrowsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedEmail("theId12345", "111111", null, "Batman", "bruce.wayne@gotham.city"));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedEmail("theId12345", "111111", "McDonalds", null, "bruce.wayne@gotham.city"));
     }
 
     @Test
-    void sendDelegatedRemovalOfMigratedThrowsEmailOnKafkaQueue(){
+    void sendDelegatedRemovalOfMigratedThrowsEmailOnKafkaQueue() {
         emailService.sendDelegatedRemovalOfMigratedEmail("theId12345", "111111", "McDonalds", "Batman", "harley.quinn@gotham.city");
         Mockito.verify(emailProducer).sendEmail(argThat(comparisonUtils.delegatedRemovalOfMigratedMatcher("harley.quinn@gotham.city", "McDonalds", "Batman")), eq(DELEGATED_REMOVAL_OF_MIGRATED.getValue()));
     }
 
     @Test
-    void sendDelegatedRemovalOfMigratedWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendDelegatedRemovalOfMigratedWithUnexpectedIssueThrowsEmailSendingException() {
         mockers.mockEmailSendingFailure(DELEGATED_REMOVAL_OF_MIGRATED.getValue());
         Assertions.assertThrows(EmailSendingException.class, () -> emailService.sendDelegatedRemovalOfMigratedEmail("theId12345", "111111", "McDonalds", "Batman", "harley.quinn@gotham.city"));
     }
 
     @Test
-    void sendRemovalOfOwnMigratedWithNullCompanyNameThrowsNullPointerException(){
+    void sendRemovalOfOwnMigratedWithNullCompanyNameThrowsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendRemoveOfOwnMigratedEmail("theId12345", "111111", null, "111"));
     }
 
     @Test
-    void sendRemovalOfOwnMigratedThrowsEmailOnKafkaQueue(){
+    void sendRemovalOfOwnMigratedThrowsEmailOnKafkaQueue() {
         when(usersService.fetchUserDetails("333", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
 
         emailService.sendRemoveOfOwnMigratedEmail("theId12345", "111111", "McDonalds", "333");
@@ -338,7 +338,7 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendRemovalOfOwnMigratedWithUnexpectedIssueThrowsEmailSendingException(){
+    void sendRemovalOfOwnMigratedWithUnexpectedIssueThrowsEmailSendingException() {
         when(usersService.fetchUserDetails("333", "theId12345")).thenReturn(testDataManager.fetchUserDtos("333").getFirst());
 
         mockers.mockEmailSendingFailure(REMOVAL_OF_OWN_MIGRATED.getValue());

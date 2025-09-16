@@ -14,21 +14,21 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 
 public final class RequestContextUtil {
 
-    private RequestContextUtil(){}
+    private RequestContextUtil() {}
 
     private static <T> T getFieldFromRequestContext(final Function<RequestContextData, T> getterMethod, final T defaultValue){
         return Optional.ofNullable(getRequestContext()).map(getterMethod).orElse(defaultValue);
     }
 
-    public static String getXRequestId(){
+    public static String getXRequestId() {
         return getFieldFromRequestContext(RequestContextData::getXRequestId, UNKNOWN);
     }
 
-    public static String getEricIdentity(){
+    public static String getEricIdentity() {
         return getFieldFromRequestContext(RequestContextData::getEricIdentity, UNKNOWN);
     }
 
-    public static String getEricIdentityType(){
+    public static String getEricIdentityType() {
         return getFieldFromRequestContext(RequestContextData::getEricIdentityType, UNKNOWN);
     }
 
@@ -36,15 +36,15 @@ public final class RequestContextUtil {
         return getFieldFromRequestContext(RequestContextData::getAdminPrivileges, new HashSet<>()).contains(privilege);
     }
 
-    public static User getUser(){
+    public static User getUser() {
         return getFieldFromRequestContext(RequestContextData::getUser, null);
     }
 
-    public static boolean isOAuth2Request(){
+    public static boolean isOAuth2Request() {
         return OAUTH2.equals(getEricIdentityType());
     }
 
-    public static boolean isAPIKeyRequest(){
+    public static boolean isAPIKeyRequest() {
         return KEY.equals(getEricIdentityType());
     }
 

@@ -15,7 +15,7 @@ public class UsersRestClientConfig {
     private String chsInternalApiKey;
 
     @Bean(name = "usersRestClient")
-    public RestClient usersRestClient(){
+    public RestClient usersRestClient() {
         return RestClient.builder()
                 .baseUrl(accountApiUrl)
                 .defaultHeader("Authorization", chsInternalApiKey)

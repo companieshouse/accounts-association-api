@@ -25,7 +25,7 @@ class ParsingUtilTest {
     }
 
     @Test
-    void parseJsonToWithArbitraryErrorThrowsInternalServerErrorRuntimeException(){
+    void parseJsonToWithArbitraryErrorThrowsInternalServerErrorRuntimeException() {
         Assertions.assertThrows(InternalServerErrorRuntimeException.class, () -> ParsingUtil.parseJsonTo("}{", User.class));
     }
 

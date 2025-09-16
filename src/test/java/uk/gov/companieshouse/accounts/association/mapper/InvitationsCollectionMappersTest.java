@@ -32,7 +32,7 @@ class InvitationsCollectionMappersTest {
     private static Mockers mockers;
 
     @BeforeEach
-    void setup(){
+    void setup() {
         final var invitationMapper = new InvitationMapperImpl();
         ReflectionTestUtils.setField(invitationMapper, "usersService", usersService);
         invitationsCollectionMappers = new InvitationsCollectionMappers(invitationMapper);
@@ -40,12 +40,12 @@ class InvitationsCollectionMappersTest {
     }
 
     @Test
-    void daoToDtoWithNullAssociationThrowsNullPointerException(){
+    void daoToDtoWithNullAssociationThrowsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class , () -> invitationsCollectionMappers.daoToDto((AssociationDao) null, 0, 15));
     }
 
     @Test
-    void daoToDtoAppliedToAssociationWithoutInvitationsReturnsEmpty(){
+    void daoToDtoAppliedToAssociationWithoutInvitationsReturnsEmpty() {
         final var association = testDataManager.fetchAssociationDaos("38").getFirst();
         association.getInvitations().clear();
 
@@ -60,7 +60,7 @@ class InvitationsCollectionMappersTest {
     }
 
     @Test
-    void daoToDtoCorrectlyMapsAssociationToInvitationsList(){
+    void daoToDtoCorrectlyMapsAssociationToInvitationsList() {
         final var association = testDataManager.fetchAssociationDaos("38").getFirst();
         association.getInvitations().getLast().invitedAt(LocalDateTime.now().minusDays(30));
 
@@ -92,7 +92,7 @@ class InvitationsCollectionMappersTest {
     }
 
     @Test
-    void daoToDtoCorrectlyMapsAssociationToInvitationsListAndPaginatesCorrectly(){
+    void daoToDtoCorrectlyMapsAssociationToInvitationsListAndPaginatesCorrectly() {
         final var association = testDataManager.fetchAssociationDaos("38").getFirst();
         association.getInvitations().getLast().invitedAt(LocalDateTime.now().minusDays(8));
 
@@ -114,12 +114,12 @@ class InvitationsCollectionMappersTest {
     }
 
     @Test
-    void daoToDtoWithNullListThrowsNullPointerException(){
+    void daoToDtoWithNullListThrowsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> invitationsCollectionMappers.daoToDto((List<AssociationDao>) null, 0, 15));
     }
 
     @Test
-    void daoToDtoAppliedToEmptyListReturnsEmpty(){
+    void daoToDtoAppliedToEmptyListReturnsEmpty() {
         final var invitations = invitationsCollectionMappers.daoToDto(List.of(), 0, 15);
         Assertions.assertEquals(0, invitations.getTotalResults());
         Assertions.assertEquals(0, invitations.getPageNumber());
@@ -131,7 +131,7 @@ class InvitationsCollectionMappersTest {
     }
 
     @Test
-    void daoToDtoCorrectlyMapsAssociationsToInvitationsList(){
+    void daoToDtoCorrectlyMapsAssociationsToInvitationsList() {
         final var associations = testDataManager.fetchAssociationDaos("36", "38");
         associations.getFirst().approvalExpiryAt(LocalDateTime.now().plusDays(30));
         associations.getFirst().getInvitations().getLast().invitedAt(LocalDateTime.now().minusDays(31));
@@ -161,7 +161,7 @@ class InvitationsCollectionMappersTest {
     }
 
     @Test
-    void daoToDtoCorrectlyMapsAssociationsToInvitationsListAndPaginatesCorrectly(){
+    void daoToDtoCorrectlyMapsAssociationsToInvitationsListAndPaginatesCorrectly() {
         final var associations = testDataManager.fetchAssociationDaos("36", "38");
         associations.getFirst().approvalExpiryAt(LocalDateTime.now().plusDays(7));
         associations.getFirst().getInvitations().getLast().invitedAt(LocalDateTime.now().minusDays(8));

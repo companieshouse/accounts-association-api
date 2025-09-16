@@ -31,7 +31,7 @@ class DelegatedRemovalOfMigratedBatchEmailBuilderTest {
     }
 
     @Test
-    void buildWithNullsThrowsNullPointerException(){
+    void buildWithNullsThrowsNullPointerException() {
         final var builder = new DelegatedRemovalOfMigratedBatchEmailBuilder();
         Assertions.assertThrows(NullPointerException.class, builder::build);
     }

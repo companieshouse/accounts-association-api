@@ -24,11 +24,11 @@ class PreviousStatesMapperTest {
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
     @Test
-    void daoToDtoWithNullDaoReturnsNull(){
+    void daoToDtoWithNullDaoReturnsNull() {
         Assertions.assertNull(previousStatesMapper.daoToDto(null));
     }
 
-    private static Stream<Arguments> daoToDtoMappingScenarios(){
+    private static Stream<Arguments> daoToDtoMappingScenarios() {
         return testDataManager.fetchAssociationDaos("MKAssociation003")
                 .getFirst()
                 .getPreviousStates()

@@ -9,7 +9,7 @@
 //class UsersRestClientConfigTest {
 //
 //    @Test
-//    void webClientIsCreatedCorrectly(){
+//    void webClientIsCreatedCorrectly() {
 //        Assertions.assertTrue(WebClient.class.isAssignableFrom(new UsersRestClientConfig().usersRestClient().getClass()));
 //    }
 //

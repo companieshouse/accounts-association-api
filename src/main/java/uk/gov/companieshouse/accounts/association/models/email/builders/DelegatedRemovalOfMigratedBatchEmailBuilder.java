@@ -20,7 +20,7 @@ public class DelegatedRemovalOfMigratedBatchEmailBuilder extends EmailBuilder<De
     }
 
     @Override
-    protected DelegatedRemovalOfMigratedBatchEmailBuilder self(){ return this;}
+    protected DelegatedRemovalOfMigratedBatchEmailBuilder self() { return this;}
 
     @Override
     public DelegatedRemovalOfMigratedBatchEmailData build() {

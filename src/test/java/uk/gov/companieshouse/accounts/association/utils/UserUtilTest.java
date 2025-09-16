@@ -26,7 +26,7 @@ class UserUtilTest {
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
-    private static Stream<Arguments> mapToDisplayValueScenarios(){
+    private static Stream<Arguments> mapToDisplayValueScenarios() {
         return Stream.of(
                 Arguments.of(null, null, null),
                 Arguments.of(null, "Not provided", "Not provided"),
@@ -41,12 +41,12 @@ class UserUtilTest {
     }
 
     @Test
-    void isRequestingUserWithNullInputsReturnsFalse(){
+    void isRequestingUserWithNullInputsReturnsFalse() {
         Assertions.assertFalse(isRequestingUser(null));
         Assertions.assertFalse(isRequestingUser(new AssociationDao()));
     }
 
-    private static Stream<Arguments> isRequestingUserCorrectlyClassifiesTargetAssociationScenarios(){
+    private static Stream<Arguments> isRequestingUserCorrectlyClassifiesTargetAssociationScenarios() {
         return Stream.of(
                 Arguments.of(new AssociationDao().userId("111"), true),
                 Arguments.of(new AssociationDao().userId("222"), false),

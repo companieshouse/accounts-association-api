@@ -39,24 +39,24 @@ class AssociationListCompanyMapperTest {
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
     @BeforeEach
-    void setup(){
+    void setup() {
         associationsListCompanyMapper = new AssociationsListCompanyMapperImpl();
         associationsListCompanyMapper.usersService = usersService;
         associationsListCompanyMapper.companyService = companyService;
     }
 
     @Test
-    void daoToDtoThrowsIllegalArgumentExceptionWhenCompanyIsNull(){
+    void daoToDtoThrowsIllegalArgumentExceptionWhenCompanyIsNull() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> associationsListCompanyMapper.daoToDto(Page.empty(), null));
     }
 
     @Test
-    void daoToDtoThrowsNullPointerExceptionWhenPageIsNull(){
+    void daoToDtoThrowsNullPointerExceptionWhenPageIsNull() {
         Assertions.assertThrows(NullPointerException.class, () -> associationsListCompanyMapper.daoToDto(null, new CompanyDetails()));
     }
 
     @Test
-    void daoToDtoDoesMappingCorrectlyForLastPage(){
+    void daoToDtoDoesMappingCorrectlyForLastPage() {
         final var associationDaos = testDataManager.fetchAssociationDaos("1", "2");
         final var users = testDataManager.fetchUserDtos("111", "222");
         final var company = testDataManager.fetchCompanyDetailsDtos("111111").getFirst();
@@ -78,7 +78,7 @@ class AssociationListCompanyMapperTest {
     }
 
     @Test
-    void daoToDtoDoesMappingCorrectlyForIntermediatePage(){
+    void daoToDtoDoesMappingCorrectlyForIntermediatePage() {
         final var associationDaos = testDataManager.fetchAssociationDaos("1", "2");
         final var users = testDataManager.fetchUserDtos("111", "222");
         final var company = testDataManager.fetchCompanyDetailsDtos("111111").getFirst();
@@ -100,7 +100,7 @@ class AssociationListCompanyMapperTest {
     }
 
     @Test
-    void daoToDtoDoesNothingWhenPageIsEmpty(){
+    void daoToDtoDoesNothingWhenPageIsEmpty() {
         final var users = testDataManager.fetchUserDtos("111", "222");
         final var company = testDataManager.fetchCompanyDetailsDtos("111111").getFirst();
 

@@ -216,8 +216,6 @@ public class AssociationsTransactionService {
 
     @Transactional
     public void updateAssociation(final String associationId, final Update update) {
-        LOGGER.debugContext(getXRequestId(), String.format("Attempting to update association with id: %s", associationId), null);
-        LOGGER.traceContext(getXRequestId(), String.format("Update contents: %s", update.toString()), null);
         Optional.ofNullable(associationId)
                 .map(id -> associationsRepository.updateAssociation(id, update))
                 .filter(numRecordsUpdated -> numRecordsUpdated > 0)

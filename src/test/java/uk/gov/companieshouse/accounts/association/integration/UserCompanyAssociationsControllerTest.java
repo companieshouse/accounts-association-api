@@ -117,7 +117,7 @@ class UserCompanyAssociationsControllerTest extends AbstractBaseIntegrationTest 
                 .andExpect(status().isForbidden());
     }
 
-    static Stream<Arguments> malformedQueryParametersTestData(){
+    static Stream<Arguments> malformedQueryParametersTestData() {
         return Stream.of(
                 Arguments.of("/associations?page_index=-1"),
                 Arguments.of("/associations?items_per_page=0"),

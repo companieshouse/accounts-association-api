@@ -10,7 +10,7 @@ public class InvitationRejectedEmailData extends EmailData {
 
     private String companyName;
 
-    public InvitationRejectedEmailData(){}
+    public InvitationRejectedEmailData() {}
 
     public InvitationRejectedEmailData(String personWhoDeclined, String companyName) {
         this.personWhoDeclined = personWhoDeclined;

@@ -27,13 +27,13 @@ class AssociationsUtilTest {
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
     @Test
-    void mapToInvitationUpdateWithNullTargetAssociationThrowsNullPointerException(){
+    void mapToInvitationUpdateWithNullTargetAssociationThrowsNullPointerException() {
         final var targetUser = testDataManager.fetchUserDtos("MKUser001").getFirst();
         Assertions.assertThrows(NullPointerException.class, () -> mapToInvitationUpdate(null, targetUser, "MKUser002", now()));
     }
 
     @Test
-    void mapToInvitationUpdateWithTargetUserSwapsUserIdAndUserEmail(){
+    void mapToInvitationUpdateWithTargetUserSwapsUserIdAndUserEmail() {
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
         final var targetUser = testDataManager.fetchUserDtos("MKUser001").getFirst();
 
@@ -56,7 +56,7 @@ class AssociationsUtilTest {
     }
 
     @Test
-    void mapToInvitationUpdateWithoutTargetUserSwapsUserIdAndUserEmail(){
+    void mapToInvitationUpdateWithoutTargetUserSwapsUserIdAndUserEmail() {
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
 
         final var update = mapToInvitationUpdate(targetAssociation, null, "MKUser002", now());
@@ -76,7 +76,7 @@ class AssociationsUtilTest {
     }
 
     @Test
-    void mapToConfirmedUpdateCarriesOutUpdateCorrectly(){
+    void mapToConfirmedUpdateCarriesOutUpdateCorrectly() {
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
         final var update = mapToConfirmedUpdate(targetAssociation, null, "MKUser002");
         final var documentSet = update.getUpdateObject().get("$set", Document.class);
@@ -85,7 +85,7 @@ class AssociationsUtilTest {
     }
 
     @Test
-    void mapToRemovedUpdateCarriesOutUpdateCorrectly(){
+    void mapToRemovedUpdateCarriesOutUpdateCorrectly() {
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
         final var update = mapToRemovedUpdate(targetAssociation, null, "MKUser002");
         final var documentSet = update.getUpdateObject().get("$set", Document.class);
@@ -94,7 +94,7 @@ class AssociationsUtilTest {
     }
 
     @Test
-    void mapToAuthCodeConfirmedUpdatedCarriesOutUpdateCorrectly(){
+    void mapToAuthCodeConfirmedUpdatedCarriesOutUpdateCorrectly() {
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
         final var targetUser = testDataManager.fetchUserDtos("MKUser001").getFirst();
         final var update = mapToAuthCodeConfirmedUpdated(targetAssociation, targetUser, "MKUser002");
@@ -104,7 +104,7 @@ class AssociationsUtilTest {
     }
 
     @Test
-    void mapToUnauthorisedUpdateCarriesOutUpdateCorrectly(){
+    void mapToUnauthorisedUpdateCarriesOutUpdateCorrectly() {
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation002").getFirst();
         final var targetUser = testDataManager.fetchUserDtos("MKUser002").getFirst();
         final var update = mapToUnauthorisedUpdate(targetAssociation, targetUser);
@@ -115,17 +115,17 @@ class AssociationsUtilTest {
     }
 
     @Test
-    void fetchAllStatusesWithoutWithNullThrowsNullPointerException(){
+    void fetchAllStatusesWithoutWithNullThrowsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> fetchAllStatusesWithout(null));
     }
 
     @Test
-    void fetchAllStatusesWithoutWithEmptyListRetrievesAllStatuses(){
+    void fetchAllStatusesWithoutWithEmptyListRetrievesAllStatuses() {
         Assertions.assertEquals(5, fetchAllStatusesWithout(Set.of()).size());
     }
 
     @Test
-    void fetchAllStatusesWithoutRetrievesSpecifiedStatuses(){
+    void fetchAllStatusesWithoutRetrievesSpecifiedStatuses() {
         final var statuses = fetchAllStatusesWithout(Set.of(StatusEnum.CONFIRMED, StatusEnum.REMOVED, StatusEnum.AWAITING_APPROVAL, StatusEnum.UNAUTHORISED));
         Assertions.assertEquals(1, statuses.size());
         Assertions.assertTrue(statuses.contains(StatusEnum.MIGRATED));

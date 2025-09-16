@@ -32,7 +32,7 @@ public class TestDataManager {
 
     private static TestDataManager instance = null;
 
-    public static TestDataManager getInstance(){
+    public static TestDataManager getInstance() {
         if (Objects.isNull(instance)){
             instance = new TestDataManager();
         }
@@ -93,7 +93,7 @@ public class TestDataManager {
     private final Map<String, Supplier<User>> userDtoSuppliers = new HashMap<>();
     private final Map<String, Supplier<CompanyDetails>> companyDetailsDtoSuppliers = new HashMap<>();
 
-    private void instantiateAssociationDaoSuppliers(){
+    private void instantiateAssociationDaoSuppliers() {
         final Supplier<AssociationDao> WayneEnterprisesBatmanAssociationDaoSupplier = () -> {
             final var invitation = new InvitationDao();
             invitation.setInvitedBy("666");
@@ -1508,7 +1508,7 @@ public class TestDataManager {
     }
 
 
-    private void instantiateUserDtoSuppliers(){
+    private void instantiateUserDtoSuppliers() {
         userDtoSuppliers.put("000", () -> new User().userId("000").email("light.yagami@death.note"));
         userDtoSuppliers.put("111", () -> new User().userId("111").email("bruce.wayne@gotham.city").displayName("Batman"));
         userDtoSuppliers.put("222", () -> new User().userId("222").email("the.joker@gotham.city"));
@@ -1564,7 +1564,7 @@ public class TestDataManager {
         userDtoSuppliers.put("MiUser029", () -> new User().userId("MiUser029").email("miss.rivers.monkey.island@inugami-example.com").displayName("Miss Rivers"));
     }
 
-    private void instantiateCompanyDtoSuppliers(){
+    private void instantiateCompanyDtoSuppliers() {
         companyDetailsDtoSuppliers.put("111111", () -> new CompanyDetails().companyNumber("111111").companyName("Wayne Enterprises").companyStatus("active"));
         companyDetailsDtoSuppliers.put("333333", () -> new CompanyDetails().companyNumber("333333").companyName("Tesco").companyStatus("active"));
         companyDetailsDtoSuppliers.put("444444", () -> new CompanyDetails().companyNumber("444444").companyName("Sainsbury's").companyStatus("active"));
@@ -1596,7 +1596,7 @@ public class TestDataManager {
         companyDetailsDtoSuppliers.put("MICOMP011", () -> new CompanyDetails().companyNumber("MICOMP011").companyName("Sword Master's Dojo").companyStatus("active"));
     }
 
-    private TestDataManager(){
+    private TestDataManager() {
         instantiateAssociationDaoSuppliers();
         instantiateUserDtoSuppliers();
         instantiateCompanyDtoSuppliers();

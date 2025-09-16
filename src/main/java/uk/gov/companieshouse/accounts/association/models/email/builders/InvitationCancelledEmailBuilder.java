@@ -21,7 +21,7 @@ public class InvitationCancelledEmailBuilder extends EmailBuilder<InvitationCanc
     }
 
     @Override
-    protected InvitationCancelledEmailBuilder self(){
+    protected InvitationCancelledEmailBuilder self() {
         return this;
     }
 

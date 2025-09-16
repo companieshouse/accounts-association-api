@@ -23,7 +23,7 @@ public class InvitationDao {
         return this;
     }
 
-    public String getInvitedBy(){
+    public String getInvitedBy() {
         return invitedBy;
     }
 
@@ -36,7 +36,7 @@ public class InvitationDao {
         return this;
     }
 
-    public LocalDateTime getInvitedAt(){
+    public LocalDateTime getInvitedAt() {
         return invitedAt;
     }
 

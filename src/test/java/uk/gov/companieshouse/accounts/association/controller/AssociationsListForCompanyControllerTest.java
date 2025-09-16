@@ -480,7 +480,7 @@ class AssociationsListForCompanyControllerTest {
         Assertions.assertEquals("MKAssociation002", association.getId());
     }
 
-    static Stream<Arguments> getAssociationsForCompanyUserAndStatusHappyCaseScenarios(){
+    static Stream<Arguments> getAssociationsForCompanyUserAndStatusHappyCaseScenarios() {
         return Stream.of(
                 Arguments.of(", \"status\":[\"confirmed\", \"removed\"]"),
                 Arguments.of(", \"status\":[]"),
@@ -533,7 +533,7 @@ class AssociationsListForCompanyControllerTest {
         Assertions.assertEquals("MKAssociation001", association.getId());
     }
 
-    static Stream<Arguments> getAssociationsForCompanyUserMalformedScenarios(){
+    static Stream<Arguments> getAssociationsForCompanyUserMalformedScenarios() {
         return Stream.of(
                 Arguments.of("$$$$$" ,"MKCOMP001", ", \"status\":[\"confirmed\", \"removed\"]"),
                 Arguments.of("MKUser002" ,"$$$$$", ", \"status\":[\"confirmed\", \"removed\"]"),
@@ -563,7 +563,7 @@ class AssociationsListForCompanyControllerTest {
                         .header("ERIC-Identity-Type", "key")
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"user_email\":\"$\\(){}$$$$@mushroomkingdom\" "))
+                        .content("{\"user_email\":\"$\\() {}$$$$@mushroomkingdom\" "))
                 .andExpect(status().isBadRequest());
     }
 
@@ -591,7 +591,7 @@ class AssociationsListForCompanyControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    static Stream<Arguments> getAssociationsForCompanyMalformedBodyScenarios(){
+    static Stream<Arguments> getAssociationsForCompanyMalformedBodyScenarios() {
         return Stream.of(
                 Arguments.of(""),
                 Arguments.of("{ \"user_email\":\"111@mushroom.kingdom\", \"user_id\":\"111\" }")

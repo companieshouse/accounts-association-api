@@ -12,7 +12,7 @@ public class InvitationCancelledEmailData extends EmailData {
 
     private String personWhoCancelledInvite;
 
-    public InvitationCancelledEmailData(){}
+    public InvitationCancelledEmailData() {}
 
     public InvitationCancelledEmailData(String personWhoWasCancelled, String companyName, String personWhoCancelledInvite) {
         this.personWhoWasCancelled = personWhoWasCancelled;

@@ -28,13 +28,13 @@ public class EmailNotification {
         return this;
     }
 
-    public String toMessage(){
+    public String toMessage() {
         var message = String.format("%s notification sent to user at %s, regarding company %s.", messageType, sentTime.toString(), companyNumber);
         message += Objects.isNull(invitationExpiryTimestamp) ? "" : String.format(" Invitation expires at %s.", invitationExpiryTimestamp);
         return message;
     }
 
-    public String toMessageSendingFailureLoggingMessage(){
+    public String toMessageSendingFailureLoggingMessage() {
         var message = String.format("Failed to send %s notification to user at %s, regarding company %s.", messageType, sentTime.toString(), companyNumber);
         message += Objects.isNull(invitationExpiryTimestamp) ? "" : String.format(" Invitation would have expired at %s.", invitationExpiryTimestamp);
         return message;

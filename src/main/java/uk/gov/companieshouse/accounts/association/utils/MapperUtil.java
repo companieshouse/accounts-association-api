@@ -7,7 +7,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.Links;
 
 public final class MapperUtil {
 
-    private MapperUtil(){}
+    private MapperUtil() {}
 
     public static AssociationsList enrichWithMetadata(final Page<Association> page, final String endpointUrl) {
         final var pageIndex = page.getNumber();

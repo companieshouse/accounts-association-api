@@ -82,7 +82,7 @@ public class AssociationDao {
         return this;
     }
 
-    public String getId(){
+    public String getId() {
         return id;
     }
 
@@ -95,7 +95,7 @@ public class AssociationDao {
         return this;
     }
 
-    public String getCompanyNumber(){
+    public String getCompanyNumber() {
         return companyNumber;
     }
 
@@ -108,7 +108,7 @@ public class AssociationDao {
         return this;
     }
 
-    public String getUserId(){
+    public String getUserId() {
         return userId;
     }
 
@@ -121,7 +121,7 @@ public class AssociationDao {
         return this;
     }
 
-    public String getUserEmail(){
+    public String getUserEmail() {
         return userEmail;
     }
 
@@ -134,7 +134,7 @@ public class AssociationDao {
         return this;
     }
 
-    public String getStatus(){
+    public String getStatus() {
         return status;
     }
 
@@ -148,7 +148,7 @@ public class AssociationDao {
     }
 
 
-    public String getApprovalRoute(){
+    public String getApprovalRoute() {
         return approvalRoute;
     }
 
@@ -162,7 +162,7 @@ public class AssociationDao {
         return this;
     }
 
-    public List<InvitationDao> getInvitations(){
+    public List<InvitationDao> getInvitations() {
         return invitations;
     }
 
@@ -175,7 +175,7 @@ public class AssociationDao {
         return this;
     }
 
-    public LocalDateTime getApprovalExpiryAt(){
+    public LocalDateTime getApprovalExpiryAt() {
         return approvalExpiryAt;
     }
 
@@ -188,7 +188,7 @@ public class AssociationDao {
         return this;
     }
 
-    public LocalDateTime getApprovedAt(){
+    public LocalDateTime getApprovedAt() {
         return approvedAt;
     }
 
@@ -205,7 +205,7 @@ public class AssociationDao {
         return removedAt;
     }
 
-    public LocalDateTime getCreatedAt(){
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
@@ -218,7 +218,7 @@ public class AssociationDao {
         return this;
     }
 
-    public LocalDateTime getMigratedAt(){
+    public LocalDateTime getMigratedAt() {
         return migratedAt;
     }
 
@@ -231,7 +231,7 @@ public class AssociationDao {
         return this;
     }
 
-    public LocalDateTime getUnauthorisedAt(){
+    public LocalDateTime getUnauthorisedAt() {
         return unauthorisedAt;
     }
 
@@ -244,7 +244,7 @@ public class AssociationDao {
         return this;
     }
 
-    public String getUnauthorisedBy(){
+    public String getUnauthorisedBy() {
         return unauthorisedBy;
     }
 
@@ -258,7 +258,7 @@ public class AssociationDao {
         return this;
     }
 
-    public List<PreviousStatesDao> getPreviousStates(){
+    public List<PreviousStatesDao> getPreviousStates() {
         return previousStates;
     }
 
@@ -271,11 +271,11 @@ public class AssociationDao {
         return this;
     }
 
-    public String getEtag(){
+    public String getEtag() {
         return etag;
     }
 
-    public Integer getVersion(){
+    public Integer getVersion() {
         return version;
     }
 

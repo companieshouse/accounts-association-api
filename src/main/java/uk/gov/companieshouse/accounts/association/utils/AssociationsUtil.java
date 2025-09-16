@@ -25,7 +25,7 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 
 public final class AssociationsUtil {
 
-    private AssociationsUtil(){}
+    private AssociationsUtil() {}
 
     private static Update mapToBaseUpdate(final AssociationDao targetAssociation, final User targetUser, final String changedByUserId){
         LOGGER.debugContext(getXRequestId(), "Attempting to mapToBaseUpdate", null);
