@@ -60,15 +60,18 @@ class AssociationsListForCompanyControllerTest extends AbstractBaseIntegrationTe
     @Autowired
     private UsersService usersService;
 
-    @MockitoBean
-    private UserClient userClient;
-    @MockitoBean
-    private CompanyClient companyClient;
-
-    @MockitoBean
-    private EmailProducer emailProducer;
+    // Mock Kafka
+    // TODO: Replace with testcontainer instance
     @MockitoBean
     private KafkaProducerFactory kafkaProducerFactory;
+    @MockitoBean
+    private EmailProducer emailProducer;
+
+    // Mock external service client layer
+    @MockitoBean
+    private CompanyClient companyClient;
+    @MockitoBean
+    private UserClient userClient;
 
     private final TestDataManager testDataManager = TestDataManager.getInstance();
 

@@ -4,14 +4,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
+import static uk.gov.companieshouse.accounts.association.common.TestDataManager.REQUEST_HEADERS.ERIC_AUTHORISED_KEY_ROLES;
+import static uk.gov.companieshouse.accounts.association.common.TestDataManager.REQUEST_HEADERS.ERIC_IDENTITY;
+import static uk.gov.companieshouse.accounts.association.common.TestDataManager.REQUEST_HEADERS.ERIC_IDENTITY_TYPE_OAUTH;
+import static uk.gov.companieshouse.accounts.association.common.TestDataManager.REQUEST_HEADERS.X_REQUEST_ID;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -19,7 +23,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,63 +33,62 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
-import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.accounts.association.service.client.CompanyClient;
+import uk.gov.companieshouse.accounts.association.service.client.UserClient;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
-import uk.gov.companieshouse.api.handler.exception.URIValidationException;
+import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
 @AutoConfigureMockMvc
-@SpringBootTest
 @ExtendWith(MockitoExtension.class)
-@Tag("integration-test")
-class UserCompanyInvitationsControllerTest {
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
+@TestPropertySource(locations = "classpath:application-test.properties")
+class UserCompanyInvitationsControllerTest extends AbstractBaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @MockitoBean
+    @Autowired
+    private AssociationsRepository associationsRepository;
+    @Autowired
     private CompanyService companyService;
-
-    @MockitoBean
+    @Autowired
     private UsersService usersService;
 
+    // Mock Kafka
+    // TODO: Replace with testcontainer instance
+    @MockitoBean
+    private KafkaProducerFactory kafkaProducerFactory;
     @MockitoBean
     private EmailProducer emailProducer;
 
+    // Mock external service client layer
     @MockitoBean
-    private KafkaProducerFactory kafkaProducerFactory;
-
-    @Autowired
-    private AssociationsRepository associationsRepository;
-
-    private static final TestDataManager testDataManager = TestDataManager.getInstance();
+    private CompanyClient companyClient;
+    @MockitoBean
+    private UserClient userClient;
 
     @Value("${invitation.url}")
     private String COMPANY_INVITATIONS_URL;
 
+    private static final TestDataManager testDataManager = TestDataManager.getInstance();
+    private ComparisonUtils comparisonUtils = new ComparisonUtils();
+
     private CountDownLatch latch;
 
-    private Mockers mockers;
-
-    private ComparisonUtils comparisonUtils = new ComparisonUtils();
+    private final String ASSOCIATIONS_INVITATIONS_URL = "/associations/invitations";
 
     private void setEmailProducerCountDownLatch(int countdown){
         latch = new CountDownLatch(countdown);
@@ -97,54 +99,61 @@ class UserCompanyInvitationsControllerTest {
     }
 
     @BeforeEach
-    public void setup() throws IOException, URIValidationException {
-        mockers = new Mockers(null, emailProducer, companyService, usersService);
+    public void setup() {
     }
 
     @Test
     void fetchActiveInvitationsForUserWithoutEricIdentityReturnsForbidden() throws Exception {
-        mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
-                        .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*"))
+        mockMvc.perform(get(ASSOCIATIONS_INVITATIONS_URL + "?page_index=1&items_per_page=1")
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void fetchActiveInvitationsForUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetailsNotFound("$$$$");
-
-        mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "$$$$")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*"))
+        final var malformedUserId = "$$$$";
+        // There's no regex on the interface for this test, so nothing to validate what "malformed" means
+        // TODO: confirm against regex impl once available and remove these comments
+        mockMvc.perform(get(ASSOCIATIONS_INVITATIONS_URL + "?page_index=1&items_per_page=1")
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, malformedUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void fetchActiveInvitationsForUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetailsNotFound("9191");
+        final var requestingUserId = "9191";
 
-        mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9191")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*"))
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+
+        mockMvc.perform(get(ASSOCIATIONS_INVITATIONS_URL + "?page_index=1&items_per_page=1")
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void fetchActiveInvitationsForUserRetrievesActiveInvitationsInCorrectOrderAndPaginatesCorrectly() throws Exception {
+        final var requestingUserId = "000";
+        final var targetUserId = "444";
+
         associationsRepository.insert(testDataManager.fetchAssociationDaos("37", "38"));
-//        mockers.mockUsersServiceFetchUserDetails("000", "444");
+
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
+        when(userClient.requestUserDetails(targetUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(targetUserId).getFirst());
 
         final var response =
-                mockMvc.perform(get("/associations/invitations?page_index=0&items_per_page=1")
-                                .header("X-Request-Id", "theId123")
-                                .header("Eric-identity", "000")
-                                .header("ERIC-Identity-Type", "oauth2")
-                                .header("ERIC-Authorised-Key-Roles", "*"))
+                mockMvc.perform(get(ASSOCIATIONS_INVITATIONS_URL + "?page_index=0&items_per_page=1")
+                                .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                                .header(ERIC_IDENTITY.key, requestingUserId)
+                                .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                                .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value))
                         .andExpect(status().isOk());
 
         final var invitations = parseResponseTo(response, InvitationsList.class).getItems();
@@ -159,14 +168,16 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void fetchActiveInvitationsForUserWithoutActiveInvitationsReturnsEmptyList() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetails("111");
+        final var requestingUserId = "111";
+
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
 
         final var response =
-                mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
-                                .header("X-Request-Id", "theId123")
-                                .header("Eric-identity", "111")
-                                .header("ERIC-Identity-Type", "oauth2")
-                                .header("ERIC-Authorised-Key-Roles", "*"))
+                mockMvc.perform(get(ASSOCIATIONS_INVITATIONS_URL + "?page_index=1&items_per_page=1")
+                                .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                                .header(ERIC_IDENTITY.key, requestingUserId)
+                                .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                                .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value))
                         .andExpect(status().isOk());
 
         final var invitations = parseResponseTo(response, InvitationsList.class);
@@ -175,12 +186,14 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithoutXRequestIdReturnsBadRequest() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetails("9999");
+        final var requestingUserId = "9999";
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
+
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
                 .andExpect(status().isBadRequest());
@@ -188,10 +201,10 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithoutEricIdentityReturnsForbidden() throws Exception {
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
                 .andExpect(status().isForbidden());
@@ -199,13 +212,16 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetailsNotFound("$$$$");
-        mockMvc.perform(post("/associations/invitations")
+        final var malformedRequestingUserId = "$$$$";
 
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "$$$$")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        //TODO: should this be treated as malformed or just passed along to not be found?
+//        when(userClient.requestUserDetails(malformedRequestingUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, malformedRequestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
                 .andExpect(status().isForbidden());
@@ -213,13 +229,15 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetailsNotFound("9191");
+        final var requestingUserId = "9191";
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9191")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
                 .andExpect(status().isForbidden());
@@ -227,26 +245,26 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithoutRequestBodyReturnsBadRequest() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetails("9999");
+        final var requestingUserId = "9999";
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void inviteUserWithoutCompanyNumberReturnsBadRequest() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetails("9999");
+        final var requestingUserId = "9999";
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
                 .andExpect(status().isBadRequest());
@@ -254,13 +272,13 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithMalformedCompanyNumberReturnsBadRequest() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetails("9999");
+        final var requestingUserId = "9999";
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"$$$$$$\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
                 .andExpect(status().isBadRequest());
@@ -268,14 +286,17 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithNonexistentCompanyNumberReturnsBadRequest() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetails("9999");
-        mockers.mockCompanyServiceFetchCompanyProfileNotFound("919191");
+        final var requestingUserId = "9999";
+        final var companyNumber = "919191";
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
+        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("Company not found", new Exception()));
+
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, "9999")
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"919191\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
                 .andExpect(status().isBadRequest());
@@ -283,13 +304,13 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithoutInviteeEmailIdReturnsBadRequest() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetails("9999");
+        final var requestingUserId = "9999";
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"333333\"}"))
                 .andExpect(status().isBadRequest());
@@ -297,13 +318,13 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithMalformedInviteeEmailIdReturnsBadRequest() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetails("9999");
+        final var requestingUserId = "9999";
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"$$$\"}"))
                 .andExpect(status().isBadRequest());
@@ -311,16 +332,24 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWhereAssociationBetweenInviteeEmailAndCompanyNumberExistsAndInviteeUserIsFoundPerformsSwapAndUpdateOperations() throws Exception {
-        associationsRepository.insert(testDataManager.fetchAssociationDaos("19", "36"));
-//        mockers.mockUsersServiceFetchUserDetails("9999");
-        mockers.mockUsersServiceSearchUserDetails("000");
-        mockers.mockCompanyServiceFetchCompanyProfile("444444");
+        final var requestingUserId = "9999";
+        final var targetUserId = "000";
+        final var companyNumber = "444444";
+        final var targetUserDetails = testDataManager.fetchUserDtos(targetUserId).getFirst();
+        final var usersList = new UsersList();
+        usersList.add(targetUserDetails);
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        associationsRepository.insert(testDataManager.fetchAssociationDaos("19", "36"));
+
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
+        when(userClient.requestUserDetailsByEmail(targetUserDetails.getEmail(), X_REQUEST_ID.value)).thenReturn(usersList);
+        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchCompanyDetailsDtos(companyNumber).getFirst());
+
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}"))
                 .andExpect(status().isCreated());
@@ -342,19 +371,25 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWhereAssociationBetweenInviteeEmailAndCompanyNumberExistsAndInviteeUserIsNotFoundDoesNotPerformSwapButDoesPerformUpdateOperation() throws Exception {
+        final var requestingUserId = "9999";
+        final var targetUserId = "000";
+        final var companyNumber = "444444";
+        final var targetUserDetails = testDataManager.fetchUserDtos(targetUserId).getFirst();
+        final var usersList = new UsersList();
+
         associationsRepository.insert(testDataManager.fetchAssociationDaos("19", "36"));
-//        mockers.mockUsersServiceFetchUserDetails("9999");
-//        mockers.mockUsersServiceToFetchUserDetailsRequest("9999");
-        mockers.mockUsersServiceSearchUserDetailsEmptyList("light.yagami@death.note");
-        mockers.mockCompanyServiceFetchCompanyProfile("444444");
+
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
+        when(userClient.requestUserDetailsByEmail(targetUserDetails.getEmail(), X_REQUEST_ID.value)).thenReturn(usersList);
+        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchCompanyDetailsDtos(companyNumber).getFirst());
 
         setEmailProducerCountDownLatch(2);
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}"))
                 .andExpect(status().isCreated());
@@ -379,19 +414,26 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberExistsDoesNotPerformSwapButDoesPerformUpdateOperation() throws Exception {
+        final var requestingUserId = "9999";
+        final var targetUserId = "000";
+        final var companyNumber = "444444";
+        final var targetUserDetails = testDataManager.fetchUserDtos(targetUserId).getFirst();
+        final var usersList = new UsersList();
+        usersList.add(targetUserDetails);
+
         associationsRepository.insert(testDataManager.fetchAssociationDaos("19", "36"));
-//        mockers.mockUsersServiceFetchUserDetails("9999");
-//        mockers.mockUsersServiceToFetchUserDetailsRequest("9999");
-        mockers.mockUsersServiceSearchUserDetails("000");
-        mockers.mockCompanyServiceFetchCompanyProfile("444444");
+
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
+        when(userClient.requestUserDetailsByEmail(targetUserDetails.getEmail(), X_REQUEST_ID.value)).thenReturn(usersList);
+        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchCompanyDetailsDtos(companyNumber).getFirst());
 
         setEmailProducerCountDownLatch(2);
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}"))
                 .andExpect(status().isCreated());
@@ -416,16 +458,24 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberDoesNotExistCreatesNewAssociation() throws Exception {
-        associationsRepository.insert(testDataManager.fetchAssociationDaos("19"));
-//        mockers.mockUsersServiceFetchUserDetails("9999");
-        mockers.mockUsersServiceSearchUserDetails("000");
-        mockers.mockCompanyServiceFetchCompanyProfile("444444");
+        final var requestingUserId = "9999";
+        final var targetUserId = "000";
+        final var companyNumber = "444444";
+        final var targetUserDetails = testDataManager.fetchUserDtos(targetUserId).getFirst();
+        final var usersList = new UsersList();
+        usersList.add(targetUserDetails);
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        associationsRepository.insert(testDataManager.fetchAssociationDaos("19"));
+
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
+        when(userClient.requestUserDetailsByEmail(targetUserDetails.getEmail(), X_REQUEST_ID.value)).thenReturn(usersList);
+        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchCompanyDetailsDtos(companyNumber).getFirst());
+
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}"))
                 .andExpect(status().isCreated());
@@ -446,19 +496,25 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWhereAssociationBetweenInviteeUserEmailAndCompanyNumberDoesNotExistAndInviteeUserIsNotFoundCreatesNewAssociation() throws Exception {
+        final var requestingUserId = "9999";
+        final var targetUserId = "000";
+        final var companyNumber = "444444";
+        final var targetUserDetails = testDataManager.fetchUserDtos(targetUserId).getFirst();
+        final var usersList = new UsersList();
+
         associationsRepository.insert(testDataManager.fetchAssociationDaos("19"));
-//        mockers.mockUsersServiceFetchUserDetails("9999");
-//        mockers.mockUsersServiceToFetchUserDetailsRequest("9999");
-        mockers.mockUsersServiceSearchUserDetailsEmptyList("light.yagami@death.note");
-        mockers.mockCompanyServiceFetchCompanyProfile("444444");
+
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
+        when(userClient.requestUserDetailsByEmail(targetUserDetails.getEmail(), X_REQUEST_ID.value)).thenReturn(usersList);
+        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchCompanyDetailsDtos(companyNumber).getFirst());
 
         setEmailProducerCountDownLatch(2);
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, "9999")
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"light.yagami@death.note\"}"))
                 .andExpect(status().isCreated());
@@ -482,16 +538,24 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWhereInviteeUserIsFoundAndAssociationBetweenInviteeUserIdAndCompanyNumberExistsDoesNotPerformSwapButThrowsBadRequest() throws Exception {
-        associationsRepository.insert(testDataManager.fetchAssociationDaos("18", "35"));
-//        mockers.mockUsersServiceFetchUserDetails("9999");
-        mockers.mockUsersServiceSearchUserDetails("000");
-        mockers.mockCompanyServiceFetchCompanyProfile("333333");
+        final var requestingUserId = "9999";
+        final var targetUserId = "000";
+        final var companyNumber = "333333";
+        final var targetUserDetails = testDataManager.fetchUserDtos(targetUserId).getFirst();
+        final var usersList = new UsersList();
+        usersList.add(targetUserDetails);
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        associationsRepository.insert(testDataManager.fetchAssociationDaos("18", "35"));
+
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
+        when(userClient.requestUserDetailsByEmail(targetUserDetails.getEmail(), X_REQUEST_ID.value)).thenReturn(usersList);
+        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchCompanyDetailsDtos(companyNumber).getFirst());
+
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"light.yagami@death.note\"}"))
                 .andExpect(status().isBadRequest()).andReturn();
@@ -499,20 +563,26 @@ class UserCompanyInvitationsControllerTest {
 
     @Test
     void inviteUserWithUserThatHasDisplayNameUsesDisplayName()  throws Exception {
+        final var requestingUserId = "9999";
+        final var targetUserId = "111";
+        final var companyNumber = "444444";
+        final var targetUserDetails = testDataManager.fetchUserDtos(targetUserId).getFirst();
+        final var usersList = new UsersList();
+        usersList.add(targetUserDetails);
 
         associationsRepository.insert(testDataManager.fetchAssociationDaos("19"));
-//        mockers.mockUsersServiceFetchUserDetails("9999");
-//        mockers.mockUsersServiceToFetchUserDetailsRequest("9999");
-        mockers.mockUsersServiceSearchUserDetails("111");
-        mockers.mockCompanyServiceFetchCompanyProfile("444444");
+
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
+        when(userClient.requestUserDetailsByEmail(targetUserDetails.getEmail(), X_REQUEST_ID.value)).thenReturn(usersList);
+        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchCompanyDetailsDtos(companyNumber).getFirst());
 
         setEmailProducerCountDownLatch(2);
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
-                        .header("ERIC-Identity-Type", "oauth2")
-                        .header("ERIC-Authorised-Key-Roles", "*")
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"444444\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
                 .andExpect(status().isCreated());
@@ -531,17 +601,24 @@ class UserCompanyInvitationsControllerTest {
     @ParameterizedTest
     @MethodSource("inviteUserAppliedToMigratedAssociationScenarios")
     void inviteUserCanBeAppliedToMigratedAssociations(final AssociationDao targetAssociation) throws Exception {
+        final var requestingUserId = "MKUser002";
+        final var targetUserId = "MKUser001";
+        final var companyNumber = "MKCOMP001";
+        final var targetUserDetails = testDataManager.fetchUserDtos(targetUserId).getFirst();
+        final var usersList = new UsersList();
+        usersList.add(targetUserDetails);
         final var requestingAssociation = testDataManager.fetchAssociationDaos("MKAssociation002").getFirst();
 
-        associationsRepository.insert(List.of(requestingAssociation, targetAssociation));
-//        mockers.mockUsersServiceFetchUserDetails("MKUser002");
-        mockers.mockUsersServiceSearchUserDetails("MKUser001");
-        mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
+        when(userClient.requestUserDetailsByEmail(targetUserDetails.getEmail(), X_REQUEST_ID.value)).thenReturn(usersList);
+        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchCompanyDetailsDtos(companyNumber).getFirst());
 
-        mockMvc.perform(post("/associations/invitations")
-                        .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "MKUser002")
-                        .header("ERIC-Identity-Type", "oauth2")
+        associationsRepository.insert(List.of(requestingAssociation, targetAssociation));
+
+        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+                        .header(ERIC_IDENTITY.key, requestingUserId)
+                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"company_number\":\"MKCOMP001\",\"invitee_email_id\":\"mario@mushroom.kingdom\"}"))
                 .andExpect(status().isCreated());
@@ -561,7 +638,7 @@ class UserCompanyInvitationsControllerTest {
 
     @AfterEach
     public void after() {
-        mongoTemplate.dropCollection(AssociationDao.class);
+        associationsRepository.deleteAll();
     }
 
 }
