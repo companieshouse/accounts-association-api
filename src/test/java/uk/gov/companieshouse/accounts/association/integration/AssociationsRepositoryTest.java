@@ -1,50 +1,61 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import jakarta.validation.ConstraintViolationException;
-import org.junit.jupiter.api.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.MethodMode;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
+import uk.gov.companieshouse.accounts.association.service.client.CompanyClient;
+import uk.gov.companieshouse.accounts.association.service.client.UserClient;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-@SpringBootTest
-@Tag("integration-test")
-class AssociationsRepositoryTest {
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
-
-    @MockBean
-    private EmailProducer emailProducer;
-
-    @MockBean
-    private KafkaProducerFactory kafkaProducerFactory;
+@AutoConfigureMockMvc
+@ExtendWith(MockitoExtension.class)
+@TestPropertySource(locations = "classpath:application-test.properties")
+class AssociationsRepositoryTest extends AbstractBaseIntegrationTest {
 
     @Autowired
     private AssociationsRepository associationsRepository;
+
+    // Mock Kafka
+    // TODO: Replace with testcontainer instance
+    @MockitoBean
+    private KafkaProducerFactory kafkaProducerFactory;
+    @MockitoBean
+    private EmailProducer emailProducer;
+
+    // Mock external service client layer
+    @MockitoBean
+    private CompanyClient companyClient;
+    @MockitoBean
+    private UserClient userClient;
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
@@ -507,6 +518,6 @@ class AssociationsRepositoryTest {
 
     @AfterEach
     public void after() {
-        mongoTemplate.dropCollection(AssociationDao.class);
+        associationsRepository.deleteAll();
     }
 }
