@@ -38,6 +38,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
@@ -60,6 +61,7 @@ import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 @AutoConfigureMockMvc
 @ExtendWith(MockitoExtension.class)
 @ComponentScan(basePackages = "uk.gov.companieshouse.email_producer")
+@TestPropertySource(locations = "classpath:application-test.properties")
 class UserCompanyAssociationsControllerTest extends AbstractBaseIntegrationTest {
 
     @Value("${invitation.url}")
@@ -91,11 +93,10 @@ class UserCompanyAssociationsControllerTest extends AbstractBaseIntegrationTest 
     @MockitoBean
     private UserClient userClient;
 
-    private final String ASSOCIATIONS_URL = "/associations";
-
     private final ComparisonUtils comparisonUtils = new ComparisonUtils();
     private final TestDataManager testDataManager = TestDataManager.getInstance();
-    private static final String DEFAULT_KIND = "association";
+
+    private final String ASSOCIATIONS_URL = "/associations";
     private final LocalDateTime now = LocalDateTime.now();
     private CountDownLatch latch;
 
@@ -399,6 +400,7 @@ class UserCompanyAssociationsControllerTest extends AbstractBaseIntegrationTest 
         Assertions.assertNotNull(associationOne.getCreatedAt());
         Assertions.assertEquals(localDateTimeToNormalisedString(now.plusDays(1)), localDateTimeToNormalisedString(associationOne.getApprovedAt().toLocalDateTime()));
         Assertions.assertEquals(localDateTimeToNormalisedString(now.plusDays(2)), localDateTimeToNormalisedString(associationOne.getRemovedAt().toLocalDateTime()));
+        String DEFAULT_KIND = "association";
         Assertions.assertEquals(DEFAULT_KIND, associationOne.getKind());
         Assertions.assertEquals(ApprovalRouteEnum.AUTH_CODE, associationOne.getApprovalRoute());
         Assertions.assertEquals(localDateTimeToNormalisedString(now.plusDays(3)), reduceTimestampResolution(associationOne.getApprovalExpiryAt()));

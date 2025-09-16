@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,7 @@ import uk.gov.companieshouse.accounts.association.service.client.UserClient;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.utils.AssociationDaoStreamSplitter;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 
@@ -51,12 +54,22 @@ public class UsersService {
         final var xRequestId = getXRequestId();
         final var userDetailsMap = new ConcurrentHashMap<String, User>();
 
-        associations.parallel()
-                .map(AssociationDao::getUserId)
-                .forEach(userId -> {
-                    final var userDetails = fetchUserDetails(userId, xRequestId);
-                    userDetailsMap.put(userId, userDetails);
-                });
+        final var splitStreams = associations.parallel()
+                .collect(Collector.of(AssociationDaoStreamSplitter::new, AssociationDaoStreamSplitter::accept, AssociationDaoStreamSplitter::merge));
+
+        if (!splitStreams.userIds.isEmpty()) {
+            splitStreams.userIds.parallelStream()
+                    .forEach(userId -> {
+                        final var userDetails = fetchUserDetails(userId, xRequestId);
+                        userDetailsMap.put(userId, userDetails);
+                    });
+        }
+
+        if (!splitStreams.userEmails.isEmpty()) {
+            splitStreams.userEmails.parallelStream()
+                    .forEach(userEmail -> fetchUserDetailsByEmail(userEmail, xRequestId)
+                    .forEach( user -> userDetailsMap.put(user.getUserId(), user)));
+        }
 
         return userDetailsMap;
     }
