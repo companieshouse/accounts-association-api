@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.reactive.function.client.WebClient;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
+import uk.gov.companieshouse.accounts.association.common.Mockers.UriType;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
@@ -64,13 +65,13 @@ class UsersServiceTest {
 
     @Test
     void fetchUserDetailsWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
-        mockers.mockWebClientForFetchUserDetailsJsonParsingError( "111", true );
+        mockers.mockWebClientForFetchUserDetailsJsonParsingError( "111", false );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails( "111", "id123" ) );
     }
 
     @Test
     void fetchUserDetailsReturnsSpecifiedUser() throws JsonProcessingException {
-        mockers.mockWebClientForFetchUserDetails( true,"111" );
+        mockers.mockWebClientForFetchUserDetails( false,"111" );
         Assertions.assertEquals( "Batman", usersService.fetchUserDetails( "111", "id123" ).getDisplayName() );
     }
 
@@ -103,14 +104,14 @@ class UsersServiceTest {
     @Test
     void fetchUserDetailsWithStreamWithArbitraryErrorReturnsInternalServerErrorRuntimeException(){
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
-        mockers.mockWebClientForFetchUserDetailsJsonParsingError( "111", true );
+        mockers.mockWebClientForFetchUserDetailsJsonParsingError( "111", false );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails( Stream.of( associationDao ) ) );
     }
 
     @Test
     void fetchUserDetailsWithStreamReturnsMap() throws JsonProcessingException {
         final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
-        mockers.mockWebClientForFetchUserDetails( true, "111");
+        mockers.mockWebClientForFetchUserDetails( false, "111");
         final var users = usersService.fetchUserDetails( Stream.of( associationDao, associationDao ) );
 
         Assertions.assertEquals( 1, users.size() );
@@ -127,10 +128,10 @@ class UsersServiceTest {
     void searchUserDetailWithNullOrMalformedUserEmailThrowsInternalServerErrorRuntimeException() {
         final var emails = new ArrayList<String>();
         emails.add( null );
-        mockers.mockWebClientForSearchUserDetailsErrorResponse( null, 400, true );
+        mockers.mockWebClientForSearchUserDetailsErrorResponse( null, 400, UriType.FUNCTION );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( emails ) );
 
-        mockers.mockWebClientForSearchUserDetailsErrorResponse( "£$@123", 400, true );
+        mockers.mockWebClientForSearchUserDetailsErrorResponse( "£$@123", 400, UriType.FUNCTION );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "£$@123" ) ) );
     }
 
@@ -150,7 +151,7 @@ class UsersServiceTest {
 
     @Test
     void searchUserDetailsWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
-        mockers.mockWebClientForSearchUserDetailsJsonParsingError("bruce.wayne+@gotham.city", false);
+        mockers.mockWebClientForSearchUserDetailsJsonParsingError("bruce.wayne+@gotham.city", UriType.FUNCTION );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "bruce.wayne+@gotham.city" ) ) );
     }
 
@@ -196,7 +197,7 @@ class UsersServiceTest {
         request.addHeader( ERIC_IDENTITY, requestingUser.getUserId() );
         RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).build() );
 
-        mockers.mockWebClientForFetchUserDetails( true, "MKUser002" );
+        mockers.mockWebClientForFetchUserDetails( false, "MKUser002" );
 
         Assertions.assertEquals( targetUser, usersService.fetchUserDetails( targetAssociation ) );
     }
