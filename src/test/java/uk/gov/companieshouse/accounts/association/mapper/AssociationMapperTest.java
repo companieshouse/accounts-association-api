@@ -60,19 +60,19 @@ class AssociationMapperTest {
     }
 
     @Test
-    void localDateTimeToOffsetDateTimeWithNullReturnsNull(){
+    void localDateTimeToOffsetDateTimeWithNullReturnsNull() {
         Assertions.assertNull(associationMapper.localDateTimeToOffsetDateTime(null));
     }
 
     @Test
-    void localDateTimeToOffsetDateTimeReturnsCorrectTimestamp(){
+    void localDateTimeToOffsetDateTimeReturnsCorrectTimestamp() {
         final var inputDate = LocalDateTime.now();
         final var outputDate = associationMapper.localDateTimeToOffsetDateTime(inputDate);
         Assertions.assertEquals(localDateTimeToNormalisedString(inputDate), reduceTimestampResolution(outputDate.toString()));
     }
 
     @Test
-    void enrichWithUserDetailsUsesDataFromInputObject(){
+    void enrichWithUserDetailsUsesDataFromInputObject() {
         final var user = testDataManager.fetchUserDtos("111").getFirst();
         final var associationPreprocessed = testDataManager.fetchAssociationDto("1", user).userEmail(null).displayName(null);
 
@@ -83,7 +83,7 @@ class AssociationMapperTest {
     }
 
     @Test
-    void enrichWithUserDetailsRetrievesDataIfInputObjectIsNull(){
+    void enrichWithUserDetailsRetrievesDataIfInputObjectIsNull() {
         final var user = testDataManager.fetchUserDtos("111").getFirst();
         final var associationPreprocessed = testDataManager.fetchAssociationDto("1", user).userEmail(null).displayName(null);
 
@@ -96,7 +96,7 @@ class AssociationMapperTest {
     }
 
     @Test
-    void enrichWithUserDetailsUsesDefaultDataIfInputObjectAndUserIdAreNull(){
+    void enrichWithUserDetailsUsesDefaultDataIfInputObjectAndUserIdAreNull() {
         final var user = testDataManager.fetchUserDtos("111").getFirst();
         final var associationPreprocessed = testDataManager.fetchAssociationDto("1", user).userId(null).displayName(null);
 
@@ -107,7 +107,7 @@ class AssociationMapperTest {
     }
 
     @Test
-    void enrichWithCompanyDetailsUsesDataFromInputObject(){
+    void enrichWithCompanyDetailsUsesDataFromInputObject() {
         final var user = testDataManager.fetchUserDtos("111").getFirst();
         final var company = testDataManager.fetchCompanyDetailsDtos("111111").getFirst();
         final var associationPreprocessed = testDataManager.fetchAssociationDto("1", user).companyName(null).companyStatus(null);
@@ -119,7 +119,7 @@ class AssociationMapperTest {
     }
 
     @Test
-    void enrichWithCompanyDetailsRetrievesDataIfInputObjectIsNull(){
+    void enrichWithCompanyDetailsRetrievesDataIfInputObjectIsNull() {
         final var user = testDataManager.fetchUserDtos("111").getFirst();
         final var associationPreprocessed = testDataManager.fetchAssociationDto("1", user).companyName(null).companyStatus(null);
 
@@ -132,7 +132,7 @@ class AssociationMapperTest {
     }
 
     @Test
-    void enrichAssociationWithLinksAndKindCorrectlyUpdatesAssociation(){
+    void enrichAssociationWithLinksAndKindCorrectlyUpdatesAssociation() {
         final var association = new Association().id("1");
         associationMapper.enrichAssociationWithLinksAndKind(association);
         Assertions.assertEquals("/associations/1", association.getLinks().getSelf());
@@ -140,11 +140,11 @@ class AssociationMapperTest {
     }
 
     @Test
-    void daoToDtoWithNullAssociationDaoReturnsNull(){
+    void daoToDtoWithNullAssociationDaoReturnsNull() {
         Assertions.assertNull(associationMapper.daoToDto(null, null, null));
     }
 
-    static Stream<Arguments> daoToDtoTestData(){
+    static Stream<Arguments> daoToDtoTestData() {
         final var associationDao = testDataManager.fetchAssociationDaos("1").getFirst();
         final var userDto = testDataManager.fetchUserDtos("111").getFirst();
         final var companyDto = testDataManager.fetchCompanyDetailsDtos("111111").getFirst();

@@ -15,7 +15,7 @@ public class StaticPropertyUtil {
     public static final int DAYS_SINCE_INVITE_TILL_EXPIRES = 30;
 
     @PostConstruct
-    public void init(){
+    public void init() {
         StaticPropertyUtil.APPLICATION_NAMESPACE = applicationNameSpace;
     }
 

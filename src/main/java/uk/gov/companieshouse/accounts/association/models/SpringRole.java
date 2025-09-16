@@ -12,7 +12,7 @@ public enum SpringRole {
 
     SpringRole(final String springRole){ value = springRole; }
 
-    public String getValue(){
+    public String getValue() {
         return value;
     }
 

@@ -37,24 +37,24 @@ class AssociationsListUserMapperTest {
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
     @BeforeEach
-    void setup(){
+    void setup() {
         associationsListUserMapper = new AssociationsListUserMapperImpl();
         associationsListUserMapper.usersService = usersService;
         associationsListUserMapper.companyService = companyService;
     }
 
     @Test
-    void daoToDtoThrowsIllegalArgumentExceptionWhenUserIsNull(){
+    void daoToDtoThrowsIllegalArgumentExceptionWhenUserIsNull() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> associationsListUserMapper.daoToDto(Page.empty(), null));
     }
 
     @Test
-    void daoToDtoThrowsNullPointerExceptionWhenPageIsNull(){
+    void daoToDtoThrowsNullPointerExceptionWhenPageIsNull() {
         Assertions.assertThrows(NullPointerException.class, () -> associationsListUserMapper.daoToDto(null, new User()));
     }
 
     @Test
-    void daoToDtoDoesMappingCorrectlyForLastPage(){
+    void daoToDtoDoesMappingCorrectlyForLastPage() {
         final var associationDaos = testDataManager.fetchAssociationDaos("18", "19");
         final var user = testDataManager.fetchUserDtos("9999").getFirst();
         final var companies = testDataManager.fetchCompanyDetailsDtos("333333", "444444");
@@ -76,7 +76,7 @@ class AssociationsListUserMapperTest {
     }
 
     @Test
-    void daoToDtoDoesMappingCorrectlyForIntermediatePage(){
+    void daoToDtoDoesMappingCorrectlyForIntermediatePage() {
         final var associationDaos = testDataManager.fetchAssociationDaos("18", "19");
         final var user = testDataManager.fetchUserDtos("9999").getFirst();
         final var companies = testDataManager.fetchCompanyDetailsDtos("333333", "444444");
@@ -98,7 +98,7 @@ class AssociationsListUserMapperTest {
     }
 
     @Test
-    void daoToDtoDoesNothingWhenPageIsEmpty(){
+    void daoToDtoDoesNothingWhenPageIsEmpty() {
         final var user = testDataManager.fetchUserDtos("9999").getFirst();
 
         final var content = new PageImpl<AssociationDao>(List.of(), PageRequest.of(0, 2), 0);

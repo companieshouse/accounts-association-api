@@ -38,7 +38,7 @@ class RequestLifecycleInterceptorTest {
     private final TestDataManager testDataManager = TestDataManager.getInstance();
 
     @Test
-    void preHandleWithOAuth2RequestSetsRequestContextWithUserAndReturnsTrue(){
+    void preHandleWithOAuth2RequestSetsRequestContextWithUserAndReturnsTrue() {
         final var user = testDataManager.fetchUserDtos("111").getFirst();
 
         final var request = new MockHttpServletRequest();
@@ -63,7 +63,7 @@ class RequestLifecycleInterceptorTest {
     }
 
     @Test
-    void preHandleWithOAuth2RequestWithNonexistentUserDoesNotSetRequestContextAndReturnsFalse(){
+    void preHandleWithOAuth2RequestWithNonexistentUserDoesNotSetRequestContextAndReturnsFalse() {
         final var user = testDataManager.fetchUserDtos("111").getFirst();
 
         final var request = new MockHttpServletRequest();
@@ -82,7 +82,7 @@ class RequestLifecycleInterceptorTest {
     }
 
     @Test
-    void preHandleWithKeyRequestReturnsTrue(){
+    void preHandleWithKeyRequestReturnsTrue() {
         final var request = new MockHttpServletRequest();
         request.addHeader("X-Request-Id", "theId123");
         request.addHeader("Eric-Identity", "theKey");
@@ -95,7 +95,7 @@ class RequestLifecycleInterceptorTest {
     }
 
     @Test
-    void afterCompletionClearsRequestContext(){
+    void afterCompletionClearsRequestContext() {
         final var request = new MockHttpServletRequest();
         request.addHeader("X-Request-Id", "theId123");
         request.addHeader("Eric-Identity", "111");
@@ -117,7 +117,7 @@ class RequestLifecycleInterceptorTest {
     }
 
     @AfterEach
-    void teardown(){
+    void teardown() {
         RequestContext.clear();
     }
 

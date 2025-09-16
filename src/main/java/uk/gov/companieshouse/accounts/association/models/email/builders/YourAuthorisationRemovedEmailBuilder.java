@@ -14,7 +14,7 @@ public class YourAuthorisationRemovedEmailBuilder extends EmailBuilder<YourAutho
     }
 
     @Override
-    protected YourAuthorisationRemovedEmailBuilder self(){
+    protected YourAuthorisationRemovedEmailBuilder self() {
         return this;
     }
 

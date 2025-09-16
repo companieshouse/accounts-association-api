@@ -14,7 +14,7 @@ public class InvitationRejectedEmailBuilder extends EmailBuilder<InvitationRejec
     }
 
     @Override
-    protected InvitationRejectedEmailBuilder self(){
+    protected InvitationRejectedEmailBuilder self() {
         return this;
     }
 

@@ -9,7 +9,7 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 
 public final class UserUtil {
 
-    private UserUtil(){}
+    private UserUtil() {}
 
     public static String mapToDisplayValue(final User user, final String defaultValue){
         return Optional.ofNullable(user)

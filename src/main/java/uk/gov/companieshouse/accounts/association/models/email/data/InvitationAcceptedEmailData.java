@@ -12,7 +12,7 @@ public class InvitationAcceptedEmailData extends EmailData {
 
     private String personWhoCreatedInvite;
 
-    public InvitationAcceptedEmailData(){}
+    public InvitationAcceptedEmailData() {}
 
     public InvitationAcceptedEmailData(String authorisedPerson, String companyName, String personWhoCreatedInvite) {
         this.authorisedPerson = authorisedPerson;

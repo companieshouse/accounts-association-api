@@ -1016,7 +1016,7 @@ class UserCompanyAssociationControllerTest extends AbstractBaseIntegrationTest {
         Assertions.assertEquals(COMPANIES_HOUSE, updatedAssociation.getUnauthorisedBy());
     }
 
-    private static Stream<Arguments> updateAssociationStatusForIdWithAPIKeyBadRequestScenarios(){
+    private static Stream<Arguments> updateAssociationStatusForIdWithAPIKeyBadRequestScenarios() {
         return Stream.of(
                 Arguments.of("confirmed"),
                 Arguments.of("removed")
@@ -1042,7 +1042,7 @@ class UserCompanyAssociationControllerTest extends AbstractBaseIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
-    private static Stream<Arguments> updateAssociationStatusForIdAPIRequestsThatChangeUnauthorisedOrMigratedAssociationsToConfirmedScenarios(){
+    private static Stream<Arguments> updateAssociationStatusForIdAPIRequestsThatChangeUnauthorisedOrMigratedAssociationsToConfirmedScenarios() {
         return Stream.of(
                 Arguments.of("MKAssociation004", "MKUser004"),
                 Arguments.of("MKAssociation001", "MKUser001")
@@ -1082,7 +1082,7 @@ class UserCompanyAssociationControllerTest extends AbstractBaseIntegrationTest {
          Mockito.verify(emailProducer).sendEmail(argThat(comparisonUtils.authCodeConfirmationEmailMatcher(targetUserDetails.getEmail(), "Mushroom Kingdom", targetUserDetails.getDisplayName())), argThat(messageType -> List.of(AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue(), AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue()).contains(messageType)));
     }
 
-    private static Stream<Arguments> updateAssociationStatusForIdSameUserUnauthorisedBadRequestScenarios(){
+    private static Stream<Arguments> updateAssociationStatusForIdSameUserUnauthorisedBadRequestScenarios() {
         return Stream.of(
                 Arguments.of("confirmed"),
                 Arguments.of("unauthorised")
@@ -1390,7 +1390,7 @@ class UserCompanyAssociationControllerTest extends AbstractBaseIntegrationTest {
         Assertions.assertTrue(items.isEmpty());
     }
 
-    private static Stream<Arguments> getPreviousStatesForAssociationMalformedScenarios(){
+    private static Stream<Arguments> getPreviousStatesForAssociationMalformedScenarios() {
         return Stream.of(
                 Arguments.of("/associations/$$$/previous-states"),
                 Arguments.of("/associations/MKAssociation003/previous-states?page_index=-1"),

@@ -13,12 +13,12 @@ public class InviteCancelledEmailBuilder extends EmailBuilder<InviteCancelledEma
     }
 
     @Override
-    protected InviteCancelledEmailBuilder self(){
+    protected InviteCancelledEmailBuilder self() {
         return this;
     }
 
     @Override
-    public InviteCancelledEmailData build(){
+    public InviteCancelledEmailData build() {
         if (Objects.isNull(recipientEmail) || Objects.isNull(companyName) || Objects.isNull(cancelledBy)) {
             throw new NullPointerException("recipientEmail, companyName, and cancelledBy cannot be null");
         }

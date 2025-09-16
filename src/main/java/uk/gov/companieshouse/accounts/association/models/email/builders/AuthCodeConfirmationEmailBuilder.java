@@ -14,12 +14,12 @@ public class AuthCodeConfirmationEmailBuilder extends EmailBuilder<AuthCodeConfi
     }
 
     @Override
-    protected AuthCodeConfirmationEmailBuilder self(){
+    protected AuthCodeConfirmationEmailBuilder self() {
         return this;
     }
 
     @Override
-    public AuthCodeConfirmationEmailData build(){
+    public AuthCodeConfirmationEmailData build() {
         if (Objects.isNull(recipientEmail) || Objects.isNull(displayName) || Objects.isNull(companyName)) {
             throw new NullPointerException("recipientEmail, displayName, and companyName cannot be null");
         }

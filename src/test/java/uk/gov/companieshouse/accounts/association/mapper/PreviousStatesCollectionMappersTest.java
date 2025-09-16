@@ -25,17 +25,17 @@ class PreviousStatesCollectionMappersTest {
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
     @BeforeEach
-    void setup(){
+    void setup() {
         previousStatesCollectionMappers = new PreviousStatesCollectionMappers(new PreviousStatesMapperImpl());
     }
 
     @Test
-    void daoToDtoThrowsNullPointerExceptionWhenAssociationIsNull(){
+    void daoToDtoThrowsNullPointerExceptionWhenAssociationIsNull() {
         Assertions.assertThrows(NullPointerException.class, () -> previousStatesCollectionMappers.daoToDto(null, 0, 15));
     }
 
     @Test
-    void daoToDtoMapsDataCorrectly(){
+    void daoToDtoMapsDataCorrectly() {
         final var association = testDataManager.fetchAssociationDaos("MKAssociation003").getFirst();
 
         final var now = LocalDateTime.now();
@@ -66,7 +66,7 @@ class PreviousStatesCollectionMappersTest {
     }
 
     @Test
-    void daoToDtoPaginatesCorrectly(){
+    void daoToDtoPaginatesCorrectly() {
         final var association = testDataManager.fetchAssociationDaos("MKAssociation003").getFirst();
 
         final var now = LocalDateTime.now();
@@ -88,7 +88,7 @@ class PreviousStatesCollectionMappersTest {
     }
 
     @Test
-    void daoToDtoReturnsEmptyListWhenThereAreNoPreviousStates(){
+    void daoToDtoReturnsEmptyListWhenThereAreNoPreviousStates() {
         final var association = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
 
         final var previousStatesList = previousStatesCollectionMappers.daoToDto(association, 0, 15);

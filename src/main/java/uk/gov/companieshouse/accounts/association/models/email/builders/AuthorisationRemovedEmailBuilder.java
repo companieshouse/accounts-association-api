@@ -20,7 +20,7 @@ public class AuthorisationRemovedEmailBuilder extends EmailBuilder<Authorisation
     }
 
     @Override
-    protected AuthorisationRemovedEmailBuilder self(){
+    protected AuthorisationRemovedEmailBuilder self() {
         return this;
     }
 

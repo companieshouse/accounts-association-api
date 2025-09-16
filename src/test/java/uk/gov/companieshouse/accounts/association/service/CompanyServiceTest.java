@@ -58,7 +58,7 @@ class CompanyServiceTest {
     }
 
     @Test
-    void fetchCompanyProfilesWithNullStreamThrowsNullPointerException(){
+    void fetchCompanyProfilesWithNullStreamThrowsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> companyService.fetchCompanyProfiles(null));
     }
 
@@ -68,7 +68,7 @@ class CompanyServiceTest {
     }
 
     @Test
-    void fetchCompanyProfilesWithStreamThatHasNonExistentCompanyReturnsNotFoundRuntimeException(){
+    void fetchCompanyProfilesWithStreamThatHasNonExistentCompanyReturnsNotFoundRuntimeException() {
         when(companyClient.requestCompanyProfile(eq("404COMP"), any())).thenThrow(NotFoundRuntimeException.class);
         final var associationDao = new AssociationDao();
         associationDao.setCompanyNumber("404COMP");
@@ -77,7 +77,7 @@ class CompanyServiceTest {
 
     // TODO: ParsingUtil unit test, NOT a company service unit test
 //    @Test
-//    void fetchCompanyProfilesWithStreamThatHasMalformedCompanyNumberReturnsInternalServerErrorRuntimeException(){
+//    void fetchCompanyProfilesWithStreamThatHasMalformedCompanyNumberReturnsInternalServerErrorRuntimeException() {
 //        final var associationDao = new AssociationDao();
 //        associationDao.setCompanyNumber("£$@123");
 ////        mockers.mockRestClientForFetchCompanyProfileErrorResponse("£$@123", 400);
@@ -88,7 +88,7 @@ class CompanyServiceTest {
 //    }
 
     @Test
-    void fetchCompanyProfilesWithStreamWithArbitraryErrorReturnsInternalServerErrorRuntimeException(){
+    void fetchCompanyProfilesWithStreamWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
         final var associationDao = testDataManager.fetchAssociationDaos("1").getFirst();
         when(companyClient.requestCompanyProfile(any(), any())).thenThrow(InternalServerErrorRuntimeException.class);
         Assertions.assertThrows(InternalServerErrorRuntimeException.class, () -> companyService.fetchCompanyProfiles(Stream.of(associationDao)));

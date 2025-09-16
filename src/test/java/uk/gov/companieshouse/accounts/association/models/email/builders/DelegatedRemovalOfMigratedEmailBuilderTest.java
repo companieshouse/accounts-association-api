@@ -29,7 +29,7 @@ class DelegatedRemovalOfMigratedEmailBuilderTest {
     }
 
     @Test
-    void buildWithNullsThrowsNullPointerException(){
+    void buildWithNullsThrowsNullPointerException() {
         final var builder = new DelegatedRemovalOfMigratedEmailBuilder();
         Assertions.assertThrows(NullPointerException.class, builder::build);
     }

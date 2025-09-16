@@ -4,17 +4,17 @@ public final class RequestContext {
 
     private static final ThreadLocal<RequestContextData> requestContextDataThreadLocal = new ThreadLocal<>();
 
-    private RequestContext(){}
+    private RequestContext() {}
 
     public static void setRequestContext(final RequestContextData requestContext){
         requestContextDataThreadLocal.set(requestContext);
     }
 
-    public static RequestContextData getRequestContext(){
+    public static RequestContextData getRequestContext() {
         return requestContextDataThreadLocal.get();
     }
 
-    public static void clear(){
+    public static void clear() {
         requestContextDataThreadLocal.remove();
     }
 

@@ -12,7 +12,7 @@ import uk.gov.companieshouse.accounts.association.models.email.data.InviteCancel
 class InviteCancelledEmailBuilderTest {
 
     @Test
-    void buildInstantiatesEmailData(){
+    void buildInstantiatesEmailData() {
         final var expectedEmailData = new InviteCancelledEmailData();
         expectedEmailData.setTo("kpatel@companieshouse.gov.uk");
         expectedEmailData.setSubject("Companies House: authorisation to file online for Tesla cancelled");
@@ -29,7 +29,7 @@ class InviteCancelledEmailBuilderTest {
     }
 
     @Test
-    void buildWithNullsThrowsNullPointerException(){
+    void buildWithNullsThrowsNullPointerException() {
         final var inviteCancelledEmailBuilder = new InviteCancelledEmailBuilder();
         Assertions.assertThrows(NullPointerException.class, inviteCancelledEmailBuilder::build);
     }

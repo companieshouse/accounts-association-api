@@ -70,7 +70,7 @@ class UsersServiceTest {
     }
 
     @Test
-    void fetchUserDetailsWithNullStreamThrowsNullPointerException(){
+    void fetchUserDetailsWithNullStreamThrowsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> usersService.fetchUsersDetails(null));
     }
 
@@ -80,7 +80,7 @@ class UsersServiceTest {
     }
 
     @Test
-    void fetchUserDetailsWithStreamThatHasNonExistentUsersReturnsNotFoundRuntimeException(){
+    void fetchUserDetailsWithStreamThatHasNonExistentUsersReturnsNotFoundRuntimeException() {
         final var associationDao = new AssociationDao();
         associationDao.setUserId("404User");
         when(userClient.requestUserDetails(any(), any())).thenThrow(NotFoundRuntimeException.class);
@@ -89,7 +89,7 @@ class UsersServiceTest {
     }
 
     @Test
-    void fetchUserDetailsWithStreamThatHasMalformedUsersIdReturnsInternalServerErrorRuntimeException(){
+    void fetchUserDetailsWithStreamThatHasMalformedUsersIdReturnsInternalServerErrorRuntimeException() {
         final var associationDao = new AssociationDao();
         associationDao.setUserId("£$@123");
         when(userClient.requestUserDetails(any(), any())).thenThrow(InternalServerErrorRuntimeException.class);
@@ -98,7 +98,7 @@ class UsersServiceTest {
     }
 
     @Test
-    void fetchUserDetailsWithStreamWithArbitraryErrorReturnsInternalServerErrorRuntimeException(){
+    void fetchUserDetailsWithStreamWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
         final var associationDao = testDataManager.fetchAssociationDaos("1").getFirst();
         when(userClient.requestUserDetails(eq(associationDao.getUserId()), any())).thenThrow(InternalServerErrorRuntimeException.class);
         Assertions.assertThrows(InternalServerErrorRuntimeException.class, () -> usersService.fetchUsersDetails(Stream.of(associationDao)));
@@ -120,7 +120,7 @@ class UsersServiceTest {
     }
 
     @Test
-    void searchUserDetailsWithNullListThrowsIllegalArgumentException(){
+    void searchUserDetailsWithNullListThrowsIllegalArgumentException() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> usersService.searchUsersDetailsByEmail(null));
     }
 
@@ -159,12 +159,12 @@ class UsersServiceTest {
     }
 
     @Test
-    void fetchUserDetailsWithNullAssociationOrNullUserIdAndUsersEmailReturnsNull(){
+    void fetchUserDetailsWithNullAssociationOrNullUserIdAndUsersEmailReturnsNull() {
 //        Assertions.assertNull(usersService.fetchUserDetails(new AssociationDao()));
     }
 
     @Test
-    void fetchUserDetailsWithNonexistentUsersIdThrowsNotFoundRuntimeException(){
+    void fetchUserDetailsWithNonexistentUsersIdThrowsNotFoundRuntimeException() {
         final var requestingUser = testDataManager.fetchUserDtos("111").getFirst();
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation002").getFirst();
         final var request = new MockHttpServletRequest();
@@ -206,7 +206,7 @@ class UsersServiceTest {
     }
 
     @Test
-    void fetchUserDetailsWithNonexistentUsersEmailReturnsNull(){
+    void fetchUserDetailsWithNonexistentUsersEmailReturnsNull() {
         final var requestingUser = testDataManager.fetchUserDtos("111").getFirst();
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
 

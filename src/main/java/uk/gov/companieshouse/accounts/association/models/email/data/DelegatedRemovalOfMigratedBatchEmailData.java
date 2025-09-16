@@ -13,7 +13,7 @@ public class DelegatedRemovalOfMigratedBatchEmailData extends EmailData {
     private String companyName;
 
 
-    public DelegatedRemovalOfMigratedBatchEmailData(){}
+    public DelegatedRemovalOfMigratedBatchEmailData() {}
 
     public DelegatedRemovalOfMigratedBatchEmailData(String removedBy, String removedUser, String companyName) {
         this.removedBy = removedBy;

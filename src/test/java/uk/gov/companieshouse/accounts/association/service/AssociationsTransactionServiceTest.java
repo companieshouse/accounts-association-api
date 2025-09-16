@@ -154,7 +154,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchUnexpiredAssociationsForCompanyAndStatusesCanFetchMigratedAssociations(){
+    void fetchUnexpiredAssociationsForCompanyAndStatusesCanFetchMigratedAssociations() {
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
 
         final var content = testDataManager.fetchAssociationDaos("MKAssociation001", "MKAssociation002", "MKAssociation003");
@@ -169,7 +169,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchUnexpiredAssociationsForCompanyAndStatusesWithUserIdRetrievesAssociations(){
+    void fetchUnexpiredAssociationsForCompanyAndStatusesWithUserIdRetrievesAssociations() {
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos("MICOMP001").getFirst();
 
         final var content = testDataManager.fetchAssociationDaos("MiAssociation002");
@@ -183,7 +183,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchUnexpiredAssociationsForCompanyAndStatusesWithUserEmailRetrievesAssociations(){
+    void fetchUnexpiredAssociationsForCompanyAndStatusesWithUserEmailRetrievesAssociations() {
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos("MICOMP005").getFirst();
 
         final var content = testDataManager.fetchAssociationDaos("MiAssociation006");
@@ -197,7 +197,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchUnexpiredAssociationsForCompanyAndStatusesWithNonexistentUserReturnsEmptyList(){
+    void fetchUnexpiredAssociationsForCompanyAndStatusesWithNonexistentUserReturnsEmptyList() {
         final var companyDetails = testDataManager.fetchCompanyDetailsDtos("MICOMP001").getFirst();
         Mockito.doReturn(Page.empty()).when(associationsRepository).fetchUnexpiredAssociationsForCompanyAndStatusesAndUser(eq("MICOMP001"), eq(Set.of("confirmed")), eq("404User"), eq("404@inugami-example.com"), any(), eq(PageRequest.of(0, 15)));
         associationsTransactionService.fetchUnexpiredAssociationsForCompanyAndStatuses(companyDetails, Set.of(StatusEnum.CONFIRMED), "404User", "404@inugami-example.com", 0, 15);
@@ -220,7 +220,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithNullInputsThrowsNullPointerException(){
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithNullInputsThrowsNullPointerException() {
         final var user = testDataManager.fetchUserDtos("9999").getFirst();
         final var status = Set.of(StatusEnum.CONFIRMED.getValue());
         Assertions.assertThrows(NullPointerException.class, () -> associationsTransactionService.fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(null, "333333", status, 0, 15));
@@ -250,7 +250,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesFiltersByCompanyNumber(){
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesFiltersByCompanyNumber() {
         final var user = testDataManager.fetchUserDtos("9999").getFirst();
         final var status = Set.of(StatusEnum.CONFIRMED.getValue(), StatusEnum.AWAITING_APPROVAL.getValue(), StatusEnum.REMOVED.getValue());
         final var content = testDataManager.fetchAssociationDaos("18", "27");
@@ -265,7 +265,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesiltersBasedOnStatus(){
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesiltersBasedOnStatus() {
         final var user = testDataManager.fetchUserDtos("9999").getFirst();
         final var status = Set.of(StatusEnum.REMOVED.getValue());
         final var content = testDataManager.fetchAssociationDaos("31", "32", "33");
@@ -280,7 +280,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesFiltersBasedOnAwaitingApprovalStatus(){
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesFiltersBasedOnAwaitingApprovalStatus() {
         final var user = testDataManager.fetchUserDtos("9999").getFirst();
         final var status = Set.of(StatusEnum.AWAITING_APPROVAL.getValue());
         final var content = testDataManager.fetchAssociationDaos("25", "26", "27");
@@ -295,7 +295,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithNullStatusDefaultsToConfirmedStatus(){
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithNullStatusDefaultsToConfirmedStatus() {
         final var user = testDataManager.fetchUserDtos("9999").getFirst();
         final var content = testDataManager.fetchAssociationDaos("18", "19", "20", "21", "22");
         final var pageRequest = PageRequest.of(0, 15);
@@ -309,7 +309,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithEmptyStatusDefaultsToConfirmedStatus(){
+    void fetchAssociationsForUserAndPartialCompanyNumberAndStatusesWithEmptyStatusDefaultsToConfirmedStatus() {
         final var user = testDataManager.fetchUserDtos("9999").getFirst();
         final var content = testDataManager.fetchAssociationDaos("18", "19", "20", "21", "22");
         final var pageRequest = PageRequest.of(0, 15);
@@ -383,13 +383,13 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void associationExistsWithExistingConfirmedAssociationReturnsTrue(){
+    void associationExistsWithExistingConfirmedAssociationReturnsTrue() {
         Mockito.doReturn(true).when(associationsRepository).confirmedAssociationExists("111111", "111");
         assertTrue(associationsTransactionService.confirmedAssociationExists("111111", "111"));
     }
 
     @Test
-    void updateAssociationStatusWithMalformedOrNonexistentAssociationIdThrowsInternalServerError(){
+    void updateAssociationStatusWithMalformedOrNonexistentAssociationIdThrowsInternalServerError() {
         final var update = new Update();
         Mockito.doReturn(0).when(associationsRepository).updateAssociation(any(), any());
         Assertions.assertThrows(InternalServerErrorRuntimeException.class, () -> associationsTransactionService.updateAssociation("$$$", update));
@@ -397,12 +397,12 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void updateAssociationWithNullAssociationIdThrowsNullPointerException(){
+    void updateAssociationWithNullAssociationIdThrowsNullPointerException() {
         Assertions.assertThrows(InternalServerErrorRuntimeException.class, () -> associationsTransactionService.updateAssociation(null, null));
     }
 
     @Test
-    void fetchAssociationForCompanyNumberAndUserIdWithNullOrMalformedOrNonexistentCompanyNumberReturnsNothing(){
+    void fetchAssociationForCompanyNumberAndUserIdWithNullOrMalformedOrNonexistentCompanyNumberReturnsNothing() {
         Mockito.doReturn(Optional.empty()).when(associationsRepository).fetchAssociation(any(), anyString(), isNull());
         assertTrue(associationsTransactionService.fetchAssociationDao(null, "111", null).isEmpty());
         assertTrue(associationsTransactionService.fetchAssociationDao("$$$$$$", "111", null).isEmpty());
@@ -417,7 +417,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchAssociationForCompanyNumberAndUserIdShouldFetchAssociation(){
+    void fetchAssociationForCompanyNumberAndUserIdShouldFetchAssociation() {
         final var association = testDataManager.fetchAssociationDaos("1").getFirst();
         Mockito.doReturn(Optional.of(association)).when(associationsRepository).fetchAssociation(anyString(), anyString(), isNull());
         assertEquals("1", associationsTransactionService.fetchAssociationDao("111111", "111", null).get().getId());
@@ -443,7 +443,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchConfirmedUserIdsRetrieveUsersAssociatedWithCompany(){
+    void fetchConfirmedUserIdsRetrieveUsersAssociatedWithCompany() {
         final var associations = testDataManager.fetchAssociationDaos("1").stream();
 
         Mockito.doReturn(associations).when(associationsRepository).fetchConfirmedAssociations(eq("111111"));
@@ -452,7 +452,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchPreviousStatesAppliedToAssociationWithPreviousStatesRetrievesAndMaps(){
+    void fetchPreviousStatesAppliedToAssociationWithPreviousStatesRetrievesAndMaps() {
         final var association = testDataManager.fetchAssociationDaos("MKAssociation003").getFirst();
         final var now = LocalDateTime.now();
 
@@ -475,7 +475,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchPreviousStatesAppliedToAssociationWithoutPreviousStatesRetrievesAndMaps(){
+    void fetchPreviousStatesAppliedToAssociationWithoutPreviousStatesRetrievesAndMaps() {
         final var association = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
 
         Mockito.doReturn(Optional.of(association)).when(associationsRepository).findById("MKAssociation001");
@@ -494,26 +494,26 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchPreviousStatesAppliedToMalformedOrNonexistentAssociationReturnsEmptyOptional(){
+    void fetchPreviousStatesAppliedToMalformedOrNonexistentAssociationReturnsEmptyOptional() {
         Assertions.assertTrue(associationsTransactionService.fetchPreviousStates("$$$", 0, 15).isEmpty());
         Assertions.assertTrue(
                 associationsTransactionService.fetchPreviousStates("404MKAssociation", 0, 15).isEmpty());
     }
 
     @Test
-    void fetchPreviousStatesThrowsIllegalArgumentExceptionWhenAssociationIdIsNull(){
+    void fetchPreviousStatesThrowsIllegalArgumentExceptionWhenAssociationIdIsNull() {
         Mockito.doThrow(new IllegalArgumentException("associationId cannot be null")).when(associationsRepository).findById(null);
         Assertions.assertThrows(IllegalArgumentException.class, () -> associationsTransactionService.fetchPreviousStates(null, 0, 15).isEmpty());
     }
 
     @Test
-    void createAssociationWithAuthCodeApprovalRouteCreatesAssociationWithNullInputsThrowsNullPointerException(){
+    void createAssociationWithAuthCodeApprovalRouteCreatesAssociationWithNullInputsThrowsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> associationsTransactionService.createAssociationWithAuthCodeApprovalRoute(null, "111"));
         Assertions.assertThrows(NullPointerException.class, () -> associationsTransactionService.createAssociationWithAuthCodeApprovalRoute("111111", null));
     }
 
     @Test
-    void createAssociationWithAuthCodeApprovalRouteCreatesAssociation(){
+    void createAssociationWithAuthCodeApprovalRouteCreatesAssociation() {
         final var expectedAssociation = new AssociationDao()
                 .companyNumber("111111")
                 .userId("111")
@@ -527,13 +527,13 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void createAssociationWithInvitationApprovalRouteWithNullInputsThrowsNullPointerException(){
+    void createAssociationWithInvitationApprovalRouteWithNullInputsThrowsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> associationsTransactionService.createAssociationWithInvitationApprovalRoute(null, "111", null, "222"));
         Assertions.assertThrows(NullPointerException.class, () -> associationsTransactionService.createAssociationWithInvitationApprovalRoute("111111", null, null, "222"));
         Assertions.assertThrows(NullPointerException.class, () -> associationsTransactionService.createAssociationWithInvitationApprovalRoute("111111", null, "bruce.wayne@gotham.city", null));
     }
 
-    private static Stream<Arguments> createAssociationWithInvitationApprovalRouteScenarios(){
+    private static Stream<Arguments> createAssociationWithInvitationApprovalRouteScenarios() {
         return Stream.of(
                 Arguments.of("111", null),
                 Arguments.of(null, "bruce.wayne@gotham.city")
@@ -563,7 +563,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchUnexpiredAssociationsForCompanyUserAndStatusesRetrievesAssociation(){
+    void fetchUnexpiredAssociationsForCompanyUserAndStatusesRetrievesAssociation() {
         final var company = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
         final var user = testDataManager.fetchUserDtos("MKUser002").getFirst();
         final var association = testDataManager.fetchAssociationDto("MKAssociation002", user);
@@ -576,7 +576,7 @@ class AssociationsTransactionServiceTest {
         Assertions.assertEquals("MKAssociation002" , associationsTransactionService.fetchUnexpiredAssociationsForCompanyUserAndStatuses(company, Set.of(StatusEnum.CONFIRMED), user, user.getEmail()).get().getId());
     }
 
-    private static Stream<Arguments> fetchUnexpiredAssociationsForCompanyUserAndStatusesRetrievesEmptyOptionalScenarios(){
+    private static Stream<Arguments> fetchUnexpiredAssociationsForCompanyUserAndStatusesRetrievesEmptyOptionalScenarios() {
         final var user = testDataManager.fetchUserDtos("MKUser002").getFirst();
         return Stream.of(
                 Arguments.of(new CompanyDetails() , Set.of(StatusEnum.CONFIRMED), user, user.getEmail()),
@@ -598,14 +598,14 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchUnexpiredAssociationsForCompanyWithNullInputsThrowsNullPointerException(){
+    void fetchUnexpiredAssociationsForCompanyWithNullInputsThrowsNullPointerException() {
         final var company = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
         Assertions.assertThrows(NullPointerException.class, () -> associationsTransactionService.fetchUnexpiredAssociationsForCompanyUserAndStatuses(null, Set.of(StatusEnum.CONFIRMED), null, "null@null.com"));
         Assertions.assertThrows(NullPointerException.class, () -> associationsTransactionService.fetchUnexpiredAssociationsForCompanyUserAndStatuses(company, null, null, "null@null.com"));
     }
 
     @Test
-    void fetchInvitationsFiltersWorkingCorrectly(){
+    void fetchInvitationsFiltersWorkingCorrectly() {
         final var association = testDataManager.fetchAssociationDaos("MiAssociation041").getFirst();
         Mockito.doReturn(Optional.of(association)).when(associationsRepository).findById("MiAssociation041");
         associationsTransactionService.fetchInvitations("MiAssociation041", 0, 15);
@@ -613,7 +613,7 @@ class AssociationsTransactionServiceTest {
     }
 
     @Test
-    void fetchAssociationsForUserAndPartialCompanyNumberFiltersWorkingCorrectly(){
+    void fetchAssociationsForUserAndPartialCompanyNumberFiltersWorkingCorrectly() {
         final var user = testDataManager.fetchUserDtos("MiUser002").getFirst();
         associationsTransactionService.fetchAssociationsForUserAndPartialCompanyNumber(user, "ICOMP001", 0, 15);
         Mockito.verify(associationsRepository).fetchAssociationsForUserAndStatusesAndPartialCompanyNumber(user.getUserId(), user.getEmail(), Set.of("confirmed", "awaiting-approval", "removed", "migrated", "unauthorised"),"ICOMP001", PageRequest.of(0,15));
@@ -621,46 +621,46 @@ class AssociationsTransactionServiceTest {
 
 
     @Test
-    void fetchAssociationsForUserAndPartialCompanyNumberWithMalformedPaginationParametersThrowsIllegalArgumentException(){
+    void fetchAssociationsForUserAndPartialCompanyNumberWithMalformedPaginationParametersThrowsIllegalArgumentException() {
         final var user = testDataManager.fetchUserDtos("MiUser002").getFirst();
         Assertions.assertThrows(IllegalArgumentException.class, () -> associationsTransactionService.fetchAssociationsForUserAndPartialCompanyNumber(user, "ICOMP001", -1, 15));
         Assertions.assertThrows(IllegalArgumentException.class, () -> associationsTransactionService.fetchAssociationsForUserAndPartialCompanyNumber(user, "ICOMP001", 0, -15));
     }
 
     @Test
-    void fetchAssociationsForUserAndPartialCompanyNumberWhereCompanyNumberIsNullThrowsNullPointerException(){
+    void fetchAssociationsForUserAndPartialCompanyNumberWhereCompanyNumberIsNullThrowsNullPointerException() {
         Assertions.assertThrows(NullPointerException.class, () -> associationsTransactionService.fetchAssociationsForUserAndPartialCompanyNumber(null, "ICOMP001", 0, 15));
     }
 
     @Test
-    void fetchConfirmedUserIdsCanRetrieveUsers(){
+    void fetchConfirmedUserIdsCanRetrieveUsers() {
         final var associations = testDataManager.fetchAssociationDaos("MiAssociation003").stream();
         Mockito.doReturn(associations).when(associationsRepository).fetchConfirmedAssociations(eq("MICOMP002"));
         Assertions.assertEquals("MiUser002", associationsTransactionService.fetchConfirmedUserIds("MICOMP002").findFirst().get());
     }
 
     @Test
-    void fetchConfirmedUserIdsRetrievesEmptyFluxWhenNoRecordsFound(){
+    void fetchConfirmedUserIdsRetrievesEmptyFluxWhenNoRecordsFound() {
         Assertions.assertEquals(0, associationsTransactionService.fetchConfirmedUserIds("MICOMP002").count());
         Assertions.assertEquals(0, associationsTransactionService.fetchConfirmedUserIds(null).count());
     }
 
     @Test
-    void fetchAssociationDaoRetrievesAssociation(){
+    void fetchAssociationDaoRetrievesAssociation() {
         associationsTransactionService.fetchAssociationDao("MICOMP001", null, "apple.bob.monkey.island@inugami-example.com");
         Mockito.verify(associationsRepository).fetchAssociation("MICOMP001", null, "apple.bob.monkey.island@inugami-example.com");
     }
 
 
     @Test
-    void fetchAssociationDaoReturnsEmptyOptionalWhenAssociationDoesNotExist(){
+    void fetchAssociationDaoReturnsEmptyOptionalWhenAssociationDoesNotExist() {
         Mockito.when(associationsRepository.findById("MiAssociation024")).thenReturn(Optional.empty());
         Assertions.assertTrue(
                 associationsTransactionService.fetchAssociationDao("MiAssociation024").isEmpty());
     }
 
     @Test
-    void fetchAssociationDaoWithNullInputThrowsIllegalArgumentException(){
+    void fetchAssociationDaoWithNullInputThrowsIllegalArgumentException() {
         Mockito.doThrow(new IllegalArgumentException("associationId cannot be null")).when(associationsRepository).findById(null);
         Assertions.assertThrows(IllegalArgumentException.class, () -> associationsTransactionService.fetchAssociationDao(null).isEmpty());
     }

@@ -20,7 +20,7 @@ public class InvitationEmailBuilder extends EmailBuilder<InvitationEmailBuilder,
     }
 
     @Override
-    protected InvitationEmailBuilder self(){
+    protected InvitationEmailBuilder self() {
         return this;
     }
 

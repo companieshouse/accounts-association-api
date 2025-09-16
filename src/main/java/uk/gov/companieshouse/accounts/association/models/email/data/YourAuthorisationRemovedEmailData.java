@@ -11,7 +11,7 @@ public class YourAuthorisationRemovedEmailData extends EmailData {
 
     private String personWhoRemovedAuthorisation;
 
-    public YourAuthorisationRemovedEmailData(){}
+    public YourAuthorisationRemovedEmailData() {}
 
     public YourAuthorisationRemovedEmailData(String companyName, String personWhoRemovedAuthorisation) {
         this.companyName = companyName;

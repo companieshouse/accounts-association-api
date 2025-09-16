@@ -33,27 +33,27 @@ public class RequestContextData {
         this.user = user;
     }
 
-    public String getXRequestId(){
+    public String getXRequestId() {
         return xRequestId;
     }
 
-    public String getEricIdentity(){
+    public String getEricIdentity() {
         return ericIdentity;
     }
 
-    public String getEricIdentityType(){
+    public String getEricIdentityType() {
         return ericIdentityType;
     }
 
-    public String getEricAuthorisedKeyRoles(){
+    public String getEricAuthorisedKeyRoles() {
         return ericAuthorisedKeyRoles;
     }
 
-    public HashSet<String> getAdminPrivileges(){
+    public HashSet<String> getAdminPrivileges() {
         return adminPrivileges;
     }
 
-    public User getUser(){
+    public User getUser() {
         return user;
     }
 
@@ -98,7 +98,7 @@ public class RequestContextData {
             return this;
         }
 
-        public RequestContextData build(){
+        public RequestContextData build() {
             return new RequestContextData(xRequestId, ericIdentity, ericIdentityType, ericAuthorisedKeyRoles, adminPrivileges, user);
         }
 

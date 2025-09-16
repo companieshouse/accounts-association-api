@@ -14,7 +14,7 @@ public class InviteEmailData extends EmailData {
 
     private String invitationLink;
 
-    public InviteEmailData(){}
+    public InviteEmailData() {}
 
     public InviteEmailData(String inviterDisplayName, String companyName, String invitationExpiryTimestamp, String invitationLink) {
         this.inviterDisplayName = inviterDisplayName;

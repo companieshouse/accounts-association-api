@@ -27,7 +27,7 @@ public class RemovalOfOwnMigratedEmailBuilderTest {
     }
 
     @Test
-    void buildWithNullsThrowsNullPointerException(){
+    void buildWithNullsThrowsNullPointerException() {
         final var builder = new RemovalOfOwnMigratedEmailBuilder();
         Assertions.assertThrows(NullPointerException.class, builder::build);
     }

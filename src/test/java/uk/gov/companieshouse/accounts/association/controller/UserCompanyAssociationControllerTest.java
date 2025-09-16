@@ -719,7 +719,7 @@ class UserCompanyAssociationControllerTest {
         Mockito.verify(emailService).sendInvitationRejectedEmailToAssociatedUser(eq("theId123"), eq("x222222"), any(), eq("Scrooge McDuck"), any());
     }
 
-    public static Stream<Arguments> updateAssociationStatusForIdMigratedScenarios(){
+    public static Stream<Arguments> updateAssociationStatusForIdMigratedScenarios() {
         return Stream.of(
                 Arguments.of("MKUser001", "confirmed", true, status().isBadRequest()),
                 Arguments.of("MKUser001", "removed", true, status().isOk()),
@@ -1005,7 +1005,7 @@ class UserCompanyAssociationControllerTest {
 
 
 
-    private static Stream<Arguments> updateAssociationStatusForIdWithAPIKeyBadRequestScenarios(){
+    private static Stream<Arguments> updateAssociationStatusForIdWithAPIKeyBadRequestScenarios() {
         return Stream.of(
                 Arguments.of("confirmed"),
                 Arguments.of("removed")
@@ -1031,7 +1031,7 @@ class UserCompanyAssociationControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    private static Stream<Arguments> updateAssociationStatusForIdAPIRequestsThatChangeUnauthorisedOrMigratedAssociationsToConfirmedScenarios(){
+    private static Stream<Arguments> updateAssociationStatusForIdAPIRequestsThatChangeUnauthorisedOrMigratedAssociationsToConfirmedScenarios() {
         return Stream.of(
                 Arguments.of("MKAssociation004", "MKUser004"),
                 Arguments.of("MKAssociation001", "MKUser001")
@@ -1062,7 +1062,7 @@ class UserCompanyAssociationControllerTest {
         Mockito.verify(emailService).sendAuthCodeConfirmationEmailToAssociatedUser(eq("theId123"), eq(associations.getCompanyNumber()), any(), eq(targetUser.getDisplayName()), "111");
     }
 
-    private static Stream<Arguments> updateAssociationStatusForIdSameUserUnauthorisedBadRequestScenarios(){
+    private static Stream<Arguments> updateAssociationStatusForIdSameUserUnauthorisedBadRequestScenarios() {
         return Stream.of(
                 Arguments.of("confirmed"),
                 Arguments.of("unauthorised")
@@ -1159,7 +1159,7 @@ class UserCompanyAssociationControllerTest {
         Assertions.assertTrue(items.isEmpty());
     }
 
-    private static Stream<Arguments> getPreviousStatesForAssociationMalformedScenarios(){
+    private static Stream<Arguments> getPreviousStatesForAssociationMalformedScenarios() {
         return Stream.of(
                 Arguments.of("/associations/$$$/previous-states"),
                 Arguments.of("/associations/MKAssociation003/previous-states?page_index=-1"),

@@ -28,12 +28,12 @@ public class InviteEmailBuilder extends EmailBuilder<InviteEmailBuilder, InviteE
     }
 
     @Override
-    protected InviteEmailBuilder self(){
+    protected InviteEmailBuilder self() {
         return this;
     }
 
     @Override
-    public InviteEmailData build(){
+    public InviteEmailData build() {
         if (Objects.isNull(recipientEmail) || Objects.isNull(inviterDisplayName) || Objects.isNull(companyName) || Objects.isNull(invitationExpiryTimestamp) || Objects.isNull(invitationLink)) {
             throw new NullPointerException("recipientEmail, inviterDisplayName, companyName, invitationExpiryTimestamp, and invitationLink cannot be null");
         }

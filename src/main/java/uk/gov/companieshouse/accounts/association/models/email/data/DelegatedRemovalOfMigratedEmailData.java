@@ -11,7 +11,7 @@ public class DelegatedRemovalOfMigratedEmailData extends EmailData {
     private String companyName;
 
 
-    public DelegatedRemovalOfMigratedEmailData(){}
+    public DelegatedRemovalOfMigratedEmailData() {}
 
     public DelegatedRemovalOfMigratedEmailData(String removedBy, String companyName) {
         this.removedBy = removedBy;

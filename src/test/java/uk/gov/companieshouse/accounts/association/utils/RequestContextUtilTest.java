@@ -32,13 +32,13 @@ class RequestContextUtilTest {
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
     @Test
-    void getXRequestIdIsUnknownWhenXRequestIdIsMissing(){
+    void getXRequestIdIsUnknownWhenXRequestIdIsMissing() {
         RequestContext.setRequestContext(new RequestContextDataBuilder().build());
         Assertions.assertEquals(UNKNOWN, getXRequestId());
     }
 
     @Test
-    void getXRequestIdRetrievesXRequestId(){
+    void getXRequestIdRetrievesXRequestId() {
         final var request = new MockHttpServletRequest();
         request.addHeader("X-Request-Id","theId123");
         RequestContext.setRequestContext(new RequestContextDataBuilder().setXRequestId(request).build());
@@ -46,13 +46,13 @@ class RequestContextUtilTest {
     }
 
     @Test
-    void getEricIdentityIsUnknownWhenEricIdentityIsMissing(){
+    void getEricIdentityIsUnknownWhenEricIdentityIsMissing() {
         RequestContext.setRequestContext(new RequestContextDataBuilder().build());
         Assertions.assertEquals(UNKNOWN, getEricIdentity());
     }
 
     @Test
-    void getEricIdentityRetrievesEricIdentity(){
+    void getEricIdentityRetrievesEricIdentity() {
         final var request = new MockHttpServletRequest();
         request.addHeader(ERIC_IDENTITY,"COMU002");
         RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).build());
@@ -60,13 +60,13 @@ class RequestContextUtilTest {
     }
 
     @Test
-    void getEricIdentityTypeIsUnknownWhenEricIdentityTypeIsMissing(){
+    void getEricIdentityTypeIsUnknownWhenEricIdentityTypeIsMissing() {
         RequestContext.setRequestContext(new RequestContextDataBuilder().build());
         Assertions.assertEquals(UNKNOWN, getEricIdentityType());
     }
 
     @Test
-    void getEricIdentityTypeRetrievesEricIdentityType(){
+    void getEricIdentityTypeRetrievesEricIdentityType() {
         final var request = new MockHttpServletRequest();
         request.addHeader("Eric-Identity-Type","oauth2");
         RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentityType(request).build());
@@ -74,20 +74,20 @@ class RequestContextUtilTest {
     }
 
     @Test
-    void hasAdminPrivilegeReturnsFalseWhenUserDoesNotHaveEricAuthorisedRoles(){
+    void hasAdminPrivilegeReturnsFalseWhenUserDoesNotHaveEricAuthorisedRoles() {
         RequestContext.setRequestContext(new RequestContextDataBuilder().setAdminPrivileges(new MockHttpServletRequest()).build());
         Assertions.assertFalse(hasAdminPrivilege(ADMIN_READ_PERMISSION));
     }
 
     @Test
-    void hasAdminPrivilegeWithNullInputReturnsFalse(){
+    void hasAdminPrivilegeWithNullInputReturnsFalse() {
         final var request = new MockHttpServletRequest();
         request.addHeader("Eric-Authorised-Roles", ADMIN_READ_PERMISSION);
         RequestContext.setRequestContext(new RequestContextDataBuilder().setAdminPrivileges(request).build());
         Assertions.assertFalse(hasAdminPrivilege(null));
     }
 
-    private static Stream<Arguments> adminPrivilegeScenarios(){
+    private static Stream<Arguments> adminPrivilegeScenarios() {
         return Stream.of(
                 Arguments.of(ADMIN_READ_PERMISSION, ADMIN_READ_PERMISSION),
                 Arguments.of(ADMIN_UPDATE_PERMISSION, ADMIN_UPDATE_PERMISSION),
@@ -107,13 +107,13 @@ class RequestContextUtilTest {
     }
 
     @Test
-    void getUserNullWhenUserIsMissing(){
+    void getUserNullWhenUserIsMissing() {
         RequestContext.setRequestContext(new RequestContextDataBuilder().build());
         Assertions.assertNull(getUser());
     }
 
     @Test
-    void getUserRetrievesUser(){
+    void getUserRetrievesUser() {
         final var user = testDataManager.fetchUserDtos("111").getFirst();
         RequestContext.setRequestContext(new RequestContextDataBuilder().setUser(user).build());
         Assertions.assertEquals(user, getUser());

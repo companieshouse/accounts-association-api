@@ -31,7 +31,7 @@ class UserAuthenticationFilterTest {
     private UserAuthenticationFilter userAuthenticationFilter;
 
     @BeforeEach
-    void setup(){
+    void setup() {
         userAuthenticationFilter = new UserAuthenticationFilter();
     }
 
@@ -128,7 +128,7 @@ class UserAuthenticationFilterTest {
         Mockito.verify(securityContext).setAuthentication(argThat(springRolesWereAssigned(List.of("ROLE_KEY"))));
     }
 
-    private static Stream<Arguments> adminPrivilegeScenarios(){
+    private static Stream<Arguments> adminPrivilegeScenarios() {
         return Stream.of(
                 Arguments.of(ADMIN_READ_PERMISSION, List.of("ROLE_BASIC_OAUTH", "ROLE_ADMIN_READ")),
                 Arguments.of(ADMIN_UPDATE_PERMISSION, List.of("ROLE_BASIC_OAUTH", "ROLE_ADMIN_UPDATE")),

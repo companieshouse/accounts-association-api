@@ -594,7 +594,7 @@ class UserCompanyInvitationsControllerTest extends AbstractBaseIntegrationTest {
         Mockito.verify(emailProducer, times(2)).sendEmail(argThat(comparisonUtils.invitationAndInviteEmailDataMatcher("scrooge.mcduck@disney.land", "Scrooge McDuck", "bruce.wayne@gotham.city", "Batman", "Sainsbury's", COMPANY_INVITATIONS_URL)), argThat(messageType -> List.of(INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue()).contains(messageType)));
     }
 
-    private static Stream<Arguments> inviteUserAppliedToMigratedAssociationScenarios(){
+    private static Stream<Arguments> inviteUserAppliedToMigratedAssociationScenarios() {
          return Stream.of(
                  Arguments.of(testDataManager.fetchAssociationDaos("MKAssociation001").getFirst()),
                  Arguments.of(testDataManager.fetchAssociationDaos("MKAssociation001").getFirst().userId(null).userEmail("mario@mushroom.kingdom"))
