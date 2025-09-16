@@ -55,6 +55,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
@@ -80,6 +81,7 @@ import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 @AutoConfigureMockMvc
 @ExtendWith(MockitoExtension.class)
 @ComponentScan(basePackages = "uk.gov.companieshouse.email_producer")
+@TestPropertySource(locations = "classpath:application-test.properties")
 class UserCompanyAssociationControllerTest extends AbstractBaseIntegrationTest {
 
     @Value("${invitation.url}")
@@ -111,10 +113,10 @@ class UserCompanyAssociationControllerTest extends AbstractBaseIntegrationTest {
     @MockitoBean
     private UserClient userClient;
 
-    private final String ASSOCIATIONS_URL = "/associations/";
-
-    private TestDataManager testDataManager = TestDataManager.getInstance();
+    private final TestDataManager testDataManager = TestDataManager.getInstance();
     private final ComparisonUtils comparisonUtils = new ComparisonUtils();
+
+    private final String ASSOCIATIONS_URL = "/associations/";
     private CountDownLatch latch;
 
     private void setEmailProducerCountDownLatch(int countdown){
