@@ -39,6 +39,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
 import uk.gov.companieshouse.accounts.association.exceptions.EmailBatchException;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NullRequiredEmailDataException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
@@ -156,15 +157,22 @@ public class EmailService {
     }
 
     public void sendAuthCodeConfirmationEmailToAssociatedUser(final String xRequestId, final String companyNumber, String companyName, final String displayName, final String userId) {
-        final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
-        if (userDetails == null || StringUtils.isBlank(userDetails.getEmail())) {
+        User user;
+        try {
+            user = usersService.fetchUserDetails(userId, xRequestId);
+        } catch (NotFoundRuntimeException exception) {
+            final var warningException = new NullRequiredEmailDataException(ASSOCIATED_USER_OR_EMAIL_IS_NULL, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE);
+            LOGGER.errorContext(xRequestId, ASSOCIATED_USER_OR_EMAIL_IS_NULL, warningException, null);
+            return;
+        }
+        if (user == null || StringUtils.isBlank(user.getEmail())) {
             final var warningException = new NullRequiredEmailDataException(ASSOCIATED_USER_OR_EMAIL_IS_NULL, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE);
             LOGGER.errorContext(xRequestId, ASSOCIATED_USER_OR_EMAIL_IS_NULL, warningException, null);
             return;
         }
 
         final var emailData = new AuthCodeConfirmationEmailBuilder()
-                .setRecipientEmail(userDetails.getEmail())
+                .setRecipientEmail(user.getEmail())
                 .setDisplayName(displayName)
                 .setCompanyName(companyName)
                 .build();
