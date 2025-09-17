@@ -2,8 +2,10 @@ package uk.gov.companieshouse.accounts.association.controller;
 
 import static org.springframework.http.HttpStatus.OK;
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ASSOCIATION_NOT_FOUND;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ONLY_ONE_MUST_BE_PRESENT;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
-import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
+import static uk.gov.companieshouse.accounts.association.models.Constants.REQUESTING_USER_NOT_PERMITTED;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
@@ -48,11 +50,11 @@ public class AssociationsListForCompanyController implements AssociationDataForC
         LOGGER.infoContext(getXRequestId(), String.format("Received request with company_number=%s, includeRemoved=%b, itemsPerPage=%d, pageIndex=%d.", companyNumber, includeRemoved, itemsPerPage, pageIndex),null);
 
         if (pageIndex < 0 || itemsPerPage <= 0){
-            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(PAGINATION_IS_MALFORMED));
+            throw new BadRequestRuntimeException(PAGINATION_IS_MALFORMED);
         }
 
         if (!associationsTransactionService.confirmedAssociationExists(companyNumber, getEricIdentity()) && !hasAdminPrivilege(ADMIN_READ_PERMISSION) && isOAuth2Request()){
-            throw new ForbiddenRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("Requesting user is not permitted to retrieve data."));
+            throw new ForbiddenRuntimeException(REQUESTING_USER_NOT_PERMITTED);
         }
 
         final var companyProfile = companyService.fetchCompanyProfile(companyNumber);
@@ -78,7 +80,7 @@ public class AssociationsListForCompanyController implements AssociationDataForC
                 .collect(Collectors.toSet());
 
         if (Objects.nonNull(userId) == Objects.nonNull(userEmail)){
-            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN,  new Exception("Only one of user_id or user_email must be present"));
+            throw new BadRequestRuntimeException(ONLY_ONE_MUST_BE_PRESENT);
         }
 
         final var companyProfile = companyService.fetchCompanyProfile(companyNumber);
@@ -87,7 +89,7 @@ public class AssociationsListForCompanyController implements AssociationDataForC
 
         return associationsTransactionService.fetchUnexpiredAssociationsForCompanyUserAndStatuses(companyProfile, statuses, user, targetUserEmail)
                 .map(association -> new ResponseEntity<>(association, OK))
-                .orElseThrow(() -> new NotFoundRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("Association not found")));
+                .orElseThrow(() -> new NotFoundRuntimeException(ASSOCIATION_NOT_FOUND));
 
     }
 

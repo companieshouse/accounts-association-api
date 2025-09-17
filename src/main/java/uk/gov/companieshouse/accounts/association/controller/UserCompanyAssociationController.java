@@ -1,14 +1,13 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
 import static org.springframework.http.HttpStatus.OK;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ASSOCIATION_NOT_FOUND_WITH_ID_VAR;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
-import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isAPIKeyRequest;
 
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
@@ -44,7 +43,8 @@ public class UserCompanyAssociationController implements UserCompanyAssociationI
         LOGGER.infoContext(getXRequestId(), String.format("Received request with id=%s.", associationId),null);
         return associationsTransactionService.fetchAssociationDto(associationId)
                 .map(association -> new ResponseEntity<>(association, OK))
-                .orElseThrow(() -> new NotFoundRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("Cannot find Association for the id: %s")));
+                .orElseThrow(() -> new NotFoundRuntimeException(String.format(
+                        ASSOCIATION_NOT_FOUND_WITH_ID_VAR, associationId)));
     }
 
     @Override
@@ -52,12 +52,13 @@ public class UserCompanyAssociationController implements UserCompanyAssociationI
         LOGGER.infoContext(getXRequestId(), String.format("Received request with id=%s, page_index=%d, items_per_page=%d.", associationId, pageIndex, itemsPerPage),null);
 
         if (pageIndex < 0 || itemsPerPage <= 0){
-            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(PAGINATION_IS_MALFORMED));
+            throw new BadRequestRuntimeException(PAGINATION_IS_MALFORMED);
         }
 
         return associationsTransactionService.fetchInvitations(associationId, pageIndex, itemsPerPage)
                 .map(invitations -> new ResponseEntity<>(invitations, OK))
-                .orElseThrow(() -> new NotFoundRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("Could not find association %s.", associationId))));
+                .orElseThrow(() -> new NotFoundRuntimeException(String.format(
+                        ASSOCIATION_NOT_FOUND_WITH_ID_VAR, associationId)));
     }
 
     @Override
@@ -65,12 +66,13 @@ public class UserCompanyAssociationController implements UserCompanyAssociationI
         LOGGER.infoContext(getXRequestId(), String.format("Received request with id=%s, page_index=%d, items_per_page=%d.", associationId, pageIndex, itemsPerPage),null);
 
         if (pageIndex < 0 || itemsPerPage <= 0) {
-            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(PAGINATION_IS_MALFORMED));
+            throw new BadRequestRuntimeException(PAGINATION_IS_MALFORMED);
         }
 
         return associationsTransactionService.fetchPreviousStates(associationId, pageIndex, itemsPerPage)
                 .map(previousStates -> new ResponseEntity<>(previousStates, OK))
-                .orElseThrow(() -> new NotFoundRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("Association %s was not found", associationId))));
+                .orElseThrow(() -> new NotFoundRuntimeException(String.format(
+                        ASSOCIATION_NOT_FOUND_WITH_ID_VAR, associationId)));
     }
 
     @Override
@@ -80,7 +82,8 @@ public class UserCompanyAssociationController implements UserCompanyAssociationI
 
         final var targetAssociation = associationsTransactionService
                 .fetchAssociationDao(associationId)
-                .orElseThrow(() -> new NotFoundRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("Could not find association %s.", associationId))));
+                .orElseThrow(() -> new NotFoundRuntimeException(String.format(
+                        ASSOCIATION_NOT_FOUND_WITH_ID_VAR, associationId)));
 
         final var targetUser = usersService.fetchUserDetails(xRequestId, targetAssociation);
 

@@ -118,7 +118,7 @@ class AssociationsListForCompanyControllerTest {
         final var requestingUserId = "111";
         final var companyNumber = "919191";
 
-        when(companyService.fetchCompanyProfile(companyNumber)).thenThrow(new NotFoundRuntimeException("Not found", new Exception("Not found")));
+        when(companyService.fetchCompanyProfile(companyNumber)).thenThrow(new NotFoundRuntimeException("Not found"));
         Mockito.doReturn(true).when(associationsTransactionService).confirmedAssociationExists(companyNumber, requestingUserId);
 
         mockMvc.perform(get(ASSOCIATIONS_COMPANIES_URL + companyNumber)
@@ -651,7 +651,7 @@ class AssociationsListForCompanyControllerTest {
         final var user = testDataManager.fetchUserDtos("MKUser002").getFirst();
         final var companyNumber = "MKCOMP001";
         final var company = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
-        when(companyService.fetchCompanyProfile(companyNumber)).thenThrow(new NotFoundRuntimeException("Company not found", new Exception()));
+        when(companyService.fetchCompanyProfile(companyNumber)).thenThrow(new NotFoundRuntimeException("Company not found"));
         Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails("theId123", "MKUser002", null);
         Mockito.doReturn(Optional.of(testDataManager.fetchAssociationDto("MKAssociation002" , user))).when(
                 associationsTransactionService).fetchUnexpiredAssociationsForCompanyUserAndStatuses(company, Set.of(CONFIRMED, REMOVED), user, "luigi@mushroom.kingdom");
@@ -672,7 +672,7 @@ class AssociationsListForCompanyControllerTest {
         final var companyNumber = "MKCOMP001";
         final var company = testDataManager.fetchCompanyDetailsDtos(companyNumber).getFirst();
         when(companyService.fetchCompanyProfile(companyNumber)).thenReturn(testDataManager.fetchCompanyDetailsDtos(companyNumber).getFirst());
-        Mockito.doThrow(new NotFoundRuntimeException("Test", new Exception())).when(usersService).retrieveUserDetails("theId123", "MKUser002", null);
+        Mockito.doThrow(new NotFoundRuntimeException("Test")).when(usersService).retrieveUserDetails("theId123", "MKUser002", null);
         Mockito.doReturn(Optional.of(testDataManager.fetchAssociationDto("MKAssociation002" , user))).when(
                 associationsTransactionService).fetchUnexpiredAssociationsForCompanyUserAndStatuses(company, Set.of(CONFIRMED, REMOVED), user, "luigi@mushroom.kingdom");
 

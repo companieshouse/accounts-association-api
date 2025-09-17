@@ -164,7 +164,7 @@ public class Mockers {
 
     public void mockCompanyServiceFetchCompanyProfileNotFound(final String... companyNumbers){
         for (final String companyNumber: companyNumbers){
-            Mockito.doThrow(new NotFoundRuntimeException("Not found", new Exception("Not found"))).when(companyService).fetchCompanyProfile(companyNumber);
+            Mockito.doThrow(new NotFoundRuntimeException("Not found")).when(companyService).fetchCompanyProfile(companyNumber);
         }
     }
 

@@ -80,7 +80,7 @@ class ControllerAdviceTest {
 
     @Test
     void testNotFoundRuntimeError() throws Exception {
-        Mockito.doThrow(new NotFoundRuntimeException("Couldn't find association", new Exception("Couldn't find association")))
+        Mockito.doThrow(new NotFoundRuntimeException("Couldn't find association"))
                 .when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
 
         try (var staticMock = mockStatic(RequestContextUtil.class)) {
@@ -131,7 +131,7 @@ class ControllerAdviceTest {
 
     @Test
     void testOnInternalServerErrorRuntimeException() throws Exception {
-        Mockito.doThrow(new InternalServerErrorRuntimeException("Couldn't find association", new Exception("Couldn't find association")))
+        Mockito.doThrow(new InternalServerErrorRuntimeException("Couldn't find association"))
                 .when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
 
         try (var staticMock = mockStatic(RequestContextUtil.class)) {
@@ -147,7 +147,7 @@ class ControllerAdviceTest {
 
     @Test
     void testOnForbiddenRuntimeException() throws Exception {
-        Mockito.doThrow(new ForbiddenRuntimeException("Forbidden", new Exception("Forbidden")))
+        Mockito.doThrow(new ForbiddenRuntimeException("Forbidden"))
                 .when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(), any(), anySet(), anyInt(), anyInt());
 
         mockMvc.perform(get("/associations")

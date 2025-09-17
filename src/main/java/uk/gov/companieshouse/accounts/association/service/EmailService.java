@@ -151,7 +151,7 @@ public class EmailService {
             // TODO: feels wrong, but seems to match prior functionality
             case NONE -> {
             }
-            default -> throw new InternalServerErrorRuntimeException("Issue during email batch processing - default case triggered", new Exception("Issue during email batch processing - default case triggered"));
+            default -> throw new InternalServerErrorRuntimeException("Issue during email batch processing - default case triggered");
         }
     }
 

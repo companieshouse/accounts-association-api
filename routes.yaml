@@ -1,6 +1,0 @@
-app_name: accounts-association-api
-group: api
-
-weight: 100
-routes:
-  1: ^/associations/*

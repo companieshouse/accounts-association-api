@@ -10,9 +10,9 @@ public class ForbiddenRuntimeException extends RuntimeException {
 
     private static final Logger LOG = LoggerFactory.getLogger(APPLICATION_NAMESPACE);
 
-    public ForbiddenRuntimeException(final String exceptionMessage, final Exception loggingMessage) {
+    public ForbiddenRuntimeException(final String exceptionMessage) {
         super(exceptionMessage);
-        LOG.errorContext(getXRequestId(), loggingMessage, null);
+        LOG.errorContext(getXRequestId(), this, null);
     }
 
 }

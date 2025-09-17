@@ -4,7 +4,8 @@ import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
 import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
-import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
+import static uk.gov.companieshouse.accounts.association.models.Constants.STATUS_IS_INVALID;
+import static uk.gov.companieshouse.accounts.association.models.Constants.USER_ID_VAR_AND_COMPANY_NUMBER_VAR_ASSOCIATION_EXISTS;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToAuthCodeConfirmedUpdated;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
@@ -83,7 +84,8 @@ public class UserCompanyAssociationsController implements UserCompanyAssociation
                 .map(List::getFirst)
                 .map(targetAssociation -> {
                     if (CONFIRMED.getValue().equals(targetAssociation.getStatus())){
-                        throw new BadRequestRuntimeException("Association already exists.", new Exception(String.format("Association between user_id %s and company_number %s already exists.", userId, companyNumber)));
+                        throw new BadRequestRuntimeException(String.format(
+                                USER_ID_VAR_AND_COMPANY_NUMBER_VAR_ASSOCIATION_EXISTS, userId, companyNumber));
                     }
                     associationsTransactionService.updateAssociation(targetAssociation.getId(), mapToAuthCodeConfirmedUpdated(targetAssociation, targetUser, COMPANIES_HOUSE));
                     return targetAssociation.getId();
@@ -105,11 +107,11 @@ public class UserCompanyAssociationsController implements UserCompanyAssociation
                 .collect(Collectors.toSet());
 
         if (!allStatuses.containsAll(status)) {
-            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("Status is invalid"));
+            throw new BadRequestRuntimeException(STATUS_IS_INVALID);
         }
 
         if (pageIndex < 0 || itemsPerPage <= 0) {
-            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(PAGINATION_IS_MALFORMED));
+            throw new BadRequestRuntimeException(PAGINATION_IS_MALFORMED);
         }
 
         final var nullableUser = getUser();

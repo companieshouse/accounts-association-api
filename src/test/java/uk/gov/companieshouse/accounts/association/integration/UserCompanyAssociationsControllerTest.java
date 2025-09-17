@@ -163,7 +163,7 @@ class UserCompanyAssociationsControllerTest extends AbstractBaseIntegrationTest 
 
         associationsRepository.insert(testDataManager.fetchAssociationDaos(associationId));
         when(userClient.requestUserDetails(userId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(userId).getFirst());
-        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("Company not found", new Exception()));
+        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("Company not found"));
 
         mockMvc.perform(get(ASSOCIATIONS_URL)
                         .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
@@ -554,7 +554,7 @@ class UserCompanyAssociationsControllerTest extends AbstractBaseIntegrationTest 
         associationsRepository.insert(testDataManager.fetchAssociationDaos("18"));
 
         when(userClient.requestUserDetails(userId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(userId).getFirst());
-        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("No company found", new Exception()));
+        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("No company found"));
 
         mockMvc.perform(post(ASSOCIATIONS_URL)
                         .header(ERIC_IDENTITY.key, userId)
@@ -604,7 +604,7 @@ class UserCompanyAssociationsControllerTest extends AbstractBaseIntegrationTest 
     void addAssociationWithNonExistentUserReturnsNotFound() throws Exception {
         final var userId = "9191";
 
-        when(userClient.requestUserDetails(userId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(userClient.requestUserDetails(userId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
 
         mockMvc.perform(post(ASSOCIATIONS_URL)
                         .header(ERIC_IDENTITY.key, userId)

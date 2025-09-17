@@ -205,7 +205,7 @@ class UserCompanyAssociationsControllerTestController {
         final var user = testDataManager.fetchUserDtos("111").getFirst();
 
 //        mockers.mockUsersServiceFetchUserDetails("111");
-        Mockito.doThrow(new NotFoundRuntimeException("Not found", new Exception("Not found"))).when(
+        Mockito.doThrow(new NotFoundRuntimeException("Not found")).when(
                 associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, null, Set.of(StatusEnum.CONFIRMED.getValue()), 0, 15);
 
         mockMvc.perform(get("/associations")

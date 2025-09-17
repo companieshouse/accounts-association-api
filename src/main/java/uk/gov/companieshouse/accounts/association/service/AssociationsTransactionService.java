@@ -1,6 +1,7 @@
 package uk.gov.companieshouse.accounts.association.service;
 
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
+import static uk.gov.companieshouse.accounts.association.models.Constants.FAILED_TO_UPDATE_ASSOCIATION_VAR;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
@@ -219,7 +220,7 @@ public class AssociationsTransactionService {
         Optional.ofNullable(associationId)
                 .map(id -> associationsRepository.updateAssociation(id, update))
                 .filter(numRecordsUpdated -> numRecordsUpdated > 0)
-                .orElseThrow(() -> new InternalServerErrorRuntimeException("Failed to update association", new Exception(String.format("Failed to update association with id: %s", associationId))));
+                .orElseThrow(() -> new InternalServerErrorRuntimeException(String.format(FAILED_TO_UPDATE_ASSOCIATION_VAR, associationId)));
         LOGGER.debugContext(getXRequestId(), String.format("Updated association %s", associationId), null);
     }
 

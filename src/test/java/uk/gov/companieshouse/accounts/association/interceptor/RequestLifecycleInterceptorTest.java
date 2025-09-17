@@ -72,7 +72,7 @@ class RequestLifecycleInterceptorTest {
         request.setMethod("GET");
 
         final var response = new MockHttpServletResponse();
-        when(usersService.fetchUserDetails(user.getUserId(), X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("Could not find user", new Exception()));
+        when(usersService.fetchUserDetails(user.getUserId(), X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("Could not find user"));
 
         requestLifecycleInterceptor.preHandle(request, response, null);
 

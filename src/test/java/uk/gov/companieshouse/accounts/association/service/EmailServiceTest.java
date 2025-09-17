@@ -68,7 +68,7 @@ class EmailServiceTest {
     void sendAuthCodeConfirmationEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNameOrNullUsersThrowsNullPointerException() {
         final var userId = "333";
         when(usersService.fetchUserDetails(userId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(userId).getFirst());
-        when(usersService.fetchUserDetails(null, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(usersService.fetchUserDetails(null, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
 
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser(X_REQUEST_ID.value, "111111", "Wayne Enterprises",null, userId));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendAuthCodeConfirmationEmailToAssociatedUser(X_REQUEST_ID.value, "111111", null,  "Harleen Quinzel", userId));
@@ -97,7 +97,7 @@ class EmailServiceTest {
     void sendAuthorisationRemovedEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException() {
         final var userId = "111";
         when(usersService.fetchUserDetails(userId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(userId).getFirst());
-        when(usersService.fetchUserDetails(null, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(usersService.fetchUserDetails(null, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
 
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUser(X_REQUEST_ID.value, "111111", null,"Harleen Quinzel", "Batman", userId));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUser(X_REQUEST_ID.value, "111111", "Wayne Enterprises", null, "Batman", userId));
@@ -126,7 +126,7 @@ class EmailServiceTest {
     void sendInvitationCancelledEmailToAssociatedUsersWithNullCompanyDetailsOrNullCompanyNameOrNullDisplayNamesOrNullRequestsThrowsNullPointerException() {
         final var userId = "111";
         when(usersService.fetchUserDetails(userId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(userId).getFirst());
-        when(usersService.fetchUserDetails(null, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(usersService.fetchUserDetails(null, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
 
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUser(X_REQUEST_ID.value, "111111", null, "Harleen Quinzel", "Batman", userId));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendInvitationCancelledEmailToAssociatedUser(X_REQUEST_ID.value, "111111", "Wayne Enterprises", null, "Batman", userId));
@@ -162,7 +162,7 @@ class EmailServiceTest {
         when(usersService.fetchUserDetails(firstUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(firstUserId).getFirst());
         when(usersService.fetchUserDetails(secondUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(secondUserId).getFirst());
         when(usersService.fetchUserDetails(thirdUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(thirdUserId).getFirst());
-        when(usersService.fetchUserDetails(null, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(usersService.fetchUserDetails(null, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
 
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUser(X_REQUEST_ID.value, "111111", null,"Harleen Quinzel", "Batman", thirdUserId));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendInvitationEmailToAssociatedUser(X_REQUEST_ID.value, "111111", "Wayne Enterprises",null, "Batman", secondUserId));
@@ -214,7 +214,7 @@ class EmailServiceTest {
         when(usersService.fetchUserDetails(firstUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(firstUserId).getFirst());
         when(usersService.fetchUserDetails(secondUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(secondUserId).getFirst());
         when(usersService.fetchUserDetails(thirdUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(thirdUserId).getFirst());
-        when(usersService.fetchUserDetails(null, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(usersService.fetchUserDetails(null, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
 
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUser(X_REQUEST_ID.value, "111111", null, Optional.of("Harleen Quinzel"), "Batman", firstUserId));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendInvitationAcceptedEmailToAssociatedUser(X_REQUEST_ID.value, "111111", "Wayne Enterprises", Optional.empty(), "Batman", secondUserId));
@@ -343,7 +343,7 @@ class EmailServiceTest {
         final var firstUserId = "111";
 
         when(usersService.fetchUserDetails(firstUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(firstUserId).getFirst());
-        when(usersService.fetchUserDetails(null, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(usersService.fetchUserDetails(null, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
 
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedBatchEmail(X_REQUEST_ID.value, "111111", null, "Batman", "Ronald", firstUserId));
         Assertions.assertThrows(NullPointerException.class, () -> emailService.sendDelegatedRemovalOfMigratedBatchEmail(X_REQUEST_ID.value, "111111", "McDonalds", null, "Ronald", firstUserId));
