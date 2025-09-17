@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static uk.gov.companieshouse.accounts.association.models.Constants.OAUTH2;
+import static uk.gov.companieshouse.accounts.association.models.Constants.UNKNOWN;
 import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY;
 import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY_TYPE;
 
@@ -19,19 +20,23 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
-import uk.gov.companieshouse.accounts.association.service.client.UserClient;
+import org.springframework.web.client.RestClient;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.context.RequestContext;
 import uk.gov.companieshouse.accounts.association.models.context.RequestContextData.RequestContextDataBuilder;
+import uk.gov.companieshouse.accounts.association.service.client.UserClient;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
 class UsersServiceTest {
+
+    @Mock
+    private RestClient usersRestClient;
 
     @Mock
     private UserClient userClient;
@@ -148,7 +153,6 @@ class UsersServiceTest {
     @Test
     void searchUserDetailsWithNonexistentEmailReturnsNull() {
         // Why do we want to return null here rather than an empty list?
-//        mockers.mockRestClientForSearchUserDetailsNonexistentEmail("404@email.com");
         Assertions.assertNull(usersService.searchUsersDetailsByEmail(List.of("404@email.com")));
     }
 
@@ -160,7 +164,7 @@ class UsersServiceTest {
 
     @Test
     void fetchUserDetailsWithNullAssociationOrNullUserIdAndUsersEmailReturnsNull() {
-//        Assertions.assertNull(usersService.fetchUserDetails(new AssociationDao()));
+        Assertions.assertNull(usersService.fetchUserDetails(UNKNOWN, new AssociationDao()));
     }
 
     @Test
@@ -173,7 +177,7 @@ class UsersServiceTest {
         RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setUser(requestingUser).build());
         when(userClient.requestUserDetails(eq(targetAssociation.getUserId()), any())).thenThrow(NotFoundRuntimeException.class);
 
-//        Assertions.assertThrows(NotFoundRuntimeException.class, () -> usersService.fetchUserDetails(targetAssociation));
+        Assertions.assertThrows(NotFoundRuntimeException.class, () -> usersService.fetchUserDetails(UNKNOWN, targetAssociation));
     }
 
     @Test
@@ -186,74 +190,64 @@ class UsersServiceTest {
         request.addHeader(ERIC_IDENTITY_TYPE, OAUTH2);
         RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setEricIdentityType(request).setUser(targetUser).build());
 
-//        Assertions.assertEquals(targetUser, usersService.fetchUserDetails(targetAssociation));
+        Assertions.assertEquals(targetUser, usersService.fetchUserDetails(UNKNOWN, targetAssociation));
     }
 
     @Test
     void fetchUserDetailsWithUserIdAssociationAndDifferentUsersRetrievesUsers() {
         final var requestingUser = testDataManager.fetchUserDtos("111").getFirst();
         final var targetUser = testDataManager.fetchUserDtos("MKUser002").getFirst();
-        final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation002").getFirst();
-
-        // TODO: confirm what this was doing, cover in integration test
+        final var targetUserList = new UsersList();
+        targetUserList.add(targetUser);
+        final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
         final var request = new MockHttpServletRequest();
+
         request.addHeader(ERIC_IDENTITY, requestingUser.getUserId());
         RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setUser(requestingUser).build());
 
-        when(userClient.requestUserDetails(eq(targetUser.getUserId()), any())).thenReturn(targetUser);
+        when(userClient.requestUserDetailsByEmail(eq(targetAssociation.getUserEmail()), any())).thenReturn(targetUserList);
 
-//        Assertions.assertEquals(targetUser, usersService.fetchUserDetails(targetAssociation));
+        Assertions.assertEquals(targetUser, usersService.fetchUserDetails(UNKNOWN, targetAssociation));
     }
 
     @Test
     void fetchUserDetailsWithNonexistentUsersEmailReturnsNull() {
         final var requestingUser = testDataManager.fetchUserDtos("111").getFirst();
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
+        final var request = new MockHttpServletRequest();
 
-        // TODO: confirm what this was doing, cover in integration test
-//        final var request = new MockHttpServletRequest();
-//        request.addHeader(ERIC_IDENTITY, requestingUser.getUserId());
-//        RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setUser(requestingUser).build());
+        request.addHeader(ERIC_IDENTITY, requestingUser.getUserId());
+        RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setUser(requestingUser).build());
 
-//        mockers.mockRestClientForSearchUserDetailsNonexistentEmail("mario@mushroom.kingdom");
-
-//        Assertions.assertNull(usersService.fetchUserDetails(targetAssociation));
+        Assertions.assertNull(usersService.fetchUserDetails(UNKNOWN, targetAssociation));
     }
 
     @Test
     void fetchUserDetailsWithUserEmailAssociationAndSameUsersReturnsEricUsers() {
         final var targetUser = testDataManager.fetchUserDtos("MKUser001").getFirst();
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
-        final var usersList = new UsersList();
-        usersList.add(targetUser);
 
-        when(userClient.requestUserDetailsByEmail(eq(targetUser.getEmail()), any())).thenReturn(usersList);
+        final var request = new MockHttpServletRequest();
+        request.addHeader(ERIC_IDENTITY, targetUser.getUserId());
+        request.addHeader(ERIC_IDENTITY_TYPE, OAUTH2);
+        RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setEricIdentityType(request).setUser(targetUser).build());
 
-        // TODO: confirm what this was doing, cover in integration test
-//        final var request = new MockHttpServletRequest();
-//        request.addHeader(ERIC_IDENTITY, targetUser.getUserId());
-//        request.addHeader(ERIC_IDENTITY_TYPE, OAUTH2);
-//        RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setEricIdentityType(request).setUser(targetUser).build());
-
-//        Assertions.assertEquals(targetUser, usersService.fetchUserDetails(targetAssociation));
+        Assertions.assertEquals(targetUser, usersService.fetchUserDetails(UNKNOWN, targetAssociation));
     }
 
     @Test
     void fetchUserDetailsWithUserEmailAssociationAndDifferentUsersRetrievesUsers() {
-//        final var requestingUser = testDataManager.fetchUserDtos("111").getFirst();
+        final var requestingUser = testDataManager.fetchUserDtos("111").getFirst();
         final var targetUser = testDataManager.fetchUserDtos("MKUser001").getFirst();
         final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
         final var targetUserList = new UsersList();
-//        final var request = new MockHttpServletRequest();
-
-        // TODO: confirm what this was doing, cover in integration test
-
         targetUserList.add(targetUser);
-//        request.addHeader(ERIC_IDENTITY, requestingUser.getUserId());
-//        RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setUser(requestingUser).build());
+        final var request = new MockHttpServletRequest();
+
+        request.addHeader(ERIC_IDENTITY, requestingUser.getUserId());
+        RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setUser(requestingUser).build());
         when(userClient.requestUserDetailsByEmail(eq(targetUser.getEmail()), any())).thenReturn(targetUserList);
 
-//        Assertions.assertEquals(targetUser, usersService.fetchUserDetails(targetAssociation));
+        Assertions.assertEquals(targetUser, usersService.fetchUserDetails(UNKNOWN, targetAssociation));
     }
-
 }

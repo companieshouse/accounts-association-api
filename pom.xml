@@ -36,7 +36,7 @@
         <logback-classic.version>1.5.16</logback-classic.version>
         <tomcat-core-and-websocket.version>11.0.10</tomcat-core-and-websocket.version>
         <grpc.version>1.73.0</grpc.version>
-      <test-containers.version>1.21.3</test-containers.version>
+        <test-containers.version>1.21.3</test-containers.version>
 
         <sonar-maven-plugin.version>4.0.0.4121</sonar-maven-plugin.version>
         <sonar.token>${CODE_ANALYSIS_TOKEN}</sonar.token>
@@ -368,6 +368,11 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
+              <configuration>
+                <!-- slows down test execution, but tests fail without this config -->
+                <reuseForks>false</reuseForks>
+                <forkCount>1</forkCount>
+              </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
