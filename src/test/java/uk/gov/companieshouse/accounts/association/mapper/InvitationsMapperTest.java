@@ -1,5 +1,8 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
 
@@ -37,7 +40,10 @@ class InvitationsMapperTest {
 
     @Test
     void daoToDtoMapsInvitationDaoToInvitation() {
-//        mockers.mockUsersServiceFetchUserDetails("666");
+        final var userId = "666";
+
+        when(usersService.fetchUserDetails(eq(userId), anyString())).thenReturn(testDataManager.fetchUserDtos(userId).getFirst());
+
         final var invitationDao = testDataManager.fetchAssociationDaos("1").getFirst().getInvitations().getFirst();
         final var invitationDto = invitationsMapper.daoToDto(invitationDao, "1");
         Assertions.assertEquals("homer.simpson@springfield.com", invitationDto.getInvitedBy());

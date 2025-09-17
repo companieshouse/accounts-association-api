@@ -40,12 +40,12 @@ public class UsersService {
     }
 
     public User fetchUserDetails(final String userId, final String xRequestId) {
-        LOGGER.debugContext(xRequestId, "Searching for users by userId: " + userId, null);
         if (StringUtils.isBlank(userId)) {
             NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_USER_ID, new Exception(BLANK_USER_ID));
             LOGGER.errorContext(xRequestId, BLANK_USER_ID, exception, null);
             throw exception;
         }
+        LOGGER.debugContext(xRequestId, "Searching for users by userId: " + userId, null);
 
         return userClient.requestUserDetails(userId, xRequestId);
     }

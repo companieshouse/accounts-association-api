@@ -1,5 +1,9 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
 
@@ -61,10 +65,11 @@ class InvitationsCollectionMappersTest {
 
     @Test
     void daoToDtoCorrectlyMapsAssociationToInvitationsList() {
+        final var userIds = List.of("111", "222", "444");
         final var association = testDataManager.fetchAssociationDaos("38").getFirst();
         association.getInvitations().getLast().invitedAt(LocalDateTime.now().minusDays(30));
 
-//        mockers.mockUsersServiceFetchUserDetails("111", "222", "444");
+        userIds.forEach(userId -> when(usersService.fetchUserDetails(eq(userId), anyString())).thenReturn(testDataManager.fetchUserDtos(userId).getFirst()));
 
         final var invitations = invitationsCollectionMappers.daoToDto(association, 0, 15);
         final var invitation0 = invitations.getItems().getFirst();
@@ -93,10 +98,11 @@ class InvitationsCollectionMappersTest {
 
     @Test
     void daoToDtoCorrectlyMapsAssociationToInvitationsListAndPaginatesCorrectly() {
+        final var userIds = List.of("222");
         final var association = testDataManager.fetchAssociationDaos("38").getFirst();
         association.getInvitations().getLast().invitedAt(LocalDateTime.now().minusDays(8));
 
-//        mockers.mockUsersServiceFetchUserDetails("222");
+        userIds.forEach(userId -> when(usersService.fetchUserDetails(eq(userId), anyString())).thenReturn(testDataManager.fetchUserDtos(userId).getFirst()));
 
         final var invitations = invitationsCollectionMappers.daoToDto(association, 1, 1);
         final var invitation = invitations.getItems().getFirst();
@@ -132,11 +138,12 @@ class InvitationsCollectionMappersTest {
 
     @Test
     void daoToDtoCorrectlyMapsAssociationsToInvitationsList() {
+        final var userIds = List.of("9999", "444");
         final var associations = testDataManager.fetchAssociationDaos("36", "38");
         associations.getFirst().approvalExpiryAt(LocalDateTime.now().plusDays(30));
         associations.getFirst().getInvitations().getLast().invitedAt(LocalDateTime.now().minusDays(31));
 
-//        mockers.mockUsersServiceFetchUserDetails("9999", "444");
+        userIds.forEach(userId -> when(usersService.fetchUserDetails(eq(userId), anyString())).thenReturn(testDataManager.fetchUserDtos(userId).getFirst()));
 
         final var invitations = invitationsCollectionMappers.daoToDto(associations, 0, 15);
         final var invitation0 = invitations.getItems().getFirst();
@@ -162,11 +169,12 @@ class InvitationsCollectionMappersTest {
 
     @Test
     void daoToDtoCorrectlyMapsAssociationsToInvitationsListAndPaginatesCorrectly() {
+        final var userIds = List.of("444");
         final var associations = testDataManager.fetchAssociationDaos("36", "38");
         associations.getFirst().approvalExpiryAt(LocalDateTime.now().plusDays(7));
         associations.getFirst().getInvitations().getLast().invitedAt(LocalDateTime.now().minusDays(8));
 
-//        mockers.mockUsersServiceFetchUserDetails("444");
+        userIds.forEach(userId -> when(usersService.fetchUserDetails(eq(userId), anyString())).thenReturn(testDataManager.fetchUserDtos(userId).getFirst()));
 
         final var invitations = invitationsCollectionMappers.daoToDto(associations, 0, 1);
         final var invitation = invitations.getItems().getFirst();

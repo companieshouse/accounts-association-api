@@ -296,9 +296,8 @@ public class EmailService {
     }
 
     private void sendInviteCancelledEmailToCancelledUser(final String xRequestId, final String companyNumber, final String companyName, final String cancelledByDisplayName, final AssociationDao associationDao) {
-        if (associationDao == null || (StringUtils.isBlank(associationDao.getUserId()) && StringUtils.isBlank(associationDao.getUserEmail()))) {
-            final var warningException = new NullRequiredEmailDataException(
-                    ASSOCIATION_DAO_OR_USER_OR_EMAIL_IS_NULL, INVITE_CANCELLED_MESSAGE_TYPE);
+        if (StringUtils.isBlank(associationDao.getUserId()) && StringUtils.isBlank(associationDao.getUserEmail())) {
+            final var warningException = new NullRequiredEmailDataException(ASSOCIATION_DAO_OR_USER_OR_EMAIL_IS_NULL, INVITE_CANCELLED_MESSAGE_TYPE);
             LOGGER.errorContext(xRequestId, ASSOCIATION_DAO_OR_USER_OR_EMAIL_IS_NULL, warningException, null);
             return;
         }
