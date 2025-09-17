@@ -10,7 +10,6 @@ import static uk.gov.companieshouse.accounts.association.utils.RequestContextUti
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.hasAdminPrivilege;
 import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY;
 
-import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;

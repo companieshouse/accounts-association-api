@@ -14,9 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
-
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,11 +29,8 @@ class InvitationsMapperTest {
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
-    private Mockers mockers;
-
     @BeforeEach
     void setup() {
-        mockers = new Mockers(null, null, null, usersService);
     }
 
     @Test
