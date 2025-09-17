@@ -47,7 +47,7 @@ public class TestDataManager {
         ERIC_IDENTITY_TYPE_API_KEY("ERIC-Identity-Type", "key"),
         ERIC_AUTHORISED_KEY_ROLES("ERIC-Authorised-Key-Roles", "*"),
         ERIC_ADMIN_UPDATE_PERMISSION("Eric-Authorised-Roles", ADMIN_UPDATE_PERMISSION),
-        ERIC_ADMIN_READ_PERMISSION("Eric-Authorised-Roles", ADMIN_READ_PERMISSION);;
+        ERIC_ADMIN_READ_PERMISSION("Eric-Authorised-Roles", ADMIN_READ_PERMISSION);
 
         public final String key;
         public final String value;
