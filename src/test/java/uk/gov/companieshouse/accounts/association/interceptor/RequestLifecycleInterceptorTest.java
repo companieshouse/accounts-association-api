@@ -1,7 +1,7 @@
 package uk.gov.companieshouse.accounts.association.interceptor;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static uk.gov.companieshouse.accounts.association.common.TestDataManager.REQUEST_HEADERS.X_REQUEST_ID;
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentityType;
@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -49,7 +48,7 @@ class RequestLifecycleInterceptorTest {
 
         final var response = new MockHttpServletResponse();
 
-//        Mockito.doReturn(user).when(usersService).fetchUserDetails(eq(user.getUserId()), any());
+        when(usersService.fetchUserDetails(user.getUserId(), X_REQUEST_ID.value)).thenReturn(user);
 
         final var result = requestLifecycleInterceptor.preHandle(request, response, null);
 
@@ -73,8 +72,7 @@ class RequestLifecycleInterceptorTest {
         request.setMethod("GET");
 
         final var response = new MockHttpServletResponse();
-
-//        Mockito.doThrow(new NotFoundRuntimeException("Could not find user", new Exception("Could not find user"))).when(usersService).fetchUserDetails(eq(user.getUserId()), any());
+        when(usersService.fetchUserDetails(user.getUserId(), X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("Could not find user", new Exception()));
 
         requestLifecycleInterceptor.preHandle(request, response, null);
 

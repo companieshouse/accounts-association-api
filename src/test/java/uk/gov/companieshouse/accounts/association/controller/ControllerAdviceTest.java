@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -88,14 +89,17 @@ class ControllerAdviceTest {
         Mockito.doThrow(new NotFoundRuntimeException("Couldn't find association", new Exception("Couldn't find association")))
                 .when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
 
-        mockStatic(RequestContextUtil.class).when(RequestContextUtil::getUser).thenReturn(testDataManager.fetchUserDtos("111").getFirst());
+        try (var staticMock = mockStatic(RequestContextUtil.class)) {
+            staticMock.when(RequestContextUtil::getUser).thenReturn(testDataManager.fetchUserDtos("111").getFirst());
 
-        mockMvc.perform(get("/associations")
-                        .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity", "111")
-                        .header("ERIC-Identity-Type", "oauth2"))
-                .andExpect(status().isNotFound());
+            mockMvc.perform(get("/associations")
+                            .header("X-Request-Id", "theId123")
+                            .header("ERIC-Identity", "111")
+                            .header("ERIC-Identity-Type", "oauth2"))
+                    .andExpect(status().isNotFound());
+        }
     }
+
 
     @Test
     void testBadRequestRuntimeError() throws Exception {
@@ -119,8 +123,8 @@ class ControllerAdviceTest {
     void testOnInternalServerError() throws Exception {
         Mockito.doThrow(new NullPointerException("Couldn't find association"))
                 .when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
-
-        mockStatic(RequestContextUtil.class).when(RequestContextUtil::getUser).thenReturn(testDataManager.fetchUserDtos("111").getFirst());
+        try (var staticMock = mockStatic(RequestContextUtil.class)) {
+            staticMock.when(RequestContextUtil::getUser).thenReturn(testDataManager.fetchUserDtos("111").getFirst());
 
         mockMvc.perform(get("/associations?company_number=123445")
                         .header("X-Request-Id", "theId123")
@@ -128,6 +132,7 @@ class ControllerAdviceTest {
                         .header("ERIC-Identity-Type", "oauth2"))
                 .andDo(print())
                 .andExpect(status().isInternalServerError());
+        }
     }
 
     @Test
@@ -135,13 +140,15 @@ class ControllerAdviceTest {
         Mockito.doThrow(new InternalServerErrorRuntimeException("Couldn't find association", new Exception("Couldn't find association")))
                 .when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
 
-        mockStatic(RequestContextUtil.class).when(RequestContextUtil::getUser).thenReturn(testDataManager.fetchUserDtos("111").getFirst());
+        try (var staticMock = mockStatic(RequestContextUtil.class)) {
+            staticMock.when(RequestContextUtil::getUser).thenReturn(testDataManager.fetchUserDtos("111").getFirst());
 
         mockMvc.perform(get("/associations")
                         .header("X-Request-Id", "theId123")
                         .header("ERIC-Identity", "111")
                         .header("ERIC-Identity-Type", "oauth2"))
                 .andExpect(status().isInternalServerError());
+        }
     }
 
     @Test

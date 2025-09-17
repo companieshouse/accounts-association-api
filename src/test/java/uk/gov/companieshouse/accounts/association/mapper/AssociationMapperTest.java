@@ -1,7 +1,9 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
+import static org.mockito.Mockito.when;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.models.Constants.UNKNOWN;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -87,7 +89,7 @@ class AssociationMapperTest {
         final var user = testDataManager.fetchUserDtos("111").getFirst();
         final var associationPreprocessed = testDataManager.fetchAssociationDto("1", user).userEmail(null).displayName(null);
 
-//        mockers.mockUsersServiceFetchUserDetails("111");
+        when(usersService.fetchUserDetails(user.getUserId(), UNKNOWN)).thenReturn(user);
 
         associationMapper.enrichWithUserDetails(associationPreprocessed, null);
 
