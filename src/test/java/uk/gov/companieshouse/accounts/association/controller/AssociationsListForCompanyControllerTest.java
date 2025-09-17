@@ -3,6 +3,7 @@ package uk.gov.companieshouse.accounts.association.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -45,6 +46,7 @@ import org.springframework.web.context.WebApplicationContext;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfig;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsTransactionService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -446,8 +448,10 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyReturnsForbiddenWhenCalledByAUserThatIsNotAMemberOfCompanyOrAdmin() throws Exception {
-//        mockers.mockUsersServiceFetchUserDetails("MKUser001");
-        Mockito.doReturn(false).when(associationsTransactionService).confirmedAssociationExists("111111", "MKUser001");
+        final var userId = "MKUser001";
+
+        when(usersService.fetchUserDetails(userId, "theId123")).thenReturn(testDataManager.fetchUserDtos(userId).getFirst());
+        when(associationsTransactionService.confirmedAssociationExists("111111", "MKUser001")).thenReturn(false);
         mockers.mockCompanyServiceFetchCompanyProfile("111111");
 
         mockMvc.perform(get("/associations/companies/111111")
@@ -463,7 +467,7 @@ class AssociationsListForCompanyControllerTest {
         final var user = testDataManager.fetchUserDtos("MKUser002").getFirst();
         final var company = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
-//        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails("MKUser002", null);
+        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails("theId123", "MKUser002", null);
         Mockito.doReturn(Optional.of(testDataManager.fetchAssociationDto("MKAssociation002" , user))).when(
                 associationsTransactionService).fetchUnexpiredAssociationsForCompanyUserAndStatuses(company, Set.of(CONFIRMED, REMOVED), user, "luigi@mushroom.kingdom");
 
@@ -495,7 +499,7 @@ class AssociationsListForCompanyControllerTest {
         final var user = testDataManager.fetchUserDtos("MKUser002").getFirst();
         final var company = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
-//        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails(null, "luigi@mushroom.kingdom");
+        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails("theId123", null, "luigi@mushroom.kingdom");
         Mockito.doReturn(Optional.of(testDataManager.fetchAssociationDto("MKAssociation002" , user))).when(
                 associationsTransactionService).fetchUnexpiredAssociationsForCompanyUserAndStatuses(eq(company), any(), eq(user), eq("luigi@mushroom.kingdom"));
 
@@ -517,7 +521,7 @@ class AssociationsListForCompanyControllerTest {
         final var user = testDataManager.fetchUserDtos("MKUser001").getFirst();
         final var company = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
-//        Mockito.doReturn(null).when(usersService).retrieveUserDetails(null, "mario@mushroom.kingdom");
+        Mockito.doReturn(null).when(usersService).retrieveUserDetails("theId123", null, "mario@mushroom.kingdom");
         Mockito.doReturn(Optional.of(testDataManager.fetchAssociationDto("MKAssociation001" , user))).when(
                 associationsTransactionService).fetchUnexpiredAssociationsForCompanyUserAndStatuses(company, Set.of(MIGRATED), null , "mario@mushroom.kingdom");
         final var response = mockMvc.perform(post("/associations/companies/MKCOMP001/search")
@@ -617,7 +621,7 @@ class AssociationsListForCompanyControllerTest {
         final var user = testDataManager.fetchUserDtos("MKUser002").getFirst();
         final var company = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
         mockers.mockCompanyServiceFetchCompanyProfileNotFound("MKCOMP001");
-//        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails("MKUser002", null);
+        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails("theId123", "MKUser002", null);
         Mockito.doReturn(Optional.of(testDataManager.fetchAssociationDto("MKAssociation002" , user))).when(
                 associationsTransactionService).fetchUnexpiredAssociationsForCompanyUserAndStatuses(company, Set.of(CONFIRMED, REMOVED), user, "luigi@mushroom.kingdom");
 
@@ -636,7 +640,7 @@ class AssociationsListForCompanyControllerTest {
         final var user = testDataManager.fetchUserDtos("MKUser002").getFirst();
         final var company = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
-//        Mockito.doThrow(new NotFoundRuntimeException("Test", new Exception())).when(usersService).retrieveUserDetails("MKUser002", null);
+        Mockito.doThrow(new NotFoundRuntimeException("Test", new Exception())).when(usersService).retrieveUserDetails("theId123", "MKUser002", null);
         Mockito.doReturn(Optional.of(testDataManager.fetchAssociationDto("MKAssociation002" , user))).when(
                 associationsTransactionService).fetchUnexpiredAssociationsForCompanyUserAndStatuses(company, Set.of(CONFIRMED, REMOVED), user, "luigi@mushroom.kingdom");
 
@@ -655,7 +659,7 @@ class AssociationsListForCompanyControllerTest {
         final var user = testDataManager.fetchUserDtos("MKUser002").getFirst();
         final var company = testDataManager.fetchCompanyDetailsDtos("MKCOMP001").getFirst();
         mockers.mockCompanyServiceFetchCompanyProfile("MKCOMP001");
-//        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails("MKUser002", null);
+        Mockito.doReturn(testDataManager.fetchUserDtos("MKUser002").getFirst()).when(usersService).retrieveUserDetails("theId123", "MKUser002", null);
         Mockito.doReturn(Optional.empty()).when(associationsTransactionService).fetchUnexpiredAssociationsForCompanyUserAndStatuses(company, Set.of(CONFIRMED, REMOVED), user, "luigi@mushroom.kingdom");
 
         mockMvc.perform(post("/associations/companies/MKCOMP001/search")

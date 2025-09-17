@@ -1,6 +1,7 @@
 package uk.gov.companieshouse.accounts.association.common;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
+import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.user.model.User;
@@ -166,19 +168,20 @@ public class Mockers {
         }
     }
 
-//    public void mockUsersServiceFetchUserDetails(final String... userIds){
-//        for (final String userId: userIds){
-//            final var userDetails = testDataManager.fetchUserDtos(userId).getFirst();
-//            Mockito.doReturn(userDetails).when(usersService).fetchUserDetails( eq(userId), any());
-//        }
-//    }
+    public void mockUsersServiceFetchUserDetails(final String... userIds){
+        for (final String userId: userIds){
+            final var userDetails = testDataManager.fetchUserDtos(userId).getFirst();
+            Mockito.doReturn(userDetails).when(usersService).fetchUserDetails( eq(userId), anyString());
+        }
+    }
 
-//    public void mockUsersServiceToFetchUserDetailsRequest(final String... userIds){
-//        for (final String userId: userIds){
-//            final var userDetails = testDataManager.fetchUserDtos(userId).getFirst();
-//            Mockito.lenient().doReturn(userDetails).when(usersService).retrieveUserDetails(eq(userId), any());
-//        }
-//    }
+    public void mockUsersServiceToFetchUserDetailsRequest(final String... userIds){
+        for (final String userId: userIds){
+            final var userDetails = testDataManager.fetchUserDtos(userId).getFirst();
+            Mockito.lenient().doReturn(userDetails).when(usersService).fetchUserDetails(eq(userId), any(
+                    AssociationDao.class));
+        }
+    }
 
     public void mockUsersServiceSearchUserDetails(final String... userIds){
         for (final String userId: userIds){

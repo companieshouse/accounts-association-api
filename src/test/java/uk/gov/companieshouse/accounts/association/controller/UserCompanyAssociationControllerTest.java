@@ -14,6 +14,7 @@ import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.par
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
+import static uk.gov.companieshouse.accounts.association.models.Constants.UNKNOWN;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.CONFIRMED;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.UNAUTHORISED;
@@ -47,6 +48,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.configuration.WebSecurityConfig;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.AssociationsTransactionService;
@@ -68,29 +70,21 @@ class UserCompanyAssociationControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
     @Autowired
     private WebApplicationContext context;
 
     @MockitoBean
     private StaticPropertyUtil staticPropertyUtil;
-
     @MockitoBean
     private UsersService usersService;
-
     @MockitoBean
     private CompanyService companyService;
-
     @MockitoBean
     private AssociationsTransactionService associationsTransactionService;
-
     @MockitoBean
     private AssociationsService associationsService;
-
     @MockitoBean
     private EmailService emailService;
-
-    final Function<String, Mono<Void>> sendEmailMock = userId -> Mono.empty();
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
@@ -209,7 +203,6 @@ class UserCompanyAssociationControllerTest {
         final var user = testDataManager.fetchUserDtos("MKUser004").getFirst();
         final var proposedAssociation = testDataManager.fetchAssociationDto("MKAssociation004", user);
 
-//      // mockers.mockUsersServiceFetchUserDetails("111");
         Mockito.doReturn(Optional.of(proposedAssociation)).when(associationsTransactionService).fetchAssociationDto("MKAssociation004");
 
         final var response =
@@ -409,12 +402,9 @@ class UserCompanyAssociationControllerTest {
     void updateAssociationStatusForIdWithRemovedUpdatesAssociationStatus() throws Exception {
         final var association = testDataManager.fetchAssociationDaos("35").getFirst();
 
-//        Mockito.doReturn(testDataManager.fetchUserDtos("000").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
-        //      // mockers.mockUsersServiceFetchUserDetails("9999");
         mockers.mockCompanyServiceFetchCompanyProfile("333333");
-        Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("35");
-        Mockito.when(
-                associationsTransactionService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        when(associationsTransactionService.fetchAssociationDao(any())).thenReturn(Optional.of(association));
+        when(associationsTransactionService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
 
         mockMvc.perform(patch("/associations/35")
                         .header("X-Request-Id", "theId123")
@@ -425,16 +415,15 @@ class UserCompanyAssociationControllerTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(associationsTransactionService).updateAssociation(anyString(), any(Update.class));
+        Mockito.verify(associationsTransactionService).updateAssociation(anyString(), any());
     }
 
     @Test
     void updateAssociationStatusForIdWithConfirmedUpdatesWithNoUserFoundShouldThrow404AssociationStatus() throws Exception {
         final var association = testDataManager.fetchAssociationDaos("36").getFirst();
 
-      // mockers.mockUsersServiceFetchUserDetails("9999");
-        Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("36");
-        Mockito.doReturn(null).when(usersService).searchUsersDetailsByEmail(List.of("light.yagami@death.note"));
+        when(associationsTransactionService.fetchAssociationDao(anyString())).thenReturn(Optional.ofNullable(association));
+        when(usersService.fetchUserDetails(any(), any(AssociationDao.class))).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
 
         mockMvc.perform(patch("/associations/36")
                         .header("X-Request-Id", "theId123")
@@ -443,16 +432,15 @@ class UserCompanyAssociationControllerTest {
                         .header("ERIC-Authorised-Key-Roles", "*")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\":\"confirmed\"}"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound());
     }
 
     @Test
     void updateAssociationStatusForIdWithNullUserIdAndExistingUserAndConfirmedUpdatesAssociationStatus() throws Exception {
         final var association = testDataManager.fetchAssociationDaos("36").getFirst();
 
-//        Mockito.doReturn(testDataManager.fetchUserDtos("000").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
-      // mockers.mockUsersServiceFetchUserDetails("000");
-        Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("36");
+        when(associationsTransactionService.fetchAssociationDao(anyString())).thenReturn(Optional.ofNullable(association));
+        when(usersService.fetchUserDetails(any(), any(AssociationDao.class))).thenReturn(testDataManager.fetchUserDtos("000").getFirst());
 
         mockMvc.perform(patch("/associations/36")
                         .header("X-Request-Id", "theId123")
@@ -463,16 +451,14 @@ class UserCompanyAssociationControllerTest {
                         .content("{\"status\":\"confirmed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(associationsTransactionService, new Times(1)).updateAssociation(anyString(), any(Update.class));
+        Mockito.verify(associationsTransactionService, new Times(1)).updateAssociation(anyString(), any());
     }
 
     @Test
     void updateAssociationStatusForIdWithNullUserIdAndExistingUserAndRemovedUpdatesAssociationStatus() throws Exception {
         final var association = testDataManager.fetchAssociationDaos("34").getFirst();
 
-      // mockers.mockUsersServiceFetchUserDetails("000");
-//        Mockito.doReturn(testDataManager.fetchUserDtos("000").getFirst()).when(usersService).fetchUserDetails(any(AssociationDao.class));
-        Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("34");
+        when(associationsTransactionService.fetchAssociationDao(anyString())).thenReturn(Optional.ofNullable(association));
 
         mockMvc.perform(patch("/associations/34")
                         .header("X-Request-Id", "theId123")
@@ -483,16 +469,14 @@ class UserCompanyAssociationControllerTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(associationsTransactionService, new Times(1)).updateAssociation(anyString(), any(Update.class));
+        Mockito.verify(associationsTransactionService, new Times(1)).updateAssociation(anyString(), any());
     }
 
     @Test
     void updateAssociationStatusForIdWithNullUserIdAndNonexistentUserAndRemovedUpdatesAssociationStatus() throws Exception {
         final var association = testDataManager.fetchAssociationDaos("34").getFirst();
 
-//        Mockito.doReturn(null).when(usersService).fetchUserDetails(any(AssociationDao.class));
-      // mockers.mockUsersServiceFetchUserDetails("000");
-        Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("34");
+        when(associationsTransactionService.fetchAssociationDao(anyString())).thenReturn(Optional.ofNullable(association));
 
         mockMvc.perform(patch("/associations/34")
                         .header("X-Request-Id", "theId123")
@@ -503,19 +487,15 @@ class UserCompanyAssociationControllerTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(associationsTransactionService, new Times(1)).updateAssociation(anyString(), any(Update.class));
+        Mockito.verify(associationsTransactionService, new Times(1)).updateAssociation(anyString(), any());
     }
 
     @Test
     void updateAssociationStatusForIdNotificationsWhereTargetUserIdExistsSendsNotification() throws Exception {
         final var association = testDataManager.fetchAssociationDaos("35").getFirst();
-        final var user = testDataManager.fetchUserDtos("000").getFirst();
 
-//        Mockito.doReturn(user).when(usersService).fetchUserDetails(any(AssociationDao.class));
-        Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("35");
-        Mockito.doReturn(Stream.of("9999")).when(associationsTransactionService).fetchConfirmedUserIds("333333");
-        Mockito.when(
-                associationsTransactionService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
+        when(associationsTransactionService.fetchAssociationDao(anyString())).thenReturn(Optional.ofNullable(association));
+        when(associationsTransactionService.fetchConfirmedUserIds(any())).thenReturn(Stream.of(testDataManager.fetchUserDtos("000").getFirst().getUserId()));
 
         mockMvc.perform(patch("/associations/35")
                         .header("X-Request-Id", "theId123")
@@ -526,7 +506,7 @@ class UserCompanyAssociationControllerTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendAuthorisationRemovedEmailToAssociatedUser(eq("theId123"), eq("333333"), any(), eq("Scrooge McDuck"), eq("light.yagami@death.note"), "111");
+        Mockito.verify(emailService).sendStatusUpdateEmails(eq(association), any(), eq(StatusEnum.REMOVED));
     }
 
     @Test
@@ -631,15 +611,20 @@ class UserCompanyAssociationControllerTest {
 
     @Test
     void confirmUserStatusRequestForExistingAssociationWithoutOneLoginUserAndDifferentRequestingUserShouldThrow400BadRequest() throws Exception {
-        final var association = testDataManager.fetchAssociationDaos("6").getFirst();
+        final var userIds = List.of("666", "222");
+        final var associationId = "6";
+        final var association = testDataManager.fetchAssociationDaos(associationId).getFirst();
+
+        userIds.forEach(userId -> when(usersService.fetchUserDetails(UNKNOWN, association)).thenReturn(testDataManager.fetchUserDtos(userId).getFirst()));
+        when(associationsTransactionService.fetchAssociationDao(associationId)).thenReturn(Optional.ofNullable(testDataManager.fetchAssociationDaos(associationId).getFirst()));
 
       // mockers.mockUsersServiceFetchUserDetails("666", "222");
-        mockers.mockUsersServiceSearchUserDetailsEmptyList("homer.simpson@springfield.com");
-        mockers.mockCompanyServiceFetchCompanyProfile("111111");
-        Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("6");
-        Mockito.doReturn(Stream.of("222", "444")).when(associationsTransactionService).fetchConfirmedUserIds("111111");
+//        mockers.mockUsersServiceSearchUserDetailsEmptyList("homer.simpson@springfield.com");
+//        mockers.mockCompanyServiceFetchCompanyProfile("111111");
+//        Mockito.doReturn(Optional.of(association)).when(associationsTransactionService).fetchAssociationDao("6");
+//        Mockito.doReturn(Stream.of("222", "444")).when(associationsTransactionService).fetchConfirmedUserIds("111111");
 
-        mockMvc.perform(patch("/associations/6")
+        mockMvc.perform(patch("/associations/" + associationId)
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", "222")
                         .header("ERIC-Identity-Type", "oauth2")

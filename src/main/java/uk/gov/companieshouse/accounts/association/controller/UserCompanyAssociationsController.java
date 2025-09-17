@@ -108,7 +108,7 @@ public class UserCompanyAssociationsController implements UserCompanyAssociation
             throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("Status is invalid"));
         }
 
-        if (pageIndex < 0 || itemsPerPage <= 0){
+        if (pageIndex < 0 || itemsPerPage <= 0) {
             throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(PAGINATION_IS_MALFORMED));
         }
 
