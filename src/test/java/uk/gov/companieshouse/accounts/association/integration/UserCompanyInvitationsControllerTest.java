@@ -130,7 +130,7 @@ class UserCompanyInvitationsControllerTest extends AbstractBaseIntegrationTest {
     void fetchActiveInvitationsForUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
         final var requestingUserId = "9191";
 
-        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
 
         mockMvc.perform(get(ASSOCIATIONS_INVITATIONS_URL + "?page_index=1&items_per_page=1")
                         .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
@@ -234,7 +234,7 @@ class UserCompanyInvitationsControllerTest extends AbstractBaseIntegrationTest {
     void inviteUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
         final var requestingUserId = "9191";
 
-        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
 
         mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
                         .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
@@ -293,7 +293,7 @@ class UserCompanyInvitationsControllerTest extends AbstractBaseIntegrationTest {
         final var companyNumber = "919191";
 
         when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
-        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("Company not found", new Exception()));
+        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("Company not found"));
 
         mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
                         .header(X_REQUEST_ID.key, X_REQUEST_ID.value)

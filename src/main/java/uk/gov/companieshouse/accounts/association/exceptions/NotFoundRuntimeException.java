@@ -5,9 +5,9 @@ import static uk.gov.companieshouse.accounts.association.utils.RequestContextUti
 
 public class NotFoundRuntimeException extends RuntimeException {
 
-    public NotFoundRuntimeException(final String exceptionMessage, final Exception loggingMessage) {
+    public NotFoundRuntimeException(final String exceptionMessage) {
         super(exceptionMessage);
-        LOGGER.errorContext(getXRequestId(), loggingMessage, null);
+        LOGGER.errorContext(getXRequestId(), this, null);
     }
 
 }

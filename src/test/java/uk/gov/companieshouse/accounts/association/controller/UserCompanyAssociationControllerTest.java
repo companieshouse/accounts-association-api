@@ -416,7 +416,7 @@ class UserCompanyAssociationControllerTest {
         final var association = testDataManager.fetchAssociationDaos("36").getFirst();
 
         when(associationsTransactionService.fetchAssociationDao(anyString())).thenReturn(Optional.ofNullable(association));
-        when(usersService.fetchUserDetails(any(), any(AssociationDao.class))).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(usersService.fetchUserDetails(any(), any(AssociationDao.class))).thenThrow(new NotFoundRuntimeException("User not found"));
 
         mockMvc.perform(patch("/associations/36")
                         .header("X-Request-Id", "theId123")

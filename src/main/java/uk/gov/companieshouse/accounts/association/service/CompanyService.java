@@ -47,7 +47,7 @@ public class CompanyService {
         xRequestId = xRequestId != null ? xRequestId : getXRequestId();
         LOGGER.debugContext(xRequestId, "Searching for company by number: " + companyNumber, null);
         if (StringUtils.isBlank(companyNumber)) {
-            NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_COMPANY_NUMBER, new Exception(BLANK_COMPANY_NUMBER));
+            NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_COMPANY_NUMBER);
             LOGGER.errorContext(xRequestId, BLANK_COMPANY_NUMBER, exception, null);
             throw exception;
         }

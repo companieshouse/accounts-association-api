@@ -98,7 +98,7 @@ class UserCompanyInvitationsControllerTest {
     @Test
     void fetchActiveInvitationsForUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
         final var ericUserId = "$$$$";
-        when(usersService.fetchUserDetails(ericUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(usersService.fetchUserDetails(ericUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
         mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", ericUserId)
@@ -110,7 +110,7 @@ class UserCompanyInvitationsControllerTest {
     @Test
     void fetchActiveInvitationsForUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
         final var ericUserId = "9191";
-        when(usersService.fetchUserDetails(ericUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(usersService.fetchUserDetails(ericUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
         mockMvc.perform(get("/associations/invitations?page_index=1&items_per_page=1")
                         .header("X-Request-Id", "theId123")
                         .header("Eric-identity", ericUserId)
@@ -209,7 +209,7 @@ class UserCompanyInvitationsControllerTest {
     @Test
     void inviteUserWithMalformedEricIdentityReturnsBadRequest() throws Exception {
         final var ericUserId = "$$$$";
-        when(usersService.fetchUserDetails(ericUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(usersService.fetchUserDetails(ericUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -224,7 +224,7 @@ class UserCompanyInvitationsControllerTest {
     @Test
     void inviteUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
         final var ericUserId = "9191";
-        when(usersService.fetchUserDetails(ericUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(usersService.fetchUserDetails(ericUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
 
         mockMvc.perform(post("/associations/invitations")
                         .header("X-Request-Id", "theId123")
@@ -451,7 +451,7 @@ class UserCompanyInvitationsControllerTest {
         mockers.mockCompanyServiceFetchCompanyProfile("333333");
         mockers.mockUsersServiceSearchUserDetails("000");
         Mockito.doReturn(Optional.of(associationDao)).when(associationsTransactionService).fetchAssociationDao("333333", "000", "light.yagami@death.note");
-        Mockito.doThrow(new BadRequestRuntimeException("There is an existing association with Confirmed status for the user", new Exception("There is an existing association with Confirmed status for the user"))).when(
+        Mockito.doThrow(new BadRequestRuntimeException("There is an existing association with Confirmed status for the user")).when(
                 associationsTransactionService).fetchAssociationDao("333333", "000", null);
         Mockito.when(
                 associationsTransactionService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);

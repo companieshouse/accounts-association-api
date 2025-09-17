@@ -3,8 +3,11 @@ package uk.gov.companieshouse.accounts.association.controller;
 import static java.time.LocalDateTime.now;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
+import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANY_NOT_FOUND_WITH_ID_VAR;
+import static uk.gov.companieshouse.accounts.association.models.Constants.EMAIL_COMPANY_ASSOCIATION_EXISTS_AT_VAR;
+import static uk.gov.companieshouse.accounts.association.models.Constants.INVITEE_EMAIL_IS_NULL;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
-import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
+import static uk.gov.companieshouse.accounts.association.models.Constants.USER_COMPANY_ASSOCIATION_DOES_NOT_EXIST_AT_VAR;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToInvitationUpdate;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
@@ -51,7 +54,7 @@ public class UserCompanyInvitationsController implements UserCompanyInvitationsI
         LOGGER.infoContext(getXRequestId(), String.format("Received request with user_id=%s, itemsPerPage=%d, pageIndex=%d.", getEricIdentity(), itemsPerPage, pageIndex),null);
 
         if (pageIndex < 0 || itemsPerPage <= 0){
-            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(PAGINATION_IS_MALFORMED));
+            throw new BadRequestRuntimeException(PAGINATION_IS_MALFORMED);
         }
 
         final var invitations = associationsTransactionService.fetchActiveInvitations(getUser(), pageIndex, itemsPerPage);
@@ -65,18 +68,18 @@ public class UserCompanyInvitationsController implements UserCompanyInvitationsI
 
         final var inviteeEmail = Optional.of(requestBody)
                 .map(InvitationRequestBodyPost::getInviteeEmailId)
-                .orElseThrow(() -> new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception("invitee_email_id is null.")));
+                .orElseThrow(() -> new BadRequestRuntimeException(INVITEE_EMAIL_IS_NULL));
 
         final var companyNumber = requestBody.getCompanyNumber();
         final CompanyDetails companyDetails;
         try {
             companyDetails = companyService.fetchCompanyProfile(companyNumber);
-        } catch(NotFoundRuntimeException exception){
-            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(exception.getMessage()));
+        } catch(NotFoundRuntimeException exception) {
+            throw new BadRequestRuntimeException(String.format(COMPANY_NOT_FOUND_WITH_ID_VAR, companyNumber));
         }
 
-        if (!associationsTransactionService.confirmedAssociationExists(companyNumber, getEricIdentity())){
-            throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("Requesting user %s does not have a confirmed association at company %s", getEricIdentity(), companyNumber)));
+        if (!associationsTransactionService.confirmedAssociationExists(companyNumber, getEricIdentity())) {
+            throw new BadRequestRuntimeException(String.format(USER_COMPANY_ASSOCIATION_DOES_NOT_EXIST_AT_VAR, getEricIdentity(), companyNumber));
         }
 
         final var inviteeUserDetails = Optional
@@ -89,7 +92,7 @@ public class UserCompanyInvitationsController implements UserCompanyInvitationsI
                 .map(association -> {
                     LOGGER.debugContext(getXRequestId(), "Mapping association", null);
                     if(CONFIRMED.getValue().equals(association.getStatus())) {
-                        throw new BadRequestRuntimeException(PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception(String.format("This invitee email address already has a confirmed association at company %s", companyNumber)));
+                        throw new BadRequestRuntimeException(String.format(EMAIL_COMPANY_ASSOCIATION_EXISTS_AT_VAR, companyNumber));
                     }
                     associationsTransactionService.updateAssociation(association.getId(), mapToInvitationUpdate(association, inviteeUserDetails, getEricIdentity(), now()));
                     LOGGER.debugContext(getXRequestId(), "Completed update associations", null);

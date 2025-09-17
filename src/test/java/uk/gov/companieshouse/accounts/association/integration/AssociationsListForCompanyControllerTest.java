@@ -305,7 +305,7 @@ class AssociationsListForCompanyControllerTest extends AbstractBaseIntegrationTe
         associationsRepository.insert(associations);
 
         when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
-        when(userClient.requestUserDetails(targetUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(userClient.requestUserDetails(targetUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
         when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchCompanyDetailsDtos(companyNumber).getFirst());
 
         mockMvc.perform(get(ASSOCIATIONS_COMPANIES_URL + companyNumber)
@@ -323,7 +323,7 @@ class AssociationsListForCompanyControllerTest extends AbstractBaseIntegrationTe
         associationsRepository.insert(testDataManager.fetchAssociationDaos("1"));
 
         when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
-        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("Comapny not found", new Exception()));
+        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("Comapny not found"));
 
         mockMvc.perform(get(ASSOCIATIONS_COMPANIES_URL + companyNumber)
                         .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
@@ -646,7 +646,7 @@ class AssociationsListForCompanyControllerTest extends AbstractBaseIntegrationTe
         associationsRepository.insert(testDataManager.fetchAssociationDaos("MKAssociation002"));
 
         when(userClient.requestUserDetails(targetedUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(targetedUserId).getFirst());
-        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("Company not found", new Exception()));
+        when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("Company not found"));
 
         mockMvc.perform(post(ASSOCIATIONS_COMPANIES_URL + companyNumber + "/search")
                         .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
@@ -665,7 +665,7 @@ class AssociationsListForCompanyControllerTest extends AbstractBaseIntegrationTe
 
         associationsRepository.insert(testDataManager.fetchAssociationDaos("MKAssociation002"));
 
-        when(userClient.requestUserDetails(targetedUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+        when(userClient.requestUserDetails(targetedUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found"));
         when(companyClient.requestCompanyProfile(companyNumber, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchCompanyDetailsDtos(companyNumber).getFirst());
 
         mockMvc.perform(post(ASSOCIATIONS_COMPANIES_URL + companyNumber + "/search")

@@ -41,7 +41,7 @@ public class UsersService {
 
     public User fetchUserDetails(final String userId, final String xRequestId) {
         if (StringUtils.isBlank(userId)) {
-            NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_USER_ID, new Exception(BLANK_USER_ID));
+            NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_USER_ID);
             LOGGER.errorContext(xRequestId, BLANK_USER_ID, exception, null);
             throw exception;
         }
@@ -82,8 +82,7 @@ public class UsersService {
             throw exception;
         }
         if (emails.stream().anyMatch(Objects::isNull)) {
-            InternalServerErrorRuntimeException exception = new InternalServerErrorRuntimeException(EMAIL_IN_LIST_CANNOT_BE_NULL,
-                    new Exception(EMAIL_IN_LIST_CANNOT_BE_NULL));
+            InternalServerErrorRuntimeException exception = new InternalServerErrorRuntimeException(EMAIL_IN_LIST_CANNOT_BE_NULL);
             LOGGER.errorContext(xRequestId, EMAIL_IN_LIST_CANNOT_BE_NULL, exception, null);
             throw exception;
         }

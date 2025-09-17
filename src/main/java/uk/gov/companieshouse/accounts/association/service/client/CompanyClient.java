@@ -1,8 +1,8 @@
 package uk.gov.companieshouse.accounts.association.service.client;
 
-import static uk.gov.companieshouse.accounts.association.models.Constants.REST_CLIENT_EXCEPTION;
-import static uk.gov.companieshouse.accounts.association.models.Constants.REST_CLIENT_FINISH;
-import static uk.gov.companieshouse.accounts.association.models.Constants.REST_CLIENT_START;
+import static uk.gov.companieshouse.accounts.association.models.Constants.REST_CLIENT_EXCEPTION_CALLING_VAR;
+import static uk.gov.companieshouse.accounts.association.models.Constants.REST_CLIENT_FINISH_TO_VAR;
+import static uk.gov.companieshouse.accounts.association.models.Constants.REST_CLIENT_START_TO_VAR;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonTo;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
@@ -40,21 +40,21 @@ public class CompanyClient {
 
     private String sendRequest(final URI uri, final String xRequestId) {
         try {
-            LOGGER.infoContext(xRequestId, String.format(REST_CLIENT_START, uri), null);
+            LOGGER.infoContext(xRequestId, String.format(REST_CLIENT_START_TO_VAR, uri), null);
             var response = companyRestClient.get().uri(uri).retrieve().body(String.class);
-            LOGGER.infoContext(xRequestId, String.format(REST_CLIENT_FINISH, uri), null);
+            LOGGER.infoContext(xRequestId, String.format(REST_CLIENT_FINISH_TO_VAR, uri), null);
             return response;
         } catch (NotFound exception) {
             LOGGER.infoContext(getXRequestId(), String.format("No company found: %s", uri), null);
-            throw new NotFoundRuntimeException(exception.getMessage(), exception);
+            throw new NotFoundRuntimeException(exception.getMessage());
         } catch (BadRequest exception) {
             LOGGER.errorContext(getXRequestId(), String.format("Bad request made: %s", uri),
                     exception, null);
-            throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
+            throw new InternalServerErrorRuntimeException(exception.getMessage());
         } catch (RestClientException exception) {
-            LOGGER.errorContext(getXRequestId(), String.format(REST_CLIENT_EXCEPTION, uri),
+            LOGGER.errorContext(getXRequestId(), String.format(REST_CLIENT_EXCEPTION_CALLING_VAR, uri),
                     exception, null);
-            throw new InternalServerErrorRuntimeException(exception.getMessage(), exception);
+            throw new InternalServerErrorRuntimeException(exception.getMessage());
         }
     }
 }
