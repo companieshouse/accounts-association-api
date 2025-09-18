@@ -15,7 +15,6 @@ import static uk.gov.companieshouse.accounts.association.common.TestDataManager.
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
@@ -69,8 +67,6 @@ class UserCompanyInvitationsControllerTest {
 
     @MockitoBean
     private EmailService emailService;
-
-    final Function<String, Mono<Void>> sendEmailMock = userId -> Mono.empty();
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 

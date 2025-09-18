@@ -28,7 +28,9 @@ public class Constants {
     public static final String REQUESTING_USER_CANNOT_CHANGE_MIGRATED_TO_CONFIRMED = "Requesting user cannot change their status from migrated to confirmed " + PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
     public static final String REQUESTING_USER_CANNOT_CHANGE_TO_UNAUTHORISED = "Requesting user cannot change their status to unauthorised " + PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
     public static final String REQUESTING_USER_VAR_CANNOT_CHANGE_TO_UNAUTHORISED = "Requesting user %s cannot change their status to unauthorised " + PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
-    public static final String REQUESTING_USER_VAR_CANNOT_CHANGE_ANOTHER_USER_TO_VAR_OR_IS_NOT_ASSOCIATED_WITH_COMPANY_VAR = "Requesting %s user cannot change another user to %s or the requesting user is not associated with company %s" + PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
+    public static final String REQUESTING_USER_VAR_CANNOT_CHANGE_ANOTHER_USER_VAR_TO_VAR_OR_IS_NOT_ASSOCIATED_WITH_COMPANY_VAR = """
+    Requesting user "%s" cannot change user "%s" to "%s" or the requesting user is not associated with company %s " + PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
+    """;
     public static final String FAILED_TO_UPDATE_ASSOCIATION_VAR = "Failed to update association with id: %s ";
 
     public static final String REST_CLIENT_EXCEPTION_CALLING_VAR = "Encountered rest client exception when calling: %s";

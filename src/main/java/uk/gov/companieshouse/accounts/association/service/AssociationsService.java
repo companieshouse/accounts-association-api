@@ -7,7 +7,7 @@ import static uk.gov.companieshouse.accounts.association.models.Constants.API_KE
 import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
 import static uk.gov.companieshouse.accounts.association.models.Constants.REQUESTING_USER_CANNOT_CHANGE_MIGRATED_TO_CONFIRMED;
 import static uk.gov.companieshouse.accounts.association.models.Constants.REQUESTING_USER_CANNOT_CHANGE_TO_UNAUTHORISED;
-import static uk.gov.companieshouse.accounts.association.models.Constants.REQUESTING_USER_VAR_CANNOT_CHANGE_ANOTHER_USER_TO_VAR_OR_IS_NOT_ASSOCIATED_WITH_COMPANY_VAR;
+import static uk.gov.companieshouse.accounts.association.models.Constants.REQUESTING_USER_VAR_CANNOT_CHANGE_ANOTHER_USER_VAR_TO_VAR_OR_IS_NOT_ASSOCIATED_WITH_COMPANY_VAR;
 import static uk.gov.companieshouse.accounts.association.models.Constants.REQUESTING_USER_VAR_CANNOT_CHANGE_TO_UNAUTHORISED;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToAuthCodeConfirmedUpdated;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToConfirmedUpdate;
@@ -36,10 +36,12 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 public class AssociationsService {
 
     private final AssociationsTransactionService associationsTransactionService;
+    private final UsersService usersService;
 
     @Autowired
-    public AssociationsService(AssociationsTransactionService associationsTransactionService) {
+    public AssociationsService(AssociationsTransactionService associationsTransactionService, UsersService usersService) {
         this.associationsTransactionService = associationsTransactionService;
+        this.usersService = usersService;
     }
 
     public Update mapToAPIKeyUpdate(final RequestBodyPut.StatusEnum proposedStatus, final AssociationDao targetAssociation, final User targetUser) {
@@ -72,12 +74,11 @@ public class AssociationsService {
                     .filter(status -> MIGRATED.equals(oldStatus) || UNAUTHORISED.equals(oldStatus))
                     .filter(status -> associationsTransactionService.confirmedAssociationExists(targetAssociation.getCompanyNumber(), getEricIdentity()))
                     .map(status -> mapToInvitationUpdate(targetAssociation, targetUser, getEricIdentity(), now()))
-                    .orElseThrow(() -> new BadRequestRuntimeException(String.format(
-                            REQUESTING_USER_VAR_CANNOT_CHANGE_ANOTHER_USER_TO_VAR_OR_IS_NOT_ASSOCIATED_WITH_COMPANY_VAR, getEricIdentity(), proposedStatus.getValue(), targetAssociation.getCompanyNumber())));
+                    .orElseThrow(() -> new BadRequestRuntimeException(String.format(REQUESTING_USER_VAR_CANNOT_CHANGE_ANOTHER_USER_VAR_TO_VAR_OR_IS_NOT_ASSOCIATED_WITH_COMPANY_VAR, getEricIdentity(), usersService.getUserIdentifier(targetUser), proposedStatus.getValue(), targetAssociation.getCompanyNumber())));
             case REMOVED -> Optional.of(REMOVED)
                     .filter(status -> associationsTransactionService.confirmedAssociationExists(targetAssociation.getCompanyNumber(), getEricIdentity()) || hasAdminPrivilege(ADMIN_UPDATE_PERMISSION))
                     .map(status -> mapToRemovedUpdate(targetAssociation, targetUser, getEricIdentity()))
-                    .orElseThrow(() -> new BadRequestRuntimeException(String.format(REQUESTING_USER_VAR_CANNOT_CHANGE_ANOTHER_USER_TO_VAR_OR_IS_NOT_ASSOCIATED_WITH_COMPANY_VAR, getEricIdentity(), proposedStatus.getValue(), targetAssociation.getCompanyNumber())));
+                    .orElseThrow(() -> new BadRequestRuntimeException(String.format(REQUESTING_USER_VAR_CANNOT_CHANGE_ANOTHER_USER_VAR_TO_VAR_OR_IS_NOT_ASSOCIATED_WITH_COMPANY_VAR, getEricIdentity(), usersService.getUserIdentifier(targetUser), proposedStatus.getValue(), targetAssociation.getCompanyNumber())));
             case UNAUTHORISED -> throw new BadRequestRuntimeException(String.format(REQUESTING_USER_VAR_CANNOT_CHANGE_TO_UNAUTHORISED, getEricIdentity()));
         };
     }

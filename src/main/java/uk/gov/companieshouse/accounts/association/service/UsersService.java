@@ -81,8 +81,16 @@ public class UsersService {
             throw exception;
         }
 
-        final var synchronizedList = Collections.synchronizedList(new UsersList());
+        if (emails.size() == 1) {
+            final var userDetails = fetchUserDetailsByEmail(emails.getFirst(), xRequestId);
+            if (Objects.nonNull(userDetails)) {
+                return userDetails;
+            } else {
+                return new UsersList();
+            }
+        }
 
+        final var synchronizedList = Collections.synchronizedList(new UsersList());
         emails.stream()
                 .parallel()
                 .forEach(email -> {
@@ -137,5 +145,26 @@ public class UsersService {
 
     public User fetchUserDetails(final String xRequestId, final AssociationDao association) {
         return retrieveUserDetails(xRequestId, association.getUserId(), association.getUserEmail());
+    }
+
+    public String getUserIdentifier(User user) {
+        try {
+            return user.getUserId();
+        } catch (NullPointerException exception) {
+            LOGGER.debug("User has no ID");
+        }
+        try {
+            return user.getDisplayName();
+        } catch (NullPointerException exception) {
+            LOGGER.debug("User has no display name");
+        }
+        try {
+            // TODO: Obfuscate?
+            return user.getEmail();
+        } catch (NullPointerException exception) {
+            LOGGER.debug("User has no email");
+        }
+
+        return "No user identity could be found";
     }
 }

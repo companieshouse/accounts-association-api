@@ -31,6 +31,7 @@ import static uk.gov.companieshouse.api.accounts.associations.model.Association.
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.UNAUTHORISED;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -124,7 +125,7 @@ public class EmailService {
             }
             case ACCEPTING_INVITATION -> {
                 final var invitedByDisplayName = targetAssociation.getInvitations().stream()
-                        .max((firstInvitation, secondInvitation) -> firstInvitation.getInvitedAt().isAfter(secondInvitation.getInvitedAt()) ? 1 : -1)
+                        .max(Comparator.comparing(InvitationDao::getInvitedAt))
                         .map(InvitationDao::getInvitedBy)
                         .map(user -> usersService.fetchUserDetails(user, xRequestId))
                         .map(user -> Optional.ofNullable(user.getDisplayName()).orElse(user.getEmail()));
@@ -234,9 +235,16 @@ public class EmailService {
     }
 
     public void sendInvitationEmailToAssociatedUser(final String xRequestId, final String companyNumber, final String companyName, final String inviterDisplayName, final String inviteeDisplayName, final String userId) {
-        final var userDetails = usersService.fetchUserDetails(userId, xRequestId);
-        if (userDetails == null || StringUtils.isBlank(userDetails.getEmail())) {
-            final var warningException = new NullRequiredEmailDataException(ASSOCIATED_USER_OR_EMAIL_IS_NULL, INVITATION_MESSAGE_TYPE);
+        User user;
+        try {
+            user = usersService.fetchUserDetails(userId, xRequestId);
+        } catch (NotFoundRuntimeException exception) {
+            final var warningException = new NullRequiredEmailDataException(ASSOCIATED_USER_OR_EMAIL_IS_NULL, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE);
+            LOGGER.errorContext(xRequestId, ASSOCIATED_USER_OR_EMAIL_IS_NULL, warningException, null);
+            return;
+        }
+        if (user == null || StringUtils.isBlank(user.getEmail())) {
+            final var warningException = new NullRequiredEmailDataException(ASSOCIATED_USER_OR_EMAIL_IS_NULL, AUTH_CODE_CONFIRMATION_MESSAGE_TYPE);
             LOGGER.errorContext(xRequestId, ASSOCIATED_USER_OR_EMAIL_IS_NULL, warningException, null);
             return;
         }
@@ -244,7 +252,7 @@ public class EmailService {
         final var emailData = new InvitationEmailBuilder()
                 .setInviteeDisplayName(inviteeDisplayName)
                 .setInviterDisplayName(inviterDisplayName)
-                .setRecipientEmail(userDetails.getEmail())
+                .setRecipientEmail(user.getEmail())
                 .setCompanyName(companyName)
                 .build();
         final var logMessageSupplier = new EmailNotification(INVITATION_MESSAGE_TYPE, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber);
@@ -417,26 +425,28 @@ public class EmailService {
 
     private EmailBatchType determineEmailBatchType(final String xRequestId, final AssociationDao targetAssociation, final StatusEnum newStatus) {
         final var oldStatus = targetAssociation.getStatus();
+        final boolean isOAuth2Request = isOAuth2Request();
+        final boolean isRequestingUser = isRequestingUser(targetAssociation);
 
-        if (isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED)) {
+        if (isOAuth2Request && isRequestingUser && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED)) {
             return EmailBatchType.REJECTING_INVITATION;
         }
-        if (isOAuth2Request() && oldStatus.equals(CONFIRMED.getValue()) && newStatus.equals(REMOVED)) {
+        if (isOAuth2Request && oldStatus.equals(CONFIRMED.getValue()) && newStatus.equals(REMOVED)) {
             return EmailBatchType.AUTHORISATION_IS_BEING_REMOVED;
         }
-        if (isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(CONFIRMED)) {
+        if (isOAuth2Request && isRequestingUser && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(CONFIRMED)) {
             return EmailBatchType.ACCEPTING_INVITATION;
         }
-        if (isOAuth2Request() && !isRequestingUser(targetAssociation) && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED)) {
+        if (isOAuth2Request && !isRequestingUser && oldStatus.equals(AWAITING_APPROVAL.getValue()) && newStatus.equals(REMOVED)) {
             return EmailBatchType.CANCELLING_ANOTHER_USERS_INVITATION;
         }
-        if (isOAuth2Request() && !isRequestingUser(targetAssociation) && oldStatus.equals(MIGRATED.getValue()) && newStatus.equals(REMOVED)) {
+        if (isOAuth2Request && !isRequestingUser && oldStatus.equals(MIGRATED.getValue()) && newStatus.equals(REMOVED)) {
             return EmailBatchType.REMOVING_ANOTHER_USERS_MIGRATED_ASSOCIATION;
         }
-        if (isOAuth2Request() && isRequestingUser(targetAssociation) && oldStatus.equals(MIGRATED.getValue()) && newStatus.equals(REMOVED)) {
+        if (isOAuth2Request && isRequestingUser && oldStatus.equals(MIGRATED.getValue()) && newStatus.equals(REMOVED)) {
             return EmailBatchType.REMOVING_OWN_MIGRATED_ASSOCIATION;
         }
-        if (isOAuth2Request() && !isRequestingUser(targetAssociation) && (oldStatus.equals(MIGRATED.getValue()) || oldStatus.equals(UNAUTHORISED.getValue()) && newStatus.equals(CONFIRMED))) {
+        if (isOAuth2Request && !isRequestingUser && (oldStatus.equals(MIGRATED.getValue()) || oldStatus.equals(UNAUTHORISED.getValue()) && newStatus.equals(CONFIRMED))) {
             return EmailBatchType.INVITING_USER;
         }
         if (isAPIKeyRequest() && (oldStatus.equals(MIGRATED.getValue()) || oldStatus.equals(UNAUTHORISED.getValue()) && newStatus.equals(CONFIRMED))) {
