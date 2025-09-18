@@ -1,8 +1,7 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationRejectedEmailData;
-
 import java.util.Objects;
+import uk.gov.companieshouse.accounts.association.models.email.data.InvitationRejectedEmailData;
 
 public class InvitationRejectedEmailBuilder extends EmailBuilder<InvitationRejectedEmailBuilder, InvitationRejectedEmailData> {
 

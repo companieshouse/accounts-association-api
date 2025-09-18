@@ -9,9 +9,9 @@ import java.util.stream.Stream;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import uk.gov.companieshouse.accounts.association.service.client.CompanyClient;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.service.client.CompanyClient;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
 @Service
