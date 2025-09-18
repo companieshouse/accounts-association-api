@@ -11,11 +11,13 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.common.TestDataManager.REQUEST_HEADERS.X_REQUEST_ID;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -39,7 +41,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
@@ -62,7 +63,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 @WebMvcTest(UserCompanyAssociationsController.class)
 @Import(WebSecurityConfig.class)
 @Tag("unit-test")
-class UserCompanyAssociationsControllerTestController {
+class UserCompanyAssociationsControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -88,8 +89,6 @@ class UserCompanyAssociationsControllerTestController {
     private static final String DEFAULT_KIND = "association";
 
     private final LocalDateTime now = LocalDateTime.now();
-
-    final Function<String, Mono<Void>> sendEmailMock = userId -> Mono.empty();
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
@@ -324,20 +323,22 @@ class UserCompanyAssociationsControllerTestController {
 
     @Test
     void fetchAssociationsByImplementsPaginationCorrectly() throws Exception {
-        final var user = testDataManager.fetchUserDtos("9999").getFirst();
+        final var userId = "9999";
+        final var user = testDataManager.fetchUserDtos(userId).getFirst();
         final var expectedAssociationsList = new AssociationsList()
                 .items(List.of(testDataManager.fetchAssociationDto("19", user)))
                 .links(new Links().self("/associations?page_index=1&items_per_page=1").next(""))
                 .itemsPerPage(1).pageNumber(1).totalPages(2).totalResults(2);
 
-//        mockers.mockUsersServiceFetchUserDetails("9999");
+        when(usersService.fetchUserDetails(userId, X_REQUEST_ID.value)).thenReturn(user);
         Mockito.doReturn(expectedAssociationsList).when(associationsTransactionService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user,null, Set.of(StatusEnum.CONFIRMED.getValue(), StatusEnum.REMOVED.getValue()), 1, 1);
 
         final var response = mockMvc.perform(get("/associations?status=confirmed&status=removed&page_index=1&items_per_page=1")
                         .header("X-Request-Id", "theId123")
-                        .header("Eric-identity", "9999")
+                        .header("Eric-identity", userId)
                         .header("ERIC-Identity-Type", "oauth2")
                         .header("ERIC-Authorised-Key-Roles", "*"))
+                .andDo(print())
                 .andExpect(status().isOk());
         final var associationsList = parseResponseTo(response, AssociationsList.class);
         final var item = associationsList.getItems().getFirst().getId();
