@@ -25,7 +25,13 @@ public final class UserUtil {
 
         final var emailMatch = Optional.ofNullable(targetAssociation)
                 .map(AssociationDao::getUserEmail)
-                .filter(userEmail -> userEmail.equals(getUser().getEmail()))
+                .filter(userEmail -> {
+                    try {
+                        return userEmail.equals(getUser().getEmail());
+                    } catch (NullPointerException exception) {
+                        return false;
+                    }
+                })
                 .isPresent();
 
         return idMatches || emailMatch;

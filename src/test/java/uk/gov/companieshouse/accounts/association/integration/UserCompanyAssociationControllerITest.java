@@ -1060,6 +1060,7 @@ class UserCompanyAssociationControllerITest extends AbstractBaseIntegrationITest
 
         associationsRepository.insert(associations);
 
+        when(userClient.requestUserDetails(requestingUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
         when(userClient.requestUserDetails(targetUserId, X_REQUEST_ID.value)).thenReturn(testDataManager.fetchUserDtos(targetUserId).getFirst());
         when(usersService.fetchUserDetailsByEmail(associations.getUserEmail(), X_REQUEST_ID.value)).thenReturn(targetUserList);
         when(companyService.fetchCompanyProfile(associations.getCompanyNumber(), X_REQUEST_ID.value)).thenReturn(testDataManager.fetchCompanyDetailsDtos(associations.getCompanyNumber()).getFirst());
