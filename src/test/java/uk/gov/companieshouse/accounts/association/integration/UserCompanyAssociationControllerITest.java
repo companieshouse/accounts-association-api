@@ -82,7 +82,7 @@ import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 @ExtendWith(MockitoExtension.class)
 @ComponentScan(basePackages = "uk.gov.companieshouse.email_producer")
 @TestPropertySource(locations = "classpath:application-test.properties")
-class UserCompanyAssociationControllerTest extends AbstractBaseIntegrationTest {
+class UserCompanyAssociationControllerITest extends AbstractBaseIntegrationITest {
 
     @Value("${invitation.url}")
     private String COMPANY_INVITATIONS_URL;

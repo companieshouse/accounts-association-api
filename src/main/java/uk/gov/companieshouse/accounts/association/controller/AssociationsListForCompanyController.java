@@ -84,7 +84,7 @@ public class AssociationsListForCompanyController implements AssociationDataForC
         }
 
         final var companyProfile = companyService.fetchCompanyProfile(companyNumber);
-        final var user = usersService.retrieveUserDetails(xRequestId, userId, userEmail);
+        final var user = usersService.retrieveUserDetails(userId, userEmail, xRequestId);
         final var targetUserEmail =  Objects.nonNull(user) ? user.getEmail() : userEmail;
 
         return associationsTransactionService.fetchUnexpiredAssociationsForCompanyUserAndStatuses(companyProfile, statuses, user, targetUserEmail)

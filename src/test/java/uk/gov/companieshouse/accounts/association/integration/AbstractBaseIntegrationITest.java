@@ -14,7 +14,7 @@ import uk.gov.companieshouse.accounts.association.configuration.MongoConfig;
 @SpringBootTest(webEnvironment= WebEnvironment.RANDOM_PORT)
 @TestPropertySource(locations = "classpath:application-test.properties")
 @Tag("integration-test")
-public abstract class AbstractBaseIntegrationTest {
+public abstract class AbstractBaseIntegrationITest {
 
     private static final MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:7.0").withExposedPorts(27017);
 
