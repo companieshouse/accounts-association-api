@@ -882,7 +882,7 @@ public class TestDataManager {
             invitationMedian.setInvitedAt(now.minusDays(6));
 
             final var invitationNewest = new InvitationDao();
-            invitationNewest.setInvitedBy("444");
+            invitationNewest.setInvitedBy("robin@gotham.city");
             invitationNewest.setInvitedAt(now.minusDays(4));
 
             final var association = new AssociationDao();

@@ -553,7 +553,6 @@ class AssociationsTransactionServiceITest extends AbstractBaseIntegrationITest {
     }
 
     @Test
-    @Ignore
     void fetchActiveInvitationsReturnsPaginatedResultsInCorrectOrderAndOnlyRetainsMostRecentInvitationPerAssociation() throws Exception {
         final var requestingUserId = "000";
         final var user = testDataManager.fetchUserDtos(requestingUserId).getFirst();
@@ -568,10 +567,6 @@ class AssociationsTransactionServiceITest extends AbstractBaseIntegrationITest {
         associationsRepository.insert(List.of(firstAssociation, secondAssociation, thirdAssociation));
 
         when(companyClient.requestCompanyProfile(companyNumber, UNKNOWN)).thenReturn(testDataManager.fetchCompanyDetailsDtos(companyNumber.toLowerCase()).getFirst());
-
-        final var mostRecentInvitationDaoInFirstAssociation = firstAssociation.getInvitations().getLast();
-        final var mostRecentInvitationDtoInFirstAssociation = new Invitation().invitedAt(mostRecentInvitationDaoInFirstAssociation.getInvitedAt().toString()).invitedBy(mostRecentInvitationDaoInFirstAssociation.getInvitedBy());
-
         when(userClient.requestUserDetails(requestingUserId, UNKNOWN)).thenReturn(testDataManager.fetchUserDtos(requestingUserId).getFirst());
         when(userClient.requestUserDetails(targetUserId, UNKNOWN)).thenReturn(testDataManager.fetchUserDtos(targetUserId).getFirst());
 
@@ -583,14 +578,17 @@ class AssociationsTransactionServiceITest extends AbstractBaseIntegrationITest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"invitee_email_id\": \"light.yagami@death.note\", \"company_number\": \"333333\"}"))
                 .andExpect(status().isCreated());
-//        Mockito.doReturn(mostRecentInvitationDtoInFirstAssociation).when(invitationsMapper).daoToDto(argThat(comparisonUtils.compare(mostRecentInvitationDaoInFirstAssociation, List.of("invited_by"), List.of(), Map.of())), eq("37"));
 
         final var invitations = associationsTransactionService.fetchActiveInvitations(user, 1, 1);
         final var invitation = invitations.getItems().getFirst();
+        final var expectedInvitation = new Invitation();
+        expectedInvitation.setInvitedBy("robin@gotham.city");
+        expectedInvitation.setInvitedAt(localDateTimeToNormalisedString(LocalDateTime.now().plusDays(8)));
 
-        // TODO: test name isn't clear on what's expected here and why it's failing
-        Assertions.assertEquals(mostRecentInvitationDaoInFirstAssociation.getInvitedBy(), invitation.getInvitedBy());
-        Assertions.assertEquals(localDateTimeToNormalisedString(mostRecentInvitationDaoInFirstAssociation.getInvitedAt()), reduceTimestampResolution(invitation.getInvitedAt()));
+        // The invitation mapper is mapping the user email to the invited by: uk/gov/companieshouse/accounts/association/mapper/InvitationMapperImpl.java:30
+        // previously the test wasn't accounting for this (because it was all mocked)
+        Assertions.assertEquals(expectedInvitation.getInvitedBy(), invitation.getInvitedBy());
+        Assertions.assertEquals(expectedInvitation.getInvitedAt(), reduceTimestampResolution(invitation.getInvitedAt()));
     }
 
     @Test
