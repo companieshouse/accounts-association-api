@@ -65,7 +65,7 @@ import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 @AutoConfigureMockMvc
 @ExtendWith(MockitoExtension.class)
 @TestPropertySource(locations = "classpath:application-test.properties")
-class AssociationsTransactionServiceTest extends AbstractBaseIntegrationTest {
+class AssociationsTransactionServiceITest extends AbstractBaseIntegrationITest {
 
     @Autowired
     private MockMvc mockMvc;

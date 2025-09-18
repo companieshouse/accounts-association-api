@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.common;
 
+import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -31,6 +32,8 @@ public class ParsingUtils {
         final var responseContent = response.andReturn().getResponse().getContentAsByteArray();
         final var objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
+        // enable only for debugging
+        // objectMapper.configure(Feature.INCLUDE_SOURCE_IN_LOCATION, true);
         return objectMapper.readValue(responseContent, responseType);
     }
 
