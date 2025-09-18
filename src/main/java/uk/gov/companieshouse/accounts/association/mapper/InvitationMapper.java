@@ -20,7 +20,12 @@ public abstract class InvitationMapper {
     private UsersService usersService;
 
     @AfterMapping
-    protected void replaceUserIdWithUserEmail(@MappingTarget final Invitation invitation){
+    protected void replaceUserIdWithUserEmail(@MappingTarget final Invitation invitation) {
+        // user_ids can never contain @ so this mapping has already taken place for this invitation
+        // so we're about to do a user_id lookup with a user_email and get a NPE
+        if (invitation.getInvitedBy().contains("@")) {
+            return;
+        }
         invitation.setInvitedBy(usersService.fetchUserDetails(invitation.getInvitedBy(), getXRequestId()).getEmail());
     }
 

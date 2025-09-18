@@ -112,19 +112,19 @@ class UserCompanyInvitationsControllerITest extends AbstractBaseIntegrationITest
                 .andExpect(status().isForbidden());
     }
 
-    @Ignore
-    @Test
-    void fetchActiveInvitationsForUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
-        final var malformedUserId = "$$$$";
-        // There's no regex on the interface for this test, so nothing to validate what "malformed" means
-        // TODO: confirm against regex impl once available and remove these comments
-        mockMvc.perform(get(ASSOCIATIONS_INVITATIONS_URL + "?page_index=1&items_per_page=1")
-                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
-                        .header(ERIC_IDENTITY.key, malformedUserId)
-                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
-                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value))
-                .andExpect(status().isForbidden());
-    }
+//    @Ignore
+//    @Test
+//    void fetchActiveInvitationsForUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
+//        final var malformedUserId = "$$$$";
+//        // There's no regex on the interface for this test, so nothing to validate what "malformed" means
+//        // TODO: confirm against regex impl once available and remove these comments
+//        mockMvc.perform(get(ASSOCIATIONS_INVITATIONS_URL + "?page_index=1&items_per_page=1")
+//                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+//                        .header(ERIC_IDENTITY.key, malformedUserId)
+//                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+//                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value))
+//                .andExpect(status().isForbidden());
+//    }
 
     @Test
     void fetchActiveInvitationsForUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
@@ -212,23 +212,23 @@ class UserCompanyInvitationsControllerITest extends AbstractBaseIntegrationITest
                 .andExpect(status().isForbidden());
     }
 
-    @Test
-    @Ignore
-    void inviteUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
-        final var malformedRequestingUserId = "$$$$";
-
-        //TODO: should this be treated as malformed or just passed along to not be found?
-//        when(userClient.requestUserDetails(malformedRequestingUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
-
-        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
-                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
-                        .header(ERIC_IDENTITY.key, malformedRequestingUserId)
-                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
-                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
-                .andExpect(status().isForbidden());
-    }
+//    @Test
+//    @Ignore
+//    void inviteUserWithMalformedEricIdentityReturnsForbidden() throws Exception {
+//        final var malformedRequestingUserId = "$$$$";
+//
+//        //TODO: should this be treated as malformed or just passed along to not be found?
+////        when(userClient.requestUserDetails(malformedRequestingUserId, X_REQUEST_ID.value)).thenThrow(new NotFoundRuntimeException("User not found", new Exception()));
+//
+//        mockMvc.perform(post(ASSOCIATIONS_INVITATIONS_URL)
+//                        .header(X_REQUEST_ID.key, X_REQUEST_ID.value)
+//                        .header(ERIC_IDENTITY.key, malformedRequestingUserId)
+//                        .header(ERIC_IDENTITY_TYPE_OAUTH.key, ERIC_IDENTITY_TYPE_OAUTH.value)
+//                        .header(ERIC_AUTHORISED_KEY_ROLES.key, ERIC_AUTHORISED_KEY_ROLES.value)
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content("{\"company_number\":\"333333\",\"invitee_email_id\":\"bruce.wayne@gotham.city\"}"))
+//                .andExpect(status().isForbidden());
+//    }
 
     @Test
     void inviteUserWithNonexistentEricIdentityReturnsForbidden() throws Exception {
