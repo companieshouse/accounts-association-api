@@ -37,6 +37,12 @@
         <grpc.version>1.73.0</grpc.version>
         <test-containers.version>1.21.3</test-containers.version>
 
+        <!-- Overrides -->
+        <!-- CVE-2025-41249 -->
+        <spring-core.version>6.2.11</spring-core.version>
+        <!-- CVE-2025-41248 -->
+        <spring-security-core.version>6.5.4</spring-security-core.version>
+
         <sonar-maven-plugin.version>4.0.0.4121</sonar-maven-plugin.version>
         <sonar.token>${CODE_ANALYSIS_TOKEN}</sonar.token>
         <sonar.login></sonar.login>
@@ -63,6 +69,18 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+      <!-- Overrides -->
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-core</artifactId>
+        <version>${spring-core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.security</groupId>
+        <artifactId>spring-security-core</artifactId>
+        <version>${spring-security-core.version}</version>
+      </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
