@@ -1,9 +1,8 @@
 package uk.gov.companieshouse.accounts.association.models.email.data;
 
+import java.util.Objects;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import uk.gov.companieshouse.email_producer.model.EmailData;
-
-import java.util.Objects;
 
 public class YourAuthorisationRemovedEmailData extends EmailData {
 
