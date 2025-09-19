@@ -31,7 +31,7 @@ public class ControllerAdvisor extends ResponseEntityExceptionHandler {
     private <T extends Exception> Errors mapThrownExceptionsToErrors(final T exception, final HttpServletRequest request){
         final var url = request.getRequestURL().toString();
         final var queryParams = Objects.nonNull(request.getQueryString()) ? "?" + request.getQueryString() : "";
-        final var contextMap = new HashMap<String, Object>(Map.of("url", url, "query-parameters", queryParams));
+        final Map<String, Object> contextMap = Map.of("url", url, "query-parameters", queryParams);
 
         LOGGER.errorContext(getXRequestId(), exception.getMessage(), exception, contextMap);
 
