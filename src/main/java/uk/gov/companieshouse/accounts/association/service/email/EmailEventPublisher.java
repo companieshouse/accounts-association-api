@@ -24,11 +24,4 @@ public class EmailEventPublisher {
 
         applicationEventPublisher.publishEvent(emailEvent);
     }
-
-//    public void publishEmailEvent(final AssociationDao targetAssociation, final User targetUser,
-//            final StatusEnum newStatus) {
-//        EmailEvent emailEvent = new EmailEvent(this, targetAssociation, targetUser, newStatus);
-//
-//        applicationEventPublisher.publishEvent(emailEvent);
-//    }
 }
