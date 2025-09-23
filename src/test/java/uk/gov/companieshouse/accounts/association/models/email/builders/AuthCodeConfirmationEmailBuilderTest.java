@@ -12,26 +12,26 @@ import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConf
 class AuthCodeConfirmationEmailBuilderTest {
 
     @Test
-    void buildInstantiatesEmailData(){
+    void buildInstantiatesEmailData() {
         final var expectedEmailData = new AuthCodeConfirmationEmailData();
-        expectedEmailData.setTo( "kpatel@companieshouse.gov.uk" );
-        expectedEmailData.setSubject( "Companies House: Krishna Patel is now authorised to file online for Tesla" );
-        expectedEmailData.setAuthorisedPerson( "Krishna Patel" );
-        expectedEmailData.setCompanyName( "Tesla" );
+        expectedEmailData.setTo("kpatel@companieshouse.gov.uk");
+        expectedEmailData.setSubject("Companies House: Krishna Patel is now authorised to file online for Tesla");
+        expectedEmailData.setAuthorisedPerson("Krishna Patel");
+        expectedEmailData.setCompanyName("Tesla");
 
         final var actualEmailData = new AuthCodeConfirmationEmailBuilder()
-                .setRecipientEmail( "kpatel@companieshouse.gov.uk" )
-                .setDisplayName( "Krishna Patel" )
-                .setCompanyName( "Tesla" )
+                .setRecipientEmail("kpatel@companieshouse.gov.uk")
+                .setDisplayName("Krishna Patel")
+                .setCompanyName("Tesla")
                 .build();
 
-        Assertions.assertEquals( expectedEmailData, actualEmailData );
+        Assertions.assertEquals(expectedEmailData, actualEmailData);
     }
 
     @Test
-    void buildWithNullsThrowsNullPointerException(){
+    void buildWithNullsThrowsNullPointerException() {
         final var builder = new AuthCodeConfirmationEmailBuilder();
-        Assertions.assertThrows( NullPointerException.class, builder::build );
+        Assertions.assertThrows(NullPointerException.class, builder::build);
     }
 
 }

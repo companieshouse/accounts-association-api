@@ -1,26 +1,25 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
-import uk.gov.companieshouse.accounts.association.models.email.data.DelegatedRemovalOfMigratedBatchEmailData;
-
 import java.util.Objects;
+import uk.gov.companieshouse.accounts.association.models.email.data.DelegatedRemovalOfMigratedBatchEmailData;
 
 public class DelegatedRemovalOfMigratedBatchEmailBuilder extends EmailBuilder<DelegatedRemovalOfMigratedBatchEmailBuilder, DelegatedRemovalOfMigratedBatchEmailData> {
 
     private String removedBy;
     private String removedUser;
 
-    public DelegatedRemovalOfMigratedBatchEmailBuilder setRemovedBy( final String removedBy ) {
+    public DelegatedRemovalOfMigratedBatchEmailBuilder setRemovedBy(final String removedBy) {
         this.removedBy = removedBy;
         return this;
     }
 
-    public DelegatedRemovalOfMigratedBatchEmailBuilder setRemovedUser( final String removedUser ) {
+    public DelegatedRemovalOfMigratedBatchEmailBuilder setRemovedUser(final String removedUser) {
         this.removedUser = removedUser;
         return this;
     }
 
     @Override
-    protected DelegatedRemovalOfMigratedBatchEmailBuilder self(){ return this;}
+    protected DelegatedRemovalOfMigratedBatchEmailBuilder self() { return this;}
 
     @Override
     public DelegatedRemovalOfMigratedBatchEmailData build() {

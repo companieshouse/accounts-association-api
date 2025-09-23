@@ -1,16 +1,15 @@
 package uk.gov.companieshouse.accounts.association.models.email.data;
 
-import uk.gov.companieshouse.email_producer.model.EmailData;
-
 import java.util.Objects;
+import uk.gov.companieshouse.email_producer.model.EmailData;
 
 public class RemovalOfOwnMigratedEmailData extends EmailData {
 
     private String companyName;
 
-    public RemovalOfOwnMigratedEmailData(){}
+    public RemovalOfOwnMigratedEmailData() {}
 
-    public RemovalOfOwnMigratedEmailData( String companyName ) {
+    public RemovalOfOwnMigratedEmailData(String companyName) {
         this.companyName = companyName;
     }
 

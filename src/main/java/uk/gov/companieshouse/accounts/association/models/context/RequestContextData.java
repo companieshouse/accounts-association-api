@@ -24,7 +24,7 @@ public class RequestContextData {
     private final HashSet<String> adminPrivileges;
     private final User user;
 
-    protected RequestContextData( final String xRequestId, final String ericIdentity, final String ericIdentityType, final String ericAuthorisedKeyRoles, final HashSet<String> adminPrivileges, final User user ){
+    protected RequestContextData(final String xRequestId, final String ericIdentity, final String ericIdentityType, final String ericAuthorisedKeyRoles, final HashSet<String> adminPrivileges, final User user){
         this.xRequestId = xRequestId;
         this.ericIdentity = ericIdentity;
         this.ericIdentityType = ericIdentityType;
@@ -33,27 +33,27 @@ public class RequestContextData {
         this.user = user;
     }
 
-    public String getXRequestId(){
+    public String getXRequestId() {
         return xRequestId;
     }
 
-    public String getEricIdentity(){
+    public String getEricIdentity() {
         return ericIdentity;
     }
 
-    public String getEricIdentityType(){
+    public String getEricIdentityType() {
         return ericIdentityType;
     }
 
-    public String getEricAuthorisedKeyRoles(){
+    public String getEricAuthorisedKeyRoles() {
         return ericAuthorisedKeyRoles;
     }
 
-    public HashSet<String> getAdminPrivileges(){
+    public HashSet<String> getAdminPrivileges() {
         return adminPrivileges;
     }
 
-    public User getUser(){
+    public User getUser() {
         return user;
     }
 
@@ -65,41 +65,41 @@ public class RequestContextData {
         private HashSet<String> adminPrivileges = new HashSet<>();
         private User user;
 
-        public RequestContextDataBuilder setXRequestId( final HttpServletRequest request ){
-            xRequestId = Optional.ofNullable( getRequestHeader( request, X_REQUEST_ID ) ).orElse( UNKNOWN );
+        public RequestContextDataBuilder setXRequestId(final HttpServletRequest request){
+            xRequestId = Optional.ofNullable(getRequestHeader(request, X_REQUEST_ID)).orElse(UNKNOWN);
             return this;
         }
 
-        public RequestContextDataBuilder setEricIdentity( final HttpServletRequest request ){
-            ericIdentity = Optional.ofNullable( getRequestHeader( request, ERIC_IDENTITY ) ).orElse( UNKNOWN );
+        public RequestContextDataBuilder setEricIdentity(final HttpServletRequest request){
+            ericIdentity = Optional.ofNullable(getRequestHeader(request, ERIC_IDENTITY)).orElse(UNKNOWN);
             return this;
         }
 
-        public RequestContextDataBuilder setEricIdentityType( final HttpServletRequest request ){
-            ericIdentityType = Optional.ofNullable( getRequestHeader( request, ERIC_IDENTITY_TYPE ) ).orElse( UNKNOWN );
+        public RequestContextDataBuilder setEricIdentityType(final HttpServletRequest request){
+            ericIdentityType = Optional.ofNullable(getRequestHeader(request, ERIC_IDENTITY_TYPE)).orElse(UNKNOWN);
             return this;
         }
 
-        public RequestContextDataBuilder setEricAuthorisedKeyRoles( final HttpServletRequest request ){
-            ericAuthorisedKeyRoles = Optional.ofNullable( getRequestHeader( request, ERIC_AUTHORISED_KEY_ROLES ) ).orElse( UNKNOWN );
+        public RequestContextDataBuilder setEricAuthorisedKeyRoles(final HttpServletRequest request){
+            ericAuthorisedKeyRoles = Optional.ofNullable(getRequestHeader(request, ERIC_AUTHORISED_KEY_ROLES)).orElse(UNKNOWN);
             return this;
         }
 
-        public RequestContextDataBuilder setAdminPrivileges( final HttpServletRequest request ){
-            adminPrivileges = Optional.ofNullable( getRequestHeader( request, ERIC_AUTHORISED_ROLES ) )
-                    .map( roles -> roles.split(" ") )
-                    .map( roles -> Arrays.stream( roles ).collect( Collectors.toCollection( HashSet::new ) ) )
-                    .orElse( new HashSet<>() );
+        public RequestContextDataBuilder setAdminPrivileges(final HttpServletRequest request){
+            adminPrivileges = Optional.ofNullable(getRequestHeader(request, ERIC_AUTHORISED_ROLES))
+                    .map(roles -> roles.split(" "))
+                    .map(roles -> Arrays.stream(roles).collect(Collectors.toCollection(HashSet::new)))
+                    .orElse(new HashSet<>());
             return this;
         }
 
-        public RequestContextDataBuilder setUser( final User user ){
+        public RequestContextDataBuilder setUser(final User user){
             this.user = user;
             return this;
         }
 
-        public RequestContextData build(){
-            return new RequestContextData( xRequestId, ericIdentity, ericIdentityType, ericAuthorisedKeyRoles, adminPrivileges, user );
+        public RequestContextData build() {
+            return new RequestContextData(xRequestId, ericIdentity, ericIdentityType, ericAuthorisedKeyRoles, adminPrivileges, user);
         }
 
     }

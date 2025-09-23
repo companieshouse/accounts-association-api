@@ -1,9 +1,8 @@
 package uk.gov.companieshouse.accounts.association.models.email;
 
-import uk.gov.companieshouse.accounts.association.utils.MessageType;
-
 import java.time.LocalDateTime;
 import java.util.Objects;
+import uk.gov.companieshouse.accounts.association.utils.MessageType;
 
 public class EmailNotification {
 
@@ -23,20 +22,20 @@ public class EmailNotification {
         this.sentTime = LocalDateTime.now();
     }
 
-    public EmailNotification setInvitationExpiryTimestamp( final String invitationExpiryTimestamp ){
+    public EmailNotification setInvitationExpiryTimestamp(final String invitationExpiryTimestamp){
         this.invitationExpiryTimestamp = invitationExpiryTimestamp;
         return this;
     }
 
-    public String toMessage(){
-        var message = String.format( "%s notification sent to user at %s, regarding company %s.", messageType, sentTime.toString(), companyNumber );
-        message += Objects.isNull( invitationExpiryTimestamp ) ? "" : String.format( " Invitation expires at %s.", invitationExpiryTimestamp );
+    public String toMessage() {
+        var message = String.format("%s notification sent to user at %s, regarding company %s.", messageType, sentTime.toString(), companyNumber);
+        message += Objects.isNull(invitationExpiryTimestamp) ? "" : String.format(" Invitation expires at %s.", invitationExpiryTimestamp);
         return message;
     }
 
-    public String toMessageSendingFailureLoggingMessage(){
-        var message = String.format( "Failed to send %s notification to user at %s, regarding company %s.", messageType, sentTime.toString(), companyNumber );
-        message += Objects.isNull( invitationExpiryTimestamp ) ? "" : String.format( " Invitation would have expired at %s.", invitationExpiryTimestamp );
+    public String toMessageSendingFailureLoggingMessage() {
+        var message = String.format("Failed to send %s notification to user at %s, regarding company %s.", messageType, sentTime.toString(), companyNumber);
+        message += Objects.isNull(invitationExpiryTimestamp) ? "" : String.format(" Invitation would have expired at %s.", invitationExpiryTimestamp);
         return message;
     }
 

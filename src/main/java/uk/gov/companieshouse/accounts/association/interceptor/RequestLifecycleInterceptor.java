@@ -25,49 +25,49 @@ public class RequestLifecycleInterceptor implements HandlerInterceptor, RequestL
 
     private final UsersService usersService;
 
-    public RequestLifecycleInterceptor( final UsersService usersService ) {
+    public RequestLifecycleInterceptor(final UsersService usersService) {
         this.usersService = usersService;
     }
 
-    protected void setupRequestContext( final HttpServletRequest request, final User user ){
+    protected void setupRequestContext(final HttpServletRequest request, final User user){
         final var requestContextData = new RequestContextDataBuilder()
-                .setXRequestId( request )
-                .setEricIdentity( request )
-                .setEricIdentityType( request )
-                .setAdminPrivileges( request )
-                .setUser( user )
+                .setXRequestId(request)
+                .setEricIdentity(request)
+                .setEricIdentityType(request)
+                .setAdminPrivileges(request)
+                .setUser(user)
                 .build();
 
-        setRequestContext( requestContextData );
+        setRequestContext(requestContextData);
     }
 
     @Override
-    public boolean preHandle( final HttpServletRequest request, final HttpServletResponse response, final Object handler ) {
-        logStartRequestProcessing( request, LOGGER );
+    public boolean preHandle(final HttpServletRequest request, final HttpServletResponse response, final Object handler) {
+        logStartRequestProcessing(request, LOGGER);
 
-        if ( KEY.equalsIgnoreCase( getRequestHeader( request, ERIC_IDENTITY_TYPE ) ) ) {
-            setupRequestContext( request, null );
+        if (KEY.equalsIgnoreCase(getRequestHeader(request, ERIC_IDENTITY_TYPE))) {
+            setupRequestContext(request, null);
             return true;
         }
 
         try {
-            final var user = usersService.fetchUserDetails( getRequestHeader( request, ERIC_IDENTITY ), getRequestHeader( request, X_REQUEST_ID ) );
-            setupRequestContext( request, user );
+            final var user = usersService.fetchUserDetails(getRequestHeader(request, ERIC_IDENTITY), getRequestHeader(request, X_REQUEST_ID));
+            setupRequestContext(request, user);
             return true;
-        } catch ( NotFoundRuntimeException exception ) {
-            LOGGER.debugContext( getRequestHeader( request, X_REQUEST_ID ), String.format( "Unable to find user %s", getRequestHeader( request, ERIC_IDENTITY ) ), null );
-            response.setStatus( 403 );
+        } catch (NotFoundRuntimeException exception) {
+            LOGGER.debugContext(getRequestHeader(request, X_REQUEST_ID), String.format("Unable to find user %s", getRequestHeader(request, ERIC_IDENTITY)), null);
+            response.setStatus(403);
             return false;
         }
     }
 
     @Override
-    public void postHandle( final HttpServletRequest request, final HttpServletResponse response, final Object handler, final ModelAndView modelAndView ) {
-        logEndRequestProcessing( request, response, LOGGER );
+    public void postHandle(final HttpServletRequest request, final HttpServletResponse response, final Object handler, final ModelAndView modelAndView) {
+        logEndRequestProcessing(request, response, LOGGER);
     }
 
     @Override
-    public void afterCompletion( final HttpServletRequest request, final HttpServletResponse response, final Object handler, final Exception exception ) {
+    public void afterCompletion(final HttpServletRequest request, final HttpServletResponse response, final Object handler, final Exception exception) {
         RequestContext.clear();
     }
 

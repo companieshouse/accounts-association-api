@@ -1,62 +1,58 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
-import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonTo;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 
-import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.service.client.CompanyClient;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
 @Service
 public class CompanyService {
 
-    private final WebClient companyWebClient;
+    private static final String BLANK_COMPANY_NUMBER = "Company number cannot be blank";
+    private final CompanyClient companyClient;
 
-    public CompanyService( @Qualifier( "companyWebClient" ) final WebClient companyWebClient ) {
-        this.companyWebClient = companyWebClient;
+    @Autowired
+    public CompanyService(final CompanyClient companyClient) {
+        this.companyClient = companyClient;
     }
 
-    private Mono<CompanyDetails> toFetchCompanyProfileRequest( final String companyNumber, final String xRequestId ) {
-        return companyWebClient.get()
-                .uri( String.format( "/company/%s/company-detail", companyNumber ) )
-                .retrieve()
-                .bodyToMono( String.class )
-                .map( parseJsonTo( CompanyDetails.class ) )
-                .onErrorMap( throwable -> {
-                    if ( throwable instanceof WebClientResponseException exception && NOT_FOUND.equals( exception.getStatusCode() ) ){
-                        return new NotFoundRuntimeException( "Failed to find company", exception );
-                    }
-                    throw new InternalServerErrorRuntimeException( "Failed to retrieve company profile", (Exception) throwable );
-                } )
-                .doOnSubscribe( onSubscribe -> LOGGER.infoContext( xRequestId, String.format( "Sending request to company-profile-api: GET /company/{company_number}/company-detail. Attempting to retrieve company profile for company: %s" , companyNumber ), null ) )
-                .doFinally( signalType -> LOGGER.infoContext( xRequestId, String.format( "Finished request to company-profile-api for company: %s.", companyNumber ), null ) );
-    }
-
-    public CompanyDetails fetchCompanyProfile( final String companyNumber ){
-        return toFetchCompanyProfileRequest( companyNumber, getXRequestId() ).block( Duration.ofSeconds( 20L ) );
-    }
-
-    public Map<String, CompanyDetails> fetchCompanyProfiles( final Stream<AssociationDao> associations ) {
+    public Map<String, CompanyDetails> fetchCompanyProfiles(final Stream<AssociationDao> associations) {
         final var xRequestId = getXRequestId();
-        return Flux.fromStream( associations )
-                .map( AssociationDao::getCompanyNumber )
-                .flatMap( companyNumber -> toFetchCompanyProfileRequest( companyNumber, xRequestId ) )
-                .collectMap( CompanyDetails::getCompanyNumber )
-                .block( Duration.ofSeconds( 20L ) );
+        final var companyDetailsMap = new ConcurrentHashMap<String, CompanyDetails>();
+
+        associations.parallel()
+                .map(AssociationDao::getCompanyNumber)
+                .forEach(companyNumber -> {
+                    final var companyDetails = fetchCompanyProfile(companyNumber, xRequestId);
+                    companyDetailsMap.put(companyNumber, companyDetails);
+                });
+
+        return companyDetailsMap;
     }
 
+    public CompanyDetails fetchCompanyProfile(final String companyNumber) {
+        return fetchCompanyProfile(companyNumber, getXRequestId());
+    }
+
+    public CompanyDetails fetchCompanyProfile(final String companyNumber, String xRequestId) {
+        xRequestId = xRequestId != null ? xRequestId : getXRequestId();
+        LOGGER.debugContext(xRequestId, "Searching for company by number: " + companyNumber, null);
+        if (StringUtils.isBlank(companyNumber)) {
+            NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_COMPANY_NUMBER);
+            LOGGER.errorContext(xRequestId, BLANK_COMPANY_NUMBER, exception, null);
+            throw exception;
+        }
+        return companyClient.requestCompanyProfile(companyNumber, xRequestId);
+    }
 }
 
 

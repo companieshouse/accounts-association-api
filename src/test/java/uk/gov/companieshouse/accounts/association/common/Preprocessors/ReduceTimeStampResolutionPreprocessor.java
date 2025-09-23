@@ -7,8 +7,8 @@ import java.util.Objects;
 public class ReduceTimeStampResolutionPreprocessor extends Preprocessor {
 
     @Override
-    public Object preprocess( final Object object ) {
-        return Objects.isNull( object ) ? null : reduceTimestampResolution( (String) object );
+    public Object preprocess(final Object object) {
+        return Objects.isNull(object) ? null : reduceTimestampResolution((String) object);
     }
 
 }

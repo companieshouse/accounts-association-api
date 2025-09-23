@@ -1,8 +1,7 @@
 package uk.gov.companieshouse.accounts.association.models.email.data;
 
-import uk.gov.companieshouse.email_producer.model.EmailData;
-
 import java.util.Objects;
+import uk.gov.companieshouse.email_producer.model.EmailData;
 
 public class DelegatedRemovalOfMigratedBatchEmailData extends EmailData {
 
@@ -13,9 +12,9 @@ public class DelegatedRemovalOfMigratedBatchEmailData extends EmailData {
     private String companyName;
 
 
-    public DelegatedRemovalOfMigratedBatchEmailData(){}
+    public DelegatedRemovalOfMigratedBatchEmailData() {}
 
-    public DelegatedRemovalOfMigratedBatchEmailData( String removedBy, String removedUser, String companyName ) {
+    public DelegatedRemovalOfMigratedBatchEmailData(String removedBy, String removedUser, String companyName) {
         this.removedBy = removedBy;
         this.removedUser = removedUser;
         this.companyName = companyName;

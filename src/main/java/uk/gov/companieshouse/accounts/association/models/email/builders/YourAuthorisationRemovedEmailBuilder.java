@@ -1,20 +1,19 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
-import uk.gov.companieshouse.accounts.association.models.email.data.YourAuthorisationRemovedEmailData;
-
 import java.util.Objects;
+import uk.gov.companieshouse.accounts.association.models.email.data.YourAuthorisationRemovedEmailData;
 
 public class YourAuthorisationRemovedEmailBuilder extends EmailBuilder<YourAuthorisationRemovedEmailBuilder, YourAuthorisationRemovedEmailData> {
 
     private String removedByDisplayName;
 
-    public YourAuthorisationRemovedEmailBuilder setRemovedByDisplayName(final String removedByDisplayName ) {
+    public YourAuthorisationRemovedEmailBuilder setRemovedByDisplayName(final String removedByDisplayName) {
         this.removedByDisplayName = removedByDisplayName;
         return this;
     }
 
     @Override
-    protected YourAuthorisationRemovedEmailBuilder self(){
+    protected YourAuthorisationRemovedEmailBuilder self() {
         return this;
     }
 

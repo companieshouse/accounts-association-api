@@ -9,7 +9,7 @@ public class AuthCodeConfirmationEmailData extends EmailData {
     private String authorisedPerson;
     private String companyName;
 
-    public AuthCodeConfirmationEmailData(){}
+    public AuthCodeConfirmationEmailData() {}
 
     public AuthCodeConfirmationEmailData(String authorisedPerson, String companyName) {
         this.authorisedPerson = authorisedPerson;

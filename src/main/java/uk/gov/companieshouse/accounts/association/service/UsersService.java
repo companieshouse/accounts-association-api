@@ -1,125 +1,170 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import java.net.URI;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import org.springframework.web.util.UriComponentsBuilder;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
-import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.api.accounts.user.model.User;
-import uk.gov.companieshouse.api.accounts.user.model.UsersList;
+import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isOAuth2Request;
 
-import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
-
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
-import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonTo;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.*;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
+import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.service.client.UserClient;
+import uk.gov.companieshouse.api.accounts.user.model.User;
+import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 
 @Service
 public class UsersService {
 
-    private final WebClient usersWebClient;
+    private final UserClient userClient;
 
-    private UsersService( @Qualifier( "usersWebClient" ) final WebClient usersWebClient ){
-        this.usersWebClient = usersWebClient;
+    private static final String BLANK_USER_ID = "UserID cannot be blank";
+    private static final String EMAIL_IN_LIST_CANNOT_BE_NULL = "Email in list cannot be null";
+
+    @Autowired
+    private UsersService(final UserClient userClient) {
+        this.userClient = userClient;
     }
 
-    public Mono<User> toFetchUserDetailsRequest( final String userId, final String xRequestId ) {
-        return usersWebClient.get()
-                .uri(uriBuilder -> UriComponentsBuilder.fromUri(uriBuilder.build())
-                        .path("/users/{user}")
-                        .buildAndExpand(userId)
-                        .toUri())
-                .retrieve()
-                .bodyToMono( String.class )
-                .map( parseJsonTo( User.class ) )
-                .onErrorMap( throwable -> {
-                    if ( throwable instanceof WebClientResponseException exception && NOT_FOUND.equals( exception.getStatusCode() ) ){
-                        return new NotFoundRuntimeException( "Failed to find user", exception );
-                    }
-                    throw new InternalServerErrorRuntimeException( "Failed to retrieve user details", (Exception) throwable );
-                } )
-                .doOnSubscribe( onSubscribe -> LOGGER.infoContext( xRequestId, String.format( "Sending request to accounts-user-api: GET /users/{user_id}. Attempting to retrieve user: %s", userId ), null ) )
-                .doFinally( signalType -> LOGGER.infoContext( xRequestId, String.format( "Finished request to accounts-user-api for user: %s", userId ), null ) );
+    public User fetchUserDetails(final String userId, final String xRequestId) {
+        if (StringUtils.isBlank(userId)) {
+            NotFoundRuntimeException exception = new NotFoundRuntimeException(BLANK_USER_ID);
+            LOGGER.errorContext(xRequestId, BLANK_USER_ID, exception, null);
+            throw exception;
+        }
+        LOGGER.debugContext(xRequestId, "Searching for users by userId: " + userId, null);
+
+        return userClient.requestUserDetails(userId, xRequestId);
     }
 
-    public User fetchUserDetails(final String userId, final String xRequestId ){
-        return toFetchUserDetailsRequest( userId, xRequestId ).block( Duration.ofSeconds( 20L ) );
-    }
-
-    public Map<String, User> fetchUserDetails( final Stream<AssociationDao> associations ){
+    public Map<String, User> fetchUsersDetails(final Stream<AssociationDao> associations) {
         final var xRequestId = getXRequestId();
-        return Flux.fromStream( associations )
-                .filter( association -> Objects.nonNull( association.getUserId() ) )
-                .map( AssociationDao::getUserId )
-                .distinct()
-                .flatMap( userId -> toFetchUserDetailsRequest( userId, xRequestId ) )
-                .collectMap( User::getUserId )
-                .block( Duration.ofSeconds( 20L ) );
-    }
+        final var userDetailsMap = new ConcurrentHashMap<String, User>();
 
-    public UsersList searchUserDetails( final List<String> emails ) {
-        final var xRequestId = getXRequestId();
-        return usersWebClient.get()
-                .uri(uriBuilder -> UriComponentsBuilder.fromUri(uriBuilder.build())
-                        .path("/users/search")
-                        .queryParam("user_email", "{emails}")
-                        .encode()
-                        .buildAndExpand(String.join(",", emails))
-                        .toUri())
-                .retrieve()
-                .bodyToMono( String.class )
-                .map( parseJsonTo( UsersList.class ) )
-                .onErrorMap( throwable -> {
-                    throw new InternalServerErrorRuntimeException( "Failed to retrieve user details", (Exception) throwable );
-                } )
-                .doOnSubscribe( onSubscribe -> LOGGER.infoContext( xRequestId,  "Sending request to accounts-user-api: GET /users/search. Attempting to retrieve users" , null ) )
-                .doFinally( signalType -> LOGGER.infoContext( xRequestId, "Finished request to accounts-user-api for users",  null ) )
-                .block( Duration.ofSeconds( 20L ) );
-    }
-
-    public User retrieveUserDetails( final String targetUserId, final String targetUserEmail ){
-        final var fetchedByUserId = Optional.ofNullable( targetUserId )
-                .map( userId -> {
-                    if ( isOAuth2Request() && userId.equals( getEricIdentity() ) ){
-                        return getUser();
+        associations.parallel().forEach(associationDao -> {
+            if (!StringUtils.isBlank(associationDao.getUserId())) {
+                userDetailsMap.put(associationDao.getUserId(), fetchUserDetails(associationDao.getUserId(), xRequestId));
+            } else if (!StringUtils.isBlank(associationDao.getUserEmail())) {
+                Optional.ofNullable(fetchUserDetailsByEmail(associationDao.getUserEmail(), xRequestId)).ifPresent(usersList -> {
+                    if (!usersList.isEmpty()) {
+                        usersList.forEach(user -> userDetailsMap.put(user.getUserId(), user));
                     }
-                    return fetchUserDetails( userId, getXRequestId() );
-                } )
-                .orElse( null );
+                });
+            } else {
+                LOGGER.infoContext(xRequestId, String.format("Association %s has a user with no id or email", associationDao.getId()), null);
+            }
+        });
 
-        if ( Objects.nonNull( fetchedByUserId ) ){
-            return fetchedByUserId;
+        return userDetailsMap;
+    }
+
+    public UsersList searchUsersDetailsByEmail(final List<String> emails) {
+        final var xRequestId = getXRequestId();
+        if (emails == null) {
+            IllegalArgumentException exception = new IllegalArgumentException("Emails cannot be null");
+            LOGGER.errorContext(xRequestId, "Emails cannot be null", exception, null);
+            throw exception;
+        }
+        if (emails.stream().anyMatch(Objects::isNull)) {
+            InternalServerErrorRuntimeException exception = new InternalServerErrorRuntimeException(EMAIL_IN_LIST_CANNOT_BE_NULL);
+            LOGGER.errorContext(xRequestId, EMAIL_IN_LIST_CANNOT_BE_NULL, exception, null);
+            throw exception;
         }
 
-        return Optional.ofNullable( targetUserEmail )
-                .map( userEmail -> {
-                    if ( isOAuth2Request() && userEmail.equals( getUser().getEmail() ) ){
+        if (emails.size() == 1) {
+            final var userDetails = fetchUserDetailsByEmail(emails.getFirst(), xRequestId);
+            if (Objects.nonNull(userDetails)) {
+                return userDetails;
+            } else {
+                return new UsersList();
+            }
+        }
+
+        final var synchronizedList = Collections.synchronizedList(new UsersList());
+        emails.stream()
+                .parallel()
+                .forEach(email -> {
+                    var userDetails = fetchUserDetailsByEmail(email, xRequestId);
+                    if (Objects.nonNull(userDetails)) {
+                        synchronizedList.addAll(userDetails);
+                    }
+                });
+
+        UsersList usersList = null;
+        if (!synchronizedList.isEmpty()) {
+            usersList = new UsersList();
+            usersList.addAll(synchronizedList);
+        }
+        return usersList;
+    }
+
+    public UsersList fetchUserDetailsByEmail(final String email, final String xRequestId) {
+        LOGGER.debugContext(xRequestId, "Searching for users by email: " + String.join(",", email), null);
+        return userClient.requestUserDetailsByEmail(email, xRequestId);
+    }
+
+    public User retrieveUserDetails(final String xRequestId, final String targetUserId, final String targetUserEmail) {
+        LOGGER.traceContext(xRequestId, "Attempting to fetch user by id: " + targetUserId, null);
+        final var fetchedByUserId = Optional.ofNullable(targetUserId).map(userId -> {
+            if (isOAuth2Request() && userId.equals(getEricIdentity())) {
+                return getUser();
+            }
+            return fetchUserDetails(userId, getXRequestId());
+        }).orElse(null);
+
+        if (Objects.nonNull(fetchedByUserId)) {
+            return fetchedByUserId;
+        }
+        LOGGER.traceContext(xRequestId, "Fetching user by id: " + targetUserId + " failed", null);
+
+        LOGGER.traceContext(xRequestId, "Attempting to fetch user by email: " + targetUserEmail, null);
+        return Optional.ofNullable(targetUserEmail)
+                .map(userEmail -> {
+                    if (isOAuth2Request() && userEmail.equals(getUser().getEmail())) {
                         return getUser();
                     }
-                    return Optional.of( userEmail )
-                            .map( List::of )
-                            .map( this::searchUserDetails )
-                            .filter( list -> !list.isEmpty() )
-                            .map( List::getFirst )
-                            .orElse( null );
-                } )
-                .orElse( null );
+                    return Optional.of(userEmail)
+                            .map(List::of)
+                            .map(this::searchUsersDetailsByEmail)
+                            .filter(list -> !list.isEmpty())
+                            .map(List::getFirst)
+                            .orElse(null);
+                }).orElse(null);
+
     }
 
-    public User fetchUserDetails( final AssociationDao association ){
-        return retrieveUserDetails( association.getUserId(), association.getUserEmail() );
+    public User fetchUserDetails(final String xRequestId, final AssociationDao association) {
+        return retrieveUserDetails(xRequestId, association.getUserId(), association.getUserEmail());
     }
 
+    public String getUserIdentifier(User user) {
+        try {
+            return user.getUserId();
+        } catch (NullPointerException exception) {
+            LOGGER.debug("User has no ID");
+        }
+        try {
+            return user.getDisplayName();
+        } catch (NullPointerException exception) {
+            LOGGER.debug("User has no display name");
+        }
+        try {
+            // TODO: Obfuscate?
+            return user.getEmail();
+        } catch (NullPointerException exception) {
+            LOGGER.debug("User has no email");
+        }
+
+        return "No user identity could be found";
+    }
 }

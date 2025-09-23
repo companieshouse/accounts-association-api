@@ -10,7 +10,7 @@ public class InviteCancelledEmailData extends EmailData {
 
     private String cancelledBy;
 
-    public InviteCancelledEmailData(){}
+    public InviteCancelledEmailData() {}
 
     public InviteCancelledEmailData(String companyName, String cancelledBy) {
         this.companyName = companyName;

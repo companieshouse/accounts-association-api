@@ -1,25 +1,24 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
-import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConfirmationEmailData;
-
 import java.util.Objects;
+import uk.gov.companieshouse.accounts.association.models.email.data.AuthCodeConfirmationEmailData;
 
 public class AuthCodeConfirmationEmailBuilder extends EmailBuilder<AuthCodeConfirmationEmailBuilder, AuthCodeConfirmationEmailData> {
 
     private String displayName;
 
-    public AuthCodeConfirmationEmailBuilder setDisplayName( final String displayName ){
+    public AuthCodeConfirmationEmailBuilder setDisplayName(final String displayName){
         this.displayName = displayName;
         return this;
     }
 
     @Override
-    protected AuthCodeConfirmationEmailBuilder self(){
+    protected AuthCodeConfirmationEmailBuilder self() {
         return this;
     }
 
     @Override
-    public AuthCodeConfirmationEmailData build(){
+    public AuthCodeConfirmationEmailData build() {
         if (Objects.isNull(recipientEmail) || Objects.isNull(displayName) || Objects.isNull(companyName)) {
             throw new NullPointerException("recipientEmail, displayName, and companyName cannot be null");
         }

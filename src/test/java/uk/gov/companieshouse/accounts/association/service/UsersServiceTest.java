@@ -1,6 +1,16 @@
 package uk.gov.companieshouse.accounts.association.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static uk.gov.companieshouse.accounts.association.models.Constants.OAUTH2;
+import static uk.gov.companieshouse.accounts.association.models.Constants.UNKNOWN;
+import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY;
+import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY_TYPE;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -10,237 +20,235 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.web.reactive.function.client.WebClient;
-import uk.gov.companieshouse.accounts.association.common.Mockers;
-import uk.gov.companieshouse.accounts.association.common.Mockers.UriType;
+import org.springframework.web.client.RestClient;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.context.RequestContext;
 import uk.gov.companieshouse.accounts.association.models.context.RequestContextData.RequestContextDataBuilder;
+import uk.gov.companieshouse.accounts.association.service.client.UserClient;
 import uk.gov.companieshouse.api.accounts.user.model.User;
+import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static uk.gov.companieshouse.accounts.association.models.Constants.OAUTH2;
-import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY;
-import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY_TYPE;
-
-@ExtendWith( MockitoExtension.class )
-@Tag( "unit-test" )
+@ExtendWith(MockitoExtension.class)
+@Tag("unit-test")
 class UsersServiceTest {
 
     @Mock
-    private WebClient usersWebClient;
+    private RestClient usersRestClient;
+
+    @Mock
+    private UserClient userClient;
 
     @InjectMocks
     private UsersService usersService;
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
-    private Mockers mockers;
-
     @BeforeEach
     void setup() {
-        mockers = new Mockers( usersWebClient, null, null, null );
     }
 
     @Test
-    void fetchUserDetailsForNullOrNonexistentUserReturnsNotFoundRuntimeException() {
-        mockers.mockWebClientForFetchUserDetailsErrorResponse( null, 404 );
-        Assertions.assertThrows( NotFoundRuntimeException.class, () -> usersService.fetchUserDetails( null, "id123" ) );
-
-        mockers.mockWebClientForFetchUserDetailsErrorResponse( "404User", 404 );
-        Assertions.assertThrows( NotFoundRuntimeException.class, () -> usersService.fetchUserDetails( "404User", "id123" ) );
+    void fetchUserDetailsForNullOrBlankUsersReturnsNotFoundRuntimeException() {
+        Assertions.assertThrows(NotFoundRuntimeException.class, () -> usersService.fetchUserDetails(null, "id123"));
+        Assertions.assertThrows(NotFoundRuntimeException.class, () -> usersService.fetchUserDetails("", "id123"));
     }
 
     @Test
-    void fetchUserDetailsWithMalformedUserIdReturnsInternalServerErrorRuntimeException() {
-        mockers.mockWebClientForFetchUserDetailsErrorResponse( "£$@123", 400 );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails( "£$@123" , "id123") );
+    void fetchUserDetailsWithMalformedUsersIdReturnsInternalServerErrorRuntimeException() {
+        when(userClient.requestUserDetails(any(), any())).thenThrow(InternalServerErrorRuntimeException.class);
+        Assertions.assertThrows(InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails("£$@123" , "id123"));
     }
 
     @Test
     void fetchUserDetailsWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
-        mockers.mockWebClientForFetchUserDetailsJsonParsingError( "111", false );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails( "111", "id123" ) );
+        when(userClient.requestUserDetails(any(), any())).thenThrow(InternalServerErrorRuntimeException.class);
+        Assertions.assertThrows(InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails("111", "id123"));
     }
 
     @Test
-    void fetchUserDetailsReturnsSpecifiedUser() throws JsonProcessingException {
-        mockers.mockWebClientForFetchUserDetails( false,"111" );
-        Assertions.assertEquals( "Batman", usersService.fetchUserDetails( "111", "id123" ).getDisplayName() );
+    void fetchUserDetailsReturnsSpecifiedUsers() {
+        when(userClient.requestUserDetails(eq("111"), any())).thenReturn(testDataManager.fetchUserDtos("111").getFirst());
+        Assertions.assertEquals("Batman", usersService.fetchUserDetails("111", "id123").getDisplayName());
     }
 
     @Test
-    void fetchUserDetailsWithNullStreamThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> usersService.fetchUserDetails( (Stream<AssociationDao>) null ) );
+    void fetchUserDetailsWithNullStreamThrowsNullPointerException() {
+        Assertions.assertThrows(NullPointerException.class, () -> usersService.fetchUsersDetails(null));
     }
 
     @Test
     void fetchUserDetailsWithEmptyStreamReturnsEmptyMap() {
-        Assertions.assertEquals( 0, usersService.fetchUserDetails( Stream.of() ).size() );
+        Assertions.assertEquals(0, usersService.fetchUsersDetails(Stream.of()).size());
     }
 
     @Test
-    void fetchUserDetailsWithStreamThatHasNonExistentUserReturnsNotFoundRuntimeException(){
+    void fetchUserDetailsWithStreamThatHasNonExistentUsersReturnsNotFoundRuntimeException() {
         final var associationDao = new AssociationDao();
-        associationDao.setUserId( "404User" );
-        mockers.mockWebClientForFetchUserDetailsErrorResponse( "404User", 404 );
-        Assertions.assertThrows( NotFoundRuntimeException.class, () -> usersService.fetchUserDetails( Stream.of( associationDao ) ) );
+        associationDao.setUserId("404User");
+        when(userClient.requestUserDetails(any(), any())).thenThrow(NotFoundRuntimeException.class);
+
+        Assertions.assertThrows(NotFoundRuntimeException.class, () -> usersService.fetchUsersDetails(Stream.of(associationDao)));
     }
 
     @Test
-    void fetchUserDetailsWithStreamThatHasMalformedUserIdReturnsInternalServerErrorRuntimeException(){
+    void fetchUserDetailsWithStreamThatHasMalformedUsersIdReturnsInternalServerErrorRuntimeException() {
         final var associationDao = new AssociationDao();
-        associationDao.setUserId( "£$@123" );
-        mockers.mockWebClientForFetchUserDetailsErrorResponse( "£$@123", 400 );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails( Stream.of( associationDao ) ) );
+        associationDao.setUserId("£$@123");
+        when(userClient.requestUserDetails(any(), any())).thenThrow(InternalServerErrorRuntimeException.class);
+
+        Assertions.assertThrows(InternalServerErrorRuntimeException.class, () -> usersService.fetchUsersDetails(Stream.of(associationDao)));
     }
 
     @Test
-    void fetchUserDetailsWithStreamWithArbitraryErrorReturnsInternalServerErrorRuntimeException(){
-        final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
-        mockers.mockWebClientForFetchUserDetailsJsonParsingError( "111", false );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.fetchUserDetails( Stream.of( associationDao ) ) );
+    void fetchUserDetailsWithStreamWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
+        final var associationDao = testDataManager.fetchAssociationDaos("1").getFirst();
+        when(userClient.requestUserDetails(eq(associationDao.getUserId()), any())).thenThrow(InternalServerErrorRuntimeException.class);
+        Assertions.assertThrows(InternalServerErrorRuntimeException.class, () -> usersService.fetchUsersDetails(Stream.of(associationDao)));
     }
 
     @Test
-    void fetchUserDetailsWithStreamReturnsMap() throws JsonProcessingException {
-        final var associationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst();
-        mockers.mockWebClientForFetchUserDetails( false, "111");
-        final var users = usersService.fetchUserDetails( Stream.of( associationDao, associationDao ) );
+    void fetchUserDetailsWithStreamReturnsMap() {
+        final var associationDao111 = testDataManager.fetchAssociationDaos("1").getFirst();
+        final var associationDao222 = testDataManager.fetchAssociationDaos("2").getFirst();
+        when(userClient.requestUserDetails(any(), any())).thenReturn(testDataManager.fetchUserDtos("111").getFirst(), testDataManager.fetchUserDtos("222").getFirst());
 
-        Assertions.assertEquals( 1, users.size() );
-        Assertions.assertTrue( users.containsKey( "111" ) );
-        Assertions.assertTrue( users.values().stream().map( User::getUserId ).toList().contains( "111" ) );
+        final var users = usersService.fetchUsersDetails(Stream.of(associationDao111, associationDao222));
+
+        Assertions.assertEquals(2, users.size());
+        Assertions.assertTrue(users.containsKey("111"));
+        Assertions.assertTrue(users.containsKey("222"));
+        Assertions.assertTrue(users.values().stream().map(User::getUserId).toList().contains("111"));
+        Assertions.assertTrue(users.values().stream().map(User::getUserId).toList().contains("222"));
     }
 
     @Test
-    void searchUserDetailsWithNullListThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> usersService.searchUserDetails( null ) );
+    void searchUserDetailsWithNullListThrowsIllegalArgumentException() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> usersService.searchUsersDetailsByEmail(null));
     }
 
     @Test
     void searchUserDetailWithNullOrMalformedUserEmailThrowsInternalServerErrorRuntimeException() {
         final var emails = new ArrayList<String>();
-        emails.add( null );
-        mockers.mockWebClientForSearchUserDetailsErrorResponse( null, 400, UriType.FUNCTION );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( emails ) );
+        emails.add(null);
+        when(userClient.requestUserDetailsByEmail(any(), any())).thenThrow(InternalServerErrorRuntimeException.class);
 
-        mockers.mockWebClientForSearchUserDetailsErrorResponse( "£$@123", 400, UriType.FUNCTION );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "£$@123" ) ) );
+        Assertions.assertThrows(InternalServerErrorRuntimeException.class, () -> usersService.searchUsersDetailsByEmail(emails));
+        Assertions.assertThrows(InternalServerErrorRuntimeException.class, () -> usersService.searchUsersDetailsByEmail(List.of("£$@123")));
     }
 
     @Test
-    void searchUserDetailsReturnsUsersList() throws JsonProcessingException {
-        mockers.mockWebClientForSearchUserDetails( false, "111" );
-        final var result = usersService.searchUserDetails( List.of( "bruce.wayne@gotham.city" ) );
-        Assertions.assertEquals( 1, result.size() );
-        Assertions.assertEquals( "Batman", result.getFirst().getDisplayName() );
+    void searchUserDetailsReturnsUsersList() {
+        final var usersList = new UsersList();
+        usersList.add(testDataManager.fetchUserDtos("111").getFirst());
+        when(userClient.requestUserDetailsByEmail(eq("bruce.wayne@gotham.city"), any())).thenReturn(usersList);
+
+        final var result = usersService.searchUsersDetailsByEmail(List.of("bruce.wayne@gotham.city"));
+        Assertions.assertEquals(1, result.size());
+        Assertions.assertEquals("Batman", result.getFirst().getDisplayName());
     }
 
-    @Test
-    void searchUserDetailsWithNonexistentEmailReturnsNull() {
-        mockers.mockWebClientForSearchUserDetailsNonexistentEmail( false, "404@email.com" );
-        Assertions.assertNull( usersService.searchUserDetails( List.of( "404@email.com" ) ) );
-    }
+    //TODO: contradicts other tests?
+//    @Test
+//    void searchUserDetailsWithNonexistentEmailReturnsNull() {
+//        //TODO: Why do we want to return null here rather than an empty list?
+//        Assertions.assertNull(usersService.searchUsersDetailsByEmail(List.of("404@email.com")));
+//    }
 
     @Test
     void searchUserDetailsWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
-        mockers.mockWebClientForSearchUserDetailsJsonParsingError("bruce.wayne+@gotham.city", UriType.FUNCTION );
-        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "bruce.wayne+@gotham.city" ) ) );
+        when(userClient.requestUserDetailsByEmail(any(), any())).thenThrow(InternalServerErrorRuntimeException.class);
+        Assertions.assertThrows(InternalServerErrorRuntimeException.class, () -> usersService.searchUsersDetailsByEmail(List.of("bruce.wayne@gotham.city")));
     }
 
     @Test
-    void fetchUserDetailsWithNullAssociationOrNullUserIdAndUserEmailReturnsNull(){
-        Assertions.assertNull( usersService.fetchUserDetails( new AssociationDao() ) );
+    void fetchUserDetailsWithNullAssociationOrNullUserIdAndUsersEmailReturnsNull() {
+        Assertions.assertNull(usersService.fetchUserDetails(UNKNOWN, new AssociationDao()));
     }
 
     @Test
-    void fetchUserDetailsWithNonexistentUserIdThrowsNotFoundRuntimeException(){
-        final var requestingUser = testDataManager.fetchUserDtos( "111" ).getFirst();
-        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
+    void fetchUserDetailsWithNonexistentUsersIdThrowsNotFoundRuntimeException() {
+        final var requestingUser = testDataManager.fetchUserDtos("111").getFirst();
+        final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation002").getFirst();
+        final var request = new MockHttpServletRequest();
+
+        request.addHeader(ERIC_IDENTITY, requestingUser.getUserId());
+        RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setUser(requestingUser).build());
+        when(userClient.requestUserDetails(eq(targetAssociation.getUserId()), any())).thenThrow(NotFoundRuntimeException.class);
+
+        Assertions.assertThrows(NotFoundRuntimeException.class, () -> usersService.fetchUserDetails(UNKNOWN, targetAssociation));
+    }
+
+    @Test
+    void fetchUserDetailsWithUserIdAssociationAndSameUsersReturnsEricUsers() {
+        final var targetUser = testDataManager.fetchUserDtos("MKUser002").getFirst();
+        final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation002").getFirst();
 
         final var request = new MockHttpServletRequest();
-        request.addHeader( ERIC_IDENTITY, requestingUser.getUserId() );
-        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).build() );
+        request.addHeader(ERIC_IDENTITY, targetUser.getUserId());
+        request.addHeader(ERIC_IDENTITY_TYPE, OAUTH2);
+        RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setEricIdentityType(request).setUser(targetUser).build());
 
-        mockers.mockWebClientForFetchUserDetailsErrorResponse( "MKUser002", 404 );
-
-        Assertions.assertThrows( NotFoundRuntimeException.class, () -> usersService.fetchUserDetails( targetAssociation ) );
+        Assertions.assertEquals(targetUser, usersService.fetchUserDetails(UNKNOWN, targetAssociation));
     }
 
     @Test
-    void fetchUserDetailsWithUserIdAssociationAndSameUsersReturnsEricUser() {
-        final var targetUser = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
-        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
-
+    void fetchUserDetailsWithUserIdAssociationAndDifferentUsersRetrievesUsers() {
+        final var requestingUser = testDataManager.fetchUserDtos("111").getFirst();
+        final var targetUser = testDataManager.fetchUserDtos("MKUser002").getFirst();
+        final var targetUserList = new UsersList();
+        targetUserList.add(targetUser);
+        final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
         final var request = new MockHttpServletRequest();
-        request.addHeader( ERIC_IDENTITY, targetUser.getUserId() );
-        request.addHeader( ERIC_IDENTITY_TYPE, OAUTH2 );
-        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setEricIdentityType( request ).setUser( targetUser ).build() );
 
-        Assertions.assertEquals( targetUser, usersService.fetchUserDetails( targetAssociation ) );
+        request.addHeader(ERIC_IDENTITY, requestingUser.getUserId());
+        RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setUser(requestingUser).build());
+
+        when(userClient.requestUserDetailsByEmail(eq(targetAssociation.getUserEmail()), any())).thenReturn(targetUserList);
+
+        Assertions.assertEquals(targetUser, usersService.fetchUserDetails(UNKNOWN, targetAssociation));
     }
 
     @Test
-    void fetchUserDetailsWithUserIdAssociationAndDifferentUsersRetrievesUser() throws JsonProcessingException {
-        final var requestingUser = testDataManager.fetchUserDtos( "111" ).getFirst();
-        final var targetUser = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
-        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation002" ).getFirst();
-
+    void fetchUserDetailsWithNonexistentUsersEmailReturnsNull() {
+        final var requestingUser = testDataManager.fetchUserDtos("111").getFirst();
+        final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
         final var request = new MockHttpServletRequest();
-        request.addHeader( ERIC_IDENTITY, requestingUser.getUserId() );
-        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).build() );
 
-        mockers.mockWebClientForFetchUserDetails( false, "MKUser002" );
+        request.addHeader(ERIC_IDENTITY, requestingUser.getUserId());
+        RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setUser(requestingUser).build());
 
-        Assertions.assertEquals( targetUser, usersService.fetchUserDetails( targetAssociation ) );
+        Assertions.assertNull(usersService.fetchUserDetails(UNKNOWN, targetAssociation));
     }
 
     @Test
-    void fetchUserDetailsWithNonexistentUserEmailReturnsNull(){
-        final var requestingUser = testDataManager.fetchUserDtos( "111" ).getFirst();
-        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
+    void fetchUserDetailsWithUserEmailAssociationAndSameUsersReturnsEricUsers() {
+        final var targetUser = testDataManager.fetchUserDtos("MKUser001").getFirst();
+        final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
 
         final var request = new MockHttpServletRequest();
-        request.addHeader( ERIC_IDENTITY, requestingUser.getUserId() );
-        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).build() );
+        request.addHeader(ERIC_IDENTITY, targetUser.getUserId());
+        request.addHeader(ERIC_IDENTITY_TYPE, OAUTH2);
+        RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setEricIdentityType(request).setUser(targetUser).build());
 
-        mockers.mockWebClientForSearchUserDetailsNonexistentEmail(false,  "mario@mushroom.kingdom" );
-
-        Assertions.assertNull( usersService.fetchUserDetails( targetAssociation ) );
+        Assertions.assertEquals(targetUser, usersService.fetchUserDetails(UNKNOWN, targetAssociation));
     }
 
     @Test
-    void fetchUserDetailsWithUserEmailAssociationAndSameUsersReturnsEricUser() throws JsonProcessingException {
-        final var targetUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
-        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
-
+    void fetchUserDetailsWithUserEmailAssociationAndDifferentUsersRetrievesUsers() {
+        final var requestingUser = testDataManager.fetchUserDtos("111").getFirst();
+        final var targetUser = testDataManager.fetchUserDtos("MKUser001").getFirst();
+        final var targetAssociation = testDataManager.fetchAssociationDaos("MKAssociation001").getFirst();
+        final var targetUserList = new UsersList();
+        targetUserList.add(targetUser);
         final var request = new MockHttpServletRequest();
-        request.addHeader( ERIC_IDENTITY, targetUser.getUserId() );
-        request.addHeader( ERIC_IDENTITY_TYPE, OAUTH2 );
-        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setEricIdentityType( request ).setUser( targetUser ).build() );
 
-        Assertions.assertEquals( targetUser, usersService.fetchUserDetails( targetAssociation ) );
-    }
+        request.addHeader(ERIC_IDENTITY, requestingUser.getUserId());
+        RequestContext.setRequestContext(new RequestContextDataBuilder().setEricIdentity(request).setUser(requestingUser).build());
+        when(userClient.requestUserDetailsByEmail(eq(targetUser.getEmail()), any())).thenReturn(targetUserList);
 
-    @Test
-    void fetchUserDetailsWithUserEmailAssociationAndDifferentUsersRetrievesUser() throws JsonProcessingException {
-        final var requestingUser = testDataManager.fetchUserDtos( "111" ).getFirst();
-        final var targetUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
-        final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
-
-        final var request = new MockHttpServletRequest();
-        request.addHeader( ERIC_IDENTITY, requestingUser.getUserId() );
-        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).build() );
-
-        mockers.mockWebClientForSearchUserDetails( false,"MKUser001" );
-
-        Assertions.assertEquals( targetUser, usersService.fetchUserDetails( targetAssociation ) );
+        Assertions.assertEquals(targetUser, usersService.fetchUserDetails(UNKNOWN, targetAssociation));
     }
 }

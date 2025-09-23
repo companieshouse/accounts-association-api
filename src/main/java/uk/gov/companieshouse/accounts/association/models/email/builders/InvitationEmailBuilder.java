@@ -1,26 +1,25 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
-
 import java.util.Objects;
+import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
 
 public class InvitationEmailBuilder extends EmailBuilder<InvitationEmailBuilder, InvitationEmailData> {
     private String inviterDisplayName;
 
     private String inviteeDisplayName;
 
-    public InvitationEmailBuilder setInviterDisplayName( final String inviterDisplayName ) {
+    public InvitationEmailBuilder setInviterDisplayName(final String inviterDisplayName) {
         this.inviterDisplayName = inviterDisplayName;
         return this;
     }
 
-    public InvitationEmailBuilder setInviteeDisplayName( final String inviteeDisplayName ) {
+    public InvitationEmailBuilder setInviteeDisplayName(final String inviteeDisplayName) {
         this.inviteeDisplayName = inviteeDisplayName;
         return this;
     }
 
     @Override
-    protected InvitationEmailBuilder self(){
+    protected InvitationEmailBuilder self() {
         return this;
     }
 

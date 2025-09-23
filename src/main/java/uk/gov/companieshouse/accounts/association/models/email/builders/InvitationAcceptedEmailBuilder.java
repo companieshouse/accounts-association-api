@@ -1,8 +1,7 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
-import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
-
 import java.util.Objects;
+import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
 
 public class InvitationAcceptedEmailBuilder extends EmailBuilder<InvitationAcceptedEmailBuilder, InvitationAcceptedEmailData> {
 
@@ -10,18 +9,18 @@ public class InvitationAcceptedEmailBuilder extends EmailBuilder<InvitationAccep
 
     private String inviteeDisplayName;
 
-    public InvitationAcceptedEmailBuilder setInviterDisplayName( final String inviterDisplayName ) {
+    public InvitationAcceptedEmailBuilder setInviterDisplayName(final String inviterDisplayName) {
         this.inviterDisplayName = inviterDisplayName;
         return this;
     }
 
-    public InvitationAcceptedEmailBuilder setInviteeDisplayName( final String inviteeDisplayName ) {
+    public InvitationAcceptedEmailBuilder setInviteeDisplayName(final String inviteeDisplayName) {
         this.inviteeDisplayName = inviteeDisplayName;
         return this;
     }
 
     @Override
-    protected InvitationAcceptedEmailBuilder self(){
+    protected InvitationAcceptedEmailBuilder self() {
         return this;
     }
 

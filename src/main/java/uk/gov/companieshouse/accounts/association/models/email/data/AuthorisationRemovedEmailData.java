@@ -12,7 +12,7 @@ public class AuthorisationRemovedEmailData extends EmailData {
 
     private String personWhoRemovedAuthorisation;
 
-    public AuthorisationRemovedEmailData(){}
+    public AuthorisationRemovedEmailData() {}
 
     public AuthorisationRemovedEmailData(String personWhoWasRemoved, String companyName, String personWhoRemovedAuthorisation) {
         this.personWhoWasRemoved = personWhoWasRemoved;
