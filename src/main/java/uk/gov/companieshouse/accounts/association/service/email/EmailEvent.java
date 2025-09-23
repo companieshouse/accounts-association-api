@@ -22,15 +22,6 @@ public class EmailEvent extends ApplicationEvent {
         this.requestContextData = requestContextData;
     }
 
-//    public EmailEvent(final Object source, final AssociationDao targetAssociation, final User targetUser,
-//            final StatusEnum newStatus) {
-//        super(source);
-//        this.targetAssociation = targetAssociation;
-//        this.targetUser = targetUser;
-//        this.newStatus = newStatus;
-//        this.requestContextData = null;
-//    }
-
     public AssociationDao getTargetAssociation() {
         return targetAssociation;
     }
