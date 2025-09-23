@@ -9,7 +9,6 @@ import static uk.gov.companieshouse.service.rest.err.Err.serviceErrBuilder;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;

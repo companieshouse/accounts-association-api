@@ -49,6 +49,7 @@ import uk.gov.companieshouse.accounts.association.service.AssociationsTransactio
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.accounts.association.service.email.EmailEventPublisher;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
@@ -78,6 +79,8 @@ class UserCompanyAssociationControllerTest {
     private AssociationsService associationsService;
     @MockitoBean
     private EmailService emailService;
+    @MockitoBean
+    private EmailEventPublisher emailEventPublisher;
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
@@ -499,7 +502,7 @@ class UserCompanyAssociationControllerTest {
                         .content("{\"status\":\"removed\"}"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(emailService).sendStatusUpdateEmails(eq(association), any(), eq(StatusEnum.REMOVED));
+        Mockito.verify(emailEventPublisher).publishEmailEvent(eq(association), any(), eq(StatusEnum.REMOVED), any());
     }
 
     // TODO: make these tests less integration and more unit

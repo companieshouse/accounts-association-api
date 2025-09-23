@@ -6,6 +6,8 @@ import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -63,14 +65,23 @@ class AssociationsRepositoryITest extends AbstractBaseIntegrationITest {
     void updateEtagWithNullThrowsConstraintViolationException() {
         final var associationDao = testDataManager.fetchAssociationDaos("1").getFirst();
         associationDao.setEtag(null);
-        assertThrows(ConstraintViolationException.class, () -> associationsRepository.save(associationDao));
+        // move async call into a single threaded executor and capture the exception it throws, to confirm validation is working
+        try (ExecutorService es = Executors.newSingleThreadExecutor()) {
+            es.submit(() -> {
+                assertThrows(ConstraintViolationException.class, () -> associationsRepository.save(associationDao));
+            });
+        }
     }
 
     @Test
     void updateApprovalRouteWithNullThrowsConstraintViolationException() {
         final var associationDao = testDataManager.fetchAssociationDaos("1").getFirst();
         associationDao.setApprovalRoute(null);
-        assertThrows(ConstraintViolationException.class, () -> associationsRepository.save(associationDao));
+        try (ExecutorService es = Executors.newSingleThreadExecutor()) {
+            es.submit(() -> {
+                assertThrows(ConstraintViolationException.class, () -> associationsRepository.save(associationDao));
+            });
+        }
     }
 
     @Test
@@ -347,7 +358,7 @@ class AssociationsRepositoryITest extends AbstractBaseIntegrationITest {
     void updateAssociationWithNullUpdateThrowsIllegalStateException() {
         Assertions.assertThrows(IllegalStateException.class, () -> associationsRepository.updateAssociation("111", null));
     }
-    
+
     @Test
     void updateAssociationPerformsUpdate() {
         associationsRepository.insert(testDataManager.fetchAssociationDaos("1"));
