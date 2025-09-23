@@ -5,6 +5,7 @@ import static uk.gov.companieshouse.accounts.association.models.Constants.ASSOCI
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getRequestcontext;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isAPIKeyRequest;
 
@@ -14,8 +15,8 @@ import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeEx
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.AssociationsTransactionService;
-import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
+import uk.gov.companieshouse.accounts.association.service.email.EmailEventPublisher;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationInterface;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
@@ -29,13 +30,13 @@ public class UserCompanyAssociationController implements UserCompanyAssociationI
     private final UsersService usersService;
     private final AssociationsService associationsService;
     private final AssociationsTransactionService associationsTransactionService;
-    private final EmailService emailService;
+    private final EmailEventPublisher emailEventPublisher;
 
-    public UserCompanyAssociationController(final UsersService usersService, final AssociationsService associationsService, final AssociationsTransactionService associationsTransactionService, final EmailService emailService) {
+    public UserCompanyAssociationController(final UsersService usersService, final AssociationsService associationsService, final AssociationsTransactionService associationsTransactionService, final EmailEventPublisher emailEventPublisher) {
         this.usersService = usersService;
         this.associationsService = associationsService;
         this.associationsTransactionService = associationsTransactionService;
-        this.emailService = emailService;
+        this.emailEventPublisher = emailEventPublisher;
     }
 
     @Override
@@ -91,7 +92,7 @@ public class UserCompanyAssociationController implements UserCompanyAssociationI
         associationsTransactionService.updateAssociation(targetAssociation.getId(), update);
 
         final var newStatus = StatusEnum.fromValue(requestBody.getStatus().getValue());
-        emailService.sendStatusUpdateEmails(targetAssociation, targetUser, newStatus);
+        emailEventPublisher.publishEmailEvent(targetAssociation, targetUser, newStatus, getRequestcontext());
 
         return new ResponseEntity<>(OK);
     }

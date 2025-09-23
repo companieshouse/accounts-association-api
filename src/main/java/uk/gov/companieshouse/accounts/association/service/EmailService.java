@@ -2,6 +2,7 @@ package uk.gov.companieshouse.accounts.association.service;
 
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
+import static uk.gov.companieshouse.accounts.association.models.context.RequestContext.setRequestContext;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.DELEGATED_REMOVAL_OF_MIGRATED;
@@ -44,6 +45,7 @@ import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeExce
 import uk.gov.companieshouse.accounts.association.exceptions.NullRequiredEmailDataException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
+import uk.gov.companieshouse.accounts.association.models.context.RequestContextData;
 import uk.gov.companieshouse.accounts.association.models.email.EmailNotification;
 import uk.gov.companieshouse.accounts.association.models.email.builders.AuthCodeConfirmationEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.AuthorisationRemovedEmailBuilder;
@@ -105,7 +107,9 @@ public class EmailService {
         }
     }
 
-    public void sendStatusUpdateEmails(final AssociationDao targetAssociation, final User targetUser, final StatusEnum newStatus) {
+    public void sendStatusUpdateEmails(final AssociationDao targetAssociation, final User targetUser, final StatusEnum newStatus, final
+            RequestContextData requestContextData) {
+        setRequestContext(requestContextData);
         final var xRequestId = getXRequestId();
         final var requestingUserDisplayValue = isAPIKeyRequest() || hasAdminPrivilege(ADMIN_UPDATE_PERMISSION) ? COMPANIES_HOUSE : mapToDisplayValue(getUser(), getUser().getEmail());
         final var targetUserDisplayValue = mapToDisplayValue(targetUser, targetAssociation.getUserEmail());
