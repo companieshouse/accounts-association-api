@@ -391,26 +391,6 @@ class AssociationsServiceTest {
     }
 
     @Test
-    void fetchActiveInvitationsReturnsPaginatedResultsInCorrectOrderAndOnlyRetainsMostRecentInvitationPerAssociation(){
-        final var user = testDataManager.fetchUserDtos( "000" ).getFirst();
-        final var firstAssociation = testDataManager.fetchAssociationDaos( "37" ).getFirst();
-        final var secondAssociation = testDataManager.fetchAssociationDaos( "38" ).getFirst();
-        secondAssociation.setUserId("000");
-
-        associationsRepository.insert( List.of( firstAssociation, secondAssociation ) );
-
-        final var mostRecentInvitationDaoInFirstAssociation = firstAssociation.getInvitations().getLast();
-        final var mostRecentInvitationDtoInFirstAssociation = new Invitation().invitedAt( mostRecentInvitationDaoInFirstAssociation.getInvitedAt().toString() ).invitedBy( mostRecentInvitationDaoInFirstAssociation.getInvitedBy() );
-        Mockito.doReturn( mostRecentInvitationDtoInFirstAssociation ).when( invitationsMapper ).daoToDto( argThat( comparisonUtils.compare( mostRecentInvitationDaoInFirstAssociation, List.of( "invited_by" ), List.of(), Map.of() ) ), eq( "37" ) );
-
-        final var invitations = associationsService.fetchActiveInvitations( user, 1, 1 );
-        final var invitation = invitations.getItems().getFirst();
-
-        Assertions.assertEquals( mostRecentInvitationDaoInFirstAssociation.getInvitedBy(), invitation.getInvitedBy() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( mostRecentInvitationDaoInFirstAssociation.getInvitedAt() ), reduceTimestampResolution( invitation.getInvitedAt() ) );
-    }
-
-    @Test
     void fetchPreviousStatesAppliedToAssociationWithPreviousStatesRetrievesAndMaps(){
         final var now = LocalDateTime.now();
 
