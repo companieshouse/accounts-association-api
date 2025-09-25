@@ -16,6 +16,12 @@ To build the service and execute unit tests, ensure you have the following:
 - Maven
 - Git
 
+#### WebFlux vs WebMVC
+Due to initial performance concerns there were investigations in to various approaches to improve performance without impacting overall architecture.
+One of the outcomes of these investigations was a more traditional WebMVC version of this service, which is available at [in the feature/SIV-741-refactor-away-from-reactive branch](companieshouse/accounts-association-api/tree/feature/SIV-741-refactor-away-from-reactive).
+It was used as a performance comparison against WebFlux and proved to be slower when running synchronously, resulting in approval of the reactive solution.
+Since those performance tests asynchronous email processing has been introduced and performance is comparable, although it's likely less scalable than the WebFlux solution.
+
 ## Endpoint Documentation
 
 ## Authentication
@@ -198,10 +204,10 @@ To set up and build the service using Docker, follow these steps:
     - `./bin/chs-dev services enable accounts-association-api`
     - `./bin/chs-dev development enable accounts-association-api`
 3. Ensure you're using Java 21
-4. Start Docker using `tilt up` in the docker-chs-development directory.
-5.  Open the tilt window and wait for `accounts-association-api` to become green.
+4. Start Docker using `tilt up` in the docker-chs-development directory. 
+5. Open the tilt window and wait for `accounts-association-api` to become green.
 6. Open your browser and navigate to http://api.chs.local/associations/healthcheck.
 
 Note: These instructions are tailored for a local Docker environment.
 
-For  further details, please refer to the documentation and associated resources.
+For further details, please refer to the documentation and associated resources.
