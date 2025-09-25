@@ -139,14 +139,16 @@ class InvitationsCollectionMappersTest {
 
     @Test
     void daoToDtoCorrectlyMapsAssociationsToInvitationsList(){
-        final var pageRequest = PageRequest.of( 0, 15 );
         final var associations = testDataManager.fetchAssociationDaos( "36", "38" );
         associations.getFirst().approvalExpiryAt( LocalDateTime.now().plusDays( 30 ) );
         associations.getFirst().getInvitations().getLast().invitedAt( LocalDateTime.now().minusDays( 31 ) );
+        final var pageRequest = PageRequest.of( 0, 15);
 
         mockers.mockUsersServiceFetchUserDetails( "9999", "444" );
 
-        final var invitations = invitationsCollectionMappers.daoToDto( associations, 0, 15 );
+        final Page<AssociationDao> associationsWithInvitations = new PageImpl<>( associations, pageRequest, associations.size() );
+
+        final var invitations = invitationsCollectionMappers.daoToDto( associationsWithInvitations, pageRequest );
         final var invitation0 = invitations.getItems().getFirst();
         final var invitation1 = invitations.getItems().getLast();
 
@@ -171,12 +173,15 @@ class InvitationsCollectionMappersTest {
     @Test
     void daoToDtoCorrectlyMapsAssociationsToInvitationsListAndPaginatesCorrectly(){
         final var associations = testDataManager.fetchAssociationDaos( "36", "38" );
+        final var pageRequest = PageRequest.of( 0, 1);
+        List<AssociationDao> pageContent = associations.subList(0, 1);
+        final Page<AssociationDao> associationsWithInvitations = new PageImpl<>( pageContent, pageRequest, associations.size() );
         associations.getFirst().approvalExpiryAt( LocalDateTime.now().plusDays( 7 ) );
         associations.getFirst().getInvitations().getLast().invitedAt( LocalDateTime.now().minusDays( 8 ) );
 
         mockers.mockUsersServiceFetchUserDetails( "9999" );
 
-        final var invitations = invitationsCollectionMappers.daoToDto( associations, 0, 1 );
+        final var invitations = invitationsCollectionMappers.daoToDto( associationsWithInvitations, pageRequest );
         final var invitation = invitations.getItems().getFirst();
 
         Assertions.assertEquals( 2, invitations.getTotalResults() );
