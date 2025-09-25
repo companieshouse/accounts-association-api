@@ -18,7 +18,7 @@ To build the service and execute unit tests, ensure you have the following:
 
 #### WebFlux vs WebMVC
 Due to initial performance concerns there were investigations in to various approaches to improve performance without impacting overall architecture.
-One of the outcomes of these investigations was a more traditional WebMVC version of this service, which is available at [the feature/SIV-741-refactor-away-from-reactive branch](companieshouse/accounts-association-api/tree/feature/SIV-741-refactor-away-from-reactive).
+One of the outcomes of these investigations was a more traditional WebMVC version of this service, which is available at [the feature/SIV-741-refactor-away-from-reactive branch](https://github.com/companieshouse/accounts-association-api/tree/feature/SIV-741-refactor-away-from-reactive).
 It was used as a performance comparison against WebFlux and proved to be slower when running synchronously, resulting in approval of the reactive solution.
 Since those performance tests asynchronous email processing has been introduced and performance is comparable, although it's likely less scalable than the WebFlux solution.
 
