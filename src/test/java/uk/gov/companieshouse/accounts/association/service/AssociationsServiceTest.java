@@ -438,7 +438,8 @@ class AssociationsServiceTest {
     @MethodSource("userIdsProvider")
     void fetchActiveInvitationsWithNullOrMalformedOrNonexistentUserIdReturnsEmptyList(String userId) {
         associationsService.fetchActiveInvitations(new User().userId(userId), 0, 1);
-        Mockito.verify( invitationsCollectionMappers ).daoToDto( List.of(), 0, 1 );
+        Mockito.verify( invitationsCollectionMappers )
+                .daoToDto( new PageImpl<AssociationDao>( Collections.emptyList() ), PageRequest.of( 0, 1 ) );
     }
 
     @Test

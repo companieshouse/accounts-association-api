@@ -4,6 +4,7 @@ import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.loc
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
@@ -115,12 +119,15 @@ class InvitationsCollectionMappersTest {
 
     @Test
     void daoToDtoWithNullListThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> invitationsCollectionMappers.daoToDto( (List<AssociationDao>) null, 0, 15) );
+        final var pageRequest = PageRequest.of( 0, 15 );
+        Assertions.assertThrows(
+                NullPointerException.class, () -> invitationsCollectionMappers.daoToDto( null, pageRequest ) );
     }
 
     @Test
     void daoToDtoAppliedToEmptyListReturnsEmpty(){
-        final var invitations = invitationsCollectionMappers.daoToDto( List.of(), 0, 15 );
+        final var pageRequest = PageRequest.of( 0, 15 );
+        final var invitations = invitationsCollectionMappers.daoToDto( Page.empty(), pageRequest );
         Assertions.assertEquals( 0, invitations.getTotalResults() );
         Assertions.assertEquals( 0, invitations.getPageNumber() );
         Assertions.assertEquals( 15, invitations.getItemsPerPage() );
@@ -132,6 +139,7 @@ class InvitationsCollectionMappersTest {
 
     @Test
     void daoToDtoCorrectlyMapsAssociationsToInvitationsList(){
+        final var pageRequest = PageRequest.of( 0, 15 );
         final var associations = testDataManager.fetchAssociationDaos( "36", "38" );
         associations.getFirst().approvalExpiryAt( LocalDateTime.now().plusDays( 30 ) );
         associations.getFirst().getInvitations().getLast().invitedAt( LocalDateTime.now().minusDays( 31 ) );
