@@ -1,24 +1,49 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.InvitationDao;
+import uk.gov.companieshouse.accounts.association.models.context.RequestContextData;
 import uk.gov.companieshouse.accounts.association.models.email.EmailNotification;
 import uk.gov.companieshouse.accounts.association.models.email.builders.*;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.user.model.User;
+import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.model.EmailData;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
+import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
+import static uk.gov.companieshouse.accounts.association.models.context.RequestContext.setRequestContext;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.*;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.hasAdminPrivilege;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isAPIKeyRequest;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isOAuth2Request;
 import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.APPLICATION_NAMESPACE;
+import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
+import static uk.gov.companieshouse.accounts.association.utils.UserUtil.isRequestingUser;
+import static uk.gov.companieshouse.accounts.association.utils.UserUtil.mapToDisplayValue;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.CONFIRMED;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.REMOVED;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.UNAUTHORISED;
 
 @Service
 @ComponentScan( basePackages = "uk.gov.companieshouse.email_producer" )
@@ -30,12 +55,84 @@ public class EmailService {
     protected static final Logger LOG = LoggerFactory.getLogger( APPLICATION_NAMESPACE );
 
     private final UsersService usersService;
+    private final CompanyService companyService;
+    private final AssociationsService associationsService;
     private final EmailProducer emailProducer;
 
     @Autowired
-    public EmailService( final UsersService usersService, final EmailProducer emailProducer ) {
+    public EmailService( final UsersService usersService, final CompanyService companyService, final AssociationsService associationsService, final EmailProducer emailProducer ) {
         this.usersService = usersService;
+        this.companyService = companyService;
         this.emailProducer = emailProducer;
+        this.associationsService = associationsService;
+    }
+
+    @Async
+    public void sendStatusUpdateEmails( final AssociationDao targetAssociation, final User targetUser, final StatusEnum newStatus, final
+            RequestContextData requestContextData) {
+        setRequestContext(requestContextData);
+
+        final var xRequestId = getXRequestId();
+        final var requestingUserDisplayValue = isAPIKeyRequest() || hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) ? COMPANIES_HOUSE : mapToDisplayValue( getUser(), getUser().getEmail() );
+        final var targetUserDisplayValue = mapToDisplayValue( targetUser, targetAssociation.getUserEmail() );
+        final var targetUserEmail = Optional.ofNullable( targetUser ).map( User::getEmail ).orElse( targetAssociation.getUserEmail() );
+        final var oldStatus = targetAssociation.getStatus();
+
+        final var cachedCompanyName = Mono
+                .just( targetAssociation.getCompanyNumber() )
+                .map( companyService::fetchCompanyProfile )
+                .map( CompanyDetails::getCompanyName )
+                .cache();
+
+        final var cachedAssociatedUsers = Mono
+                .just( targetAssociation.getCompanyNumber() )
+                .flatMapMany( associationsService::fetchConfirmedUserIds )
+                .cache();
+
+        final var cachedInvitedByDisplayName = Mono
+                .just( targetAssociation )
+                .map( AssociationDao::getInvitations )
+                .flatMapMany( Flux::fromIterable )
+                .reduce( (firstInvitation, secondInvitation) -> firstInvitation.getInvitedAt().isAfter( secondInvitation.getInvitedAt() ) ? firstInvitation : secondInvitation )
+                .map( InvitationDao::getInvitedBy )
+                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
+                .map( user -> Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() ) )
+                .cache();
+
+        final var isRejectingInvitation = isOAuth2Request() && isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
+        final var authorisationIsBeingRemoved = isOAuth2Request() && oldStatus.equals( CONFIRMED.getValue() ) && newStatus.equals( REMOVED );
+        final var isAcceptingInvitation = isOAuth2Request() && isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( CONFIRMED );
+        final var isCancellingAnotherUsersInvitation = isOAuth2Request() && !isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
+        final var isRemovingAnotherUsersMigratedAssociation = isOAuth2Request() && !isRequestingUser( targetAssociation ) && oldStatus.equals( MIGRATED.getValue() ) && newStatus.equals( REMOVED );
+        final var isRemovingOwnMigratedAssociation = isOAuth2Request() && isRequestingUser( targetAssociation ) && oldStatus.equals( MIGRATED.getValue() ) && newStatus.equals( REMOVED );
+        final var isInvitingUser = isOAuth2Request() && !isRequestingUser( targetAssociation ) && ( oldStatus.equals( MIGRATED.getValue() ) || oldStatus.equals( UNAUTHORISED.getValue() ) && newStatus.equals( CONFIRMED ) );
+        final var isConfirmingWithAuthCode = isAPIKeyRequest() && ( oldStatus.equals( MIGRATED.getValue() ) || oldStatus.equals( UNAUTHORISED.getValue() ) && newStatus.equals( CONFIRMED ) );
+
+        var emails = Flux.empty();
+        if ( isRejectingInvitation ) {
+            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendInvitationRejectedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue ) ) );
+        } else if ( authorisationIsBeingRemoved ) {
+            emails = emails.concatWith( sendAuthorisationRemovedEmailToRemovedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation.getUserId() ) );
+            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendAuthorisationRemovedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
+        } else if ( isAcceptingInvitation ) {
+            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendInvitationAcceptedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, cachedInvitedByDisplayName, requestingUserDisplayValue ) ) );
+        } else if ( isCancellingAnotherUsersInvitation ) {
+            emails = emails.concatWith( sendInviteCancelledEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation ) );
+            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendInvitationCancelledEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
+        } else if ( isRemovingAnotherUsersMigratedAssociation ) {
+            emails = emails.concatWith( sendDelegatedRemovalOfMigratedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserEmail ) );
+            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendDelegatedRemovalOfMigratedBatchEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
+        } else if ( isRemovingOwnMigratedAssociation ) {
+            emails = emails.concatWith( sendRemoveOfOwnMigratedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, getEricIdentity() ) );
+            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendDelegatedRemovalOfMigratedBatchEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
+        } else if ( isInvitingUser ) {
+            final var invitationExpiryTimestamp = LocalDateTime.now().plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ).toString();
+            emails = emails.concatWith( sendInviteEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, invitationExpiryTimestamp, targetUserEmail ) );
+            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendInvitationEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
+        } else if ( isConfirmingWithAuthCode ){
+            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendAuthCodeConfirmationEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, targetUserDisplayValue ) ) );
+        }
+        emails.subscribe();
     }
 
     private void sendEmail( final String xRequestId, final MessageType messageType, final EmailData emailData, final EmailNotification logMessageSupplier ){

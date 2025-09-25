@@ -6,6 +6,7 @@ import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_
 import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
+import static uk.gov.companieshouse.accounts.association.models.context.RequestContext.getRequestContext;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToAuthCodeConfirmedUpdated;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToConfirmedUpdate;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToInvitationUpdate;
@@ -153,73 +154,9 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
         associationsService.updateAssociation( targetAssociation.getId(), update );
 
         final var newStatus = StatusEnum.fromValue( requestBody.getStatus().getValue() );
-        sendStatusUpdateEmails( targetAssociation, targetUser, newStatus );
+        emailService.sendStatusUpdateEmails( targetAssociation, targetUser, newStatus, getRequestContext() );
 
         return new ResponseEntity<>( OK );
-    }
-
-    private void sendStatusUpdateEmails( final AssociationDao targetAssociation, final User targetUser, final StatusEnum newStatus ) {
-        final var xRequestId = getXRequestId();
-        final var requestingUserDisplayValue = isAPIKeyRequest() || hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) ? COMPANIES_HOUSE : mapToDisplayValue( getUser(), getUser().getEmail() );
-        final var targetUserDisplayValue = mapToDisplayValue( targetUser, targetAssociation.getUserEmail() );
-        final var targetUserEmail = Optional.ofNullable( targetUser ).map( User::getEmail ).orElse( targetAssociation.getUserEmail() );
-        final var oldStatus = targetAssociation.getStatus();
-
-        final var cachedCompanyName = Mono
-                .just( targetAssociation.getCompanyNumber() )
-                .map( companyService::fetchCompanyProfile )
-                .map( CompanyDetails::getCompanyName )
-                .cache();
-
-        final var cachedAssociatedUsers = Mono
-                .just( targetAssociation.getCompanyNumber() )
-                .flatMapMany( associationsService::fetchConfirmedUserIds )
-                .cache();
-
-        final var cachedInvitedByDisplayName = Mono
-                .just( targetAssociation )
-                .map( AssociationDao::getInvitations )
-                .flatMapMany( Flux::fromIterable )
-                .reduce( (firstInvitation, secondInvitation) -> firstInvitation.getInvitedAt().isAfter( secondInvitation.getInvitedAt() ) ? firstInvitation : secondInvitation )
-                .map( InvitationDao::getInvitedBy )
-                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
-                .map( user -> Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() ) )
-                .cache();
-
-        final var isRejectingInvitation = isOAuth2Request() && isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
-        final var authorisationIsBeingRemoved = isOAuth2Request() && oldStatus.equals( CONFIRMED.getValue() ) && newStatus.equals( REMOVED );
-        final var isAcceptingInvitation = isOAuth2Request() && isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( CONFIRMED );
-        final var isCancellingAnotherUsersInvitation = isOAuth2Request() && !isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
-        final var isRemovingAnotherUsersMigratedAssociation = isOAuth2Request() && !isRequestingUser( targetAssociation ) && oldStatus.equals( MIGRATED.getValue() ) && newStatus.equals( REMOVED );
-        final var isRemovingOwnMigratedAssociation = isOAuth2Request() && isRequestingUser( targetAssociation ) && oldStatus.equals( MIGRATED.getValue() ) && newStatus.equals( REMOVED );
-        final var isInvitingUser = isOAuth2Request() && !isRequestingUser( targetAssociation ) && ( oldStatus.equals( MIGRATED.getValue() ) || oldStatus.equals( UNAUTHORISED.getValue() ) && newStatus.equals( CONFIRMED ) );
-        final var isConfirmingWithAuthCode = isAPIKeyRequest() && ( oldStatus.equals( MIGRATED.getValue() ) || oldStatus.equals( UNAUTHORISED.getValue() ) && newStatus.equals( CONFIRMED ) );
-
-        var emails = Flux.empty();
-        if ( isRejectingInvitation ) {
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationRejectedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue ) ) );
-        } else if ( authorisationIsBeingRemoved ) {
-            emails = emails.concatWith( emailService.sendAuthorisationRemovedEmailToRemovedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation.getUserId() ) );
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendAuthorisationRemovedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-        } else if ( isAcceptingInvitation ) {
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationAcceptedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, cachedInvitedByDisplayName, requestingUserDisplayValue ) ) );
-        } else if ( isCancellingAnotherUsersInvitation ) {
-            emails = emails.concatWith( emailService.sendInviteCancelledEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation ) );
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationCancelledEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-        } else if ( isRemovingAnotherUsersMigratedAssociation ) {
-            emails = emails.concatWith( emailService.sendDelegatedRemovalOfMigratedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserEmail ) );
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendDelegatedRemovalOfMigratedBatchEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-        } else if ( isRemovingOwnMigratedAssociation ) {
-            emails = emails.concatWith( emailService.sendRemoveOfOwnMigratedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, getEricIdentity() ) );
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendDelegatedRemovalOfMigratedBatchEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-        } else if ( isInvitingUser ) {
-            final var invitationExpiryTimestamp = LocalDateTime.now().plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ).toString();
-            emails = emails.concatWith( emailService.sendInviteEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, invitationExpiryTimestamp, targetUserEmail ) );
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendInvitationEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-        } else if ( isConfirmingWithAuthCode ){
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( emailService.sendAuthCodeConfirmationEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, targetUserDisplayValue ) ) );
-        }
-        emails.subscribe();
     }
 
 }
