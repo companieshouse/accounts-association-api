@@ -12,33 +12,24 @@ import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToInvitationUpdate;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToRemovedUpdate;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToUnauthorisedUpdate;
+import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.hasAdminPrivilege;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isAPIKeyRequest;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isOAuth2Request;
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
 import static uk.gov.companieshouse.accounts.association.utils.UserUtil.isRequestingUser;
-import static uk.gov.companieshouse.accounts.association.utils.UserUtil.mapToDisplayValue;
-import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.CONFIRMED;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
-import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.REMOVED;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.UNAUTHORISED;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
@@ -50,19 +41,16 @@ import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
 import uk.gov.companieshouse.api.accounts.user.model.User;
-import uk.gov.companieshouse.api.company.CompanyDetails;
 
 @RestController
 public class UserCompanyAssociation implements UserCompanyAssociationInterface {
 
     private final UsersService usersService;
-    private final CompanyService companyService;
     private final AssociationsService associationsService;
     private final EmailService emailService;
 
     public UserCompanyAssociation( final UsersService usersService, final CompanyService companyService, final AssociationsService associationsService, final EmailService emailService ) {
         this.usersService = usersService;
-        this.companyService = companyService;
         this.associationsService = associationsService;
         this.emailService = emailService;
     }
