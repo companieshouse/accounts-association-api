@@ -71,15 +71,4 @@ public class InvitationsCollectionMappers {
                                 ( int ) associationsWithActiveInvitations.getTotalElements(), pageRequest.getPageNumber(),
                                 pageRequest.getPageSize() ) ) );
     }
-    public InvitationsList daoToDto( final List<AssociationDao> associationsWithActiveInvitations, final int pageIndex, final int itemsPerPage ) {
-        return associationsWithActiveInvitations
-                .stream()
-                .skip( ( long ) pageIndex * itemsPerPage )
-                .limit( itemsPerPage )
-                .map( this::mapToMostRecentInvitation )
-                .collect( Collectors.collectingAndThen( Collectors.toList(),
-                        mapToInvitationsList( FETCH_ACTIVE_INVITATIONS_FOR_USER_URI, associationsWithActiveInvitations.size(),
-                                pageIndex, itemsPerPage ) ) );
-
-    }
 }
