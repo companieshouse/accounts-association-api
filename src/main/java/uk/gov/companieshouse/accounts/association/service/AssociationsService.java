@@ -157,10 +157,17 @@ public class AssociationsService {
 
     @Transactional( readOnly = true )
     public InvitationsList fetchActiveInvitations( final User user, final int pageIndex, final int itemsPerPage ) {
-        LOGGER.debugContext( getXRequestId(), String.format( "Attempting to retrieve active invitations for user %s", user.getUserId() ), null );
-        final var associationsWithActiveInvitations = associationsRepository.fetchAssociationsWithActiveInvitations( user.getUserId(), user.getEmail(), LocalDateTime.now() );
-        final var invitations = invitationsCollectionMappers.daoToDto( associationsWithActiveInvitations, pageIndex, itemsPerPage );
-        LOGGER.debugContext( getXRequestId(), String.format( "Successfully retrieved active invitations for user %s", user.getUserId() ), null );
+        LOGGER.debugContext( getXRequestId(),
+                String.format( "Attempting to retrieve active invitations for user %s", user.getUserId() ), null );
+        final var pageRequest = PageRequest.of( pageIndex, itemsPerPage );
+        var associationsWithActiveInvitations = associationsRepository.fetchAssociationsWithActiveInvitations(
+                user.getUserId(), user.getEmail(), LocalDateTime.now(), pageRequest );
+        if(associationsWithActiveInvitations == null){
+            associationsWithActiveInvitations = Page.empty();
+        }
+        final var invitations = invitationsCollectionMappers.daoToDto( associationsWithActiveInvitations, pageRequest );
+        LOGGER.debugContext( getXRequestId(),
+                String.format( "Successfully retrieved active invitations for user %s", user.getUserId() ), null );
         return invitations;
     }
 

@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
@@ -50,19 +52,34 @@ public class InvitationsCollectionMappers {
                 .collect( Collectors.collectingAndThen( Collectors.toList(), mapToInvitationsList( String.format( GET_INVITATIONS_FOR_ASSOCIATION_URI, association.getId() ), association.getInvitations().size(), pageIndex, itemsPerPage ) ) );
     }
 
+
     private Invitation mapToMostRecentInvitation( final AssociationDao association ){
-        final var mostRecentInvitation = association.getInvitations()
+        final var mostRecentInvitation = association
+                .getInvitations()
                 .stream()
-                .max( Comparator.comparing( InvitationDao::getInvitedAt ) ).orElseThrow(NullPointerException::new);
+                .max( Comparator.comparing( InvitationDao::getInvitedAt ) )
+                .orElseThrow( NullPointerException::new );
         return invitationsMapper.daoToDto(mostRecentInvitation, association.getId() );
     }
 
-    public InvitationsList daoToDto( final List<AssociationDao> associationsWithActiveInvitations, final int pageIndex, final int itemsPerPage ){
-        return associationsWithActiveInvitations.stream()
-                .skip((long) pageIndex * itemsPerPage )
+    public InvitationsList daoToDto( final Page<AssociationDao> associationsWithActiveInvitations, PageRequest pageRequest ){
+        return associationsWithActiveInvitations.getContent()
+                .stream()
+                .map( this::mapToMostRecentInvitation )
+                .collect( Collectors.collectingAndThen( Collectors.toList(),
+                        mapToInvitationsList( FETCH_ACTIVE_INVITATIONS_FOR_USER_URI,
+                                ( int ) associationsWithActiveInvitations.getTotalElements(), pageRequest.getPageNumber(),
+                                pageRequest.getPageSize() ) ) );
+    }
+    public InvitationsList daoToDto( final List<AssociationDao> associationsWithActiveInvitations, final int pageIndex, final int itemsPerPage ) {
+        return associationsWithActiveInvitations
+                .stream()
+                .skip( ( long ) pageIndex * itemsPerPage )
                 .limit( itemsPerPage )
                 .map( this::mapToMostRecentInvitation )
-                .collect( Collectors.collectingAndThen( Collectors.toList(), mapToInvitationsList( FETCH_ACTIVE_INVITATIONS_FOR_USER_URI, associationsWithActiveInvitations.size(), pageIndex, itemsPerPage ) ) );
-    }
+                .collect( Collectors.collectingAndThen( Collectors.toList(),
+                        mapToInvitationsList( FETCH_ACTIVE_INVITATIONS_FOR_USER_URI, associationsWithActiveInvitations.size(),
+                                pageIndex, itemsPerPage ) ) );
 
+    }
 }

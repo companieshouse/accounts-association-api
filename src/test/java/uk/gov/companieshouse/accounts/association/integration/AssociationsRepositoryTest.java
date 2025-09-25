@@ -446,20 +446,33 @@ class AssociationsRepositoryTest {
 
     @Test
     void fetchAssociationsWithActiveInvitationsWithNullOrMalformedOrNonExistentUserIdOrEmailOrNullTimestampReturnsEmptyStream(){
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, null, LocalDateTime.now() ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "$$$", null,LocalDateTime.now() ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "9191", null,LocalDateTime.now() ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "99999", null,null ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "$$$",LocalDateTime.now() ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "ronald@mcdonalds.com",LocalDateTime.now() ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "ronald@mcdonalds.com",null ).isEmpty() );
+        final var pageRequest = PageRequest.of( 0, 15 );
+        Assertions.assertTrue( associationsRepository
+                .fetchAssociationsWithActiveInvitations( "$$$", null, LocalDateTime.now(), pageRequest )
+                .isEmpty() );
+        Assertions.assertTrue( associationsRepository
+                .fetchAssociationsWithActiveInvitations( "9191", null, LocalDateTime.now(), pageRequest )
+                .isEmpty() );
+        Assertions.assertTrue( associationsRepository
+                .fetchAssociationsWithActiveInvitations( "99999", null, null, pageRequest )
+                .isEmpty() );
+        Assertions.assertTrue( associationsRepository
+                .fetchAssociationsWithActiveInvitations( null, "$$$", LocalDateTime.now(), pageRequest )
+                .isEmpty() );
+        Assertions.assertTrue( associationsRepository
+                .fetchAssociationsWithActiveInvitations( null, "ronald@mcdonalds.com", LocalDateTime.now(), pageRequest )
+                .isEmpty() );
+        Assertions.assertTrue( associationsRepository
+                .fetchAssociationsWithActiveInvitations( null, "ronald@mcdonalds.com", null, pageRequest )
+                .isEmpty() );
     }
 
     @Test
     void fetchAssociationsWithActiveInvitationsBasedOnUserIdAppliesFiltersCorrectly(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "23" ) );
-
-        final var associationIds = associationsRepository.fetchAssociationsWithActiveInvitations( "9999", null, LocalDateTime.now() )
+        final var pageRequest = PageRequest.of( 0, 15 );
+        final var associationIds = associationsRepository
+                .fetchAssociationsWithActiveInvitations( "9999", null, LocalDateTime.now(), pageRequest )
                 .stream()
                 .map( AssociationDao::getId )
                 .toList();
@@ -471,8 +484,9 @@ class AssociationsRepositoryTest {
     @Test
     void fetchAssociationsWithActiveInvitationsBasedOnUserEmailAppliesFiltersCorrectly(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "6" ) );
-
-        final var associationIds = associationsRepository.fetchAssociationsWithActiveInvitations( null, "homer.simpson@springfield.com", LocalDateTime.now() )
+        final var pageRequest = PageRequest.of( 0, 15 );
+        final var associationIds = associationsRepository
+                .fetchAssociationsWithActiveInvitations( null, "homer.simpson@springfield.com", LocalDateTime.now(), pageRequest )
                 .stream()
                 .map( AssociationDao::getId )
                 .toList();
