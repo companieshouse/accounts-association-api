@@ -59,7 +59,6 @@ public class InvitationsCollectionMappers {
 
     public InvitationsList daoToDto( final List<AssociationDao> associationsWithActiveInvitations, final int pageIndex, final int itemsPerPage ){
         return associationsWithActiveInvitations.stream()
-                //.sorted( Comparator.comparing( AssociationDao::getApprovalExpiryAt ).reversed() )
                 .skip((long) pageIndex * itemsPerPage )
                 .limit( itemsPerPage )
                 .map( this::mapToMostRecentInvitation )

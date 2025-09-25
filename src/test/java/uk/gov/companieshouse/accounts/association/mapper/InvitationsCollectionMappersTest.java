@@ -166,7 +166,7 @@ class InvitationsCollectionMappersTest {
         associations.getFirst().approvalExpiryAt( LocalDateTime.now().plusDays( 7 ) );
         associations.getFirst().getInvitations().getLast().invitedAt( LocalDateTime.now().minusDays( 8 ) );
 
-        mockers.mockUsersServiceFetchUserDetails( "444" );
+        mockers.mockUsersServiceFetchUserDetails( "9999" );
 
         final var invitations = invitationsCollectionMappers.daoToDto( associations, 0, 1 );
         final var invitation = invitations.getItems().getFirst();
@@ -178,9 +178,9 @@ class InvitationsCollectionMappersTest {
         Assertions.assertEquals( "/associations/invitations?page_index=0&items_per_page=1", invitations.getLinks().getSelf() );
         Assertions.assertEquals( "/associations/invitations?page_index=1&items_per_page=1", invitations.getLinks().getNext() );
 
-        Assertions.assertEquals( "38", invitation.getAssociationId() );
-        Assertions.assertEquals( "robin@gotham.city", invitation.getInvitedBy() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( LocalDateTime.now().plusDays( 8 ) ), reduceTimestampResolution( invitation.getInvitedAt() ) );
+        Assertions.assertEquals( "36", invitation.getAssociationId() );
+        Assertions.assertEquals( "scrooge.mcduck@disney.land", invitation.getInvitedBy() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( LocalDateTime.now().minusDays( 8 ) ), reduceTimestampResolution( invitation.getInvitedAt() ) );
         Assertions.assertTrue( invitation.getIsActive() );
     }
 
