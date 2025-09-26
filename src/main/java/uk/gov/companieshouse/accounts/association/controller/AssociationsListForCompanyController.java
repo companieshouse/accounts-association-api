@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
@@ -16,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.companieshouse.accounts.association.exceptions.BadRequestRuntimeException;
 import uk.gov.companieshouse.accounts.association.exceptions.ForbiddenRuntimeException;
-import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
@@ -85,8 +85,7 @@ public class AssociationsListForCompanyController implements AssociationDataForC
 
         return associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( companyProfile, statuses, user, targetUserEmail )
                 .map( association -> new ResponseEntity<>( association, OK ) )
-                .orElseThrow( () -> new NotFoundRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Association not found") ) );
-
+                .orElseGet( () -> new ResponseEntity<>( NOT_FOUND ) );
     }
 
 }
