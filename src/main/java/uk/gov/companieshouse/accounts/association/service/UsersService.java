@@ -41,6 +41,7 @@ public class UsersService {
                         .path("/users/{user}")
                         .buildAndExpand(userId)
                         .toUri())
+                .header( "X-Request-Id", xRequestId )
                 .retrieve()
                 .bodyToMono( String.class )
                 .map( parseJsonTo( User.class ) )

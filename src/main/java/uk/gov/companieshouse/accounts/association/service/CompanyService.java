@@ -31,6 +31,7 @@ public class CompanyService {
     private Mono<CompanyDetails> toFetchCompanyProfileRequest( final String companyNumber, final String xRequestId ) {
         return companyWebClient.get()
                 .uri( String.format( "/company/%s/company-detail", companyNumber ) )
+                .header( "X-Request-Id", xRequestId )
                 .retrieve()
                 .bodyToMono( String.class )
                 .map( parseJsonTo( CompanyDetails.class ) )

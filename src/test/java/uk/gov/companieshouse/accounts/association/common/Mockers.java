@@ -21,6 +21,7 @@ import uk.gov.companieshouse.email_producer.EmailSendingException;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +39,7 @@ public class Mockers {
     private final EmailProducer emailProducer;
     private final CompanyService companyService;
     private final UsersService usersService;
+    private boolean mockHeader = true;
 
     public Mockers( final WebClient webClient, final EmailProducer emailProducer, final CompanyService companyService, final UsersService usersService ) {
         this.webClient = webClient;
@@ -73,7 +75,9 @@ public class Mockers {
                 Mockito.doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(Mockito.any(Function.class));
             }
         }
-
+        if( mockHeader ){
+            Mockito.doReturn( requestHeadersSpec ).when( requestHeadersSpec ).header( Mockito.anyString(), Mockito.any() );
+        }
         Mockito.doReturn( requestHeadersUriSpec ).when(webClient).get();
         Mockito.doReturn( responseSpec ).when( requestHeadersSpec ).retrieve();
         Mockito.doReturn( jsonResponse ).when( responseSpec ).bodyToMono( String.class );
@@ -116,7 +120,9 @@ public class Mockers {
                 Mockito.doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(Mockito.any(Function.class));
             }
         }
-
+        if( mockHeader ){
+            Mockito.doReturn( requestHeadersSpec ).when( requestHeadersSpec ).header( Mockito.anyString(), Mockito.any() );
+        }
         Mockito.doReturn(responseSpec).when(requestHeadersSpec).retrieve();
         Mockito.doReturn(Mono.error(new WebClientResponseException(responseCode, "Error", null, null, null))).when(responseSpec)
                 .bodyToMono(String.class);
@@ -166,16 +172,18 @@ public class Mockers {
         Mockito.doReturn(requestHeadersUriSpec).when(webClient).get();
         switch (uriType) {
             case URI -> {
-                Mockito.doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(uriUri);
+                Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uriUri );
             }
             case STRING -> {
-                Mockito.doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(uriString);
+                Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( uriString );
             }
             case FUNCTION -> {
-                Mockito.doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(Mockito.any(Function.class));
+                Mockito.doReturn( requestHeadersSpec ).when( requestHeadersUriSpec ).uri( Mockito.any( Function.class ) );
             }
         }
-
+        if( mockHeader ){
+            Mockito.doReturn( requestHeadersSpec ).when( requestHeadersSpec ).header( Mockito.anyString(), Mockito.any() );
+        }
         Mockito.doReturn(responseSpec).when(requestHeadersSpec).retrieve();
         Mockito.doReturn(Mono.just("}{")).when(responseSpec).bodyToMono(String.class);
     }
@@ -376,6 +384,10 @@ public class Mockers {
         for ( final String userId: userIds ){
             Mockito.doThrow( new NotFoundRuntimeException( "Not found.", new Exception( "Not found." ) ) ).when( usersService ).fetchUserDetails( eq(userId), any() );
         }
+    }
+
+    public void setMockHeader( final boolean mockHeader ) {
+        this.mockHeader = mockHeader;
     }
 
 }
