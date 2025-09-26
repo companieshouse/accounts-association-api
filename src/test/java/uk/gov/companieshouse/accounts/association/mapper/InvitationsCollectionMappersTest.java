@@ -197,4 +197,27 @@ class InvitationsCollectionMappersTest {
         Assertions.assertTrue( invitation.getIsActive() );
     }
 
+    @Test
+    void mapToMostRecentInvitationThrowsWhenInvitationsIsNull() {
+        final AssociationDao association = new AssociationDao() {
+            @Override
+            public List<uk.gov.companieshouse.accounts.association.models.InvitationDao> getInvitations() {
+                return null;
+            }
+        };
+        Assertions.assertThrows( IllegalStateException.class,
+                () -> ReflectionTestUtils.invokeMethod( invitationsCollectionMappers, "mapToMostRecentInvitation",
+                        association ) );
+    }
+
+    @Test
+    void mapToMostRecentInvitationThrowsWhenInvitationsIsEmpty() {
+        final var association = new AssociationDao();
+        association.setInvitations( Collections.emptyList() );
+
+        Assertions.assertThrows( IllegalStateException.class,
+                () -> ReflectionTestUtils.invokeMethod( invitationsCollectionMappers, "mapToMostRecentInvitation",
+                        association ) );
+    }
+
 }
