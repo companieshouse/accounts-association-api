@@ -52,12 +52,13 @@ public class InvitationsCollectionMappers {
                 .collect( Collectors.collectingAndThen( Collectors.toList(), mapToInvitationsList( String.format( GET_INVITATIONS_FOR_ASSOCIATION_URI, association.getId() ), association.getInvitations().size(), pageIndex, itemsPerPage ) ) );
     }
 
+
     private Invitation mapToMostRecentInvitation( final AssociationDao association ){
         final var mostRecentInvitation = association
                 .getInvitations()
                 .stream()
                 .max( Comparator.comparing( InvitationDao::getInvitedAt ) )
-                .orElseThrow( () -> new IllegalStateException("No invitations found") );
+                .orElseThrow( NullPointerException::new );
         return invitationsMapper.daoToDto(mostRecentInvitation, association.getId() );
     }
 
