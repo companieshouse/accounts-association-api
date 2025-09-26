@@ -3,6 +3,7 @@ package uk.gov.companieshouse.accounts.association.service;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.mongodb.core.query.Update;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
 import uk.gov.companieshouse.accounts.association.mapper.InvitationsCollectionMappers;
@@ -160,11 +162,19 @@ public class AssociationsService {
         LOGGER.debugContext( getXRequestId(),
                 String.format( "Attempting to retrieve active invitations for user %s", user.getUserId() ), null );
         final var pageRequest = PageRequest.of( pageIndex, itemsPerPage );
-        var associationsWithActiveInvitations = associationsRepository.fetchAssociationsWithActiveInvitations(
-                user.getUserId(), user.getEmail(), LocalDateTime.now(), pageRequest );
-        if(associationsWithActiveInvitations == null){
-            associationsWithActiveInvitations = Page.empty();
-        }
+        final var associationsWithActiveInvitations = associationsRepository
+                .fetchAssociationsWithActiveInvitations( user.getUserId(), user.getEmail(), LocalDateTime.now(), pageRequest )
+                .stream()
+                .filter( associationDao -> associationDao
+                        .getInvitations()
+                        .isEmpty() )
+                .collect( Collectors.collectingAndThen( Collectors.toList(), result -> {
+                    if ( result.isEmpty() ) {
+                        throw new NotFoundRuntimeException( String.format( "No active invitations for user %s", user ),
+                                new Exception( String.format( "No active invitations for user %s", user ) ) );
+                    }
+                    return new PageImpl<>(result);
+                } ) );
         final var invitations = invitationsCollectionMappers.daoToDto( associationsWithActiveInvitations, pageRequest );
         LOGGER.debugContext( getXRequestId(),
                 String.format( "Successfully retrieved active invitations for user %s", user.getUserId() ), null );
