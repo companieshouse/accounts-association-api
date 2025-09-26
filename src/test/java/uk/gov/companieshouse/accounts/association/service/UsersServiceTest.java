@@ -1,6 +1,7 @@
 package uk.gov.companieshouse.accounts.association.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -46,6 +47,11 @@ class UsersServiceTest {
     @BeforeEach
     void setup() {
         mockers = new Mockers( usersWebClient, null, null, null );
+    }
+
+    @AfterEach
+    void tearDown() {
+        mockers.setMockHeader( true );
     }
 
     @Test
@@ -128,6 +134,7 @@ class UsersServiceTest {
     void searchUserDetailWithNullOrMalformedUserEmailThrowsInternalServerErrorRuntimeException() {
         final var emails = new ArrayList<String>();
         emails.add( null );
+        mockers.setMockHeader( false );
         mockers.mockWebClientForSearchUserDetailsErrorResponse( null, 400, UriType.FUNCTION );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( emails ) );
 
@@ -151,6 +158,7 @@ class UsersServiceTest {
 
     @Test
     void searchUserDetailsWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
+        mockers.setMockHeader( false );
         mockers.mockWebClientForSearchUserDetailsJsonParsingError("bruce.wayne+@gotham.city", UriType.FUNCTION );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "bruce.wayne+@gotham.city" ) ) );
     }
