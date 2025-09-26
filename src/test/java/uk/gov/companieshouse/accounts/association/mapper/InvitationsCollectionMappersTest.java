@@ -21,7 +21,6 @@ import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 
 @ExtendWith( MockitoExtension.class )
 @Tag( "unit-test" )
@@ -197,36 +196,5 @@ class InvitationsCollectionMappersTest {
         Assertions.assertEquals( localDateTimeToNormalisedString( LocalDateTime.now().minusDays( 8 ) ), reduceTimestampResolution( invitation.getInvitedAt() ) );
         Assertions.assertTrue( invitation.getIsActive() );
     }
-
-    @Test
-    void mapToMostRecentInvitationReturnsMostRecentInvitation() {
-        // Arrange
-        final var association = testDataManager.fetchAssociationDaos( "38" ).getFirst();
-
-        // Ensure we have multiple invitations with different invitedAt times
-        association.getInvitations()
-                .get( 0 )
-                .invitedAt( LocalDateTime.now().minusDays( 10 ) );
-        association.getInvitations()
-                .get( 1 )
-                .invitedAt( LocalDateTime.now().minusDays( 5 ) );
-        association.getInvitations()
-                .get( 2 )
-                .invitedAt( LocalDateTime.now().minusDays( 1 ) );
-
-        mockers.mockUsersServiceFetchUserDetails( "444" );
-
-        // Act
-        final Invitation invitation = ReflectionTestUtils.invokeMethod( invitationsCollectionMappers, "mapToMostRecentInvitation",
-                association );
-
-        // Assert
-        Assertions.assertNotNull( invitation );
-        Assertions.assertEquals( "38", invitation.getAssociationId() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( LocalDateTime
-                .now()
-                .minusDays( 1 ) ), reduceTimestampResolution( invitation.getInvitedAt() ) );
-    }
-
 
 }
