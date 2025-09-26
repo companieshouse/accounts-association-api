@@ -35,8 +35,8 @@ public interface AssociationsRepository extends MongoRepository<AssociationDao, 
     @Query( "{ $or:[ {'user_id': ?0 }, {'user_email': ?1 } ], 'status': { $in: ?2 }, 'company_number': { $regex: ?3 } }" )
     Page<AssociationDao> fetchAssociationsForUserAndStatusesAndPartialCompanyNumber( final String userId, final String userEmail, final Set<String> statuses, final String partialCompanyNumber, final Pageable pageable );
 
-    @Query( "{ '$or': [ { 'user_id': { '$ne': null, '$eq': ?0 } }, { 'user_email': { '$ne': null, '$eq': ?1 } } ], 'status': 'awaiting-approval', 'approval_expiry_at': { $gt: ?2 } }" )
-    List<AssociationDao> fetchAssociationsWithActiveInvitations( final String userId, final String userEmail, final LocalDateTime now );
+    @Query( value = "{ '$or': [ { 'user_id': { '$ne': null, '$eq': ?0 } }, { 'user_email': { '$ne': null, '$eq': ?1 } } ], 'status': 'awaiting-approval', 'approval_expiry_at': { $gt: ?2 } }" ,sort = "{ 'approval_expiry_at': 1 }" )
+    Page<AssociationDao> fetchAssociationsWithActiveInvitations( final String userId, final String userEmail, final LocalDateTime now, final Pageable pageable );
 
     @Query( "{ '_id': ?0 }" )
     int updateAssociation( final String associationId, final Update update );
