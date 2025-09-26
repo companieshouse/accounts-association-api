@@ -1,5 +1,6 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -52,15 +53,18 @@ public class InvitationsCollectionMappers {
                 .collect( Collectors.collectingAndThen( Collectors.toList(), mapToInvitationsList( String.format( GET_INVITATIONS_FOR_ASSOCIATION_URI, association.getId() ), association.getInvitations().size(), pageIndex, itemsPerPage ) ) );
     }
 
+    private Invitation mapToMostRecentInvitation( final AssociationDao association ) {
+        final var invitations = association.getInvitations();
+        if ( invitations == null || invitations.isEmpty() ) {
+            throw new IllegalStateException("No invitations found") ;
+        }
+        final InvitationDao mostRecent = ( invitations.size() == 1 )
+                ? invitations.getFirst()
+                : Collections.max( invitations, Comparator.comparing( InvitationDao::getInvitedAt ) );
 
-    private Invitation mapToMostRecentInvitation( final AssociationDao association ){
-        final var mostRecentInvitation = association
-                .getInvitations()
-                .stream()
-                .max( Comparator.comparing( InvitationDao::getInvitedAt ) )
-                .orElseThrow( NullPointerException::new );
-        return invitationsMapper.daoToDto(mostRecentInvitation, association.getId() );
+        return invitationsMapper.daoToDto( mostRecent, association.getId() );
     }
+
 
     public InvitationsList daoToDto( final Page<AssociationDao> associationsWithActiveInvitations, PageRequest pageRequest ){
         return associationsWithActiveInvitations.getContent()
