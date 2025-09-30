@@ -4,6 +4,10 @@ import static uk.gov.companieshouse.accounts.association.models.Constants.DEFAUL
 import static uk.gov.companieshouse.accounts.association.models.Constants.DEFAULT_KIND;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Objects;
 import java.util.Optional;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Context;
@@ -16,11 +20,6 @@ import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
-
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.Objects;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 

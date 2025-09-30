@@ -1,9 +1,8 @@
 package uk.gov.companieshouse.accounts.association.models.email;
 
-import uk.gov.companieshouse.accounts.association.utils.MessageType;
-
 import java.time.LocalDateTime;
 import java.util.Objects;
+import uk.gov.companieshouse.accounts.association.utils.MessageType;
 
 public class EmailNotification {
 

@@ -1,5 +1,19 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.DELEGATED_REMOVAL_OF_MIGRATED;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.DELEGATED_REMOVAL_OF_MIGRATED_BATCH;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_ACCEPTED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_CANCELLED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_REJECTED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_CANCELLED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.REMOVAL_OF_OWN_MIGRATED;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.APPLICATION_NAMESPACE;
+
 import java.util.Objects;
 import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,16 +23,24 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.email.EmailNotification;
-import uk.gov.companieshouse.accounts.association.models.email.builders.*;
+import uk.gov.companieshouse.accounts.association.models.email.builders.AuthCodeConfirmationEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.AuthorisationRemovedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.DelegatedRemovalOfMigratedBatchEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.DelegatedRemovalOfMigratedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationAcceptedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationCancelledEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationRejectedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InviteCancelledEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InviteEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.RemovalOfOwnMigratedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.YourAuthorisationRemovedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.model.EmailData;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
-
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.*;
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.APPLICATION_NAMESPACE;
 
 @Service
 @ComponentScan( basePackages = "uk.gov.companieshouse.email_producer" )

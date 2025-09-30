@@ -11,6 +11,7 @@ import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToInvitationUpdate;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToRemovedUpdate;
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToUnauthorisedUpdate;
+import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
@@ -23,7 +24,6 @@ import static uk.gov.companieshouse.accounts.association.utils.UserUtil.mapToDis
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.CONFIRMED;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
-import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.REMOVED;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.UNAUTHORISED;
 

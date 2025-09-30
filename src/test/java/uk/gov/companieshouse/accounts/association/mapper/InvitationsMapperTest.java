@@ -13,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
-
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 
 @ExtendWith(MockitoExtension.class)
