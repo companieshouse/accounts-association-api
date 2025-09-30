@@ -1,6 +1,24 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
+import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.OK;
+import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
+import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
+import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToAuthCodeConfirmedUpdated;
+import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
+import static uk.gov.companieshouse.accounts.association.utils.UserUtil.mapToDisplayValue;
+import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
+
 import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -12,26 +30,10 @@ import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.api.UserCompanyAssociationsInterface;
-import uk.gov.companieshouse.api.accounts.associations.model.*;
-import java.util.stream.Collectors;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import static org.springframework.http.HttpStatus.CREATED;
-import static org.springframework.http.HttpStatus.OK;
-import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
-import static uk.gov.companieshouse.accounts.association.models.Constants.PAGINATION_IS_MALFORMED;
-import static uk.gov.companieshouse.accounts.association.models.Constants.PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN;
-import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
-import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.mapToAuthCodeConfirmedUpdated;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
-import static uk.gov.companieshouse.accounts.association.utils.UserUtil.mapToDisplayValue;
-import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
-import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
+import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
+import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPost;
+import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 
 @RestController
 public class UserCompanyAssociations implements UserCompanyAssociationsInterface {
