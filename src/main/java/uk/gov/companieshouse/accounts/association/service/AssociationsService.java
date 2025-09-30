@@ -162,9 +162,6 @@ public class AssociationsService {
         final var pageRequest = PageRequest.of( pageIndex, itemsPerPage );
         var associationsWithActiveInvitations = associationsRepository.fetchAssociationsWithActiveInvitations(
                 user.getUserId(), user.getEmail(), LocalDateTime.now(), pageRequest );
-        if(associationsWithActiveInvitations == null){
-            associationsWithActiveInvitations = Page.empty();
-        }
         final var invitations = invitationsCollectionMappers.daoToDto( associationsWithActiveInvitations, pageRequest );
         LOGGER.debugContext( getXRequestId(),
                 String.format( "Successfully retrieved active invitations for user %s", user.getUserId() ), null );

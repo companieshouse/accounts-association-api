@@ -39,6 +39,7 @@ public class AssociationDao {
     @Field( "approval_route" )
     private String approvalRoute;
 
+    @NotNull
     private final List<InvitationDao> invitations = new ArrayList<>();
 
     @Field( "approval_expiry_at" )
@@ -161,6 +162,7 @@ public class AssociationDao {
         return this;
     }
 
+    @NotNull
     public List<InvitationDao> getInvitations(){
         return invitations;
     }
