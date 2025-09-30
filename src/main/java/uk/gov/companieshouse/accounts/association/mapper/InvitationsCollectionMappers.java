@@ -52,9 +52,6 @@ public class InvitationsCollectionMappers {
 
     private Invitation mapToMostRecentInvitation( final AssociationDao association ) {
         final var invitations = association.getInvitations();
-        if ( invitations == null || invitations.isEmpty() ) {
-            throw new IllegalStateException("No invitations found") ;
-        }
         final InvitationDao mostRecent = ( invitations.size() == 1 )
                 ? invitations.getFirst()
                 : Collections.max( invitations, Comparator.comparing( InvitationDao::getInvitedAt ) );
