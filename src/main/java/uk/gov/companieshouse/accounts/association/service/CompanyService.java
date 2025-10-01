@@ -37,9 +37,9 @@ public class CompanyService {
                 .map( parseJsonTo( CompanyDetails.class ) )
                 .onErrorMap( throwable -> {
                     if ( throwable instanceof WebClientResponseException exception && NOT_FOUND.equals( exception.getStatusCode() ) ){
-                        return new NotFoundRuntimeException( "Failed to find company", exception );
+                        return new NotFoundRuntimeException( xRequestId, "Failed to find company", exception );
                     }
-                    throw new InternalServerErrorRuntimeException( "Failed to retrieve company profile", (Exception) throwable );
+                    throw new InternalServerErrorRuntimeException( xRequestId, "Failed to retrieve company profile", (Exception) throwable );
                 } )
                 .doOnSubscribe( onSubscribe -> LOGGER.infoContext( xRequestId, String.format( "Sending request to company-profile-api: GET /company/{company_number}/company-detail. Attempting to retrieve company profile for company: %s" , companyNumber ), null ) )
                 .doFinally( signalType -> LOGGER.infoContext( xRequestId, String.format( "Finished request to company-profile-api for company: %s.", companyNumber ), null ) );

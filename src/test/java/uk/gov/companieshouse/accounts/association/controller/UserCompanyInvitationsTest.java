@@ -22,10 +22,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -54,19 +54,19 @@ class UserCompanyInvitationsTest {
     @Autowired
     private WebApplicationContext context;
 
-    @MockBean
+    @MockitoBean
     private StaticPropertyUtil staticPropertyUtil;
 
-    @MockBean
+    @MockitoBean
     private UsersService usersService;
 
-    @MockBean
+    @MockitoBean
     private CompanyService companyService;
 
-    @MockBean
+    @MockitoBean
     private AssociationsService associationsService;
 
-    @MockBean
+    @MockitoBean
     private EmailService emailService;
 
     final Function<String, Mono<Void>> sendEmailMock = userId -> Mono.empty();
@@ -451,7 +451,7 @@ class UserCompanyInvitationsTest {
         mockers.mockCompanyServiceFetchCompanyProfile( "333333" );
         mockers.mockUsersServiceSearchUserDetails( "000" );
         Mockito.doReturn(Optional.of(associationDao)).when(associationsService).fetchAssociationDao("333333", "000", "light.yagami@death.note");
-        Mockito.doThrow(new BadRequestRuntimeException("There is an existing association with Confirmed status for the user", new Exception( "There is an existing association with Confirmed status for the user" ))).when(associationsService).fetchAssociationDao("333333", "000", null);
+        Mockito.doThrow(new BadRequestRuntimeException( "theId123", "There is an existing association with Confirmed status for the user", new Exception( "There is an existing association with Confirmed status for the user" ))).when(associationsService).fetchAssociationDao("333333", "000", null);
         Mockito.when(associationsService.confirmedAssociationExists(Mockito.any(), Mockito.any())).thenReturn(true);
 
         mockMvc.perform(post("/associations/invitations")

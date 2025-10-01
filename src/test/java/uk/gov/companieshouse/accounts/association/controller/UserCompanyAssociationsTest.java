@@ -29,12 +29,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -71,19 +71,19 @@ class UserCompanyAssociationsTest {
     @Autowired
     private WebApplicationContext context;
 
-    @MockBean
+    @MockitoBean
     private StaticPropertyUtil staticPropertyUtil;
 
-    @MockBean
+    @MockitoBean
     private UsersService usersService;
 
-    @MockBean
+    @MockitoBean
     private CompanyService companyService;
 
-    @MockBean
+    @MockitoBean
     private AssociationsService associationsService;
 
-    @MockBean
+    @MockitoBean
     private EmailService emailService;
 
     private static final String DEFAULT_KIND = "association";
@@ -171,7 +171,7 @@ class UserCompanyAssociationsTest {
 
     @Test
     void fetchAssociationsByTestShouldThrow500WhenInternalServerError() throws Exception {
-        when(usersService.fetchUserDetails(eq("000"), any())).thenThrow(new InternalServerErrorRuntimeException("test", new Exception("test")));
+        when(usersService.fetchUserDetails(eq("000"), any())).thenThrow(new InternalServerErrorRuntimeException( "theId", "test", new Exception("test")));
         mockMvc.perform(get("/associations?page_index=0&items_per_page=15&company_number=111111")
                 .header("Eric-identity", "000")
                 .header("X-Request-Id", "theId")
@@ -205,7 +205,7 @@ class UserCompanyAssociationsTest {
         final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
 
         mockers.mockUsersServiceFetchUserDetails( "111" );
-        Mockito.doThrow(new NotFoundRuntimeException("Not found", new Exception( "Not found" ))).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, null, Set.of(StatusEnum.CONFIRMED.getValue()), 0, 15);
+        Mockito.doThrow(new NotFoundRuntimeException( "theId123", "Not found", new Exception( "Not found" ))).when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(user, null, Set.of(StatusEnum.CONFIRMED.getValue()), 0, 15);
 
         mockMvc.perform(get("/associations")
                         .header("X-Request-Id", "theId123")

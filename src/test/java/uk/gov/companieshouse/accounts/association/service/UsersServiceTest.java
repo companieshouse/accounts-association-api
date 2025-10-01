@@ -1,12 +1,14 @@
 package uk.gov.companieshouse.accounts.association.service;
 
 import static uk.gov.companieshouse.accounts.association.models.Constants.OAUTH2;
+import static uk.gov.companieshouse.accounts.association.models.Constants.X_REQUEST_ID;
 import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY;
 import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -16,8 +18,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.Mockers.UriType;
@@ -133,7 +138,7 @@ class UsersServiceTest {
     void searchUserDetailWithNullOrMalformedUserEmailThrowsInternalServerErrorRuntimeException() {
         final var emails = new ArrayList<String>();
         emails.add( null );
-        mockers.setMockHeader( false );
+        mockers.setMockHeader( true );
         mockers.mockWebClientForSearchUserDetailsErrorResponse( null, 400, UriType.FUNCTION );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( emails ) );
 
@@ -157,7 +162,7 @@ class UsersServiceTest {
 
     @Test
     void searchUserDetailsWithArbitraryErrorReturnsInternalServerErrorRuntimeException() {
-        mockers.setMockHeader( false );
+        mockers.setMockHeader( true );
         mockers.mockWebClientForSearchUserDetailsJsonParsingError("bruce.wayne+@gotham.city", UriType.FUNCTION );
         Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> usersService.searchUserDetails( List.of( "bruce.wayne+@gotham.city" ) ) );
     }
@@ -215,9 +220,9 @@ class UsersServiceTest {
         final var targetAssociation = testDataManager.fetchAssociationDaos( "MKAssociation001" ).getFirst();
 
         final var request = new MockHttpServletRequest();
+        request.addHeader(X_REQUEST_ID, "theId123");
         request.addHeader( ERIC_IDENTITY, requestingUser.getUserId() );
-        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).build() );
-
+        RequestContext.setRequestContext( new RequestContextDataBuilder().setEricIdentity( request ).setUser( requestingUser ).setXRequestId( request ).build() );
         mockers.mockWebClientForSearchUserDetailsNonexistentEmail(false,  "mario@mushroom.kingdom" );
 
         Assertions.assertNull( usersService.fetchUserDetails( targetAssociation ) );

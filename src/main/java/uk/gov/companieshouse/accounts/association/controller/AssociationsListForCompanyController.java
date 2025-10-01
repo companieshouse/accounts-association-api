@@ -48,11 +48,11 @@ public class AssociationsListForCompanyController implements AssociationDataForC
         LOGGER.infoContext( getXRequestId(), String.format( "Received request with company_number=%s, includeRemoved=%b, itemsPerPage=%d, pageIndex=%d.", companyNumber, includeRemoved, itemsPerPage, pageIndex ),null );
 
         if ( pageIndex < 0 || itemsPerPage <= 0 ){
-            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
+            throw new BadRequestRuntimeException( getXRequestId(), PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
         }
 
         if ( !associationsService.confirmedAssociationExists( companyNumber, getEricIdentity() ) && !hasAdminPrivilege( ADMIN_READ_PERMISSION ) && isOAuth2Request() ){
-            throw new ForbiddenRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user is not permitted to retrieve data." ) );
+            throw new ForbiddenRuntimeException( getXRequestId(), PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Requesting user is not permitted to retrieve data." ) );
         }
 
         final var companyProfile = companyService.fetchCompanyProfile( companyNumber );
@@ -77,7 +77,7 @@ public class AssociationsListForCompanyController implements AssociationDataForC
                 .collect(Collectors.toSet());
 
         if ( Objects.nonNull( userId ) == Objects.nonNull( userEmail ) ){
-            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN,  new Exception( "Only one of user_id or user_email must be present" ) );
+            throw new BadRequestRuntimeException( getXRequestId(), PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN,  new Exception( "Only one of user_id or user_email must be present" ) );
         }
 
         final var companyProfile = companyService.fetchCompanyProfile( companyNumber );

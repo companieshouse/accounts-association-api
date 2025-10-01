@@ -25,9 +25,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
@@ -55,16 +55,16 @@ class AssociationsListForCompanyControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private CompanyService companyService;
 
-    @MockBean
+    @MockitoBean
     private UsersService usersService;
 
-    @MockBean
+    @MockitoBean
     private EmailProducer emailProducer;
 
-    @MockBean
+    @MockitoBean
     private KafkaProducerFactory kafkaProducerFactory;
 
     @Autowired
@@ -582,7 +582,7 @@ class AssociationsListForCompanyControllerTest {
     void getAssociationsForCompanyWithNonExistentUserIdReturnsNotFound() throws Exception {
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "MKAssociation002" ) );
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        Mockito.doThrow( new NotFoundRuntimeException( "Test", new Exception() ) ).when( usersService ).retrieveUserDetails("MKUser002", null );
+        Mockito.doThrow( new NotFoundRuntimeException( "theId123", "Test", new Exception() ) ).when( usersService ).retrieveUserDetails("MKUser002", null );
 
         mockMvc.perform( post( "/associations/companies/MKCOMP001/search" )
                         .header("X-Request-Id", "theId123")

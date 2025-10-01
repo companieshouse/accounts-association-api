@@ -83,7 +83,7 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                 .map( List::getFirst )
                 .map( targetAssociation -> {
                     if ( CONFIRMED.getValue().equals( targetAssociation.getStatus() ) ){
-                        throw new BadRequestRuntimeException( "Association already exists.", new Exception( String.format( "Association between user_id %s and company_number %s already exists.", userId, companyNumber ) ) );
+                        throw new BadRequestRuntimeException( getXRequestId(), "Association already exists.", new Exception( String.format( "Association between user_id %s and company_number %s already exists.", userId, companyNumber ) ) );
                     }
                     associationsService.updateAssociation( targetAssociation.getId(), mapToAuthCodeConfirmedUpdated( targetAssociation, targetUser, COMPANIES_HOUSE ) );
                     return targetAssociation.getId();
@@ -104,11 +104,11 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
 
         final var allStatuses = fetchAllStatusesWithout( Set.of() ).stream().map( Association.StatusEnum::toString ).collect( Collectors.toSet() );
         if ( !allStatuses.containsAll(status) ) {
-            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Status is invalid" ) );
+            throw new BadRequestRuntimeException( getXRequestId(), PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "Status is invalid" ) );
         }
 
         if ( pageIndex < 0 || itemsPerPage <= 0 ){
-            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
+            throw new BadRequestRuntimeException( getXRequestId(), PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
         }
 
         final var associationsList = associationsService.fetchAssociationsForUserAndPartialCompanyNumberAndStatuses( getUser(), companyNumber, new HashSet<>( status ), pageIndex, itemsPerPage );

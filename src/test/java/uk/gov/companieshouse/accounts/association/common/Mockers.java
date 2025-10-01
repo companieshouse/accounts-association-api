@@ -3,13 +3,17 @@ package uk.gov.companieshouse.accounts.association.common;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static uk.gov.companieshouse.accounts.association.models.Constants.X_REQUEST_ID;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import org.mockito.Mockito;
+import org.springframework.http.HttpHeaders;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.util.UriComponents;
@@ -52,6 +56,7 @@ public class Mockers {
 
         when(requestHeadersUriSpec.uri(any( Function.class ) ) ).thenReturn(requestHeadersSpec );
         Mockito.doReturn( requestHeadersUriSpec ).when(webClient).get();
+        Mockito.doReturn( requestHeadersSpec ).when( requestHeadersSpec ).header(any(), any());
         Mockito.doReturn( responseSpec ).when( requestHeadersSpec ).retrieve();
         Mockito.doReturn( jsonResponse ).when( responseSpec ).bodyToMono( String.class );
     }
@@ -343,7 +348,7 @@ public class Mockers {
 
     public void mockCompanyServiceFetchCompanyProfileNotFound( final String... companyNumbers ){
         for ( final String companyNumber: companyNumbers ){
-            Mockito.doThrow( new NotFoundRuntimeException( "Not found", new Exception( "Not found" ) ) ).when( companyService ).fetchCompanyProfile( companyNumber );
+            Mockito.doThrow( new NotFoundRuntimeException( "theId123", "Not found", new Exception( "Not found" ) ) ).when( companyService ).fetchCompanyProfile( companyNumber );
         }
     }
 
@@ -379,7 +384,7 @@ public class Mockers {
 
     public void mockUsersServiceFetchUserDetailsNotFound( final String... userIds ){
         for ( final String userId: userIds ){
-            Mockito.doThrow( new NotFoundRuntimeException( "Not found.", new Exception( "Not found." ) ) ).when( usersService ).fetchUserDetails( eq(userId), any() );
+            Mockito.doThrow( new NotFoundRuntimeException( "theId123", "Not found.", new Exception( "Not found." ) ) ).when( usersService ).fetchUserDetails( eq(userId), any() );
         }
     }
 

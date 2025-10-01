@@ -12,9 +12,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -40,22 +40,22 @@ class ControllerAdviceTest {
     @Autowired
     private WebApplicationContext context;
 
-    @MockBean
+    @MockitoBean
     private AssociationsService associationsService;
 
-    @MockBean
+    @MockitoBean
     private UsersService usersService;
 
-    @MockBean
+    @MockitoBean
     private InterceptorConfig interceptorConfig;
 
-    @MockBean
+    @MockitoBean
     private EmailService emailService;
 
-    @MockBean
+    @MockitoBean
     private StaticPropertyUtil staticPropertyUtil;
 
-    @MockBean
+    @MockitoBean
     private CompanyService companyService;
 
     @BeforeEach
@@ -67,7 +67,7 @@ class ControllerAdviceTest {
 
     @Test
     void testNotFoundRuntimeError() throws Exception {
-        Mockito.doThrow(new NotFoundRuntimeException( "Couldn't find association", new Exception( "Couldn't find association" ) ))
+        Mockito.doThrow(new NotFoundRuntimeException( "theId123", "Couldn't find association", new Exception( "Couldn't find association" ) ))
                 .when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
 
         mockMvc.perform(get("/associations")
@@ -109,7 +109,7 @@ class ControllerAdviceTest {
 
     @Test
     void testOnInternalServerErrorRuntimeException() throws Exception {
-        Mockito.doThrow(new InternalServerErrorRuntimeException("Couldn't find association", new Exception("Couldn't find association")))
+        Mockito.doThrow(new InternalServerErrorRuntimeException("theId123", "Couldn't find association", new Exception("Couldn't find association")))
                 .when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
 
         mockMvc.perform(get("/associations")
@@ -121,7 +121,7 @@ class ControllerAdviceTest {
 
     @Test
     void testOnForbiddenRuntimeException() throws Exception {
-        Mockito.doThrow( new ForbiddenRuntimeException( "Forbidden", new Exception( "Forbidden" ) ) )
+        Mockito.doThrow( new ForbiddenRuntimeException("theId123", "Forbidden", new Exception( "Forbidden" ) ) )
                 .when( associationsService ).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses( any(), any(), anySet(), anyInt(), anyInt() );
 
         mockMvc.perform( get( "/associations" )

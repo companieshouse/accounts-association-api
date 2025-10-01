@@ -52,7 +52,7 @@ public class UserCompanyInvitations implements UserCompanyInvitationsInterface {
         LOGGER.infoContext( getXRequestId(), String.format( "Received request with user_id=%s, itemsPerPage=%d, pageIndex=%d.", getEricIdentity(), itemsPerPage, pageIndex ),null );
 
         if ( pageIndex < 0 || itemsPerPage <= 0 ){
-            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
+            throw new BadRequestRuntimeException( getXRequestId(), PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( PAGINATION_IS_MALFORMED ) );
         }
 
         final var invitations = associationsService.fetchActiveInvitations( getUser(), pageIndex, itemsPerPage );
@@ -66,18 +66,18 @@ public class UserCompanyInvitations implements UserCompanyInvitationsInterface {
 
         final var inviteeEmail = Optional.of( requestBody )
                 .map( InvitationRequestBodyPost::getInviteeEmailId )
-                .orElseThrow( () -> new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "invitee_email_id is null." ) ) );
+                .orElseThrow( () -> new BadRequestRuntimeException( getXRequestId(), PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( "invitee_email_id is null." ) ) );
 
         final var companyNumber = requestBody.getCompanyNumber();
         final CompanyDetails companyDetails;
         try {
             companyDetails = companyService.fetchCompanyProfile( companyNumber );
         } catch( NotFoundRuntimeException exception ){
-            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( exception.getMessage() ) );
+            throw new BadRequestRuntimeException( getXRequestId(), PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( exception.getMessage() ) );
         }
 
         if ( !associationsService.confirmedAssociationExists( companyNumber, getEricIdentity() ) ){
-            throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Requesting user %s does not have a confirmed association at company %s", getEricIdentity(), companyNumber ) ) );
+            throw new BadRequestRuntimeException( getXRequestId(), PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "Requesting user %s does not have a confirmed association at company %s", getEricIdentity(), companyNumber ) ) );
         }
 
         final var inviteeUserDetails = Optional
@@ -90,7 +90,7 @@ public class UserCompanyInvitations implements UserCompanyInvitationsInterface {
                 .map( association -> {
                     LOGGER.debugContext( getXRequestId(), "Mapping association", null );
                     if( CONFIRMED.getValue().equals( association.getStatus() ) ) {
-                        throw new BadRequestRuntimeException( PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "This invitee email address already has a confirmed association at company %s", companyNumber ) ) );
+                        throw new BadRequestRuntimeException( getXRequestId(), PLEASE_CHECK_THE_REQUEST_AND_TRY_AGAIN, new Exception( String.format( "This invitee email address already has a confirmed association at company %s", companyNumber ) ) );
                     }
                     associationsService.updateAssociation( association.getId(), mapToInvitationUpdate( association, inviteeUserDetails, getEricIdentity(), now() ) );
                     LOGGER.debugContext( getXRequestId(), "Completed update associations", null );
