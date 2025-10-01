@@ -6,6 +6,7 @@ import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.red
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -205,7 +206,7 @@ class InvitationsCollectionMappersTest {
                 return null;
             }
         };
-        Assertions.assertThrows( IllegalStateException.class,
+        Assertions.assertThrows( NullPointerException.class,
                 () -> ReflectionTestUtils.invokeMethod( invitationsCollectionMappers, "mapToMostRecentInvitation",
                         association ) );
     }
@@ -215,7 +216,7 @@ class InvitationsCollectionMappersTest {
         final var association = new AssociationDao();
         association.setInvitations( Collections.emptyList() );
 
-        Assertions.assertThrows( IllegalStateException.class,
+        Assertions.assertThrows( NoSuchElementException.class,
                 () -> ReflectionTestUtils.invokeMethod( invitationsCollectionMappers, "mapToMostRecentInvitation",
                         association ) );
     }

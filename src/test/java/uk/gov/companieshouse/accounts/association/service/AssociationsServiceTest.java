@@ -441,9 +441,11 @@ class AssociationsServiceTest {
     @ParameterizedTest
     @MethodSource("userIdsProvider")
     void fetchActiveInvitationsWithNullOrMalformedOrNonexistentUserIdReturnsEmptyList(String userId) {
+        final var associationDao = testDataManager.fetchAssociationDaos( "18" ).getFirst();
+        Mockito.doReturn( new PageImpl<>( List.of(associationDao) ) ).when( associationsRepository ).fetchAssociationsWithActiveInvitations( any(), any(), any(), any() );
         associationsService.fetchActiveInvitations(new User().userId(userId), 0, 1);
         Mockito.verify( invitationsCollectionMappers )
-                .daoToDto( new PageImpl<AssociationDao>( Collections.emptyList() ), PageRequest.of( 0, 1 ) );
+                .daoToDto(new PageImpl<>(List.of(associationDao)), PageRequest.of( 0, 1 ) );
     }
 
     @Test
