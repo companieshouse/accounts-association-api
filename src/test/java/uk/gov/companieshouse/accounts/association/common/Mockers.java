@@ -3,17 +3,13 @@ package uk.gov.companieshouse.accounts.association.common;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static uk.gov.companieshouse.accounts.association.models.Constants.X_REQUEST_ID;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import org.mockito.Mockito;
-import org.springframework.http.HttpHeaders;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.util.UriComponents;
