@@ -1,6 +1,21 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
+import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
+import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
+import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.INVITATION;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.CONFIRMED;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
+
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,21 +39,6 @@ import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
-import java.time.LocalDateTime;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
-import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
-import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
-import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
-import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
-import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.INVITATION;
-import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.CONFIRMED;
-import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 
 @Service
 public class AssociationsService {
@@ -158,8 +158,9 @@ public class AssociationsService {
     @Transactional( readOnly = true )
     public InvitationsList fetchActiveInvitations( final User user, final int pageIndex, final int itemsPerPage ) {
         LOGGER.debugContext( getXRequestId(), String.format( "Attempting to retrieve active invitations for user %s", user.getUserId() ), null );
-        final var associationsWithActiveInvitations = associationsRepository.fetchAssociationsWithActiveInvitations( user.getUserId(), user.getEmail(), LocalDateTime.now() );
-        final var invitations = invitationsCollectionMappers.daoToDto( associationsWithActiveInvitations, pageIndex, itemsPerPage );
+        final var pageRequest = PageRequest.of( pageIndex, itemsPerPage );
+        final var associationsWithActiveInvitations = associationsRepository.fetchAssociationsWithActiveInvitations( user.getUserId(), user.getEmail(), LocalDateTime.now(), pageRequest );
+        final var invitations = invitationsCollectionMappers.daoToDto( associationsWithActiveInvitations, pageRequest );
         LOGGER.debugContext( getXRequestId(), String.format( "Successfully retrieved active invitations for user %s", user.getUserId() ), null );
         return invitations;
     }

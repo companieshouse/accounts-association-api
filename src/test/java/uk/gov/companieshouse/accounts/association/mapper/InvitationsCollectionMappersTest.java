@@ -4,7 +4,9 @@ import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.loc
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -12,6 +14,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
@@ -115,12 +120,15 @@ class InvitationsCollectionMappersTest {
 
     @Test
     void daoToDtoWithNullListThrowsNullPointerException(){
-        Assertions.assertThrows( NullPointerException.class, () -> invitationsCollectionMappers.daoToDto( (List<AssociationDao>) null, 0, 15) );
+        final var pageRequest = PageRequest.of( 0, 15 );
+        Assertions.assertThrows(
+                NullPointerException.class, () -> invitationsCollectionMappers.daoToDto( null, pageRequest ) );
     }
 
     @Test
     void daoToDtoAppliedToEmptyListReturnsEmpty(){
-        final var invitations = invitationsCollectionMappers.daoToDto( List.of(), 0, 15 );
+        final var pageRequest = PageRequest.of( 0, 15 );
+        final var invitations = invitationsCollectionMappers.daoToDto( Page.empty(), pageRequest );
         Assertions.assertEquals( 0, invitations.getTotalResults() );
         Assertions.assertEquals( 0, invitations.getPageNumber() );
         Assertions.assertEquals( 15, invitations.getItemsPerPage() );
@@ -135,10 +143,13 @@ class InvitationsCollectionMappersTest {
         final var associations = testDataManager.fetchAssociationDaos( "36", "38" );
         associations.getFirst().approvalExpiryAt( LocalDateTime.now().plusDays( 30 ) );
         associations.getFirst().getInvitations().getLast().invitedAt( LocalDateTime.now().minusDays( 31 ) );
+        final var pageRequest = PageRequest.of( 0, 15);
 
         mockers.mockUsersServiceFetchUserDetails( "9999", "444" );
 
-        final var invitations = invitationsCollectionMappers.daoToDto( associations, 0, 15 );
+        final Page<AssociationDao> associationsWithInvitations = new PageImpl<>( associations, pageRequest, associations.size() );
+
+        final var invitations = invitationsCollectionMappers.daoToDto( associationsWithInvitations, pageRequest );
         final var invitation0 = invitations.getItems().getFirst();
         final var invitation1 = invitations.getItems().getLast();
 
@@ -163,12 +174,15 @@ class InvitationsCollectionMappersTest {
     @Test
     void daoToDtoCorrectlyMapsAssociationsToInvitationsListAndPaginatesCorrectly(){
         final var associations = testDataManager.fetchAssociationDaos( "36", "38" );
+        final var pageRequest = PageRequest.of( 0, 1);
+        List<AssociationDao> pageContent = associations.subList(0, 1);
+        final Page<AssociationDao> associationsWithInvitations = new PageImpl<>( pageContent, pageRequest, associations.size() );
         associations.getFirst().approvalExpiryAt( LocalDateTime.now().plusDays( 7 ) );
         associations.getFirst().getInvitations().getLast().invitedAt( LocalDateTime.now().minusDays( 8 ) );
 
-        mockers.mockUsersServiceFetchUserDetails( "444" );
+        mockers.mockUsersServiceFetchUserDetails( "9999" );
 
-        final var invitations = invitationsCollectionMappers.daoToDto( associations, 0, 1 );
+        final var invitations = invitationsCollectionMappers.daoToDto( associationsWithInvitations, pageRequest );
         final var invitation = invitations.getItems().getFirst();
 
         Assertions.assertEquals( 2, invitations.getTotalResults() );
@@ -178,10 +192,33 @@ class InvitationsCollectionMappersTest {
         Assertions.assertEquals( "/associations/invitations?page_index=0&items_per_page=1", invitations.getLinks().getSelf() );
         Assertions.assertEquals( "/associations/invitations?page_index=1&items_per_page=1", invitations.getLinks().getNext() );
 
-        Assertions.assertEquals( "38", invitation.getAssociationId() );
-        Assertions.assertEquals( "robin@gotham.city", invitation.getInvitedBy() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( LocalDateTime.now().plusDays( 8 ) ), reduceTimestampResolution( invitation.getInvitedAt() ) );
+        Assertions.assertEquals( "36", invitation.getAssociationId() );
+        Assertions.assertEquals( "scrooge.mcduck@disney.land", invitation.getInvitedBy() );
+        Assertions.assertEquals( localDateTimeToNormalisedString( LocalDateTime.now().minusDays( 8 ) ), reduceTimestampResolution( invitation.getInvitedAt() ) );
         Assertions.assertTrue( invitation.getIsActive() );
+    }
+
+    @Test
+    void mapToMostRecentInvitationThrowsWhenInvitationsIsNull() {
+        final AssociationDao association = new AssociationDao() {
+            @Override
+            public List<uk.gov.companieshouse.accounts.association.models.InvitationDao> getInvitations() {
+                return null;
+            }
+        };
+        Assertions.assertThrows( NullPointerException.class,
+                () -> ReflectionTestUtils.invokeMethod( invitationsCollectionMappers, "mapToMostRecentInvitation",
+                        association ) );
+    }
+
+    @Test
+    void mapToMostRecentInvitationThrowsWhenInvitationsIsEmpty() {
+        final var association = new AssociationDao();
+        association.setInvitations( Collections.emptyList() );
+
+        Assertions.assertThrows( NoSuchElementException.class,
+                () -> ReflectionTestUtils.invokeMethod( invitationsCollectionMappers, "mapToMostRecentInvitation",
+                        association ) );
     }
 
 }

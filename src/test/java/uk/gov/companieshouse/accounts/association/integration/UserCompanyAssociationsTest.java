@@ -1,6 +1,23 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
+
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -35,24 +52,6 @@ import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
-import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
-import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
 
 @AutoConfigureMockMvc
 @SpringBootTest

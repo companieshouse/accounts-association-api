@@ -1,10 +1,12 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
@@ -48,22 +50,23 @@ public class InvitationsCollectionMappers {
                 .collect( Collectors.collectingAndThen( Collectors.toList(), mapToInvitationsList( String.format( GET_INVITATIONS_FOR_ASSOCIATION_URI, association.getId() ), association.getInvitations().size(), pageIndex, itemsPerPage ) ) );
     }
 
-    private Invitation mapToMostRecentInvitation( final AssociationDao association ){
-        final var mostRecentInvitation = Stream.of( association.getInvitations() )
-                .filter( invitations -> invitations.size() > 1 )
-                .flatMap( List::stream )
-                .max( Comparator.comparing( InvitationDao::getInvitedAt ) )
-                .orElse( association.getInvitations().getFirst() );
-        return invitationsMapper.daoToDto( mostRecentInvitation, association.getId() );
+    private Invitation mapToMostRecentInvitation( final AssociationDao association ) {
+        final var invitations = association.getInvitations();
+        final InvitationDao mostRecent = ( invitations.size() == 1 )
+                ? invitations.getFirst()
+                : Collections.max( invitations, Comparator.comparing( InvitationDao::getInvitedAt ) );
+
+        return invitationsMapper.daoToDto( mostRecent, association.getId() );
     }
 
-    public InvitationsList daoToDto( final List<AssociationDao> associationsWithActiveInvitations, final int pageIndex, final int itemsPerPage ){
-        return associationsWithActiveInvitations.stream()
-                .sorted( Comparator.comparing( AssociationDao::getApprovalExpiryAt ).reversed() )
-                .skip((long) pageIndex * itemsPerPage )
-                .limit( itemsPerPage )
+
+    public InvitationsList daoToDto( final Page<AssociationDao> associationsWithActiveInvitations, final PageRequest pageRequest ){
+        return associationsWithActiveInvitations.getContent()
+                .stream()
                 .map( this::mapToMostRecentInvitation )
-                .collect( Collectors.collectingAndThen( Collectors.toList(), mapToInvitationsList( FETCH_ACTIVE_INVITATIONS_FOR_USER_URI, associationsWithActiveInvitations.size(), pageIndex, itemsPerPage ) ) );
+                .collect( Collectors.collectingAndThen( Collectors.toList(),
+                        mapToInvitationsList( FETCH_ACTIVE_INVITATIONS_FOR_USER_URI,
+                                ( int ) associationsWithActiveInvitations.getTotalElements(), pageRequest.getPageNumber(),
+                                pageRequest.getPageSize() ) ) );
     }
-
 }

@@ -1,6 +1,21 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
-import org.junit.jupiter.api.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -27,18 +42,6 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusE
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
-import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
 
 @AutoConfigureMockMvc
 @SpringBootTest

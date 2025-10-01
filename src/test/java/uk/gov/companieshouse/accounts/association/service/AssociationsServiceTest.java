@@ -1,9 +1,31 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.INVITATION;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.CONFIRMED;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -26,8 +48,8 @@ import uk.gov.companieshouse.accounts.association.common.TestDataManager;
 import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListCompanyMapper;
 import uk.gov.companieshouse.accounts.association.mapper.AssociationsListUserMapper;
-import uk.gov.companieshouse.accounts.association.mapper.InvitationsCollectionMappers;
 import uk.gov.companieshouse.accounts.association.mapper.InvitationMapper;
+import uk.gov.companieshouse.accounts.association.mapper.InvitationsCollectionMappers;
 import uk.gov.companieshouse.accounts.association.mapper.PreviousStatesCollectionMappers;
 import uk.gov.companieshouse.accounts.association.mapper.PreviousStatesMapperImpl;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
@@ -38,24 +60,6 @@ import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.api.error.ApiErrorResponseException;
 import uk.gov.companieshouse.api.handler.exception.URIValidationException;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
-import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
-import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
-import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.INVITATION;
-import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.*;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
@@ -437,8 +441,11 @@ class AssociationsServiceTest {
     @ParameterizedTest
     @MethodSource("userIdsProvider")
     void fetchActiveInvitationsWithNullOrMalformedOrNonexistentUserIdReturnsEmptyList(String userId) {
+        final var associationDao = testDataManager.fetchAssociationDaos( "18" ).getFirst();
+        Mockito.doReturn( new PageImpl<>( List.of(associationDao) ) ).when( associationsRepository ).fetchAssociationsWithActiveInvitations( any(), any(), any(), any() );
         associationsService.fetchActiveInvitations(new User().userId(userId), 0, 1);
-        Mockito.verify( invitationsCollectionMappers ).daoToDto( List.of(), 0, 1 );
+        Mockito.verify( invitationsCollectionMappers )
+                .daoToDto(new PageImpl<>(List.of(associationDao)), PageRequest.of( 0, 1 ) );
     }
 
     @Test

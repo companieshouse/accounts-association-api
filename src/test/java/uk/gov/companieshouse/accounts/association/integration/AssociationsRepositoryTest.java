@@ -1,7 +1,16 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import jakarta.validation.ConstraintViolationException;
-import org.junit.jupiter.api.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -23,12 +32,6 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association.Approva
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
-
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @Tag("integration-test")
@@ -296,10 +299,6 @@ class AssociationsRepositoryTest {
         Assertions.assertTrue( page.isEmpty() );
     }
 
-
-
-
-
     static Stream<Arguments> nullAndMalformedParameters() {
         return Stream.of(
                 Arguments.of(null, "111"),
@@ -446,20 +445,33 @@ class AssociationsRepositoryTest {
 
     @Test
     void fetchAssociationsWithActiveInvitationsWithNullOrMalformedOrNonExistentUserIdOrEmailOrNullTimestampReturnsEmptyStream(){
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, null, LocalDateTime.now() ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "$$$", null,LocalDateTime.now() ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "9191", null,LocalDateTime.now() ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( "99999", null,null ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "$$$",LocalDateTime.now() ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "ronald@mcdonalds.com",LocalDateTime.now() ).isEmpty() );
-        Assertions.assertTrue( associationsRepository.fetchAssociationsWithActiveInvitations( null, "ronald@mcdonalds.com",null ).isEmpty() );
+        final var pageRequest = PageRequest.of( 0, 15 );
+        Assertions.assertTrue( associationsRepository
+                .fetchAssociationsWithActiveInvitations( "$$$", null, LocalDateTime.now(), pageRequest )
+                .isEmpty() );
+        Assertions.assertTrue( associationsRepository
+                .fetchAssociationsWithActiveInvitations( "9191", null, LocalDateTime.now(), pageRequest )
+                .isEmpty() );
+        Assertions.assertTrue( associationsRepository
+                .fetchAssociationsWithActiveInvitations( "99999", null, null, pageRequest )
+                .isEmpty() );
+        Assertions.assertTrue( associationsRepository
+                .fetchAssociationsWithActiveInvitations( null, "$$$", LocalDateTime.now(), pageRequest )
+                .isEmpty() );
+        Assertions.assertTrue( associationsRepository
+                .fetchAssociationsWithActiveInvitations( null, "ronald@mcdonalds.com", LocalDateTime.now(), pageRequest )
+                .isEmpty() );
+        Assertions.assertTrue( associationsRepository
+                .fetchAssociationsWithActiveInvitations( null, "ronald@mcdonalds.com", null, pageRequest )
+                .isEmpty() );
     }
 
     @Test
     void fetchAssociationsWithActiveInvitationsBasedOnUserIdAppliesFiltersCorrectly(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "23" ) );
-
-        final var associationIds = associationsRepository.fetchAssociationsWithActiveInvitations( "9999", null, LocalDateTime.now() )
+        final var pageRequest = PageRequest.of( 0, 15 );
+        final var associationIds = associationsRepository
+                .fetchAssociationsWithActiveInvitations( "9999", null, LocalDateTime.now(), pageRequest )
                 .stream()
                 .map( AssociationDao::getId )
                 .toList();
@@ -471,8 +483,9 @@ class AssociationsRepositoryTest {
     @Test
     void fetchAssociationsWithActiveInvitationsBasedOnUserEmailAppliesFiltersCorrectly(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "6" ) );
-
-        final var associationIds = associationsRepository.fetchAssociationsWithActiveInvitations( null, "homer.simpson@springfield.com", LocalDateTime.now() )
+        final var pageRequest = PageRequest.of( 0, 15 );
+        final var associationIds = associationsRepository
+                .fetchAssociationsWithActiveInvitations( null, "homer.simpson@springfield.com", LocalDateTime.now(), pageRequest )
                 .stream()
                 .map( AssociationDao::getId )
                 .toList();
@@ -504,6 +517,51 @@ class AssociationsRepositoryTest {
         Assertions.assertEquals( 1, confirmedAssociations.size() );
         Assertions.assertEquals( "5", confirmedAssociations.getFirst().getId() );
     }
+
+    @Test
+    void fetchAssociationsWithActiveInvitationsSortsByExpiry() {
+        final var now = LocalDateTime.parse( "2025-01-01T12:00:00" );
+        final var pageRequest = PageRequest.of( 0, 10 );
+
+        final var a1 = new AssociationDao()
+                .id( "A1" )
+                .userId( "9999" )
+                .companyNumber( "COMP001" )
+                .status( StatusEnum.AWAITING_APPROVAL.getValue() )
+                .approvalRoute( ApprovalRouteEnum.AUTH_CODE.getValue() )
+                .etag( "etag-1" )
+                .approvalExpiryAt( now.plusMinutes( 2 ) );
+
+        final var a2 = new AssociationDao()
+                .id( "A2" )
+                .userId( "9999" )
+                .companyNumber( "COMP002" )
+                .status( StatusEnum.AWAITING_APPROVAL.getValue() )
+                .approvalRoute( ApprovalRouteEnum.AUTH_CODE.getValue() )
+                .etag( "etag-2" )
+                .approvalExpiryAt( now.plusMinutes( 5 ) );
+
+        final var a3 = new AssociationDao()
+                .id( "A3" )
+                .userId( "9999" )
+                .companyNumber( "COMP003" )
+                .status( StatusEnum.AWAITING_APPROVAL.getValue() )
+                .approvalRoute( ApprovalRouteEnum.AUTH_CODE.getValue() )
+                .etag( "etag-3" )
+                .approvalExpiryAt( now.plusMinutes( 10 ) );
+
+        associationsRepository.insert( List.of( a2, a1, a3 ) );
+
+        final var result = associationsRepository
+                .fetchAssociationsWithActiveInvitations( "9999", null, now, pageRequest )
+                .stream()
+                .map( AssociationDao::getId )
+                .toList();
+
+        Assertions.assertEquals( List.of( "A1", "A2", "A3" ), result );
+        Assertions.assertNotEquals( List.of( "A2", "A1", "A3" ), result );
+    }
+
 
     @AfterEach
     public void after() {

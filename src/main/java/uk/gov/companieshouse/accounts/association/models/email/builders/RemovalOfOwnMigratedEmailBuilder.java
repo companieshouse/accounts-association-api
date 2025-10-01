@@ -1,8 +1,7 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
-import uk.gov.companieshouse.accounts.association.models.email.data.RemovalOfOwnMigratedEmailData;
-
 import java.util.Objects;
+import uk.gov.companieshouse.accounts.association.models.email.data.RemovalOfOwnMigratedEmailData;
 
 public class RemovalOfOwnMigratedEmailBuilder extends EmailBuilder<RemovalOfOwnMigratedEmailBuilder, RemovalOfOwnMigratedEmailData> {
 

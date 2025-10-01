@@ -1,9 +1,26 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.INVITATION;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
+import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.CONFIRMED;
+
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -13,7 +30,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Update;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
@@ -27,24 +43,10 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 import uk.gov.companieshouse.email_producer.EmailProducer;
 import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
-
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.*;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
-import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
-import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
-import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.INVITATION;
-import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
-import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.CONFIRMED;
 
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
@@ -388,26 +390,6 @@ class AssociationsServiceTest {
         Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( new User(), 0, 1 ).getItems() );
         Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( new User().userId("$$$"), 0, 1 ).getItems() );
         Assertions.assertEquals( Collections.emptyList(), associationsService.fetchActiveInvitations( new User().userId("9191"), 0, 1 ).getItems() );
-    }
-
-    @Test
-    void fetchActiveInvitationsReturnsPaginatedResultsInCorrectOrderAndOnlyRetainsMostRecentInvitationPerAssociation(){
-        final var user = testDataManager.fetchUserDtos( "000" ).getFirst();
-        final var firstAssociation = testDataManager.fetchAssociationDaos( "37" ).getFirst();
-        final var secondAssociation = testDataManager.fetchAssociationDaos( "38" ).getFirst();
-        secondAssociation.setUserId("000");
-
-        associationsRepository.insert( List.of( firstAssociation, secondAssociation ) );
-
-        final var mostRecentInvitationDaoInFirstAssociation = firstAssociation.getInvitations().getLast();
-        final var mostRecentInvitationDtoInFirstAssociation = new Invitation().invitedAt( mostRecentInvitationDaoInFirstAssociation.getInvitedAt().toString() ).invitedBy( mostRecentInvitationDaoInFirstAssociation.getInvitedBy() );
-        Mockito.doReturn( mostRecentInvitationDtoInFirstAssociation ).when( invitationsMapper ).daoToDto( argThat( comparisonUtils.compare( mostRecentInvitationDaoInFirstAssociation, List.of( "invited_by" ), List.of(), Map.of() ) ), eq( "37" ) );
-
-        final var invitations = associationsService.fetchActiveInvitations( user, 1, 1 );
-        final var invitation = invitations.getItems().getFirst();
-
-        Assertions.assertEquals( mostRecentInvitationDaoInFirstAssociation.getInvitedBy(), invitation.getInvitedBy() );
-        Assertions.assertEquals( localDateTimeToNormalisedString( mostRecentInvitationDaoInFirstAssociation.getInvitedAt() ), reduceTimestampResolution( invitation.getInvitedAt() ) );
     }
 
     @Test

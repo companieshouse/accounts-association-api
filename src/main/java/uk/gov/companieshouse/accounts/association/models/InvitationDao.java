@@ -1,10 +1,9 @@
 package uk.gov.companieshouse.accounts.association.models;
 
-import org.springframework.data.mongodb.core.mapping.Field;
+import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
 
 import java.time.LocalDateTime;
-
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 public class InvitationDao {
 
