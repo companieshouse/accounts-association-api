@@ -60,7 +60,7 @@ public class InvitationsCollectionMappers {
     }
 
 
-    public InvitationsList daoToDto( final Page<AssociationDao> associationsWithActiveInvitations, PageRequest pageRequest ){
+    public InvitationsList daoToDto( final Page<AssociationDao> associationsWithActiveInvitations, final PageRequest pageRequest ){
         return associationsWithActiveInvitations.getContent()
                 .stream()
                 .map( this::mapToMostRecentInvitation )
