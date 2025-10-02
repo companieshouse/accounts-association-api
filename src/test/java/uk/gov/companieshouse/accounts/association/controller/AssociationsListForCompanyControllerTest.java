@@ -34,10 +34,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -72,16 +72,16 @@ class AssociationsListForCompanyControllerTest {
     @Autowired
     private WebApplicationContext context;
 
-    @MockBean
+    @MockitoBean
     private AssociationsService associationsService;
 
-    @MockBean
+    @MockitoBean
     private CompanyService companyService;
 
-    @MockBean
+    @MockitoBean
     private UsersService usersService;
 
-    @MockBean
+    @MockitoBean
     private StaticPropertyUtil staticPropertyUtil;
 
     private static final String DEFAULT_KIND = "association";
@@ -633,7 +633,7 @@ class AssociationsListForCompanyControllerTest {
         final var user = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
         final var company = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
         mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        Mockito.doThrow( new NotFoundRuntimeException( "Test", new Exception() ) ).when( usersService ).retrieveUserDetails("MKUser002", null );
+        Mockito.doThrow( new NotFoundRuntimeException( "theId123", "Test", new Exception() ) ).when( usersService ).retrieveUserDetails("MKUser002", null );
         Mockito.doReturn(Optional.of( testDataManager.fetchAssociationDto( "MKAssociation002" , user ) ) ).when( associationsService ).fetchUnexpiredAssociationsForCompanyUserAndStatuses( company, Set.of( CONFIRMED, REMOVED ), user, "luigi@mushroom.kingdom" );
 
         mockMvc.perform( post( "/associations/companies/MKCOMP001/search" )

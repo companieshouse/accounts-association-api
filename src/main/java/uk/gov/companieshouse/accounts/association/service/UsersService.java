@@ -48,9 +48,9 @@ public class UsersService {
                 .map( parseJsonTo( User.class ) )
                 .onErrorMap( throwable -> {
                     if ( throwable instanceof WebClientResponseException exception && NOT_FOUND.equals( exception.getStatusCode() ) ){
-                        return new NotFoundRuntimeException( "Failed to find user", exception );
+                        return new NotFoundRuntimeException( xRequestId, "Failed to find user", exception );
                     }
-                    throw new InternalServerErrorRuntimeException( "Failed to retrieve user details", (Exception) throwable );
+                    throw new InternalServerErrorRuntimeException( xRequestId, "Failed to retrieve user details", (Exception) throwable );
                 } )
                 .doOnSubscribe( onSubscribe -> LOGGER.infoContext( xRequestId, String.format( "Sending request to accounts-user-api: GET /users/{user_id}. Attempting to retrieve user: %s", userId ), null ) )
                 .doFinally( signalType -> LOGGER.infoContext( xRequestId, String.format( "Finished request to accounts-user-api for user: %s", userId ), null ) );
@@ -80,11 +80,12 @@ public class UsersService {
                         .encode()
                         .buildAndExpand(String.join(",", emails))
                         .toUri())
+                .header( "X-Request-Id", xRequestId )
                 .retrieve()
                 .bodyToMono( String.class )
                 .map( parseJsonTo( UsersList.class ) )
                 .onErrorMap( throwable -> {
-                    throw new InternalServerErrorRuntimeException( "Failed to retrieve user details", (Exception) throwable );
+                    throw new InternalServerErrorRuntimeException( xRequestId, "Failed to retrieve user details", (Exception) throwable );
                 } )
                 .doOnSubscribe( onSubscribe -> LOGGER.infoContext( xRequestId,  "Sending request to accounts-user-api: GET /users/search. Attempting to retrieve users" , null ) )
                 .doFinally( signalType -> LOGGER.infoContext( xRequestId, "Finished request to accounts-user-api for users",  null ) )

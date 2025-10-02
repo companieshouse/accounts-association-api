@@ -221,7 +221,7 @@ public class AssociationsService {
         Optional.ofNullable( associationId )
                 .map( id -> associationsRepository.updateAssociation( id, update ) )
                 .filter( numRecordsUpdated -> numRecordsUpdated > 0 )
-                .orElseThrow( () -> new InternalServerErrorRuntimeException( "Failed to update association", new Exception( String.format( "Failed to update association with id: %s", associationId ) ) ) );
+                .orElseThrow( () -> new InternalServerErrorRuntimeException( getXRequestId(), "Failed to update association", new Exception( String.format( "Failed to update association with id: %s", associationId ) ) ) );
         LOGGER.debugContext( getXRequestId(), String.format( "Updated association %s", associationId ), null );
     }
 
