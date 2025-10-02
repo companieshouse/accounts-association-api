@@ -194,9 +194,7 @@ A business validation error will throw an exception that will be handled in the 
 To set up and build the service using Docker, follow these steps:
 
 1. Clone Docker CHS Development repository and follow instructions in the README.
-2. Execute the following:
-    - `./bin/chs-dev services enable accounts-association-api`
-    - `./bin/chs-dev development enable accounts-association-api`
+2. Execute the following `chs-dev services enable accounts-association-api` in the docker-chs-development directory.
 3. Ensure you're using Java 21
 4. Start Docker using `chs-dev up` in the docker-chs-development directory.
 5. Run `chs-dev status` to confirm the service is running in docker-chs-development directory.
