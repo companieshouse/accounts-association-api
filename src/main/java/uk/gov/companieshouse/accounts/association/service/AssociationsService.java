@@ -11,6 +11,7 @@ import static uk.gov.companieshouse.api.accounts.associations.model.Association.
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -117,7 +118,7 @@ public class AssociationsService {
         final var association = Optional.of( associationsRepository.fetchUnexpiredAssociationsForCompanyAndStatusesAndUser( companyDetails.getCompanyNumber(), parsedStatuses, userId, userEmail, LocalDateTime.now(),  null ) )
                 .filter( Slice::hasContent )
                 .map( Slice::getContent )
-                .map( List::getFirst )
+                .flatMap( associations -> associations.stream().max( Comparator.comparing( associationDao -> associationDao.getUserId() != null ) ) )
                 .map( associationDao -> associationsListCompanyMapper.daoToDto( associationDao, user, companyDetails ) );
         LOGGER.debugContext( getXRequestId(), "Successfully fetched unexpired associations for company, user and statuses" ,null );
         return association;
