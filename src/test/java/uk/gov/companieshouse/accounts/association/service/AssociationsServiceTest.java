@@ -610,6 +610,25 @@ class AssociationsServiceTest {
     }
 
     @Test
+    void fetchUnexpiredAssociationsForCompanyUserAndStatusesPrioritisesUserIdBasedAssociations(){
+        final var confirmedAssociationDao = testDataManager.fetchAssociationDaos( "MiAssociation002" ).getFirst();
+        final var migratedAssociationDao = testDataManager.fetchAssociationDaos( "MiAssociation033" ).getFirst().companyNumber( "MICOMP001" );
+        final var userDetails = testDataManager.fetchUserDtos( "MiUser002" ).getFirst();
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "MICOMP001" ).getFirst();
+        final var confirmedAssociationDto = testDataManager.fetchAssociationDto( "MiAssociation002", userDetails );
+
+        final var pageRequest = PageRequest.of( 0, 15 );
+        final var page = new PageImpl<>( List.of( confirmedAssociationDao, migratedAssociationDao ), pageRequest, 0 );
+        Mockito.doReturn( page ).when( associationsRepository ).fetchUnexpiredAssociationsForCompanyAndStatusesAndUser( any(), any(), any(), any(), any(), any() );
+        Mockito.doReturn( confirmedAssociationDto ).when( associationsListCompanyMapper ).daoToDto( argThat( association -> "MiAssociation002".equals( association.getId() ) ), argThat( user -> "MiUser002".equals( user.getUserId() ) ), argThat( company -> "MICOMP001".equals( company.getCompanyNumber() ) ) );
+
+        final var result = associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( companyDetails, Set.of( StatusEnum.CONFIRMED, StatusEnum.MIGRATED ), userDetails, userDetails.getEmail() );
+
+        Assertions.assertTrue( result.isPresent() );
+        Assertions.assertEquals( "MiAssociation002", result.get().getId() );
+    }
+
+    @Test
     void fetchInvitationsFiltersWorkingCorrectly(){
         final var association = testDataManager.fetchAssociationDaos( "MiAssociation041" ).getFirst();
         Mockito.doReturn( Optional.of(association) ).when(associationsRepository).findById( "MiAssociation041" );

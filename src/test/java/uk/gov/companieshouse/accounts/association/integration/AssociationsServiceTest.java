@@ -8,6 +8,7 @@ import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.red
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.INVITATION;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.CONFIRMED;
 
@@ -525,6 +526,23 @@ class AssociationsServiceTest {
         final var company = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
         Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( null, Set.of( StatusEnum.CONFIRMED ), null, "null@null.com" ) );
         Assertions.assertThrows( NullPointerException.class, () -> associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( company, null, null, "null@null.com" ) );
+    }
+
+    @Test
+    void fetchUnexpiredAssociationsForCompanyUserAndStatusesPrioritisesUserIdBasedAssociations(){
+        final var confirmedAssociationDao = testDataManager.fetchAssociationDaos( "MiAssociation002" ).getFirst();
+        final var migratedAssociationDao = testDataManager.fetchAssociationDaos( "MiAssociation033" ).getFirst().companyNumber( "MICOMP001" );
+        final var userDetails = testDataManager.fetchUserDtos( "MiUser002" ).getFirst();
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "MICOMP001" ).getFirst();
+        final var confirmedAssociationDto = testDataManager.fetchAssociationDto( "MiAssociation002", userDetails );
+
+        associationsRepository.insert( List.of( confirmedAssociationDao, migratedAssociationDao ) );
+        Mockito.doReturn( confirmedAssociationDto ).when( associationsListCompanyMapper ).daoToDto( argThat( association -> "MiAssociation002".equals( association.getId() ) ), argThat( user -> "MiUser002".equals( user.getUserId() ) ), argThat( company -> "MICOMP001".equals( company.getCompanyNumber() ) ) );
+
+        final var result = associationsService.fetchUnexpiredAssociationsForCompanyUserAndStatuses( companyDetails, Set.of( StatusEnum.CONFIRMED, StatusEnum.MIGRATED ), userDetails, userDetails.getEmail() );
+
+        Assertions.assertTrue( result.isPresent() );
+        Assertions.assertEquals( "MiAssociation002", result.get().getId() );
     }
 
     @AfterEach
