@@ -74,7 +74,7 @@ import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 @SpringBootTest
 @ExtendWith( MockitoExtension.class )
 @Tag( "integration-test" )
-class UserCompanyAssociationTest {
+class UserCompanyAssociationTest extends BaseMongoIntegration {
 
     @Value( "${invitation.url}")
     private String COMPANY_INVITATIONS_URL;
