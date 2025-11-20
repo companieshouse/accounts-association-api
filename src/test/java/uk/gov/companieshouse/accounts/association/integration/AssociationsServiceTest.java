@@ -8,7 +8,6 @@ import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.red
 import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.INVITATION;
-import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.CONFIRMED;
 
@@ -52,7 +51,7 @@ import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
 @Tag("integration-test")
-class AssociationsServiceTest {
+class AssociationsServiceTest extends BaseMongoIntegration {
 
     @Autowired
     private MongoTemplate mongoTemplate;

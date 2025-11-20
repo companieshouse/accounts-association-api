@@ -57,7 +57,7 @@ import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
 @Tag("integration-test")
-class UserCompanyAssociationsTest {
+class UserCompanyAssociationsTest extends BaseMongoIntegration {
 
     @Autowired
     private MongoTemplate mongoTemplate;
