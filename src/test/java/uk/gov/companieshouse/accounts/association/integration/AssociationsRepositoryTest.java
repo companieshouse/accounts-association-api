@@ -35,7 +35,7 @@ import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
 
 @SpringBootTest
 @Tag("integration-test")
-class AssociationsRepositoryTest {
+class AssociationsRepositoryTest extends BaseMongoIntegration {
 
     @Autowired
     private MongoTemplate mongoTemplate;
