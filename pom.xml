@@ -33,7 +33,7 @@
         <google-http-client.version>1.45.0</google-http-client.version>
         <api-helper-java.version>3.0.1</api-helper-java.version>
         <email-producer-java.version>3.0.4</email-producer-java.version>
-        <logback-classic.version>1.5.16</logback-classic.version>
+        <logback-classic.version>1.5.19</logback-classic.version>
         <tomcat-core-and-websocket.version>11.0.14</tomcat-core-and-websocket.version>
         <grpc.version>1.73.0</grpc.version>
         <test-containers.version>1.21.3</test-containers.version>
