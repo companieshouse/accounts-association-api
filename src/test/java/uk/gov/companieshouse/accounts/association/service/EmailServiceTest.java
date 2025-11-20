@@ -13,6 +13,8 @@ import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVIT
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_CANCELLED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.REMOVAL_OF_OWN_MIGRATED;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.REA_DIGITAL_AUTHORISATION_ADDED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.REA_DIGITAL_AUTHORISATION_REMOVED_MESSAGE_TYPE;
 
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -43,6 +45,9 @@ class EmailServiceTest {
 
     @Mock
     private UsersService usersService;
+
+    @Mock
+    private CompanyService companyService;
 
     @InjectMocks
     private EmailService emailService;
@@ -303,5 +308,57 @@ class EmailServiceTest {
         mockers.mockUsersServiceToFetchUserDetailsRequest( "333" );
         mockers.mockEmailSendingFailure( REMOVAL_OF_OWN_MIGRATED.getValue() );
         Assertions.assertThrows( EmailSendingException.class, () -> emailService.sendRemoveOfOwnMigratedEmail( "theId12345", "111111", Mono.just("McDonalds"),  "333" ).block() );
+    }
+
+    @Test
+    void sendReaDigitalAuthorisationAddedEmail_sendsWhenReaPresent() {
+        Mockito.doReturn("rea@example.com").when(companyService).fetchRegisteredEmailAddress("111111");
+        emailService.sendReaDigitalAuthorisationAddedEmail("theId12345", "111111", Mono.just("Test Enterprises")).block();
+        Mockito.verify(emailProducer).sendEmail(argThat(comparisonUtils.reaDigitalAuthChangedEmailMatcher("rea@example.com", "Test Enterprises", "111111")),
+                eq(REA_DIGITAL_AUTHORISATION_ADDED_MESSAGE_TYPE.getValue()));
+    }
+
+    @Test
+    void sendReaDigitalAuthorisationRemovedEmail_sendsWhenReaPresent() {
+        Mockito.doReturn("rea@example.com").when(companyService).fetchRegisteredEmailAddress("111111");
+        emailService.sendReaDigitalAuthorisationRemovedEmail("theId12345", "111111", Mono.just("Test Enterprises")).block();
+        Mockito.verify(emailProducer).sendEmail(argThat(comparisonUtils.reaDigitalAuthChangedEmailMatcher("rea@example.com", "Test Enterprises", "111111")),
+                eq(REA_DIGITAL_AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue()));
+    }
+
+    @Test
+    void sendReaDigitalAuthorisationEmails_doNothingWhenReaMissing() {
+        Mockito.doReturn(null).when(companyService).fetchRegisteredEmailAddress("111111");
+        emailService.sendReaDigitalAuthorisationAddedEmail("theId12345", "111111", Mono.just("Test Enterprises")).block();
+        emailService.sendReaDigitalAuthorisationRemovedEmail("theId12345", "111111", Mono.just("Test Enterprises")).block();
+        Mockito.verifyNoInteractions(usersService);
+        Mockito.verifyNoMoreInteractions(emailProducer);
+    }
+
+    @Test
+    void sendReaDigitalAuthorisationEmails_doNothingWhenReaBlank() {
+        Mockito.doReturn("").when(companyService).fetchRegisteredEmailAddress("111111");
+        emailService.sendReaDigitalAuthorisationAddedEmail("theId12345", "111111", Mono.just("Test Enterprises")).block();
+        emailService.sendReaDigitalAuthorisationRemovedEmail("theId12345", "111111", Mono.just("Test Enterprises")).block();
+        Mockito.verifyNoInteractions(usersService);
+        Mockito.verifyNoMoreInteractions(emailProducer);
+    }
+
+    @Test
+    void sendReaDigitalAuthorisationAddedEmail_throwsWhenProducerFails() {
+        Mockito.doReturn("rea@example.com").when(companyService).fetchRegisteredEmailAddress("111111");
+        mockers.mockEmailSendingFailure(REA_DIGITAL_AUTHORISATION_ADDED_MESSAGE_TYPE.getValue());
+        final Mono<String> companyName = Mono.just("Test Enterprises");
+        final Mono<Void> operation = emailService.sendReaDigitalAuthorisationAddedEmail("theId12345", "111111", companyName);
+        Assertions.assertThrows(EmailSendingException.class, operation::block);
+    }
+
+    @Test
+    void sendReaDigitalAuthorisationRemovedEmail_throwsWhenProducerFails() {
+        Mockito.doReturn("rea@example.com").when(companyService).fetchRegisteredEmailAddress("111111");
+        mockers.mockEmailSendingFailure(REA_DIGITAL_AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue());
+        final Mono<String> companyName = Mono.just("Test Enterprises");
+        final Mono<Void> operation = emailService.sendReaDigitalAuthorisationRemovedEmail("theId12345", "111111", companyName);
+        Assertions.assertThrows(EmailSendingException.class, operation::block);
     }
 }

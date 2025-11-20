@@ -13,6 +13,8 @@ import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVIT
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITATION_REJECTED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_CANCELLED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.INVITE_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.REA_DIGITAL_AUTHORISATION_ADDED_MESSAGE_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.MessageType.REA_DIGITAL_AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.REMOVAL_OF_OWN_MIGRATED;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.YOUR_AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
@@ -56,6 +58,7 @@ import uk.gov.companieshouse.accounts.association.models.email.builders.Invitati
 import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationRejectedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.InviteCancelledEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.InviteEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.ReaDigitalAuthChangedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.RemovalOfOwnMigratedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.YourAuthorisationRemovedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.utils.MessageType;
@@ -136,8 +139,10 @@ public class EmailService {
         } else if ( authorisationIsBeingRemoved ) {
             emails = emails.concatWith( sendAuthorisationRemovedEmailToRemovedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation.getUserId() ) );
             emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendAuthorisationRemovedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
+            emails = emails.concatWith( sendReaDigitalAuthorisationRemovedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName ) );
         } else if ( isAcceptingInvitation ) {
             emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendInvitationAcceptedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, cachedInvitedByDisplayName, requestingUserDisplayValue ) ) );
+            emails = emails.concatWith( sendReaDigitalAuthorisationAddedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName ) );
         } else if ( isCancellingAnotherUsersInvitation ) {
             emails = emails.concatWith( sendInviteCancelledEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation ) );
             emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendInvitationCancelledEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
@@ -153,6 +158,7 @@ public class EmailService {
             emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendInvitationEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
         } else if ( isConfirmingWithAuthCode ){
             emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendAuthCodeConfirmationEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, targetUserDisplayValue ) ) );
+            emails = emails.concatWith( sendReaDigitalAuthorisationAddedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName ) );
         }
         emails.subscribe();
     }
@@ -165,6 +171,33 @@ public class EmailService {
             LOG.errorContext( xRequestId, new Exception( logMessageSupplier.toMessageSendingFailureLoggingMessage() ), null );
             throw exception;
         }
+    }
+
+    private Mono<Void> sendReaDigitalAuthorisationChangedEmail(final String xRequestId, final String companyNumber,
+                                                         final Mono<String> companyName, final MessageType messageType) {
+        final var rea = companyService.fetchRegisteredEmailAddress(companyNumber);
+        if (rea == null || rea.isBlank()) {
+            return Mono.empty();
+        }
+        return Mono.just(new ReaDigitalAuthChangedEmailBuilder()
+                        .setRecipientEmail(rea)
+                        .setCompanyNumber(companyNumber))
+                .zipWith(companyName, ReaDigitalAuthChangedEmailBuilder::setCompanyName)
+                .map(ReaDigitalAuthChangedEmailBuilder::build)
+                .doOnNext(emailData -> {
+                    final var logMessageSupplier = new EmailNotification(
+                            messageType, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber);
+                    sendEmail(xRequestId, messageType, emailData, logMessageSupplier);
+                })
+                .then();
+    }
+
+    public Mono<Void> sendReaDigitalAuthorisationAddedEmail(final String xRequestId, final String companyNumber, final Mono<String> companyName) {
+        return sendReaDigitalAuthorisationChangedEmail(xRequestId, companyNumber, companyName, REA_DIGITAL_AUTHORISATION_ADDED_MESSAGE_TYPE);
+    }
+
+    public Mono<Void> sendReaDigitalAuthorisationRemovedEmail(final String xRequestId, final String companyNumber, final Mono<String> companyName) {
+        return sendReaDigitalAuthorisationChangedEmail(xRequestId, companyNumber, companyName, REA_DIGITAL_AUTHORISATION_REMOVED_MESSAGE_TYPE);
     }
 
     public Function<String, Mono<Void>> sendAuthCodeConfirmationEmailToAssociatedUser( final String xRequestId, final String companyNumber, Mono<String> companyName, final String displayName ) {

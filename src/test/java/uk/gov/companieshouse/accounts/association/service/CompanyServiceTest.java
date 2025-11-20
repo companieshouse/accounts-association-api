@@ -105,4 +105,28 @@ class CompanyServiceTest {
         Assertions.assertTrue( companies.values().stream().map( CompanyDetails::getCompanyNumber ).toList().contains( "111111" ) );
     }
 
+    @Test
+    void fetchRegisteredEmailAddressReturnsEmail() throws JsonProcessingException {
+        mockers.mockWebClientForFetchRegisteredEmailAddress(true, "111111", "rea@example.com");
+        Assertions.assertEquals("rea@example.com", companyService.fetchRegisteredEmailAddress("111111"));
+    }
+
+    @Test
+    void fetchRegisteredEmailAddressNotFoundThrowsNotFoundRuntimeException() {
+        mockers.mockWebClientForFetchRegisteredEmailAddressErrorResponse("404COMP", 404);
+        Assertions.assertThrows(NotFoundRuntimeException.class, () -> companyService.fetchRegisteredEmailAddress("404COMP"));
+    }
+
+    @Test
+    void fetchRegisteredEmailAddressParsingErrorThrowsInternalServerErrorRuntimeException() {
+        mockers.mockWebClientForFetchRegisteredEmailAddressJsonParsingError("111111", true);
+        Assertions.assertThrows(InternalServerErrorRuntimeException.class, () -> companyService.fetchRegisteredEmailAddress("111111"));
+    }
+
+    @Test
+    void fetchRegisteredEmailAddressBlankReturnsBlankAndDoesNotThrow() throws JsonProcessingException {
+        mockers.mockWebClientForFetchRegisteredEmailAddress(true, "222222", "");
+        Assertions.assertEquals("", companyService.fetchRegisteredEmailAddress("222222"));
+    }
+
 }

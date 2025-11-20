@@ -331,6 +331,25 @@ public class Mockers {
         mockWebClientJsonParsingError( uri, isUriString );
     }
 
+    public void mockWebClientForFetchRegisteredEmailAddress(final boolean isUriString, final String companyNumber, final String email) throws JsonProcessingException {
+        final var uri = String.format("/company/%s/registered-email-address", companyNumber);
+        final var jsonResponse = new ObjectMapper().writeValueAsString(new java.util.HashMap<String, String>() {{
+            put("registered_email_address", email);
+        }});
+        UriType uriType = isUriString ? UriType.STRING : UriType.FUNCTION;
+        mockWebClientSuccessResponse(uri, Mono.just(jsonResponse), uriType);
+    }
+
+    public void mockWebClientForFetchRegisteredEmailAddressErrorResponse(final String companyNumber, final int responseCode) {
+        final var uri = String.format("/company/%s/registered-email-address", companyNumber);
+        mockWebClientErrorResponse(uri, responseCode);
+    }
+
+    public void mockWebClientForFetchRegisteredEmailAddressJsonParsingError(final String companyNumber, final boolean isUriString) {
+        final var uri = String.format("/company/%s/registered-email-address", companyNumber);
+        mockWebClientJsonParsingError(uri, isUriString);
+    }
+
     public void mockEmailSendingFailure( final String messageType ){
         Mockito.doThrow( new EmailSendingException("Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), eq( messageType ) );
     }

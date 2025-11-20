@@ -21,6 +21,7 @@ import uk.gov.companieshouse.accounts.association.models.email.builders.Invitati
 import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationRejectedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.InviteCancelledEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.InviteEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.ReaDigitalAuthChangedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.RemovalOfOwnMigratedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.YourAuthorisationRemovedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.data.AuthorisationRemovedEmailData;
@@ -31,6 +32,7 @@ import uk.gov.companieshouse.accounts.association.models.email.data.InvitationCa
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InviteCancelledEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InviteEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.ReaDigitalAuthChangedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.RemovalOfOwnMigratedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.YourAuthorisationRemovedEmailData;
 import uk.gov.companieshouse.email_producer.model.EmailData;
@@ -52,6 +54,16 @@ public class ComparisonUtils {
             }
         }
         return true;
+    }
+
+    public ArgumentMatcher<ReaDigitalAuthChangedEmailData> reaDigitalAuthChangedEmailMatcher(final String to, final String companyName, final String companyNumber) {
+        final var expected = new ReaDigitalAuthChangedEmailBuilder()
+                .setRecipientEmail(to)
+                .setCompanyName(companyName)
+                .setCompanyNumber(companyNumber)
+                .build();
+
+        return compare(expected, List.of("to", "companyName", "companyNumber", "subject"), List.of(), Map.of());
     }
 
     private boolean mapsDoNotMatchOnAll( final Map<String, Object> actualMap, final Map<String, Object> referenceMap, final List<String> nonmatchingFields ){

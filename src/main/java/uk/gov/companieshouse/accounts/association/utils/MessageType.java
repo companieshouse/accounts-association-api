@@ -24,7 +24,11 @@ public enum MessageType {
 
     REMOVAL_OF_OWN_MIGRATED( "associations_removal_of_own_migrated" ),
 
-    INVITE_CANCELLED_MESSAGE_TYPE( "associations_invite_cancelled" );
+    INVITE_CANCELLED_MESSAGE_TYPE( "associations_invite_cancelled" ),
+
+    REA_DIGITAL_AUTHORISATION_ADDED_MESSAGE_TYPE( "associations_rea_digital_authorisation_added" ),
+
+    REA_DIGITAL_AUTHORISATION_REMOVED_MESSAGE_TYPE( "associations_rea_digital_authorisation_removed" );
 
     private final String value;
 
