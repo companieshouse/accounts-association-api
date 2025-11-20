@@ -682,6 +682,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( Flux.just( "000" ) ).when( associationsService ).fetchConfirmedUserIds( "333333" );
         Mockito.doReturn(associationDao).when(associationsService).createAssociationWithAuthCodeApprovalRoute("333333", "9999");
         Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "333333" ), any( Mono.class ), eq( "Scrooge McDuck" ) );
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendReaDigitalAuthorisationAddedEmail( eq( "theId123" ), eq( "333333" ), any( Mono.class ) );
 
         mockMvc.perform(post( "/associations" )
                         .header("X-Request-Id", "theId123")
@@ -710,6 +711,7 @@ class UserCompanyAssociationsTest {
         Mockito.doReturn( new PageImpl<>( new ArrayList<>( List.of( originalAssociationDao ) ) ) ).when( associationsService ).fetchAssociationsForUserAndPartialCompanyNumber( any(), anyString(),anyInt(),anyInt() );
         Mockito.doReturn( Flux.just( "MKUser002" ) ).when( associationsService ).fetchConfirmedUserIds( "MKCOMP001" );
         Mockito.doReturn( sendEmailMock ).when( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ), eq( "Mario" ) );
+        Mockito.doReturn( Mono.empty() ).when( emailService ).sendReaDigitalAuthorisationAddedEmail( eq( "theId123" ), eq( "MKCOMP001" ), any( Mono.class ) );
 
         mockMvc.perform( post( "/associations" )
                         .header( "X-Request-Id", "theId123" )
@@ -729,6 +731,7 @@ class UserCompanyAssociationsTest {
         Assertions.assertNotNull( updatedAssociation.getPreviousStates().getFirst().getChangedAt() );
 
         Mockito.verify( emailService ).sendAuthCodeConfirmationEmailToAssociatedUser( eq( "theId123" ), eq( "MKCOMP001" ), argThat( companyName -> "Mushroom Kingdom".equals( companyName.block() ) ), eq( "Mario" ) );
+        Mockito.verify( emailService ).sendReaDigitalAuthorisationAddedEmail( eq( "theId123" ), eq( "MKCOMP001" ), argThat( companyName -> "Mushroom Kingdom".equals( companyName.block() ) ));
     }
 
 }
