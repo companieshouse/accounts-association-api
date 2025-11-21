@@ -350,7 +350,9 @@ class EmailServiceTest {
         mockers.mockEmailSendingFailure(REA_DIGITAL_AUTHORISATION_ADDED_MESSAGE_TYPE.getValue());
         final Mono<String> companyName = Mono.just("Test Enterprises");
         final Mono<Void> operation = emailService.sendReaDigitalAuthorisationAddedEmail("theId12345", "111111", companyName);
-        Assertions.assertThrows(EmailSendingException.class, operation::block);
+        Assertions.assertDoesNotThrow(() -> operation.block());
+        Mockito.verify(emailProducer).sendEmail(argThat(comparisonUtils.reaDigitalAuthChangedEmailMatcher("rea@example.com", "Test Enterprises", "111111")), eq(REA_DIGITAL_AUTHORISATION_ADDED_MESSAGE_TYPE.getValue())
+        );
     }
 
     @Test
@@ -359,6 +361,8 @@ class EmailServiceTest {
         mockers.mockEmailSendingFailure(REA_DIGITAL_AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue());
         final Mono<String> companyName = Mono.just("Test Enterprises");
         final Mono<Void> operation = emailService.sendReaDigitalAuthorisationRemovedEmail("theId12345", "111111", companyName);
-        Assertions.assertThrows(EmailSendingException.class, operation::block);
+        Assertions.assertDoesNotThrow(() -> operation.block());
+        Mockito.verify(emailProducer).sendEmail(argThat(comparisonUtils.reaDigitalAuthChangedEmailMatcher("rea@example.com", "Test Enterprises", "111111")), eq(REA_DIGITAL_AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue())
+        );
     }
 }
