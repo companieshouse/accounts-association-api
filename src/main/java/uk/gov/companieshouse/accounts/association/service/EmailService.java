@@ -44,6 +44,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.models.context.RequestContextData;
@@ -173,9 +175,17 @@ public class EmailService {
         }
     }
 
-    private Mono<Void> sendReaDigitalAuthorisationChangedEmail(final String xRequestId, final String companyNumber,
-                                                         final Mono<String> companyName, final MessageType messageType) {
-        final var rea = companyService.fetchRegisteredEmailAddress(companyNumber);
+    private Mono<Void> sendReaDigitalAuthorisationChangedEmail(final String xRequestId, final String companyNumber, final Mono<String> companyName, final MessageType messageType) {
+        final String rea;
+        try {
+            rea = companyService.fetchRegisteredEmailAddress(companyNumber);
+        } catch (NotFoundRuntimeException e) {
+            LOG.infoContext(xRequestId, String.format("Registered email address not found for company: %s; skipping REA email.", companyNumber), null);
+            return Mono.empty();
+        } catch (InternalServerErrorRuntimeException e) {
+            LOG.errorContext(xRequestId, new Exception(String.format("Failed to retrieve REA for company: %s; skipping REA email.", companyNumber), e), null);
+            return Mono.empty();
+        }
         if (rea == null || rea.isBlank()) {
             return Mono.empty();
         }
@@ -184,11 +194,14 @@ public class EmailService {
                         .setCompanyNumber(companyNumber))
                 .zipWith(companyName, ReaDigitalAuthChangedEmailBuilder::setCompanyName)
                 .map(ReaDigitalAuthChangedEmailBuilder::build)
-                .doOnNext(emailData -> {
-                    final var logMessageSupplier = new EmailNotification(
-                            messageType, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber);
-                    sendEmail(xRequestId, messageType, emailData, logMessageSupplier);
-                })
+                .flatMap(emailData -> Mono.fromRunnable(() -> {
+                    final var logMessageSupplier = new EmailNotification(messageType, APPLICATION_NAMESPACE, emailData.getTo(), companyNumber);
+                    try {
+                        sendEmail(xRequestId, messageType, emailData, logMessageSupplier);
+                    } catch (Exception ex) {
+                        LOG.errorContext(xRequestId, new Exception(String.format("Failed sending REA email for company: %s; continuing without failing request.", companyNumber), ex), null);
+                    }
+                }))
                 .then();
     }
 
