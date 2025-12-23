@@ -1,12 +1,6 @@
 package uk.gov.companieshouse.accounts.association.integration;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import jakarta.validation.ConstraintViolationException;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
@@ -17,7 +11,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
@@ -30,8 +23,14 @@ import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.repositories.AssociationsRepository;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.email_producer.EmailProducer;
-import uk.gov.companieshouse.email_producer.factory.KafkaProducerFactory;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 
 @SpringBootTest
 @Tag("integration-test")
@@ -39,13 +38,6 @@ class AssociationsRepositoryTest extends BaseMongoIntegration {
 
     @Autowired
     private MongoTemplate mongoTemplate;
-
-    @MockBean
-    private EmailProducer emailProducer;
-
-    @MockBean
-    private KafkaProducerFactory kafkaProducerFactory;
-
     @Autowired
     private AssociationsRepository associationsRepository;
 
