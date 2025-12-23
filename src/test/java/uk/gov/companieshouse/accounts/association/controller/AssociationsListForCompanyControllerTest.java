@@ -1,25 +1,5 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
-import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
-import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
-import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.CONFIRMED;
-import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
-import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.REMOVED;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -55,6 +35,44 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association.Approva
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.Links;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.parseResponseTo;
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_READ_PERMISSION;
+import static uk.gov.companieshouse.accounts.association.utils.AssociationsUtil.fetchAllStatusesWithout;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.ASSOCIATIONS;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.ASSOCIATIONS_COMPANIES;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.ERIC_AUTHORISED_KEY_ROLES;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.ERIC_AUTHORISED_ROLES;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.ERIC_IDENTITY;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.ERIC_IDENTITY_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.ERIC_IDENTITY_VALUE;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.IDS;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.KEY_ROLES_VALUE;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.MKCOMP_001;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.MK_ASSOCIATION_001;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.MK_USER_001;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.NON_EXISTING_COMPANY;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.OAUTH_2;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.WRONG_COMPANY_ID;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.X_REQUEST_ID;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.X_REQUEST_ID_VALUE;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.CONFIRMED;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.MIGRATED;
+import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.REMOVED;
 
 @AutoConfigureMockMvc
 @WebMvcTest(AssociationsListForCompanyController.class)
@@ -103,45 +121,46 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyWithMalformedCompanyNumberReturnsBadRequest() throws Exception {
-        mockMvc.perform( get( "/associations/companies/$$$$$$" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
+        mockMvc.perform(get(ASSOCIATIONS_COMPANIES + WRONG_COMPANY_ID)
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void getAssociationsForCompanyWithNonexistentCompanyReturnsNotFound() throws Exception {
-        mockers.mockCompanyServiceFetchCompanyProfileNotFound( "919191" );
-        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "919191", "111" );
+        String id = NON_EXISTING_COMPANY;
+        mockers.mockCompanyServiceFetchCompanyProfileNotFound(id);
+        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists(id, ERIC_IDENTITY_VALUE);
 
-        mockMvc.perform( get( "/associations/companies/919191" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
+        mockMvc.perform(get(ASSOCIATIONS_COMPANIES + "/" + NON_EXISTING_COMPANY)
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void getAssociationsForCompanyWithoutQueryParamsUsesDefaults() throws Exception {
-        final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var batmanUser = testDataManager.fetchUserDtos(ERIC_IDENTITY_VALUE).getFirst();
         final var batmanAssociation = testDataManager.fetchAssociationDto( "1", batmanUser );
-        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos(IDS).getFirst();
 
-        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "111111", "111" );
+        mockers.mockCompanyServiceFetchCompanyProfile(IDS);
+        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists(IDS, ERIC_IDENTITY_VALUE);
 
         final var associationsList = new AssociationsList()
                 .totalResults( 1 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
-                .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
+                .links(new Links().self(String.format("%s" + ASSOCIATIONS, internalApiUrl)).next(""))
                 .items(List.of( batmanAssociation ));
 
         Mockito.doReturn(associationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ) ),  isNull(), isNull(), eq( 0 ), eq( 15 ) );
 
-        mockMvc.perform( get( "/associations/companies/111111" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
+        mockMvc.perform(get(ASSOCIATIONS_COMPANIES + IDS)
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect(status().isOk());
 
         Mockito.verify( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( eq( companyDetails ) ,  eq( fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ) ),  isNull(), isNull(), eq( 0 ), eq(15 ) );
@@ -149,43 +168,43 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanySupportsRequestsFromAdminUsers() throws Exception {
-        final var marioUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
-        final var marioAssociation = testDataManager.fetchAssociationDto( "MKAssociation001", marioUser );
+        final var marioUser = testDataManager.fetchUserDtos(MK_USER_001).getFirst();
+        final var marioAssociation = testDataManager.fetchAssociationDto(MK_ASSOCIATION_001, marioUser);
         final var associationsList = new AssociationsList()
                 .totalResults( 1 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
-                .links( new Links().self( String.format( "%s/associations", internalApiUrl ) ).next("") )
+                .links(new Links().self(String.format("%s" + ASSOCIATIONS, internalApiUrl)).next(""))
                 .items( List.of( marioAssociation ) );
 
-        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "111" );
+        mockers.mockCompanyServiceFetchCompanyProfile(MKCOMP_001);
+        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists(MKCOMP_001, "111");
         Mockito.doReturn(associationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ) ),  isNull(), isNull(), eq( 0 ), eq( 15 ) );
 
-        mockMvc.perform( get( "/associations/companies/MKCOMP001" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "oauth2" )
-                        .header( "ERIC-Authorised-Roles", ADMIN_READ_PERMISSION ) )
+        mockMvc.perform(get(ASSOCIATIONS_COMPANIES + MKCOMP_001)
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2)
+                        .header(ERIC_AUTHORISED_ROLES, ADMIN_READ_PERMISSION))
                 .andExpect( status().isOk() );
     }
 
     @Test
     void getAssociationsForCompanySupportsRequestsFromAPIKey() throws Exception {
-        final var marioUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
-        final var marioAssociation = testDataManager.fetchAssociationDto( "MKAssociation001", marioUser );
+        final var marioUser = testDataManager.fetchUserDtos(MK_USER_001).getFirst();
+        final var marioAssociation = testDataManager.fetchAssociationDto(MK_ASSOCIATION_001, marioUser);
         final var associationsList = new AssociationsList()
                 .totalResults( 1 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
-                .links( new Links().self( String.format( "%s/associations", internalApiUrl ) ).next("") )
+                .links(new Links().self(String.format("%s" + ASSOCIATIONS, internalApiUrl)).next(""))
                 .items( List.of( marioAssociation ) );
 
-        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "111" );
+        mockers.mockCompanyServiceFetchCompanyProfile(MKCOMP_001);
+        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists(MKCOMP_001, ERIC_IDENTITY_VALUE);
         Mockito.doReturn(associationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ) ),  isNull(), isNull(), eq( 0 ), eq( 15 ) );
 
-        final var response = mockMvc.perform( get( "/associations/companies/MKCOMP001" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header("ERIC-Authorised-Key-Roles", "*") )
+        final var response = mockMvc.perform(get(ASSOCIATIONS_COMPANIES + "/MKCOMP001")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, "key")
+                        .header(ERIC_AUTHORISED_KEY_ROLES, KEY_ROLES_VALUE))
                 .andExpect( status().isOk() );
 
         final var associations = parseResponseTo( response, AssociationsList.class );
@@ -196,28 +215,28 @@ class AssociationsListForCompanyControllerTest {
                         .map( uk.gov.companieshouse.api.accounts.associations.model.Association::getId )
                         .toList();
 
-        Assertions.assertTrue( items.contains(  "MKAssociation001" ) );
+        Assertions.assertTrue(items.contains(MK_ASSOCIATION_001));
     }
 
     @Test
     void getAssociationsForCompanyWithIncludeRemovedFalseAppliesFilter() throws Exception {
-        final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var batmanUser = testDataManager.fetchUserDtos(ERIC_IDENTITY_VALUE).getFirst();
         final var batmanAssociation = testDataManager.fetchAssociationDto( "1", batmanUser );
-        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos(IDS).getFirst();
 
-        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "111111", "111" );
+        mockers.mockCompanyServiceFetchCompanyProfile(IDS);
+        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists(IDS, ERIC_IDENTITY_VALUE);
 
         final var expectedAssociationsList = new AssociationsList()
                 .totalResults( 1 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
-                .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
+                .links(new Links().self(String.format("%s" + ASSOCIATIONS, internalApiUrl)).next(""))
                 .items(List.of( batmanAssociation ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ) ), isNull(), isNull(), eq( 0 ), eq( 15 ) );
 
-        mockMvc.perform( get( "/associations/companies/111111?include_removed=false" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
+        mockMvc.perform(get(ASSOCIATIONS_COMPANIES + "/111111?include_removed=false")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect(status().isOk());
 
         Mockito.verify( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( eq( companyDetails ) , eq( fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ) ),  isNull(), isNull(), eq( 0 ), eq( 15 ) );
@@ -225,25 +244,25 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyWithIncludeRemovedTrueDoesNotApplyFilter() throws Exception {
-        final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var batmanUser = testDataManager.fetchUserDtos(ERIC_IDENTITY_VALUE).getFirst();
         final var batmanAssociation = testDataManager.fetchAssociationDto( "1", batmanUser );
         final var jokerUser = testDataManager.fetchUserDtos( "222" ).getFirst();
         final var jokerAssociation = testDataManager.fetchAssociationDto( "2", jokerUser );
-        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos(IDS).getFirst();
 
-        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "111111", "111" );
+        mockers.mockCompanyServiceFetchCompanyProfile(IDS);
+        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists(IDS, ERIC_IDENTITY_VALUE);
 
         final var expectedAssociationsList = new AssociationsList()
                 .totalResults( 2 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 15 )
-                .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
+                .links(new Links().self(String.format("%s" + ASSOCIATIONS, internalApiUrl)).next(""))
                 .items(List.of( batmanAssociation, jokerAssociation ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of() ) ),  isNull(), isNull(), eq( 0 ), eq( 15 ) );
 
-        mockMvc.perform( get( "/associations/companies/111111?include_removed=true" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
+        mockMvc.perform(get(ASSOCIATIONS_COMPANIES + "/111111?include_removed=true")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect(status().isOk());
 
         Mockito.verify( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( eq( companyDetails ), eq( fetchAllStatusesWithout( Set.of() ) ),  isNull(), isNull(), eq ( 0 ), eq( 15 ) );
@@ -254,20 +273,20 @@ class AssociationsListForCompanyControllerTest {
         final var jokerUser = testDataManager.fetchUserDtos( "222" ).getFirst();
         final var jokerAssociation = testDataManager.fetchAssociationDto( "2", jokerUser );
 
-        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "111111", "111" );
+        mockers.mockCompanyServiceFetchCompanyProfile(IDS);
+        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists(IDS, ERIC_IDENTITY_VALUE);
 
         final var expectedAssociationsList = new AssociationsList()
                 .totalResults( 2 ).totalPages( 2 ).pageNumber( 1 ).itemsPerPage( 1 )
-                .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
+                .links(new Links().self(String.format("%s" + ASSOCIATIONS, internalApiUrl)).next(""))
                 .items(List.of( jokerAssociation ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of() ) ),  isNull(), isNull(), eq( 1 ), eq( 1 ) );
 
         final var response =
-                mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=1&page_index=1" )
-                                .header("X-Request-Id", "theId123")
-                                .header( "ERIC-Identity", "111" )
-                                .header( "ERIC-Identity-Type", "oauth2" ) )
+                mockMvc.perform(get(ASSOCIATIONS_COMPANIES + "/111111?include_removed=true&items_per_page=1&page_index=1")
+                                .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                                .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                                .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                         .andExpect(status().isOk());
 
         final var associationsList = parseResponseTo( response, AssociationsList.class );
@@ -280,7 +299,7 @@ class AssociationsListForCompanyControllerTest {
                         .toList();
 
         Assertions.assertTrue( items.contains( "2" ) );
-        Assertions.assertEquals( String.format("%s/associations", internalApiUrl), links.getSelf() );
+        Assertions.assertEquals(String.format("%s" + ASSOCIATIONS, internalApiUrl), links.getSelf());
         Assertions.assertEquals( "", links.getNext() );
         Assertions.assertEquals( 1, associationsList.getPageNumber() );
         Assertions.assertEquals( 1, associationsList.getItemsPerPage() );
@@ -290,24 +309,24 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyDoesMappingCorrectly() throws Exception {
-        final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var batmanUser = testDataManager.fetchUserDtos(ERIC_IDENTITY_VALUE).getFirst();
         final var batmanAssociation = testDataManager.fetchAssociationDto( "1", batmanUser );
         final var jokerUser = testDataManager.fetchUserDtos( "222" ).getFirst();
         final var jokerAssociation = testDataManager.fetchAssociationDto( "2", jokerUser );
 
-        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "111111", "111" );
+        mockers.mockCompanyServiceFetchCompanyProfile(IDS);
+        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists(IDS, ERIC_IDENTITY_VALUE);
 
         final var expectedAssociationsList = new AssociationsList()
                 .totalResults( 2 ).totalPages( 1 ).pageNumber( 0 ).itemsPerPage( 2 )
-                .links( new Links().self(String.format("%s/associations", internalApiUrl)).next("") )
+                .links(new Links().self(String.format("%s" + ASSOCIATIONS, internalApiUrl)).next(""))
                 .items(List.of( batmanAssociation, jokerAssociation ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( any(), eq( fetchAllStatusesWithout( Set.of() ) ),  isNull(), isNull(), eq( 0 ), eq( 2 ) );
 
         final var response =
-                mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=2&page_index=0" ).header("X-Request-Id", "theId123")
-                                .header( "ERIC-Identity", "111" )
-                                .header( "ERIC-Identity-Type", "oauth2" ) )
+                mockMvc.perform(get(ASSOCIATIONS_COMPANIES + "/111111?include_removed=true&items_per_page=2&page_index=0").header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                                .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                                .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                         .andExpect(status().isOk());
         final var associationsList = parseResponseTo( response, AssociationsList.class );
 
@@ -316,10 +335,10 @@ class AssociationsListForCompanyControllerTest {
 
         Assertions.assertEquals( "a", firstAssociation.getEtag() );
         Assertions.assertEquals( "1", firstAssociation.getId() );
-        Assertions.assertEquals( "111", firstAssociation.getUserId() );
+        Assertions.assertEquals(ERIC_IDENTITY_VALUE, firstAssociation.getUserId());
         Assertions.assertEquals( "bruce.wayne@gotham.city", firstAssociation.getUserEmail() );
         Assertions.assertEquals( "Batman", firstAssociation.getDisplayName() );
-        Assertions.assertEquals( "111111", firstAssociation.getCompanyNumber() );
+        Assertions.assertEquals(IDS, firstAssociation.getCompanyNumber());
         Assertions.assertEquals( "Wayne Enterprises", firstAssociation.getCompanyName() );
         Assertions.assertEquals( CONFIRMED, firstAssociation.getStatus() );
         Assertions.assertNull( firstAssociation.getCreatedAt() );
@@ -328,7 +347,7 @@ class AssociationsListForCompanyControllerTest {
         Assertions.assertEquals( DEFAULT_KIND, firstAssociation.getKind() );
         Assertions.assertEquals( ApprovalRouteEnum.AUTH_CODE, firstAssociation.getApprovalRoute() );
         Assertions.assertEquals( localDateTimeToNormalisedString( now.plusDays(3) ), reduceTimestampResolution( firstAssociation.getApprovalExpiryAt() ) );
-        Assertions.assertEquals( "/associations/1", firstAssociation.getLinks().getSelf() );
+        Assertions.assertEquals(ASSOCIATIONS + "/1", firstAssociation.getLinks().getSelf());
 
         final var secondAssociation = associations.get( 1 );
         Assertions.assertEquals( "222", secondAssociation.getUserId() );
@@ -338,37 +357,37 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyWithUnacceptablePaginationParametersShouldReturnBadRequest() throws Exception {
-        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "111111", "111" );
+        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists(IDS, ERIC_IDENTITY_VALUE);
 
-        mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=1&page_index=-1" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
+        mockMvc.perform(get(ASSOCIATIONS_COMPANIES + "/111111?include_removed=true&items_per_page=1&page_index=-1")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect(status().isBadRequest());
 
-        mockMvc.perform( get( "/associations/companies/111111?include_removed=true&items_per_page=0&page_index=0" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
+        mockMvc.perform(get(ASSOCIATIONS_COMPANIES + "/111111?include_removed=true&items_per_page=0&page_index=0")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void getAssociationsForCompanyFetchesAssociation() throws Exception {
-        final var batmanUser = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var batmanUser = testDataManager.fetchUserDtos(ERIC_IDENTITY_VALUE).getFirst();
         final var associationOne = testDataManager.fetchAssociationDto( "1", batmanUser );
-        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos(IDS).getFirst();
 
-        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
-        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "111111", "111" );
+        mockers.mockCompanyServiceFetchCompanyProfile(IDS);
+        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists(IDS, ERIC_IDENTITY_VALUE);
 
         final var expectedAssociationsList = new AssociationsList().totalResults( 1 ).items(List.of( associationOne ));
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( eq( companyDetails ), eq( fetchAllStatusesWithout( Set.of( StatusEnum.REMOVED ) ) ),  isNull(), isNull(), eq( 0 ), eq(15 ) );
 
         final var response =
-                mockMvc.perform( get( "/associations/companies/{company_number}?user_email=bruce.wayne@gotham.city", "111111" ).header("X-Request-Id", "theId123")
-                                .header( "ERIC-Identity", "111" )
-                                .header( "ERIC-Identity-Type", "oauth2" ) )
+                mockMvc.perform(get(ASSOCIATIONS_COMPANIES + "/{company_number}?user_email=bruce.wayne@gotham.city", IDS).header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                                .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                                .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                         .andExpect(status().isOk());
 
         final var associationsList = parseResponseTo( response, AssociationsList.class );
@@ -379,19 +398,19 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyWithNonexistentUserEmailFetchesEmptyList() throws Exception {
-        final var companyDetails = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+        final var companyDetails = testDataManager.fetchCompanyDetailsDtos(IDS).getFirst();
 
-        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+        mockers.mockCompanyServiceFetchCompanyProfile(IDS);
 
-        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "111111", "111" );
+        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists(IDS, ERIC_IDENTITY_VALUE);
 
         final var expectedAssociationsList = new AssociationsList().totalResults( 0 ).items(List.of());
         Mockito.doReturn(expectedAssociationsList).when(associationsService).fetchUnexpiredAssociationsForCompanyAndStatuses( eq( companyDetails ), eq( fetchAllStatusesWithout ( Set.of( StatusEnum.REMOVED ) ) ),  isNull(), isNull(), eq(0 ) , eq(15 ) );
 
         final var response =
-                mockMvc.perform( get( "/associations/companies/111111?user_email=the.void@space.com" ).header("X-Request-Id", "theId123")
-                                .header( "ERIC-Identity", "111" )
-                                .header( "ERIC-Identity-Type", "oauth2" ) )
+                mockMvc.perform(get(ASSOCIATIONS_COMPANIES + "/111111?user_email=the.void@space.com").header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                                .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                                .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                         .andExpect(status().isOk());
 
         final var associationsList = parseResponseTo( response, AssociationsList.class );
@@ -401,24 +420,24 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyCanRetrieveMigratedAssociations() throws Exception {
-        final var marioUser = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
+        final var marioUser = testDataManager.fetchUserDtos(MK_USER_001).getFirst();
         final var luigiUser = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
         final var peachUser = testDataManager.fetchUserDtos( "MKUser003" ).getFirst();
-        final var marioAssociation = testDataManager.fetchAssociationDto( "MKAssociation001", marioUser );
+        final var marioAssociation = testDataManager.fetchAssociationDto(MK_ASSOCIATION_001, marioUser);
         final var luigiAssociation = testDataManager.fetchAssociationDto( "MKAssociation002", luigiUser );
         final var peachAssociation = testDataManager.fetchAssociationDto( "MKAssociation003", peachUser );
-        final var mushroomKingdomCompany = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
+        final var mushroomKingdomCompany = testDataManager.fetchCompanyDetailsDtos(MKCOMP_001).getFirst();
 
-        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        Mockito.doReturn( true ).when( associationsService ).confirmedAssociationExists( "MKCOMP001", "MKUser002" );
+        mockers.mockCompanyServiceFetchCompanyProfile(MKCOMP_001);
+        Mockito.doReturn(true).when(associationsService).confirmedAssociationExists(MKCOMP_001, "MKUser002");
 
         final var expectedAssociationsList = new AssociationsList().totalResults( 3 ).items( List.of( marioAssociation, luigiAssociation, peachAssociation ) );
         Mockito.doReturn( expectedAssociationsList ).when( associationsService ).fetchUnexpiredAssociationsForCompanyAndStatuses( eq(mushroomKingdomCompany ), eq( fetchAllStatusesWithout( Set.of() ) ),  isNull(), isNull(), eq( 0 ), eq( 15 ) );
 
-        final var response = mockMvc.perform( get( "/associations/companies/{company_number}?include_removed=true", "MKCOMP001" )
-                        .header( "X-Request-Id", "theId123" )
-                        .header( "ERIC-Identity", "MKUser002" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
+        final var response = mockMvc.perform(get(ASSOCIATIONS_COMPANIES + "/{company_number}?include_removed=true", MKCOMP_001)
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, "MKUser002")
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect( status().isOk() );
 
         final var associationsList = parseResponseTo( response, AssociationsList.class );
@@ -428,14 +447,14 @@ class AssociationsListForCompanyControllerTest {
 
         for ( final Association association: associations ){
             final var expectedStatus = switch ( association.getId() ){
-                case "MKAssociation001" -> "migrated";
+                case MK_ASSOCIATION_001 -> "migrated";
                 case "MKAssociation002" -> "confirmed";
                 case "MKAssociation003" -> "removed";
                 default -> "unknown";
             };
 
             final var expectedApprovalRoute = switch ( association.getId() ){
-                case "MKAssociation001", "MKAssociation003" -> "migration";
+                case MK_ASSOCIATION_001, "MKAssociation003" -> "migration";
                 case "MKAssociation002" -> "auth_code";
                 default -> "unknown";
             };
@@ -447,14 +466,14 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyReturnsForbiddenWhenCalledByAUserThatIsNotAMemberOfCompanyOrAdmin() throws Exception {
-        mockers.mockUsersServiceFetchUserDetails( "MKUser001" );
-        Mockito.doReturn( false ).when( associationsService ).confirmedAssociationExists( "111111", "MKUser001" );
-        mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
+        mockers.mockUsersServiceFetchUserDetails(MK_USER_001);
+        Mockito.doReturn(false).when(associationsService).confirmedAssociationExists(IDS, MK_USER_001);
+        mockers.mockCompanyServiceFetchCompanyProfile(IDS);
 
-        mockMvc.perform( get( "/associations/companies/111111" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "MKUser001" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
+        mockMvc.perform(get(ASSOCIATIONS_COMPANIES + IDS)
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, MK_USER_001)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect( status().isForbidden() );
     }
 
@@ -462,16 +481,16 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyUserAndStatusWithUserIdFetchesAssociations() throws Exception {
         final var user = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
-        final var company = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
-        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        final var company = testDataManager.fetchCompanyDetailsDtos(MKCOMP_001).getFirst();
+        mockers.mockCompanyServiceFetchCompanyProfile(MKCOMP_001);
         Mockito.doReturn( testDataManager.fetchUserDtos("MKUser002" ).getFirst() ).when( usersService ).retrieveUserDetails("MKUser002", null );
         Mockito.doReturn(Optional.of( testDataManager.fetchAssociationDto( "MKAssociation002" , user ) ) ).when( associationsService ).fetchUnexpiredAssociationsForCompanyUserAndStatuses( company, Set.of( CONFIRMED, REMOVED ), user, "luigi@mushroom.kingdom" );
 
-        final var response = mockMvc.perform( post( "/associations/companies/MKCOMP001/search" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "test" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "ERIC-Authorised-Key-Roles", "*" )
+        final var response = mockMvc.perform(post(ASSOCIATIONS_COMPANIES + "/MKCOMP001/search")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, "test")
+                        .header(ERIC_IDENTITY_TYPE, "key")
+                        .header(ERIC_AUTHORISED_KEY_ROLES, KEY_ROLES_VALUE)
                         .contentType(MediaType.APPLICATION_JSON )
                         .content( "{\"user_id\":\"MKUser002\", \"status\":[\"confirmed\", \"removed\"]} " ) )
                 .andExpect( status().isOk() );
@@ -493,16 +512,16 @@ class AssociationsListForCompanyControllerTest {
     @MethodSource("getAssociationsForCompanyUserAndStatusHappyCaseScenarios")
     void getAssociationsForCompanyUserAndStatusWithUserEmailFetchesAssociations( final String status ) throws Exception {
         final var user = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
-        final var company = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
-        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        final var company = testDataManager.fetchCompanyDetailsDtos(MKCOMP_001).getFirst();
+        mockers.mockCompanyServiceFetchCompanyProfile(MKCOMP_001);
         Mockito.doReturn( testDataManager.fetchUserDtos("MKUser002" ).getFirst() ).when( usersService ).retrieveUserDetails(null, "luigi@mushroom.kingdom" );
         Mockito.doReturn(Optional.of( testDataManager.fetchAssociationDto( "MKAssociation002" , user ) ) ).when( associationsService ).fetchUnexpiredAssociationsForCompanyUserAndStatuses( eq( company ), any(), eq( user ), eq( "luigi@mushroom.kingdom" ) );
 
-        final var response = mockMvc.perform( post( "/associations/companies/MKCOMP001/search" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "test" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "ERIC-Authorised-Key-Roles", "*" )
+        final var response = mockMvc.perform(post(ASSOCIATIONS_COMPANIES + "/MKCOMP001/search")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, "test")
+                        .header(ERIC_IDENTITY_TYPE, "key")
+                        .header(ERIC_AUTHORISED_KEY_ROLES, KEY_ROLES_VALUE)
                         .contentType(MediaType.APPLICATION_JSON )
                         .content( String.format( "{\"user_email\":\"luigi@mushroom.kingdom\" %s} ", status) ) )
                 .andExpect( status().isOk() );
@@ -513,29 +532,29 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyUserWithNonExistentUserEmailFetchesAssociations( ) throws Exception {
-        final var user = testDataManager.fetchUserDtos( "MKUser001" ).getFirst();
-        final var company = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
-        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        final var user = testDataManager.fetchUserDtos(MK_USER_001).getFirst();
+        final var company = testDataManager.fetchCompanyDetailsDtos(MKCOMP_001).getFirst();
+        mockers.mockCompanyServiceFetchCompanyProfile(MKCOMP_001);
         Mockito.doReturn( null ).when( usersService ).retrieveUserDetails(null, "mario@mushroom.kingdom" );
-        Mockito.doReturn(Optional.of( testDataManager.fetchAssociationDto( "MKAssociation001" , user ) ) ).when( associationsService ).fetchUnexpiredAssociationsForCompanyUserAndStatuses( company, Set.of( MIGRATED ), null , "mario@mushroom.kingdom" );
-        final var response = mockMvc.perform( post( "/associations/companies/MKCOMP001/search" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "test" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "ERIC-Authorised-Key-Roles", "*" )
+        Mockito.doReturn(Optional.of(testDataManager.fetchAssociationDto(MK_ASSOCIATION_001, user))).when(associationsService).fetchUnexpiredAssociationsForCompanyUserAndStatuses(company, Set.of(MIGRATED), null, "mario@mushroom.kingdom");
+        final var response = mockMvc.perform(post(ASSOCIATIONS_COMPANIES + "/MKCOMP001/search")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, "test")
+                        .header(ERIC_IDENTITY_TYPE, "key")
+                        .header(ERIC_AUTHORISED_KEY_ROLES, KEY_ROLES_VALUE)
                         .contentType(MediaType.APPLICATION_JSON )
                         .content(  "{\"user_email\":\"mario@mushroom.kingdom\" , \"status\":[\"migrated\"] }" ) )
                 .andExpect( status().isOk() );
 
         final var association = parseResponseTo( response, Association.class );
-        Assertions.assertEquals( "MKAssociation001", association.getId() );
+        Assertions.assertEquals(MK_ASSOCIATION_001, association.getId());
     }
 
     static Stream<Arguments> getAssociationsForCompanyUserMalformedScenarios(){
         return Stream.of(
-                Arguments.of( "$$$$$" ,"MKCOMP001", ", \"status\":[\"confirmed\", \"removed\"]" ),
+                Arguments.of("$$$$$", MKCOMP_001, ", \"status\":[\"confirmed\", \"removed\"]"),
                 Arguments.of( "MKUser002" ,"$$$$$", ", \"status\":[\"confirmed\", \"removed\"]" ),
-                Arguments.of( "MKUser002" ,"MKCOMP001", ", \"status\":[\"$$$$$$\", \"removed\"]" )
+                Arguments.of("MKUser002", MKCOMP_001, ", \"status\":[\"" + WRONG_COMPANY_ID + "\", \"removed\"]")
 
         );
     }
@@ -543,11 +562,11 @@ class AssociationsListForCompanyControllerTest {
     @ParameterizedTest
     @MethodSource("getAssociationsForCompanyUserMalformedScenarios")
     void getAssociationsForCompanyUserAndStatusMalformedReturnsBadRequests(final String userId, final String companyNumber, final String status) throws Exception {
-        mockMvc.perform( post( String.format("/associations/companies/%s/search", companyNumber ) )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "test" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "ERIC-Authorised-Key-Roles", "*" )
+        mockMvc.perform(post(String.format(ASSOCIATIONS_COMPANIES + "/%s/search", companyNumber))
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, "test")
+                        .header(ERIC_IDENTITY_TYPE, "key")
+                        .header(ERIC_AUTHORISED_KEY_ROLES, KEY_ROLES_VALUE)
                         .contentType(MediaType.APPLICATION_JSON )
                         .content( String.format( "{\"user_id\":\"%s\" %s }", userId , status ) ) )
                 .andExpect( status().isBadRequest() );
@@ -555,11 +574,11 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyUserAndStatusWithMalformedEmailReturnsBadRequest() throws Exception {
-        mockMvc.perform( post( "/associations/companies/MKCOMP001/search"  )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "test" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "ERIC-Authorised-Key-Roles", "*" )
+        mockMvc.perform(post(ASSOCIATIONS_COMPANIES + "/MKCOMP001/search")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, "test")
+                        .header(ERIC_IDENTITY_TYPE, "key")
+                        .header(ERIC_AUTHORISED_KEY_ROLES, KEY_ROLES_VALUE)
                         .contentType(MediaType.APPLICATION_JSON )
                         .content( "{\"user_email\":\"$\\(){}$$$$@mushroomkingdom\" " ) )
                 .andExpect( status().isBadRequest() );
@@ -567,11 +586,11 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyUserAndStatusWithoutUserReturnsBadRequest() throws Exception {
-        mockMvc.perform( post( "/associations/companies/MKCOMP001/search" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "test" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "ERIC-Authorised-Key-Roles", "*" )
+        mockMvc.perform(post(ASSOCIATIONS_COMPANIES + "/MKCOMP001/search")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, "test")
+                        .header(ERIC_IDENTITY_TYPE, "key")
+                        .header(ERIC_AUTHORISED_KEY_ROLES, KEY_ROLES_VALUE)
                         .contentType(MediaType.APPLICATION_JSON )
                         .content( "{ \"status\":[\"confirmed\", \"removed\"]} " ) )
                 .andExpect( status().isBadRequest() );
@@ -579,11 +598,11 @@ class AssociationsListForCompanyControllerTest {
 
     @Test
     void getAssociationsForCompanyUserAndStatusWithMalformedUserEmailReturnsBadRequest() throws Exception {
-        mockMvc.perform( post( "/associations/companies/MKCOMP001/search" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "test" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "ERIC-Authorised-Key-Roles", "*" )
+        mockMvc.perform(post(ASSOCIATIONS_COMPANIES + "/MKCOMP001/search")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, "test")
+                        .header(ERIC_IDENTITY_TYPE, "key")
+                        .header(ERIC_AUTHORISED_KEY_ROLES, KEY_ROLES_VALUE)
                         .contentType(MediaType.APPLICATION_JSON )
                         .content( "\"user_email\":\"$$$$$@mushroom.kingdom\" ,\"status\":[\"confirmed\", \"removed\"]} " ) )
                 .andExpect( status().isBadRequest() );
@@ -600,11 +619,11 @@ class AssociationsListForCompanyControllerTest {
     @ParameterizedTest
     @MethodSource("getAssociationsForCompanyMalformedBodyScenarios")
     void getAssociationsForCompanyMalformedBodyScenarios( final String body ) throws Exception{
-        mockMvc.perform( post( "/associations/companies/MKCOMP001/search" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "test" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "ERIC-Authorised-Key-Roles", "*" )
+        mockMvc.perform(post(ASSOCIATIONS_COMPANIES + "/MKCOMP001/search")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, "test")
+                        .header(ERIC_IDENTITY_TYPE, "key")
+                        .header(ERIC_AUTHORISED_KEY_ROLES, KEY_ROLES_VALUE)
                         .contentType(MediaType.APPLICATION_JSON )
                         .content( body ) )
                 .andExpect( status().isBadRequest() );
@@ -613,16 +632,16 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWithNonExistentCompanyNumberReturnsNotFound() throws Exception {
         final var user = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
-        final var company = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
-        mockers.mockCompanyServiceFetchCompanyProfileNotFound( "MKCOMP001" );
+        final var company = testDataManager.fetchCompanyDetailsDtos(MKCOMP_001).getFirst();
+        mockers.mockCompanyServiceFetchCompanyProfileNotFound(MKCOMP_001);
         Mockito.doReturn( testDataManager.fetchUserDtos("MKUser002" ).getFirst() ).when( usersService ).retrieveUserDetails("MKUser002", null );
         Mockito.doReturn(Optional.of( testDataManager.fetchAssociationDto( "MKAssociation002" , user ) ) ).when( associationsService ).fetchUnexpiredAssociationsForCompanyUserAndStatuses( company, Set.of( CONFIRMED, REMOVED ), user, "luigi@mushroom.kingdom" );
 
-        mockMvc.perform( post( "/associations/companies/MKCOMP001/search" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "test" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "ERIC-Authorised-Key-Roles", "*" )
+        mockMvc.perform(post(ASSOCIATIONS_COMPANIES + "/MKCOMP001/search")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, "test")
+                        .header(ERIC_IDENTITY_TYPE, "key")
+                        .header(ERIC_AUTHORISED_KEY_ROLES, KEY_ROLES_VALUE)
                         .contentType(MediaType.APPLICATION_JSON )
                         .content( "{\"user_id\":\"MKUser002\", \"status\":[\"confirmed\", \"removed\"]} " ) )
                 .andExpect( status().isNotFound() );
@@ -631,16 +650,16 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyWithNonExistentUserIdReturnsNotFound() throws Exception {
         final var user = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
-        final var company = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
-        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
-        Mockito.doThrow( new NotFoundRuntimeException( "theId123", "Test", new Exception() ) ).when( usersService ).retrieveUserDetails("MKUser002", null );
+        final var company = testDataManager.fetchCompanyDetailsDtos(MKCOMP_001).getFirst();
+        mockers.mockCompanyServiceFetchCompanyProfile(MKCOMP_001);
+        Mockito.doThrow(new NotFoundRuntimeException(X_REQUEST_ID_VALUE, "Test", new Exception())).when(usersService).retrieveUserDetails("MKUser002", null);
         Mockito.doReturn(Optional.of( testDataManager.fetchAssociationDto( "MKAssociation002" , user ) ) ).when( associationsService ).fetchUnexpiredAssociationsForCompanyUserAndStatuses( company, Set.of( CONFIRMED, REMOVED ), user, "luigi@mushroom.kingdom" );
 
-        mockMvc.perform( post( "/associations/companies/MKCOMP001/search" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "test" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "ERIC-Authorised-Key-Roles", "*" )
+        mockMvc.perform(post(ASSOCIATIONS_COMPANIES + "/MKCOMP001/search")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, "test")
+                        .header(ERIC_IDENTITY_TYPE, "key")
+                        .header(ERIC_AUTHORISED_KEY_ROLES, KEY_ROLES_VALUE)
                         .contentType(MediaType.APPLICATION_JSON )
                         .content( "{\"user_id\":\"MKUser002\", \"status\":[\"confirmed\", \"removed\"]} " ) )
                 .andExpect( status().isNotFound() );
@@ -649,16 +668,16 @@ class AssociationsListForCompanyControllerTest {
     @Test
     void getAssociationsForCompanyNonExistentAssociationsReturnsNotFound() throws Exception {
         final var user = testDataManager.fetchUserDtos( "MKUser002" ).getFirst();
-        final var company = testDataManager.fetchCompanyDetailsDtos( "MKCOMP001" ).getFirst();
-        mockers.mockCompanyServiceFetchCompanyProfile( "MKCOMP001" );
+        final var company = testDataManager.fetchCompanyDetailsDtos(MKCOMP_001).getFirst();
+        mockers.mockCompanyServiceFetchCompanyProfile(MKCOMP_001);
         Mockito.doReturn( testDataManager.fetchUserDtos("MKUser002" ).getFirst() ).when( usersService ).retrieveUserDetails("MKUser002", null );
         Mockito.doReturn(Optional.empty( ) ).when( associationsService ).fetchUnexpiredAssociationsForCompanyUserAndStatuses( company, Set.of( CONFIRMED, REMOVED ), user, "luigi@mushroom.kingdom" );
 
-        mockMvc.perform( post( "/associations/companies/MKCOMP001/search" )
-                        .header("X-Request-Id", "theId123")
-                        .header( "ERIC-Identity", "test" )
-                        .header( "ERIC-Identity-Type", "key" )
-                        .header( "ERIC-Authorised-Key-Roles", "*" )
+        mockMvc.perform(post(ASSOCIATIONS_COMPANIES + "/MKCOMP001/search")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, "test")
+                        .header(ERIC_IDENTITY_TYPE, "key")
+                        .header(ERIC_AUTHORISED_KEY_ROLES, KEY_ROLES_VALUE)
                         .contentType(MediaType.APPLICATION_JSON )
                         .content( "{\"user_id\":\"MKUser002\", \"status\":[\"confirmed\", \"removed\"]} " ) )
                 .andExpect( status().isNotFound() );
