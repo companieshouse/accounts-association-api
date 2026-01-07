@@ -1,5 +1,46 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import uk.gov.companieshouse.accounts.association.client.EmailClient;
+import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
+import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
+import uk.gov.companieshouse.accounts.association.factory.SendEmailFactory;
+import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.accounts.association.models.InvitationDao;
+import uk.gov.companieshouse.accounts.association.models.context.RequestContextData;
+import uk.gov.companieshouse.accounts.association.models.email.EmailNotification;
+import uk.gov.companieshouse.accounts.association.models.email.builders.AuthCodeConfirmationEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.AuthorisationRemovedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.DelegatedRemovalOfMigratedBatchEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.DelegatedRemovalOfMigratedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationAcceptedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationCancelledEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationRejectedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InviteCancelledEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.InviteEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.ReaDigitalAuthChangedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.RemovalOfOwnMigratedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.YourAuthorisationRemovedEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.data.EmailData;
+import uk.gov.companieshouse.accounts.association.utils.MessageType;
+import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
+import uk.gov.companieshouse.api.accounts.user.model.User;
+import uk.gov.companieshouse.api.chskafka.SendEmail;
+import uk.gov.companieshouse.api.company.CompanyDetails;
+import uk.gov.companieshouse.logging.Logger;
+import uk.gov.companieshouse.logging.LoggerFactory;
+
+import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
 import static uk.gov.companieshouse.accounts.association.models.context.RequestContext.setRequestContext;
@@ -33,47 +74,7 @@ import static uk.gov.companieshouse.api.accounts.associations.model.Association.
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.REMOVED;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.UNAUTHORISED;
 
-import java.time.LocalDateTime;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Function;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import uk.gov.companieshouse.accounts.association.exceptions.InternalServerErrorRuntimeException;
-import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
-import uk.gov.companieshouse.accounts.association.models.AssociationDao;
-import uk.gov.companieshouse.accounts.association.models.InvitationDao;
-import uk.gov.companieshouse.accounts.association.models.context.RequestContextData;
-import uk.gov.companieshouse.accounts.association.models.email.EmailNotification;
-import uk.gov.companieshouse.accounts.association.models.email.builders.AuthCodeConfirmationEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.AuthorisationRemovedEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.DelegatedRemovalOfMigratedBatchEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.DelegatedRemovalOfMigratedEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationAcceptedEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationCancelledEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationRejectedEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InviteCancelledEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.InviteEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.ReaDigitalAuthChangedEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.RemovalOfOwnMigratedEmailBuilder;
-import uk.gov.companieshouse.accounts.association.models.email.builders.YourAuthorisationRemovedEmailBuilder;
-import uk.gov.companieshouse.accounts.association.utils.MessageType;
-import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
-import uk.gov.companieshouse.api.accounts.user.model.User;
-import uk.gov.companieshouse.api.company.CompanyDetails;
-import uk.gov.companieshouse.email_producer.EmailProducer;
-import uk.gov.companieshouse.email_producer.model.EmailData;
-import uk.gov.companieshouse.logging.Logger;
-import uk.gov.companieshouse.logging.LoggerFactory;
-
 @Service
-@ComponentScan( basePackages = "uk.gov.companieshouse.email_producer" )
 public class EmailService {
 
     @Value( "${invitation.url}" )
@@ -84,14 +85,15 @@ public class EmailService {
     private final UsersService usersService;
     private final CompanyService companyService;
     private final AssociationsService associationsService;
-    private final EmailProducer emailProducer;
-
+    private final EmailClient emailClient;
+    private final SendEmailFactory sendEmailFactory;
     @Autowired
-    public EmailService( final UsersService usersService, final CompanyService companyService, final AssociationsService associationsService, final EmailProducer emailProducer ) {
+    public EmailService(final UsersService usersService, final CompanyService companyService, final AssociationsService associationsService, EmailClient emailClient, SendEmailFactory sendEmailFactory) {
         this.usersService = usersService;
         this.companyService = companyService;
-        this.emailProducer = emailProducer;
         this.associationsService = associationsService;
+        this.emailClient = emailClient;
+        this.sendEmailFactory = sendEmailFactory;
     }
 
     @Async
@@ -165,9 +167,10 @@ public class EmailService {
         emails.subscribe();
     }
 
-    private void sendEmail( final String xRequestId, final MessageType messageType, final EmailData emailData, final EmailNotification logMessageSupplier ){
+    private void sendEmail(final String xRequestId, final MessageType messageType, final EmailData emailData, final EmailNotification logMessageSupplier) {
         try {
-            emailProducer.sendEmail( emailData, messageType.getValue() );
+            SendEmail sendEmail = sendEmailFactory.createSendEmail(emailData, messageType.getValue());
+            emailClient.sendEmail(sendEmail, xRequestId);
             LOG.infoContext( xRequestId, logMessageSupplier.toMessage(), null );
         } catch ( Exception exception ){
             LOG.errorContext( xRequestId, new Exception( logMessageSupplier.toMessageSendingFailureLoggingMessage() ), null );
