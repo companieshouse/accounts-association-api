@@ -9,7 +9,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,10 +78,10 @@ class UserCompanyInvitationsTest extends BaseMongoIntegration {
     @MockitoBean
     private UsersService usersService;
 
-    @Mock
+    @MockitoBean
     private EmailClient emailClient;
 
-    @Mock
+    @MockitoBean
     SendEmailFactory sendEmailFactory;
 
     @Autowired

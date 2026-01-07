@@ -9,7 +9,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +17,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.companieshouse.accounts.association.client.EmailClient;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
@@ -74,16 +74,16 @@ class UserCompanyAssociationsTest extends BaseMongoIntegration {
     @Autowired
     private  MockMvc mockMvc;
 
-    @Mock
+    @MockitoBean
     private CompanyService companyService;
 
-    @Mock
+    @MockitoBean
     private UsersService usersService;
 
-    @Mock
+    @MockitoBean
     private EmailClient emailClient;
 
-    @Mock
+    @MockitoBean
     private SendEmailFactory sendEmailFactory;
 
     @Autowired
@@ -584,8 +584,6 @@ class UserCompanyAssociationsTest extends BaseMongoIntegration {
                 .andExpect( status().isCreated() );
 
         Mockito.verify(sendEmailFactory).createSendEmail(argThat(comparisonUtils.authCodeConfirmationEmailMatcher("scrooge.mcduck@disney.land", "Sainsbury's", "Batman")), eq(AUTH_CODE_CONFIRMATION_MESSAGE_TYPE.getValue()));
-
-        Mockito.verify(sendEmailFactory).createSendEmail(argThat(comparisonUtils.authCodeConfirmationEmailMatcher("scrooge.mcduck@disney.land", "Sainsbury's", "Batman")), X_REQUEST_ID_VALUE);
     }
 
     @Test

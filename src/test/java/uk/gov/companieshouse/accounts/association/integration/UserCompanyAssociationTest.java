@@ -9,7 +9,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +17,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.companieshouse.accounts.association.client.EmailClient;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
@@ -89,13 +89,13 @@ class UserCompanyAssociationTest extends BaseMongoIntegration {
     private MongoTemplate mongoTemplate;
     @Autowired
     private MockMvc mockMvc;
-    @Mock
+    @MockitoBean
     private CompanyService companyService;
-    @Mock
+    @MockitoBean
     private UsersService usersService;
-    @Mock
+    @MockitoBean
     private EmailClient emailClient;
-    @Mock
+    @MockitoBean
     private SendEmailFactory emailFactory;
     @Autowired
     private AssociationsRepository associationsRepository;
@@ -200,7 +200,7 @@ class UserCompanyAssociationTest extends BaseMongoIntegration {
                                 .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
                                 .header(ERIC_IDENTITY, "111")
                                 .header(ERIC_IDENTITY_TYPE, OAUTH_2)
-                        .header( "Eric-Authorised-Roles", ADMIN_READ_PERMISSION ) )
+                                .header("Eric-Authorised-Roles", ADMIN_READ_PERMISSION))
                         .andExpect(status().isOk());
         final var association = parseResponseTo(response, Association.class);
         Assertions.assertEquals( "MKAssociation004", association.getId() );
@@ -722,7 +722,7 @@ class UserCompanyAssociationTest extends BaseMongoIntegration {
                         .header(ERIC_AUTHORISED_KEY_ROLES, KEY_ROLES_VALUE)
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( String.format( "{\"status\":\"%s\"}", status ) ) )
-                .andExpect( status().isBadRequest() );
+                .andExpect(status().isBadRequest());
     }
 
     private static Stream<Arguments> updateAssociationStatusForIdAPIRequestsThatChangeUnauthorisedOrMigratedAssociationsToConfirmedScenarios() {
