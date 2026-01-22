@@ -31,7 +31,7 @@
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <google-http-client.version>2.0.3</google-http-client.version>
         <api-helper-java.version>3.0.3</api-helper-java.version>
-        <logback-classic.version>1.5.23</logback-classic.version>
+        <logback-classic.version>1.5.25</logback-classic.version>
         <tomcat-core-and-websocket.version>11.0.15</tomcat-core-and-websocket.version>
         <grpc.version>1.78.0</grpc.version>
         <test-containers.version>2.0.3</test-containers.version>
