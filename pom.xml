@@ -14,31 +14,29 @@
     <description>User and Company association.</description>
     <properties>
         <java.version>21</java.version>
-        <spring-boot.version>3.5.5</spring-boot.version>
+        <spring-boot-dependencies.version>3.5.9</spring-boot-dependencies.version>
+        <spring-boot-maven-plugin.version>3.5.9</spring-boot-maven-plugin.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.1</maven-surefire-plugin.version>
-        <structured-logging.version>3.0.36</structured-logging.version>
-        <log4j-version>2.24.2</log4j-version>
-        <rest-service-common-library-version>2.0.4</rest-service-common-library-version>
-        <private-api-sdk-java.version>4.0.352</private-api-sdk-java.version>
-        <api-sdk-manager-java-library.version>3.0.9</api-sdk-manager-java-library.version>
+        <structured-logging.version>3.0.48</structured-logging.version>
+        <environment-reader-library.version>3.0.5</environment-reader-library.version>
+        <log4j.version>2.25.3</log4j.version>
+        <rest-service-common-library.version>2.0.9</rest-service-common-library.version>
+        <private-api-sdk-java.version>4.0.429</private-api-sdk-java.version>
+        <api-sdk-manager-java-library.version>3.0.15</api-sdk-manager-java-library.version>
         <api-security-java-version>2.0.8</api-security-java-version>
         <org.mapstruct.version>1.6.2</org.mapstruct.version>
         <junit-jupiter.version>1.20.3</junit-jupiter.version>
-        <version.kafka-clients>3.1.0</version.kafka-clients>
+        <version.kafka-clients>3.9.1</version.kafka-clients>
         <junit.version>4.13.2</junit.version>
         <commons-compress.version>1.27.1</commons-compress.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <google-http-client.version>1.45.0</google-http-client.version>
         <api-helper-java.version>3.0.1</api-helper-java.version>
-        <email-producer-java.version>3.0.4</email-producer-java.version>
-        <flapdoodle.version>4.20.0</flapdoodle.version>
-        <logback-classic.version>1.5.16</logback-classic.version>
-        <tomcat-core-and-websocket.version>11.0.10</tomcat-core-and-websocket.version>
+        <email-producer-java.version>3.0.11</email-producer-java.version>
         <grpc.version>1.73.0</grpc.version>
 
-        <sonar-maven-plugin.version>4.0.0.4121</sonar-maven-plugin.version>
         <sonar.token>${CODE_ANALYSIS_TOKEN}</sonar.token>
         <sonar.login></sonar.login>
         <sonar.password></sonar.password>
@@ -46,40 +44,70 @@
         <sonar.projectKey>uk.gov.companieshouse:accounts-association-api</sonar.projectKey>
         <sonar.java.binaries>${project.basedir}/target,${project.basedir}/target/*</sonar.java.binaries>
     </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
+                <version>${spring-boot-dependencies.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${log4j.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar-maven-plugin.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>uk.gov.companieshouse</groupId>
+                <artifactId>structured-logging</artifactId>
+                <version>${structured-logging.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>uk.gov.companieshouse</groupId>
+                <artifactId>environment-reader-library</artifactId>
+                <version>${environment-reader-library.version}</version>
+            </dependency>
+
+            <!-- CVE-2025-48924 -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.18.0</version>
+            </dependency>
+            <!-- CVE-2026-24400 -->
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>3.27.7</version>
+                <scope>test</scope>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
             <exclusions>
                 <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-slf4j-impl</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-web</artifactId>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-web</artifactId>
-            <version>6.2.8</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -90,24 +118,9 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-core</artifactId>
-            <version>${logback-classic.version}</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback-classic.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>uk.gov.companieshouse</groupId>
             <artifactId>structured-logging</artifactId>
-            <version>${structured-logging.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -119,27 +132,7 @@
         <dependency>
             <groupId>uk.gov.companieshouse</groupId>
             <artifactId>rest-service-common-library</artifactId>
-            <version>${rest-service-common-library-version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.tomcat.embed</groupId>
-                    <artifactId>tomcat-embed-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.tomcat.embed</groupId>
-                    <artifactId>tomcat-embed-websocket</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-core</artifactId>
-            <version>${tomcat-core-and-websocket.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-websocket</artifactId>
-            <version>${tomcat-core-and-websocket.version}</version>
+            <version>${rest-service-common-library.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -163,6 +156,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -174,12 +173,6 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
             <version>${commons-compress.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-lang3</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -288,31 +281,9 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.jetty.ee10</groupId>
-            <artifactId>jetty-ee10-webapp</artifactId>
-            <version>12.1.0</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <version>${version.kafka-clients}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.xerial.snappy</groupId>
-                    <artifactId>snappy-java</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.xerial.snappy</groupId>
-            <artifactId>snappy-java</artifactId>
-            <version>1.1.10.7</version>
-        </dependency>
-        <dependency>
-            <groupId>de.flapdoodle.embed</groupId>
-            <artifactId>de.flapdoodle.embed.mongo.spring3x</artifactId>
-            <version>${flapdoodle.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
@@ -327,7 +298,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring-boot.version}</version>
+                <version>${spring-boot-dependencies.version}</version>
                 <configuration>
                     <mainClass>uk.gov.companieshouse.accounts.association.AccountsAssociationServiceApplication
                     </mainClass>

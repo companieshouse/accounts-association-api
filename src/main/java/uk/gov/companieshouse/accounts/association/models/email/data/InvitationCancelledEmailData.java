@@ -1,7 +1,7 @@
 package uk.gov.companieshouse.accounts.association.models.email.data;
 
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import uk.gov.companieshouse.email_producer.model.EmailData;
 
 public class InvitationCancelledEmailData extends EmailData {
