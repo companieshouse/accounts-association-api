@@ -1,11 +1,5 @@
 package uk.gov.companieshouse.accounts.association.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anySet;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -28,6 +22,19 @@ import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.ASSOCIATIONS;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.ERIC_IDENTITY;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.ERIC_IDENTITY_TYPE;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.ERIC_IDENTITY_VALUE;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.OAUTH_2;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.X_REQUEST_ID;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.X_REQUEST_ID_VALUE;
 
 @Tag("unit-test")
 @Import(WebSecurityConfig.class)
@@ -67,31 +74,31 @@ class ControllerAdviceTest {
 
     @Test
     void testNotFoundRuntimeError() throws Exception {
-        Mockito.doThrow(new NotFoundRuntimeException( "theId123", "Couldn't find association", new Exception( "Couldn't find association" ) ))
+        Mockito.doThrow(new NotFoundRuntimeException(X_REQUEST_ID_VALUE, "Couldn't find association", new Exception("Couldn't find association")))
                 .when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
 
-        mockMvc.perform(get("/associations")
-                        .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity", "111")
-                        .header( "ERIC-Identity-Type", "oauth2" ))
+        mockMvc.perform(get(ASSOCIATIONS)
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void testBadRequestRuntimeError() throws Exception {
-        mockMvc.perform(get( "/associations?page_index=-1" )
-                        .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity", "111")
-                        .header( "ERIC-Identity-Type", "oauth2" ))
+        mockMvc.perform(get(ASSOCIATIONS + "?page_index=-1")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void testConstraintViolationError() throws Exception {
-        mockMvc.perform(get( "/associations?company_number=&&" )
-                        .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity", "111")
-                        .header( "ERIC-Identity-Type", "oauth2" ))
+        mockMvc.perform(get(ASSOCIATIONS + "?company_number=&&")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect(status().isBadRequest());
     }
 
@@ -100,34 +107,34 @@ class ControllerAdviceTest {
         Mockito.doThrow(new NullPointerException("Couldn't find association"))
                 .when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
 
-        mockMvc.perform(get("/associations?company_number=123445")
-                        .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity", "111")
-                        .header( "ERIC-Identity-Type", "oauth2" ))
+        mockMvc.perform(get(ASSOCIATIONS + "?company_number=123445")
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect(status().isInternalServerError());
     }
 
     @Test
     void testOnInternalServerErrorRuntimeException() throws Exception {
-        Mockito.doThrow(new InternalServerErrorRuntimeException("theId123", "Couldn't find association", new Exception("Couldn't find association")))
+        Mockito.doThrow(new InternalServerErrorRuntimeException(X_REQUEST_ID_VALUE, "Couldn't find association", new Exception("Couldn't find association")))
                 .when(associationsService).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses(any(),any(),anySet(),anyInt(),anyInt());
 
-        mockMvc.perform(get("/associations")
-                        .header("X-Request-Id", "theId123")
-                        .header("ERIC-Identity", "111")
-                        .header( "ERIC-Identity-Type", "oauth2" ))
+        mockMvc.perform(get(ASSOCIATIONS)
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect(status().isInternalServerError());
     }
 
     @Test
     void testOnForbiddenRuntimeException() throws Exception {
-        Mockito.doThrow( new ForbiddenRuntimeException("theId123", "Forbidden", new Exception( "Forbidden" ) ) )
+        Mockito.doThrow(new ForbiddenRuntimeException(X_REQUEST_ID_VALUE, "Forbidden", new Exception("Forbidden")))
                 .when( associationsService ).fetchAssociationsForUserAndPartialCompanyNumberAndStatuses( any(), any(), anySet(), anyInt(), anyInt() );
 
-        mockMvc.perform( get( "/associations" )
-                        .header( "X-Request-Id", "theId123" )
-                        .header( "ERIC-Identity", "111" )
-                        .header( "ERIC-Identity-Type", "oauth2" ) )
+        mockMvc.perform(get(ASSOCIATIONS)
+                        .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
+                        .header(ERIC_IDENTITY, ERIC_IDENTITY_VALUE)
+                        .header(ERIC_IDENTITY_TYPE, OAUTH_2))
                 .andExpect( status().isForbidden() );
     }
 

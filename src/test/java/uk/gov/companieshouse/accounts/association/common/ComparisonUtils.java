@@ -1,12 +1,5 @@
 package uk.gov.companieshouse.accounts.association.common;
 
-import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.toMap;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
 import org.mockito.ArgumentMatcher;
 import org.springframework.data.domain.Page;
 import uk.gov.companieshouse.accounts.association.common.Preprocessors.Preprocessor;
@@ -21,20 +14,29 @@ import uk.gov.companieshouse.accounts.association.models.email.builders.Invitati
 import uk.gov.companieshouse.accounts.association.models.email.builders.InvitationRejectedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.InviteCancelledEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.InviteEmailBuilder;
+import uk.gov.companieshouse.accounts.association.models.email.builders.ReaDigitalAuthChangedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.RemovalOfOwnMigratedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.builders.YourAuthorisationRemovedEmailBuilder;
 import uk.gov.companieshouse.accounts.association.models.email.data.AuthorisationRemovedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.DelegatedRemovalOfMigratedBatchEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.DelegatedRemovalOfMigratedEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.EmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationAcceptedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationCancelledEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InvitationEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InviteCancelledEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.InviteEmailData;
+import uk.gov.companieshouse.accounts.association.models.email.data.ReaDigitalAuthChangedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.RemovalOfOwnMigratedEmailData;
 import uk.gov.companieshouse.accounts.association.models.email.data.YourAuthorisationRemovedEmailData;
-import uk.gov.companieshouse.email_producer.model.EmailData;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+
+import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.toMap;
 public class ComparisonUtils {
 
     private final LocalDateTime now = LocalDateTime.now();
@@ -52,6 +54,16 @@ public class ComparisonUtils {
             }
         }
         return true;
+    }
+
+    public ArgumentMatcher<ReaDigitalAuthChangedEmailData> reaDigitalAuthChangedEmailMatcher(final String to, final String companyName, final String companyNumber) {
+        final var expected = new ReaDigitalAuthChangedEmailBuilder()
+                .setRecipientEmail(to)
+                .setCompanyName(companyName)
+                .setCompanyNumber(companyNumber)
+                .build();
+
+        return compare(expected, List.of("to", "companyName", "companyNumber", "subject"), List.of(), Map.of());
     }
 
     private boolean mapsDoNotMatchOnAll( final Map<String, Object> actualMap, final Map<String, Object> referenceMap, final List<String> nonmatchingFields ){
@@ -123,7 +135,7 @@ public class ComparisonUtils {
         };
     }
 
-    public ArgumentMatcher<EmailData> authCodeConfirmationEmailMatcher( final String recipientEmail, final String companyName, final String displayName ){
+    public ArgumentMatcher<EmailData> authCodeConfirmationEmailMatcher(final String recipientEmail, final String companyName, final String displayName) {
         final var expectedEmail = new AuthCodeConfirmationEmailBuilder()
                 .setRecipientEmail( recipientEmail )
                 .setCompanyName( companyName )

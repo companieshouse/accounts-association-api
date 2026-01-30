@@ -1,26 +1,29 @@
 package uk.gov.companieshouse.accounts.association.common;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.net.URI;
-import java.util.List;
-import java.util.function.Function;
 import org.mockito.Mockito;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
+import uk.gov.companieshouse.accounts.association.client.EmailClient;
+import uk.gov.companieshouse.accounts.association.exceptions.EmailSendException;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.user.model.UsersList;
-import uk.gov.companieshouse.email_producer.EmailProducer;
-import uk.gov.companieshouse.email_producer.EmailSendingException;
+import uk.gov.companieshouse.api.chskafka.SendEmail;
+
+import java.net.URI;
+import java.util.List;
+import java.util.function.Function;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static uk.gov.companieshouse.accounts.association.utils.TestConstant.X_REQUEST_ID_VALUE;
 
 public class Mockers {
 
@@ -33,14 +36,14 @@ public class Mockers {
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
     private final WebClient webClient;
-    private final EmailProducer emailProducer;
+    private final EmailClient emailClient;
     private final CompanyService companyService;
     private final UsersService usersService;
     private boolean mockHeader = true;
 
-    public Mockers( final WebClient webClient, final EmailProducer emailProducer, final CompanyService companyService, final UsersService usersService ) {
+    public Mockers(final WebClient webClient, final EmailClient emailClient, final CompanyService companyService, final UsersService usersService) {
         this.webClient = webClient;
-        this.emailProducer = emailProducer;
+        this.emailClient = emailClient;
         this.companyService = companyService;
         this.usersService = usersService;
     }
@@ -331,8 +334,29 @@ public class Mockers {
         mockWebClientJsonParsingError( uri, isUriString );
     }
 
-    public void mockEmailSendingFailure( final String messageType ){
-        Mockito.doThrow( new EmailSendingException("Failed to send email", new Exception() ) ).when( emailProducer ).sendEmail( any(), eq( messageType ) );
+    public void mockWebClientForFetchRegisteredEmailAddress(final boolean isUriString, final String companyNumber, final String email) throws JsonProcessingException {
+        final var uri = String.format("/company/%s/registered-email-address", companyNumber);
+        final var jsonResponse = new ObjectMapper().writeValueAsString(new java.util.HashMap<String, String>() {{
+            put("registered_email_address", email);
+        }});
+        UriType uriType = isUriString ? UriType.STRING : UriType.FUNCTION;
+        mockWebClientSuccessResponse(uri, Mono.just(jsonResponse), uriType);
+    }
+
+    public void mockWebClientForFetchRegisteredEmailAddressErrorResponse(final String companyNumber, final int responseCode) {
+        final var uri = String.format("/company/%s/registered-email-address", companyNumber);
+        mockWebClientErrorResponse(uri, responseCode);
+    }
+
+    public void mockWebClientForFetchRegisteredEmailAddressJsonParsingError(final String companyNumber, final boolean isUriString) {
+        final var uri = String.format("/company/%s/registered-email-address", companyNumber);
+        mockWebClientJsonParsingError(uri, isUriString);
+    }
+
+    public void mockEmailSendingFailure() {
+        Mockito.doThrow(new EmailSendException("Failed to send email"))
+                .when(emailClient)
+                .sendEmail(Mockito.any(SendEmail.class), any());
     }
 
     public void mockCompanyServiceFetchCompanyProfile( final String... companyNumbers ){
@@ -344,7 +368,7 @@ public class Mockers {
 
     public void mockCompanyServiceFetchCompanyProfileNotFound( final String... companyNumbers ){
         for ( final String companyNumber: companyNumbers ){
-            Mockito.doThrow( new NotFoundRuntimeException( "theId123", "Not found", new Exception( "Not found" ) ) ).when( companyService ).fetchCompanyProfile( companyNumber );
+            Mockito.doThrow(new NotFoundRuntimeException(X_REQUEST_ID_VALUE, "Not found", new Exception("Not found"))).when(companyService).fetchCompanyProfile(companyNumber);
         }
     }
 
@@ -380,7 +404,7 @@ public class Mockers {
 
     public void mockUsersServiceFetchUserDetailsNotFound( final String... userIds ){
         for ( final String userId: userIds ){
-            Mockito.doThrow( new NotFoundRuntimeException( "theId123", "Not found.", new Exception( "Not found." ) ) ).when( usersService ).fetchUserDetails( eq(userId), any() );
+            Mockito.doThrow(new NotFoundRuntimeException(X_REQUEST_ID_VALUE, "Not found.", new Exception("Not found."))).when(usersService).fetchUserDetails(eq(userId), any());
         }
     }
 

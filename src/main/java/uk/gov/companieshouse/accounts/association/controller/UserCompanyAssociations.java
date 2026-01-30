@@ -89,10 +89,11 @@ public class UserCompanyAssociations implements UserCompanyAssociationsInterface
                     return targetAssociation.getId();
                 } )
                 .orElseGet( () -> associationsService.createAssociationWithAuthCodeApprovalRoute( companyNumber, userId ).getId() );
-
+        final var reaEmailMono = emailService.sendReaDigitalAuthorisationAddedEmail(getXRequestId(), companyDetails.getCompanyNumber(), Mono.just(companyDetails.getCompanyName()));
         Mono.just( companyNumber )
                 .flatMapMany( associationsService::fetchConfirmedUserIds )
                 .flatMap( emailService.sendAuthCodeConfirmationEmailToAssociatedUser( getXRequestId(), companyDetails.getCompanyNumber(), Mono.just( companyDetails.getCompanyName() ), mapToDisplayValue( targetUser, targetUser.getEmail() ) ) )
+                .then( reaEmailMono )
                 .subscribe();
 
         return new ResponseEntity<>( new ResponseBodyPost().associationLink( String.format( "/associations/%s", targetAssociationId ) ), CREATED );

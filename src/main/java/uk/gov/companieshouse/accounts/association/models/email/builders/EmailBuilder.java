@@ -1,6 +1,7 @@
 package uk.gov.companieshouse.accounts.association.models.email.builders;
 
-import uk.gov.companieshouse.email_producer.model.EmailData;
+
+import uk.gov.companieshouse.accounts.association.models.email.data.EmailData;
 
 public abstract class EmailBuilder<T extends EmailBuilder<T, U>, U extends EmailData> {
 

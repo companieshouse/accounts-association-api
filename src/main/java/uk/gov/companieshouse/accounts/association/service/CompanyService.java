@@ -18,14 +18,17 @@ import uk.gov.companieshouse.accounts.association.exceptions.InternalServerError
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.api.company.CompanyDetails;
+import uk.gov.companieshouse.api.model.company.RegisteredEmailAddressJson;
 
 @Service
 public class CompanyService {
 
     private final WebClient companyWebClient;
+    private final WebClient oracleQueryWebClient;
 
-    public CompanyService( @Qualifier( "companyWebClient" ) final WebClient companyWebClient ) {
+    public CompanyService( @Qualifier( "companyWebClient" ) final WebClient companyWebClient, @Qualifier( "oracleQueryWebClient" ) final WebClient oracleQueryWebClient ) {
         this.companyWebClient = companyWebClient;
+        this.oracleQueryWebClient = oracleQueryWebClient;
     }
 
     private Mono<CompanyDetails> toFetchCompanyProfileRequest( final String companyNumber, final String xRequestId ) {
@@ -58,6 +61,35 @@ public class CompanyService {
                 .block( Duration.ofSeconds( 20L ) );
     }
 
+    private Mono<RegisteredEmailAddressJson> toFetchRegisteredEmailAddressRequest(final String companyNumber,final String xRequestId ) {
+        return oracleQueryWebClient.get()
+                .uri( String.format( "/company/%s/registered-email-address", companyNumber ) )
+                .header( "X-Request-Id", xRequestId )
+                .retrieve()
+                .bodyToMono( String.class )
+                .map( parseJsonTo( RegisteredEmailAddressJson.class ) )
+                .onErrorMap( throwable -> {
+                    if ( throwable instanceof WebClientResponseException exception && NOT_FOUND.equals( exception.getStatusCode() ) ){
+                        return new NotFoundRuntimeException( xRequestId, "Failed to find registered email address for company", exception );
+                    }
+                    throw new InternalServerErrorRuntimeException( xRequestId, "Failed to retrieve registered email address", (Exception) throwable );
+                } )
+                .doOnSubscribe( onSubscribe -> LOGGER.infoContext( xRequestId, String.format( "Sending request to oracle-query-api: GET /company/%s/registered-email-address. Attempting to retrieve registered email address.", companyNumber ), null ) )
+                .doFinally( signalType -> LOGGER.infoContext( xRequestId, String.format( "Finished request to oracle-query-api for company: %s.", companyNumber ), null ) );
+    }
+
+    public String fetchRegisteredEmailAddress( final String companyNumber ){
+        final var xRequestId = getXRequestId();
+        final var response = toFetchRegisteredEmailAddressRequest( companyNumber, xRequestId )
+                .block( Duration.ofSeconds( 20L ) );
+        final var registeredEmailAddress = response == null ? null : response.getRegisteredEmailAddress();
+        if ( registeredEmailAddress == null || registeredEmailAddress.isBlank() ) {
+            LOGGER.infoContext( xRequestId, String.format( "Registered email address not found or blank for company: %s", companyNumber ), null );
+        } else {
+            LOGGER.infoContext( xRequestId, String.format( "Retrieved registered email address for company: %s", companyNumber), null );
+        }
+        return registeredEmailAddress;
+    }
 }
 
 
