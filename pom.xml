@@ -14,11 +14,11 @@
     <description>User and Company association.</description>
     <properties>
         <java.version>21</java.version>
-        <spring-boot.version>3.5.9</spring-boot.version>
+        <spring-boot.version>3.5.11</spring-boot.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.1</maven-surefire-plugin.version>
-        <structured-logging.version>3.0.39</structured-logging.version>
+        <structured-logging.version>3.0.46</structured-logging.version>
         <log4j.version>2.25.3</log4j.version>
         <rest-service-common-library-version>2.0.9</rest-service-common-library-version>
         <private-api-sdk-java.version>4.0.431</private-api-sdk-java.version>
@@ -31,21 +31,10 @@
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <google-http-client.version>2.0.3</google-http-client.version>
         <api-helper-java.version>3.0.3</api-helper-java.version>
-        <tomcat-core-and-websocket.version>11.0.15</tomcat-core-and-websocket.version>
         <grpc.version>1.78.0</grpc.version>
         <test-containers.version>2.0.3</test-containers.version>
 
-        <sonar.token>${CODE_ANALYSIS_TOKEN}</sonar.token>
-        <sonar.login></sonar.login>
-        <sonar.password></sonar.password>
-        <sonar-maven-plugin.version>5.5.0.6356</sonar-maven-plugin.version>
-        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml
-        </sonar.coverage.jacoco.xmlReportPaths>
-        <sonar.projectName>accounts-association-api</sonar.projectName>
-        <sonar.projectKey>uk.gov.companieshouse:accounts-association-api</sonar.projectKey>
-        <sonar.java.binaries>${project.basedir}/target,${project.basedir}/target/*</sonar.java.binaries>
         <jakarta.annotation-api.version>3.0.0</jakarta.annotation-api.version>
-        <jetty-ee10-webapp.version>12.1.5</jetty-ee10-webapp.version>
         <snappy-java.version>1.1.10.8</snappy-java.version>
         <mongodb.version>1.21.4</mongodb.version>
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
@@ -128,26 +117,6 @@
             <groupId>uk.gov.companieshouse</groupId>
             <artifactId>rest-service-common-library</artifactId>
             <version>${rest-service-common-library-version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.tomcat.embed</groupId>
-                    <artifactId>tomcat-embed-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.tomcat.embed</groupId>
-                    <artifactId>tomcat-embed-websocket</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-core</artifactId>
-            <version>${tomcat-core-and-websocket.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-websocket</artifactId>
-            <version>${tomcat-core-and-websocket.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -156,10 +125,6 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webflux</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-reactive-httpclient</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -271,11 +236,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.jetty.ee10</groupId>
-            <artifactId>jetty-ee10-webapp</artifactId>
-            <version>${jetty-ee10-webapp.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.xerial.snappy</groupId>
             <artifactId>snappy-java</artifactId>
             <version>${snappy-java.version}</version>
@@ -341,11 +301,6 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.sonarsource.scanner.maven</groupId>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <version>${sonar-maven-plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

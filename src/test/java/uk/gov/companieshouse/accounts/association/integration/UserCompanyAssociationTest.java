@@ -33,9 +33,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.PreviousStatesList;
 import uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut;
-import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Stream;
@@ -84,7 +82,7 @@ import static uk.gov.companieshouse.api.accounts.associations.model.PreviousStat
 @Tag( "integration-test" )
 class UserCompanyAssociationTest extends BaseMongoIntegration {
     @Value("${invitation.url}")
-    private String COMPANY_INVITATIONS_URL;
+    private String companyInvitationsUrl;
     @Autowired
     private MongoTemplate mongoTemplate;
     @Autowired
@@ -104,7 +102,7 @@ class UserCompanyAssociationTest extends BaseMongoIntegration {
     private final ComparisonUtils comparisonUtils = new ComparisonUtils();
 
     @BeforeEach
-    public void setup() throws IOException, URIValidationException {
+    public void setup() {
         mockers = new Mockers(null, emailClient, companyService, usersService);
     }
 
@@ -865,7 +863,7 @@ class UserCompanyAssociationTest extends BaseMongoIntegration {
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"status\":\"confirmed\"}" ) )
                 .andExpect(status().isOk());
-        Mockito.verify(emailFactory, times(2)).createSendEmail(argThat(comparisonUtils.invitationAndInviteEmailDataMatcher("luigi@mushroom.kingdom", "Luigi", "mario@mushroom.kingdom", "Mario", "Mushroom Kingdom", COMPANY_INVITATIONS_URL)), argThat(messageType -> List.of(INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue()).contains(messageType)));
+        Mockito.verify(emailFactory, times(2)).createSendEmail(argThat(comparisonUtils.invitationAndInviteEmailDataMatcher("luigi@mushroom.kingdom", "Luigi", "mario@mushroom.kingdom", "Mario", "Mushroom Kingdom", companyInvitationsUrl)), argThat(messageType -> List.of(INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue()).contains(messageType)));
     }
 
     @Test
@@ -884,7 +882,7 @@ class UserCompanyAssociationTest extends BaseMongoIntegration {
                         .contentType( MediaType.APPLICATION_JSON )
                         .content( "{\"status\":\"confirmed\"}" ) )
                 .andExpect( status().isOk() );
-        Mockito.verify(emailFactory, times(2)).createSendEmail(argThat(comparisonUtils.invitationAndInviteEmailDataMatcher("luigi@mushroom.kingdom", "Luigi", "bowser@mushroom.kingdom", "Bowser", "Mushroom Kingdom", COMPANY_INVITATIONS_URL)), argThat(messageType -> List.of(INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue()).contains(messageType)));
+        Mockito.verify(emailFactory, times(2)).createSendEmail(argThat(comparisonUtils.invitationAndInviteEmailDataMatcher("luigi@mushroom.kingdom", "Luigi", "bowser@mushroom.kingdom", "Bowser", "Mushroom Kingdom", companyInvitationsUrl)), argThat(messageType -> List.of(INVITATION_MESSAGE_TYPE.getValue(), INVITE_MESSAGE_TYPE.getValue()).contains(messageType)));
     }
 
     @Test
