@@ -32,9 +32,7 @@ import uk.gov.companieshouse.api.accounts.associations.model.Association.Approva
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.AssociationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.ResponseBodyPost;
-import uk.gov.companieshouse.api.handler.exception.URIValidationException;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Stream;
@@ -94,7 +92,7 @@ class UserCompanyAssociationsTest extends BaseMongoIntegration {
     private static final String DEFAULT_KIND = "association";
 
     @Value( "${invitation.url}")
-    private String COMPANY_INVITATIONS_URL;
+    private String companyInvitationsUrl;
 
     private final LocalDateTime now = LocalDateTime.now();
 
@@ -104,7 +102,7 @@ class UserCompanyAssociationsTest extends BaseMongoIntegration {
 
 
     @BeforeEach
-    public void setup() throws IOException, URIValidationException {
+    public void setup() {
         mockers = new Mockers(null, emailClient, companyService, usersService);
     }
 
