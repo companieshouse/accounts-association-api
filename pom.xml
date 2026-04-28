@@ -156,7 +156,7 @@
                 </exclusion>
                 <exclusion>
                     <groupId>io.opentelemetry.semconv</groupId>
-                    <artifactId>opentelemetry-semconv-incubating</artifactId>
+                    <artifactId>opentelemetry-semconv</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
