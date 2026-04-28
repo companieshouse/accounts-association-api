@@ -14,15 +14,15 @@
     <description>User and Company association.</description>
     <properties>
         <java.version>21</java.version>
-        <spring-boot-dependencies.version>3.5.13</spring-boot-dependencies.version>
+        <spring-boot-dependencies.version>3.5.14</spring-boot-dependencies.version>
         <jackson.version>2.21.1</jackson.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.1</maven-surefire-plugin.version>
         <structured-logging.version>3.0.51</structured-logging.version>
-        <log4j.version>2.25.3</log4j.version>
+        <log4j.version>2.25.4</log4j.version>
         <rest-service-common-library-version>2.0.9</rest-service-common-library-version>
-        <api-sdk-manager-java-library.version>3.0.16</api-sdk-manager-java-library.version>
+        <api-sdk-manager-java-library.version>3.0.19</api-sdk-manager-java-library.version>
         <private-api-sdk-java.version>4.0.473</private-api-sdk-java.version>
         <api-security-java-version>2.0.19</api-security-java-version>
         <org.mapstruct.version>1.6.3</org.mapstruct.version>
@@ -31,7 +31,6 @@
         <api-helper-java.version>3.0.3</api-helper-java.version>
         <grpc.version>1.78.0</grpc.version>
         <test-containers.version>2.0.3</test-containers.version>
-
         <jakarta.annotation-api.version>3.0.0</jakarta.annotation-api.version>
         <snappy-java.version>1.1.10.8</snappy-java.version>
         <mongodb.version>1.21.4</mongodb.version>
@@ -39,6 +38,13 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-instrumentation-bom</artifactId>
+                <version>2.27.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -131,10 +137,29 @@
                 <version>3.27.7</version>
                 <scope>test</scope>
             </dependency>
-
+            <!-- CVE-2020-29582 -->
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib</artifactId>
+                <version>2.3.21</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-spring-boot-starter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.opentelemetry.semconv</groupId>
+                    <artifactId>opentelemetry-semconv-incubating</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.opentelemetry.semconv</groupId>
+                    <artifactId>opentelemetry-semconv</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
