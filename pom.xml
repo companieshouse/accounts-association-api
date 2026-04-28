@@ -20,9 +20,9 @@
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.1</maven-surefire-plugin.version>
         <structured-logging.version>3.0.51</structured-logging.version>
-        <log4j.version>2.25.3</log4j.version>
+        <log4j.version>2.25.4</log4j.version>
         <rest-service-common-library-version>2.0.9</rest-service-common-library-version>
-        <api-sdk-manager-java-library.version>3.0.16</api-sdk-manager-java-library.version>
+        <api-sdk-manager-java-library.version>3.0.19</api-sdk-manager-java-library.version>
         <private-api-sdk-java.version>4.0.473</private-api-sdk-java.version>
         <api-security-java-version>2.0.19</api-security-java-version>
         <org.mapstruct.version>1.6.3</org.mapstruct.version>
@@ -31,7 +31,6 @@
         <api-helper-java.version>3.0.3</api-helper-java.version>
         <grpc.version>1.78.0</grpc.version>
         <test-containers.version>2.0.3</test-containers.version>
-
         <jakarta.annotation-api.version>3.0.0</jakarta.annotation-api.version>
         <snappy-java.version>1.1.10.8</snappy-java.version>
         <mongodb.version>1.21.4</mongodb.version>
@@ -138,13 +137,28 @@
                 <version>3.27.7</version>
                 <scope>test</scope>
             </dependency>
-
+            <!-- CVE-2020-29582 -->
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib</artifactId>
+                <version>2.3.21</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-spring-boot-starter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.opentelemetry.semconv</groupId>
+                    <artifactId>opentelemetry-semconv-incubating</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.opentelemetry.semconv</groupId>
+                    <artifactId>opentelemetry-semconv-incubating</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
