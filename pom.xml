@@ -39,13 +39,6 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>io.opentelemetry.instrumentation</groupId>
-                <artifactId>opentelemetry-instrumentation-bom</artifactId>
-                <version>2.27.0</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot-dependencies.version}</version>
@@ -146,20 +139,6 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
-        <dependency>
-            <groupId>io.opentelemetry.instrumentation</groupId>
-            <artifactId>opentelemetry-spring-boot-starter</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.opentelemetry.semconv</groupId>
-                    <artifactId>opentelemetry-semconv-incubating</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.opentelemetry.semconv</groupId>
-                    <artifactId>opentelemetry-semconv</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
