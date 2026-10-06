@@ -17,7 +17,7 @@
         <spring-boot.version>4.1.1</spring-boot.version>
 
         <!-- CH dependencies -->
-        <ch-boms.version>0.1.25</ch-boms.version>
+        <ch-boms.version>0.1.27</ch-boms.version>
         <private-api-sdk-java.version>7.2.7</private-api-sdk-java.version>
         <!-- although this is in ch-boms - needed here for the annotation processor path in the maven-compiler-plugin -->
         <mapstruct.version>1.6.3</mapstruct.version>
