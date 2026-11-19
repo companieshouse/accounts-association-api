@@ -37,12 +37,15 @@ import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
 import static uk.gov.companieshouse.accounts.association.models.Constants.ADMIN_UPDATE_PERMISSION;
 import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
+import static uk.gov.companieshouse.accounts.association.models.Constants.DEFAULT_DISPLAY_NAME;
 import static uk.gov.companieshouse.accounts.association.models.context.RequestContext.setRequestContext;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTHORISATION_REMOVED_MESSAGE_TYPE;
 import static uk.gov.companieshouse.accounts.association.utils.MessageType.AUTH_CODE_CONFIRMATION_MESSAGE_TYPE;
@@ -124,8 +127,12 @@ public class EmailService {
                 .flatMapMany( Flux::fromIterable )
                 .reduce( (firstInvitation, secondInvitation) -> firstInvitation.getInvitedAt().isAfter( secondInvitation.getInvitedAt() ) ? firstInvitation : secondInvitation )
                 .map( InvitationDao::getInvitedBy )
-                .map( user -> usersService.fetchUserDetails( user, xRequestId ) )
-                .map( user -> Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() ) )
+                .flatMap( invitedBy -> Mono.fromCallable( () -> usersService.fetchUserDetails( invitedBy, xRequestId ) )
+                        .map( user -> Optional.ofNullable( user.getDisplayName() ).orElse( user.getEmail() ) )
+                        .onErrorResume( NotFoundRuntimeException.class, exception -> {
+                            LOG.errorContext( xRequestId, new Exception( "Inviting user not found in accounts-user-api; using placeholder display name in emails", exception ), new HashMap<>( Map.of( "user_id", invitedBy ) ) );
+                            return Mono.just( DEFAULT_DISPLAY_NAME );
+                        } ) )
                 .cache();
 
         final var isRejectingInvitation = isOAuth2Request() && isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
@@ -165,6 +172,14 @@ public class EmailService {
             emails = emails.concatWith( sendReaDigitalAuthorisationAddedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName ) );
         }
         emails.subscribe();
+    }
+
+    private Mono<User> fetchRecipient( final String userId, final String xRequestId ){
+        return usersService.toFetchUserDetailsRequest( userId, xRequestId )
+                .onErrorResume( NotFoundRuntimeException.class, exception -> {
+                    LOG.errorContext( xRequestId, new Exception( "Recipient not found in accounts-user-api; skipping email to this user", exception ), new HashMap<>( Map.of( "user_id", userId ) ) );
+                    return Mono.empty();
+                } );
     }
 
     private void sendEmail(final String xRequestId, final MessageType messageType, final EmailData emailData, final EmailNotification logMessageSupplier) {
@@ -218,7 +233,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendAuthCodeConfirmationEmailToAssociatedUser( final String xRequestId, final String companyNumber, Mono<String> companyName, final String displayName ) {
         return userId -> Mono.just( userId )
-                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
+                .flatMap( user -> fetchRecipient( user, xRequestId ) )
                 .map( user -> new AuthCodeConfirmationEmailBuilder()
                         .setRecipientEmail( user.getEmail() )
                         .setDisplayName( displayName ) )
@@ -232,7 +247,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendAuthorisationRemovedEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String removedByDisplayName, final String removedUserDisplayName ) {
         return userId -> Mono.just( userId )
-                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
+                .flatMap( user -> fetchRecipient( user, xRequestId ) )
                 .map( user -> new AuthorisationRemovedEmailBuilder()
                         .setRemovedByDisplayName( removedByDisplayName )
                         .setRemovedUserDisplayName( removedUserDisplayName )
@@ -247,7 +262,7 @@ public class EmailService {
 
     public Mono<Void> sendAuthorisationRemovedEmailToRemovedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String removedByDisplayName, final String userId ) {
        return Mono.just( userId )
-               .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
+               .flatMap( user -> fetchRecipient( user, xRequestId ) )
                .map( user -> new YourAuthorisationRemovedEmailBuilder()
                        .setRemovedByDisplayName( removedByDisplayName )
                        .setRecipientEmail( user.getEmail() ) )
@@ -261,7 +276,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendInvitationCancelledEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String cancelledByDisplayName, final String cancelledUserDisplayName ) {
         return userId -> Mono.just( userId )
-                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
+                .flatMap( user -> fetchRecipient( user, xRequestId ) )
                 .map( user -> new InvitationCancelledEmailBuilder()
                         .setCancelledByDisplayName( cancelledByDisplayName )
                         .setCancelledUserDisplayName( cancelledUserDisplayName )
@@ -276,7 +291,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendInvitationEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String inviterDisplayName, final String inviteeDisplayName ) {
         return userId -> Mono.just( userId )
-                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
+                .flatMap( user -> fetchRecipient( user, xRequestId ) )
                 .map( user -> new InvitationEmailBuilder()
                         .setInviteeDisplayName( inviteeDisplayName )
                         .setInviterDisplayName( inviterDisplayName )
@@ -291,7 +306,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendInvitationAcceptedEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final Mono<String> invitedByDisplayName, final String inviteeDisplayName ) {
         return userId -> Mono.just( userId )
-                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
+                .flatMap( user -> fetchRecipient( user, xRequestId ) )
                 .map( user -> new InvitationAcceptedEmailBuilder()
                                 .setInviteeDisplayName( inviteeDisplayName )
                                 .setRecipientEmail( user.getEmail() ) )
@@ -306,7 +321,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendInvitationRejectedEmailToAssociatedUser( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String inviteeDisplayName ) {
         return userId -> Mono.just( userId )
-                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
+                .flatMap( user -> fetchRecipient( user, xRequestId ) )
                 .map( user -> new InvitationRejectedEmailBuilder()
                                 .setInviteeDisplayName( inviteeDisplayName )
                                 .setRecipientEmail( user.getEmail() ) )
@@ -336,7 +351,7 @@ public class EmailService {
         return Mono.just( associationDao )
                 .filter( dao -> Objects.nonNull( dao.getUserId() ) )
                 .map( AssociationDao::getUserId )
-                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
+                .flatMap( user -> fetchRecipient( user, xRequestId ) )
                 .map( User::getEmail )
                 .switchIfEmpty( Mono.just( associationDao ).map( AssociationDao::getUserEmail ) )
                 .map( inviteeEmail -> new InviteCancelledEmailBuilder()
@@ -363,7 +378,7 @@ public class EmailService {
 
     public Mono<Void> sendRemoveOfOwnMigratedEmail( final String xRequestId, final String companyNumber, final Mono<String> companyName, final String userId ) {
         return Mono.just( userId )
-                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
+                .flatMap( user -> fetchRecipient( user, xRequestId ) )
                 .map( user -> new RemovalOfOwnMigratedEmailBuilder()
                         .setRecipientEmail( user.getEmail() ) )
                 .zipWith( companyName, RemovalOfOwnMigratedEmailBuilder::setCompanyName )
@@ -376,7 +391,7 @@ public class EmailService {
 
     public Function<String, Mono<Void>> sendDelegatedRemovalOfMigratedBatchEmail(final String xRequestId, final String companyNumber, final Mono<String> companyName, final String removedBy, final String removedUser ) {
         return userId -> Mono.just( userId )
-                .flatMap( user -> usersService.toFetchUserDetailsRequest( user, xRequestId ) )
+                .flatMap( user -> fetchRecipient( user, xRequestId ) )
                 .map( user -> new DelegatedRemovalOfMigratedBatchEmailBuilder()
                         .setRemovedBy( removedBy )
                         .setRemovedUser( removedUser )
