@@ -1,5 +1,7 @@
 package uk.gov.companieshouse.accounts.association.service;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static uk.gov.companieshouse.accounts.association.models.Constants.OAUTH2;
 import static uk.gov.companieshouse.accounts.association.models.Constants.X_REQUEST_ID;
 import static uk.gov.companieshouse.api.util.security.EricConstants.ERIC_IDENTITY;
@@ -17,9 +19,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
 import uk.gov.companieshouse.accounts.association.common.Mockers.UriType;
 import uk.gov.companieshouse.accounts.association.common.TestDataManager;
@@ -92,11 +96,40 @@ class UsersServiceTest {
     }
 
     @Test
-    void fetchUserDetailsWithStreamThatHasNonExistentUserReturnsNotFoundRuntimeException(){
+    void fetchUserDetailsWithStreamThatHasNonExistentUserOmitsThatUser(){
         final var associationDao = new AssociationDao();
         associationDao.setUserId( "404User" );
         mockers.mockWebClientForFetchUserDetailsErrorResponse( "404User", 404 );
-        Assertions.assertThrows( NotFoundRuntimeException.class, () -> usersService.fetchUserDetails( Stream.of( associationDao ) ) );
+        Assertions.assertTrue( usersService.fetchUserDetails( Stream.of( associationDao ) ).isEmpty() );
+    }
+
+    @Test
+    void fetchUserDetailsWithStreamReturnsRemainingUsersWhenOneOfSeveralIsNotFound(){
+        final var spiedUsersService = Mockito.spy( usersService );
+        final var users = testDataManager.fetchUserDtos( "111", "222" );
+        final var associations = Stream.of( "111", "404User", "222" ).map( userId -> new AssociationDao().userId( userId ) );
+
+        Mockito.doReturn( Mono.just( users.getFirst() ) ).when( spiedUsersService ).toFetchUserDetailsRequest( eq( "111" ), any() );
+        Mockito.doReturn( Mono.just( users.getLast() ) ).when( spiedUsersService ).toFetchUserDetailsRequest( eq( "222" ), any() );
+        Mockito.doReturn( Mono.error( new NotFoundRuntimeException( "id123", "Failed to find user", new Exception( "Failed to find user" ) ) ) ).when( spiedUsersService ).toFetchUserDetailsRequest( eq( "404User" ), any() );
+
+        final var result = spiedUsersService.fetchUserDetails( associations );
+
+        Assertions.assertEquals( 2, result.size() );
+        Assertions.assertEquals( users.getFirst(), result.get( "111" ) );
+        Assertions.assertEquals( users.getLast(), result.get( "222" ) );
+        Assertions.assertFalse( result.containsKey( "404User" ) );
+    }
+
+    @Test
+    void fetchUserDetailsWithStreamPropagatesServerErrorWhenOneOfSeveralUsersFails(){
+        final var spiedUsersService = Mockito.spy( usersService );
+        final var associations = Stream.of( "111", "500User" ).map( userId -> new AssociationDao().userId( userId ) );
+
+        Mockito.lenient().doReturn( Mono.just( testDataManager.fetchUserDtos( "111" ).getFirst() ) ).when( spiedUsersService ).toFetchUserDetailsRequest( eq( "111" ), any() );
+        Mockito.doReturn( Mono.error( new InternalServerErrorRuntimeException( "id123", "Failed to retrieve user details", new Exception( "Failed to retrieve user details" ) ) ) ).when( spiedUsersService ).toFetchUserDetailsRequest( eq( "500User" ), any() );
+
+        Assertions.assertThrows( InternalServerErrorRuntimeException.class, () -> spiedUsersService.fetchUserDetails( associations ) );
     }
 
     @Test

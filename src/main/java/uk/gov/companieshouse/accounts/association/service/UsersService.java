@@ -9,6 +9,7 @@ import static uk.gov.companieshouse.accounts.association.utils.RequestContextUti
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isOAuth2Request;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,7 +67,11 @@ public class UsersService {
                 .filter( association -> Objects.nonNull( association.getUserId() ) )
                 .map( AssociationDao::getUserId )
                 .distinct()
-                .flatMap( userId -> toFetchUserDetailsRequest( userId, xRequestId ) )
+                .flatMap( userId -> toFetchUserDetailsRequest( userId, xRequestId )
+                        .onErrorResume( NotFoundRuntimeException.class, exception -> {
+                            LOGGER.errorContext( xRequestId, new Exception( "User not found in accounts-user-api; omitting from fetched users", exception ), new HashMap<>( Map.of( "user_id", userId ) ) );
+                            return Mono.empty();
+                        } ) )
                 .collectMap( User::getUserId )
                 .block( Duration.ofSeconds( 20L ) );
     }

@@ -2,6 +2,8 @@ package uk.gov.companieshouse.accounts.association.mapper;
 
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static uk.gov.companieshouse.accounts.association.models.Constants.DEFAULT_DISPLAY_NAME;
 
 import java.util.List;
 import java.util.Map;
@@ -96,6 +98,28 @@ class AssociationListCompanyMapperTest {
         Assertions.assertEquals( "/associations/companies/111111?page_index=0&items_per_page=2", links.getSelf() );
         Assertions.assertEquals( "/associations/companies/111111?page_index=1&items_per_page=2", links.getNext() );
         Assertions.assertEquals( 2, associations.getItems().size() );
+    }
+
+    @Test
+    void daoToDtoUsesPlaceholderWithoutRefetchingWhenUserWasNotFound(){
+        final var associationDaos = testDataManager.fetchAssociationDaos( "1", "2" );
+        final var users = testDataManager.fetchUserDtos( "111" );
+        final var company = testDataManager.fetchCompanyDetailsDtos( "111111" ).getFirst();
+
+        final var content = new PageImpl<>( associationDaos, PageRequest.of( 0, 15 ), associationDaos.size() );
+
+        Mockito.doReturn( Map.of( "111", users.getFirst() ) ).when( usersService ).fetchUserDetails( any( Stream.class ) );
+
+        final var associations = associationsListCompanyMapper.daoToDto( content, company );
+        final var foundUserAssociation = associations.getItems().getFirst();
+        final var missingUserAssociation = associations.getItems().getLast();
+
+        Assertions.assertEquals( 2, associations.getItems().size() );
+        Assertions.assertEquals( users.getFirst().getEmail(), foundUserAssociation.getUserEmail() );
+        Assertions.assertEquals( "222", missingUserAssociation.getUserId() );
+        Assertions.assertEquals( associationDaos.getLast().getUserEmail(), missingUserAssociation.getUserEmail() );
+        Assertions.assertEquals( DEFAULT_DISPLAY_NAME, missingUserAssociation.getDisplayName() );
+        Mockito.verify( usersService, Mockito.never() ).fetchUserDetails( anyString(), any() );
     }
 
     @Test

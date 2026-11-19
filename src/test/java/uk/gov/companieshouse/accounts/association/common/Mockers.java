@@ -17,8 +17,14 @@ import uk.gov.companieshouse.api.accounts.user.model.UsersList;
 import uk.gov.companieshouse.api.chskafka.SendEmail;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import uk.gov.companieshouse.accounts.association.models.AssociationDao;
+import uk.gov.companieshouse.api.accounts.user.model.User;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -40,6 +46,7 @@ public class Mockers {
     private final CompanyService companyService;
     private final UsersService usersService;
     private boolean mockHeader = true;
+    private final Map<String, User> registeredUsers = new HashMap<>();
 
     public Mockers(final WebClient webClient, final EmailClient emailClient, final CompanyService companyService, final UsersService usersService) {
         this.webClient = webClient;
@@ -375,14 +382,29 @@ public class Mockers {
     public void mockUsersServiceFetchUserDetails( final String... userIds ){
         for ( final String userId: userIds ){
             final var userDetails = testDataManager.fetchUserDtos( userId ).getFirst();
+            registeredUsers.put( userId, userDetails );
             Mockito.doReturn( userDetails ).when( usersService ).fetchUserDetails( eq(userId), any() );
         }
+        Mockito.lenient().doAnswer( invocation -> {
+            final Stream<AssociationDao> associations = invocation.getArgument( 0 );
+            return associations
+                    .map( AssociationDao::getUserId )
+                    .filter( registeredUsers::containsKey )
+                    .distinct()
+                    .collect( Collectors.toMap( Function.identity(), registeredUsers::get ) );
+        } ).when( usersService ).fetchUserDetails( any( Stream.class ) );
     }
 
     public void mockUsersServiceToFetchUserDetailsRequest( final String... userIds ){
         for ( final String userId: userIds ){
             final var userDetails = testDataManager.fetchUserDtos( userId ).getFirst();
             Mockito.doReturn( Mono.just( userDetails ) ).when( usersService ).toFetchUserDetailsRequest( eq(userId), any() );
+        }
+    }
+
+    public void mockUsersServiceToFetchUserDetailsRequestNotFound( final String... userIds ){
+        for ( final String userId: userIds ){
+            Mockito.doReturn( Mono.error( new NotFoundRuntimeException( X_REQUEST_ID_VALUE, "Not found.", new Exception( "Not found." ) ) ) ).when( usersService ).toFetchUserDetailsRequest( eq(userId), any() );
         }
     }
 

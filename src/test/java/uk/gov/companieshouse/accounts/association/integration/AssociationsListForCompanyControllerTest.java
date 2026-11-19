@@ -274,8 +274,9 @@ class AssociationsListForCompanyControllerTest extends BaseMongoIntegration {
     }
 
     @Test
-    void getAssociationsForCompanyWhereAccountsUserEndpointCannotFindUserReturnsNotFound() throws Exception {
+    void getAssociationsForCompanyWhereAccountsUserEndpointCannotFindUserReturnsOkWithPlaceholderUser() throws Exception {
         final var associations = testDataManager.fetchAssociationDaos( "1" );
+        associations.getFirst().setUserEmail( null );
         associations.add( testDataManager.fetchAssociationDaos( "18" ).getFirst().companyNumber( "111111" ) );
 
         associationsRepository.insert( associations );
@@ -283,11 +284,22 @@ class AssociationsListForCompanyControllerTest extends BaseMongoIntegration {
         mockers.mockUsersServiceFetchUserDetailsNotFound( "111" );
         mockers.mockCompanyServiceFetchCompanyProfile( "111111" );
 
-        mockMvc.perform(get(ASSOCIATIONS_COMPANIES + "111111")
+        final var response = mockMvc.perform(get(ASSOCIATIONS_COMPANIES + "111111")
                         .header(X_REQUEST_ID, X_REQUEST_ID_VALUE)
                         .header(ERIC_IDENTITY, ERIC_ID_VALUE)
                         .header(ERIC_IDENTITY_TYPE, OAUTH_2))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk());
+
+        final var items = parseResponseTo( response, AssociationsList.class ).getItems();
+        final var danglingUserAssociation = items.stream().filter( association -> "1".equals( association.getId() ) ).findFirst().orElseThrow();
+        final var requestingUserAssociation = items.stream().filter( association -> ERIC_ID_VALUE.equals( association.getUserId() ) ).findFirst().orElseThrow();
+
+        Assertions.assertEquals( 2, items.size() );
+        Assertions.assertEquals( "111", danglingUserAssociation.getUserId() );
+        Assertions.assertEquals( DEFAULT_DISPLAY_NAME, danglingUserAssociation.getUserEmail() );
+        Assertions.assertEquals( DEFAULT_DISPLAY_NAME, danglingUserAssociation.getDisplayName() );
+        Assertions.assertEquals( testDataManager.fetchUserDtos( ERIC_ID_VALUE ).getFirst().getEmail(), requestingUserAssociation.getUserEmail() );
+        Mockito.verify( usersService, Mockito.never() ).fetchUserDetails( Mockito.eq( "111" ), Mockito.any() );
     }
 
     @Test

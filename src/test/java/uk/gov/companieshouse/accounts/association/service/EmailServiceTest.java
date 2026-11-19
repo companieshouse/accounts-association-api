@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.companieshouse.accounts.association.client.EmailClient;
 import uk.gov.companieshouse.accounts.association.common.ComparisonUtils;
@@ -110,6 +111,20 @@ class EmailServiceTest {
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), null, "Batman" ).apply( "333" ).block() );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel", null ).apply( "333" ).block() );
         Assertions.assertThrows( NullPointerException.class, () -> emailService.sendAuthorisationRemovedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel", "Batman" ).apply( null ).block() );
+    }
+
+    @Test
+    void sendAuthorisationRemovedEmailToAssociatedUsersSkipsNotFoundUserAndStillEmailsTheRest() {
+        mockers.mockUsersServiceToFetchUserDetailsRequest( "333", "444" );
+        mockers.mockUsersServiceToFetchUserDetailsRequestNotFound( "404User" );
+        sendEmailFactoryMock(AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue());
+
+        Flux.just( "333", "404User", "444" )
+                .flatMap( emailService.sendAuthorisationRemovedEmailToAssociatedUser( "theId12345", "111111", Mono.just( "Wayne Enterprises" ), "Harleen Quinzel", "Batman" ) )
+                .blockLast();
+
+        Mockito.verify(sendEmailFactory, Mockito.times(2)).createSendEmail(Mockito.any(EmailData.class), eq(AUTHORISATION_REMOVED_MESSAGE_TYPE.getValue()));
+        Mockito.verify(emailClient, Mockito.times(2)).sendEmail(Mockito.any(SendEmail.class), eq("theId12345"));
     }
 
     @Test

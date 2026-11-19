@@ -2,6 +2,7 @@ package uk.gov.companieshouse.accounts.association.mapper;
 
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.localDateTimeToNormalisedString;
 import static uk.gov.companieshouse.accounts.association.common.ParsingUtils.reduceTimestampResolution;
+import static uk.gov.companieshouse.accounts.association.models.Constants.DEFAULT_DISPLAY_NAME;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +44,15 @@ class InvitationsMapperTest {
         Assertions.assertEquals( localDateTimeToNormalisedString( invitationDao.getInvitedAt() ), reduceTimestampResolution( invitationDto.getInvitedAt() ) );
         Assertions.assertEquals( "1", invitationDto.getAssociationId() );
         Assertions.assertTrue( invitationDto.getIsActive() );
+    }
+
+    @Test
+    void daoToDtoUsesPlaceholderWhenInvitingUserIsNotFound(){
+        final var invitationDao = testDataManager.fetchAssociationDaos( "1" ).getFirst().getInvitations().getFirst();
+        mockers.mockUsersServiceFetchUserDetailsNotFound( invitationDao.getInvitedBy() );
+        final var invitationDto = invitationsMapper.daoToDto( invitationDao, "1" );
+        Assertions.assertEquals( DEFAULT_DISPLAY_NAME, invitationDto.getInvitedBy() );
+        Assertions.assertEquals( "1", invitationDto.getAssociationId() );
     }
 
 }

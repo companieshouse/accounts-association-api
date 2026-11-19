@@ -95,6 +95,32 @@ class AssociationMapperTest {
     }
 
     @Test
+    void enrichWithUserDetailsUsesPlaceholderWhenUserIsNotFound(){
+        final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var associationPreprocessed = testDataManager.fetchAssociationDto( "1", user ).userEmail( null ).displayName( null );
+
+        mockers.mockUsersServiceFetchUserDetailsNotFound( "111" );
+
+        associationMapper.enrichWithUserDetails( associationPreprocessed, null );
+
+        Assertions.assertEquals( DEFAULT_DISPLAY_NAME, associationPreprocessed.getUserEmail() );
+        Assertions.assertEquals( DEFAULT_DISPLAY_NAME, associationPreprocessed.getDisplayName() );
+    }
+
+    @Test
+    void enrichWithUserDetailsKeepsStoredEmailWhenUserIsNotFound(){
+        final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
+        final var associationPreprocessed = testDataManager.fetchAssociationDto( "1", user ).userEmail( "stored@example.com" ).displayName( null );
+
+        mockers.mockUsersServiceFetchUserDetailsNotFound( "111" );
+
+        associationMapper.enrichWithUserDetails( associationPreprocessed, null );
+
+        Assertions.assertEquals( "stored@example.com", associationPreprocessed.getUserEmail() );
+        Assertions.assertEquals( DEFAULT_DISPLAY_NAME, associationPreprocessed.getDisplayName() );
+    }
+
+    @Test
     void enrichWithUserDetailsUsesDefaultDataIfInputObjectAndUserIdAreNull(){
         final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
         final var associationPreprocessed = testDataManager.fetchAssociationDto( "1", user ).userId( null ).displayName( null );
