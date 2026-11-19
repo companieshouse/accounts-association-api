@@ -296,7 +296,7 @@ class AssociationsListForCompanyControllerTest extends BaseMongoIntegration {
 
         Assertions.assertEquals( 2, items.size() );
         Assertions.assertEquals( "111", danglingUserAssociation.getUserId() );
-        Assertions.assertEquals( DEFAULT_DISPLAY_NAME, danglingUserAssociation.getUserEmail() );
+        Assertions.assertNull( danglingUserAssociation.getUserEmail() );
         Assertions.assertEquals( DEFAULT_DISPLAY_NAME, danglingUserAssociation.getDisplayName() );
         Assertions.assertEquals( testDataManager.fetchUserDtos( ERIC_ID_VALUE ).getFirst().getEmail(), requestingUserAssociation.getUserEmail() );
         Mockito.verify( usersService, Mockito.never() ).fetchUserDetails( Mockito.eq( "111" ), Mockito.any() );

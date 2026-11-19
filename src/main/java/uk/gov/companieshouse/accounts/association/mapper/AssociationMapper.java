@@ -60,12 +60,13 @@ public abstract class AssociationMapper {
         }
     }
 
-    // Used when a user_id no longer exists in accounts-user-api. Consumers (e.g. your-companies-web) render
-    // userEmail as the person's heading, so DEFAULT_DISPLAY_NAME is used when no email is stored on the association.
+    // Used when a user_id no longer exists in accounts-user-api. The email is deliberately left null rather than
+    // set to a placeholder, because consumers (e.g. your-companies-web) use userEmail as data, such as the
+    // recipient when sending or resending invitations.
     protected static User toUnresolvedUser( final String userId, final String storedUserEmail ){
         return new User()
                 .userId( userId )
-                .email( Optional.ofNullable( storedUserEmail ).orElse( DEFAULT_DISPLAY_NAME ) );
+                .email( storedUserEmail );
     }
 
     @AfterMapping

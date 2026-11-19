@@ -1,6 +1,5 @@
 package uk.gov.companieshouse.accounts.association.mapper;
 
-import static uk.gov.companieshouse.accounts.association.models.Constants.DEFAULT_DISPLAY_NAME;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
@@ -30,8 +29,8 @@ public abstract class InvitationMapper {
         try {
             invitation.setInvitedBy( usersService.fetchUserDetails( invitedBy, getXRequestId() ).getEmail() );
         } catch ( NotFoundRuntimeException exception ){
-            LOGGER.errorContext( getXRequestId(), new Exception( "Inviting user not found in accounts-user-api; using placeholder for invited_by", exception ), new HashMap<>( Map.of( "user_id", String.valueOf( invitedBy ) ) ) );
-            invitation.setInvitedBy( DEFAULT_DISPLAY_NAME );
+            LOGGER.errorContext( getXRequestId(), new Exception( "Inviting user not found in accounts-user-api; leaving invited_by null", exception ), new HashMap<>( Map.of( "user_id", String.valueOf( invitedBy ) ) ) );
+            invitation.setInvitedBy( null );
         }
     }
 

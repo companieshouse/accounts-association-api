@@ -95,7 +95,7 @@ class AssociationMapperTest {
     }
 
     @Test
-    void enrichWithUserDetailsUsesPlaceholderWhenUserIsNotFound(){
+    void enrichWithUserDetailsLeavesEmailNullAndUsesPlaceholderDisplayNameWhenUserIsNotFound(){
         final var user = testDataManager.fetchUserDtos( "111" ).getFirst();
         final var associationPreprocessed = testDataManager.fetchAssociationDto( "1", user ).userEmail( null ).displayName( null );
 
@@ -103,7 +103,7 @@ class AssociationMapperTest {
 
         associationMapper.enrichWithUserDetails( associationPreprocessed, null );
 
-        Assertions.assertEquals( DEFAULT_DISPLAY_NAME, associationPreprocessed.getUserEmail() );
+        Assertions.assertNull( associationPreprocessed.getUserEmail() );
         Assertions.assertEquals( DEFAULT_DISPLAY_NAME, associationPreprocessed.getDisplayName() );
     }
 
