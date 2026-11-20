@@ -4,7 +4,7 @@ import static uk.gov.companieshouse.GenerateEtagUtil.generateEtag;
 import static uk.gov.companieshouse.accounts.association.models.Constants.COMPANIES_HOUSE;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
+import static uk.gov.companieshouse.accounts.association.models.Constants.DAYS_SINCE_INVITE_TILL_EXPIRES;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum.AUTH_CODE;
 import static uk.gov.companieshouse.api.accounts.associations.model.PreviousState.StatusEnum.AWAITING_APPROVAL;
 import static uk.gov.companieshouse.api.accounts.associations.model.RequestBodyPut.StatusEnum.CONFIRMED;
@@ -27,6 +27,8 @@ public final class AssociationsUtil {
 
     private AssociationsUtil(){}
 
+    private static final String STATUS_FIELD = "status";
+
     private static Update mapToBaseUpdate( final AssociationDao targetAssociation, final User targetUser, final String changedByUserId ){
         LOGGER.debugContext( getXRequestId(), "Attempting to mapToBaseUpdate", null );
 
@@ -47,31 +49,31 @@ public final class AssociationsUtil {
         final var invitationDao = new InvitationDao().invitedBy( invitedByUserId ).invitedAt( now );
         return mapToBaseUpdate( targetAssociation, targetUser, invitedByUserId )
                 .push( "invitations", invitationDao )
-                .set( "status", AWAITING_APPROVAL.getValue() )
+                .set( STATUS_FIELD, AWAITING_APPROVAL.getValue() )
                 .set( "approval_expiry_at", now.plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ) );
     }
 
     public static Update mapToConfirmedUpdate( final AssociationDao targetAssociation, final User targetUser, final String changedByUserId ){
         return mapToBaseUpdate( targetAssociation, targetUser, changedByUserId )
-                .set( "status", CONFIRMED.getValue() )
+                .set( STATUS_FIELD, CONFIRMED.getValue() )
                 .set( "approved_at", LocalDateTime.now() );
     }
 
     public static Update mapToRemovedUpdate( final AssociationDao targetAssociation, final User targetUser, final String changedByUserId ){
         return mapToBaseUpdate( targetAssociation, targetUser, changedByUserId )
-                .set( "status", REMOVED.getValue() )
+                .set( STATUS_FIELD, REMOVED.getValue() )
                 .set( "removed_at", LocalDateTime.now() );
     }
 
     public static Update mapToAuthCodeConfirmedUpdated( final AssociationDao targetAssociation, final User targetUser, final String changedByUserId ) {
         return mapToBaseUpdate( targetAssociation, targetUser, changedByUserId )
-                .set( "status", CONFIRMED.getValue() )
+                .set( STATUS_FIELD, CONFIRMED.getValue() )
                 .set( "approval_route", AUTH_CODE.getValue() );
     }
 
     public static Update mapToUnauthorisedUpdate( final AssociationDao targetAssociation, final User targetUser ){
         return mapToBaseUpdate( targetAssociation, targetUser, COMPANIES_HOUSE )
-                .set( "status", UNAUTHORISED.getValue() )
+                .set( STATUS_FIELD, UNAUTHORISED.getValue() )
                 .set( "unauthorised_at", LocalDateTime.now() )
                 .set( "unauthorised_by", COMPANIES_HOUSE );
     }

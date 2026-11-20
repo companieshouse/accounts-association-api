@@ -2,7 +2,7 @@ package uk.gov.companieshouse.accounts.association.mapper;
 
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
+import static uk.gov.companieshouse.accounts.association.models.Constants.DAYS_SINCE_INVITE_TILL_EXPIRES;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;

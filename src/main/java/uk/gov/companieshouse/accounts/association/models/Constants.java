@@ -15,5 +15,8 @@ public class Constants {
     public static final String ADMIN_UPDATE_PERMISSION = "/admin/user-company-associations/update";
     public static final String COMPANIES_HOUSE =  "Companies House";
     public static final String ERIC_AUTHORISED_TOKEN_PERMISSIONS = "ERIC-Authorised-Token-Permissions";
+    public static final int DAYS_SINCE_INVITE_TILL_EXPIRES = 30;
 
+    private Constants() {
+    }
 }

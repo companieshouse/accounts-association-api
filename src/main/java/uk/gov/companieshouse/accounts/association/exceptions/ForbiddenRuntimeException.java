@@ -1,6 +1,6 @@
 package uk.gov.companieshouse.accounts.association.exceptions;
 
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.APPLICATION_NAMESPACE;
+import static uk.gov.companieshouse.accounts.association.AccountsAssociationServiceApplication.APPLICATION_NAMESPACE;
 
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;

@@ -67,8 +67,8 @@ import static uk.gov.companieshouse.accounts.association.utils.RequestContextUti
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.hasAdminPrivilege;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isAPIKeyRequest;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.isOAuth2Request;
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.APPLICATION_NAMESPACE;
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
+import static uk.gov.companieshouse.accounts.association.AccountsAssociationServiceApplication.APPLICATION_NAMESPACE;
+import static uk.gov.companieshouse.accounts.association.models.Constants.DAYS_SINCE_INVITE_TILL_EXPIRES;
 import static uk.gov.companieshouse.accounts.association.utils.UserUtil.isRequestingUser;
 import static uk.gov.companieshouse.accounts.association.utils.UserUtil.mapToDisplayValue;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.AWAITING_APPROVAL;
@@ -99,29 +99,107 @@ public class EmailService {
         this.sendEmailFactory = sendEmailFactory;
     }
 
+    private enum StatusUpdateEmailScenario {
+        REJECTING_INVITATION,
+        REMOVING_AUTHORISATION,
+        ACCEPTING_INVITATION,
+        CANCELLING_ANOTHER_USERS_INVITATION,
+        REMOVING_ANOTHER_USERS_MIGRATED_ASSOCIATION,
+        REMOVING_OWN_MIGRATED_ASSOCIATION,
+        INVITING_USER,
+        CONFIRMING_WITH_AUTH_CODE,
+        NONE
+    }
+
     @Async
     public void sendStatusUpdateEmails( final AssociationDao targetAssociation, final User targetUser, final StatusEnum newStatus, final
             RequestContextData requestContextData) {
         setRequestContext(requestContextData);
 
         final var xRequestId = getXRequestId();
+        final var companyNumber = targetAssociation.getCompanyNumber();
         final var requestingUserDisplayValue = isAPIKeyRequest() || hasAdminPrivilege( ADMIN_UPDATE_PERMISSION ) ? COMPANIES_HOUSE : mapToDisplayValue( getUser(), getUser().getEmail() );
         final var targetUserDisplayValue = mapToDisplayValue( targetUser, targetAssociation.getUserEmail() );
         final var targetUserEmail = Optional.ofNullable( targetUser ).map( User::getEmail ).orElse( targetAssociation.getUserEmail() );
-        final var oldStatus = targetAssociation.getStatus();
 
         final var cachedCompanyName = Mono
-                .just( targetAssociation.getCompanyNumber() )
+                .just( companyNumber )
                 .map( companyService::fetchCompanyProfile )
                 .map( CompanyDetails::getCompanyName )
                 .cache();
 
         final var cachedAssociatedUsers = Mono
-                .just( targetAssociation.getCompanyNumber() )
+                .just( companyNumber )
                 .flatMapMany( associationsService::fetchConfirmedUserIds )
                 .cache();
 
-        final var cachedInvitedByDisplayName = Mono
+        final Flux<Void> emails = switch ( determineStatusUpdateEmailScenario( targetAssociation, newStatus ) ) {
+            case REJECTING_INVITATION -> cachedAssociatedUsers.flatMap( sendInvitationRejectedEmailToAssociatedUser( xRequestId, companyNumber, cachedCompanyName, requestingUserDisplayValue ) );
+            case REMOVING_AUTHORISATION -> Flux.concat(
+                    sendAuthorisationRemovedEmailToRemovedUser( xRequestId, companyNumber, cachedCompanyName, requestingUserDisplayValue, targetAssociation.getUserId() ),
+                    cachedAssociatedUsers.flatMap( sendAuthorisationRemovedEmailToAssociatedUser( xRequestId, companyNumber, cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ),
+                    sendReaDigitalAuthorisationRemovedEmail( xRequestId, companyNumber, cachedCompanyName ) );
+            case ACCEPTING_INVITATION -> Flux.concat(
+                    cachedAssociatedUsers.flatMap( sendInvitationAcceptedEmailToAssociatedUser( xRequestId, companyNumber, cachedCompanyName, fetchInvitedByDisplayName( targetAssociation, xRequestId ), requestingUserDisplayValue ) ),
+                    sendReaDigitalAuthorisationAddedEmail( xRequestId, companyNumber, cachedCompanyName ) );
+            case CANCELLING_ANOTHER_USERS_INVITATION -> Flux.concat(
+                    sendInviteCancelledEmail( xRequestId, companyNumber, cachedCompanyName, requestingUserDisplayValue, targetAssociation ),
+                    cachedAssociatedUsers.flatMap( sendInvitationCancelledEmailToAssociatedUser( xRequestId, companyNumber, cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
+            case REMOVING_ANOTHER_USERS_MIGRATED_ASSOCIATION -> Flux.concat(
+                    sendDelegatedRemovalOfMigratedEmail( xRequestId, companyNumber, cachedCompanyName, requestingUserDisplayValue, targetUserEmail ),
+                    cachedAssociatedUsers.flatMap( sendDelegatedRemovalOfMigratedBatchEmail( xRequestId, companyNumber, cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
+            case REMOVING_OWN_MIGRATED_ASSOCIATION -> Flux.concat(
+                    sendRemoveOfOwnMigratedEmail( xRequestId, companyNumber, cachedCompanyName, getEricIdentity() ),
+                    cachedAssociatedUsers.flatMap( sendDelegatedRemovalOfMigratedBatchEmail( xRequestId, companyNumber, cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
+            case INVITING_USER -> Flux.concat(
+                    sendInviteEmail( xRequestId, companyNumber, cachedCompanyName, requestingUserDisplayValue, LocalDateTime.now().plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ).toString(), targetUserEmail ),
+                    cachedAssociatedUsers.flatMap( sendInvitationEmailToAssociatedUser( xRequestId, companyNumber, cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
+            case CONFIRMING_WITH_AUTH_CODE -> Flux.concat(
+                    cachedAssociatedUsers.flatMap( sendAuthCodeConfirmationEmailToAssociatedUser( xRequestId, companyNumber, cachedCompanyName, targetUserDisplayValue ) ),
+                    sendReaDigitalAuthorisationAddedEmail( xRequestId, companyNumber, cachedCompanyName ) );
+            case NONE -> Flux.empty();
+        };
+        emails.subscribe();
+    }
+
+    private static StatusUpdateEmailScenario determineStatusUpdateEmailScenario( final AssociationDao targetAssociation, final StatusEnum newStatus ) {
+        if ( isAPIKeyRequest() ) {
+            return isBeingAuthorised( targetAssociation.getStatus(), newStatus ) ? StatusUpdateEmailScenario.CONFIRMING_WITH_AUTH_CODE : StatusUpdateEmailScenario.NONE;
+        }
+        return isOAuth2Request() ? determineOAuth2StatusUpdateEmailScenario( targetAssociation, newStatus ) : StatusUpdateEmailScenario.NONE;
+    }
+
+    private static StatusUpdateEmailScenario determineOAuth2StatusUpdateEmailScenario( final AssociationDao targetAssociation, final StatusEnum newStatus ) {
+        final var oldStatus = targetAssociation.getStatus();
+        final var isRequestingUser = isRequestingUser( targetAssociation );
+        final var wasAwaitingApproval = oldStatus.equals( AWAITING_APPROVAL.getValue() );
+        final var wasMigrated = oldStatus.equals( MIGRATED.getValue() );
+        final var isBeingRemoved = newStatus.equals( REMOVED );
+
+        if ( wasAwaitingApproval && isBeingRemoved ) {
+            return isRequestingUser ? StatusUpdateEmailScenario.REJECTING_INVITATION : StatusUpdateEmailScenario.CANCELLING_ANOTHER_USERS_INVITATION;
+        }
+        if ( oldStatus.equals( CONFIRMED.getValue() ) && isBeingRemoved ) {
+            return StatusUpdateEmailScenario.REMOVING_AUTHORISATION;
+        }
+        if ( wasAwaitingApproval && isRequestingUser && newStatus.equals( CONFIRMED ) ) {
+            return StatusUpdateEmailScenario.ACCEPTING_INVITATION;
+        }
+        if ( wasMigrated && isBeingRemoved ) {
+            return isRequestingUser ? StatusUpdateEmailScenario.REMOVING_OWN_MIGRATED_ASSOCIATION : StatusUpdateEmailScenario.REMOVING_ANOTHER_USERS_MIGRATED_ASSOCIATION;
+        }
+        if ( !isRequestingUser && isBeingAuthorised( oldStatus, newStatus ) ) {
+            return StatusUpdateEmailScenario.INVITING_USER;
+        }
+        return StatusUpdateEmailScenario.NONE;
+    }
+
+    private static boolean isBeingAuthorised( final String oldStatus, final StatusEnum newStatus ) {
+        return oldStatus.equals( MIGRATED.getValue() ) || oldStatus.equals( UNAUTHORISED.getValue() ) && newStatus.equals( CONFIRMED );
+    }
+
+    private Mono<String> fetchInvitedByDisplayName( final AssociationDao targetAssociation, final String xRequestId ) {
+        return Mono
                 .just( targetAssociation )
                 .map( AssociationDao::getInvitations )
                 .flatMapMany( Flux::fromIterable )
@@ -134,44 +212,6 @@ public class EmailService {
                             return Mono.just( DEFAULT_DISPLAY_NAME );
                         } ) )
                 .cache();
-
-        final var isRejectingInvitation = isOAuth2Request() && isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
-        final var authorisationIsBeingRemoved = isOAuth2Request() && oldStatus.equals( CONFIRMED.getValue() ) && newStatus.equals( REMOVED );
-        final var isAcceptingInvitation = isOAuth2Request() && isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( CONFIRMED );
-        final var isCancellingAnotherUsersInvitation = isOAuth2Request() && !isRequestingUser( targetAssociation ) && oldStatus.equals( AWAITING_APPROVAL.getValue() ) && newStatus.equals( REMOVED );
-        final var isRemovingAnotherUsersMigratedAssociation = isOAuth2Request() && !isRequestingUser( targetAssociation ) && oldStatus.equals( MIGRATED.getValue() ) && newStatus.equals( REMOVED );
-        final var isRemovingOwnMigratedAssociation = isOAuth2Request() && isRequestingUser( targetAssociation ) && oldStatus.equals( MIGRATED.getValue() ) && newStatus.equals( REMOVED );
-        final var isInvitingUser = isOAuth2Request() && !isRequestingUser( targetAssociation ) && ( oldStatus.equals( MIGRATED.getValue() ) || oldStatus.equals( UNAUTHORISED.getValue() ) && newStatus.equals( CONFIRMED ) );
-        final var isConfirmingWithAuthCode = isAPIKeyRequest() && ( oldStatus.equals( MIGRATED.getValue() ) || oldStatus.equals( UNAUTHORISED.getValue() ) && newStatus.equals( CONFIRMED ) );
-
-        var emails = Flux.empty();
-        if ( isRejectingInvitation ) {
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendInvitationRejectedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue ) ) );
-        } else if ( authorisationIsBeingRemoved ) {
-            emails = emails.concatWith( sendAuthorisationRemovedEmailToRemovedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation.getUserId() ) );
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendAuthorisationRemovedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-            emails = emails.concatWith( sendReaDigitalAuthorisationRemovedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName ) );
-        } else if ( isAcceptingInvitation ) {
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendInvitationAcceptedEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, cachedInvitedByDisplayName, requestingUserDisplayValue ) ) );
-            emails = emails.concatWith( sendReaDigitalAuthorisationAddedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName ) );
-        } else if ( isCancellingAnotherUsersInvitation ) {
-            emails = emails.concatWith( sendInviteCancelledEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetAssociation ) );
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendInvitationCancelledEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-        } else if ( isRemovingAnotherUsersMigratedAssociation ) {
-            emails = emails.concatWith( sendDelegatedRemovalOfMigratedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserEmail ) );
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendDelegatedRemovalOfMigratedBatchEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-        } else if ( isRemovingOwnMigratedAssociation ) {
-            emails = emails.concatWith( sendRemoveOfOwnMigratedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, getEricIdentity() ) );
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendDelegatedRemovalOfMigratedBatchEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-        } else if ( isInvitingUser ) {
-            final var invitationExpiryTimestamp = LocalDateTime.now().plusDays( DAYS_SINCE_INVITE_TILL_EXPIRES ).toString();
-            emails = emails.concatWith( sendInviteEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, invitationExpiryTimestamp, targetUserEmail ) );
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendInvitationEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, requestingUserDisplayValue, targetUserDisplayValue ) ) );
-        } else if ( isConfirmingWithAuthCode ){
-            emails = emails.concatWith( cachedAssociatedUsers.flatMap( sendAuthCodeConfirmationEmailToAssociatedUser( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName, targetUserDisplayValue ) ) );
-            emails = emails.concatWith( sendReaDigitalAuthorisationAddedEmail( xRequestId, targetAssociation.getCompanyNumber(), cachedCompanyName ) );
-        }
-        emails.subscribe();
     }
 
     private Mono<User> fetchRecipient( final String userId, final String xRequestId ){

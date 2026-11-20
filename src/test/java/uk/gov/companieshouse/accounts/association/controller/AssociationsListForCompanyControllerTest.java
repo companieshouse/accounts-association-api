@@ -18,7 +18,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -29,7 +28,6 @@ import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeExce
 import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.Association;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.ApprovalRouteEnum;
 import uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum;
@@ -99,9 +97,6 @@ class AssociationsListForCompanyControllerTest {
     @MockitoBean
     private UsersService usersService;
 
-    @MockitoBean
-    private StaticPropertyUtil staticPropertyUtil;
-
     private static final String DEFAULT_KIND = "association";
     private static final String DEFAULT_DISPLAY_NAME = "Not provided";
 
@@ -116,7 +111,6 @@ class AssociationsListForCompanyControllerTest {
         mockMvc = MockMvcBuilders.webAppContextSetup( context )
                 .apply( SecurityMockMvcConfigurers.springSecurity() )
                 .build();
-        ReflectionTestUtils.setField( staticPropertyUtil, "APPLICATION_NAMESPACE", "acsp-manage-users-api" );
     }
 
     @Test

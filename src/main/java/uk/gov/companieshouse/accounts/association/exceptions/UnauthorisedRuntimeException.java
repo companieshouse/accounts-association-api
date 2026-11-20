@@ -3,7 +3,7 @@ package uk.gov.companieshouse.accounts.association.exceptions;
 import uk.gov.companieshouse.logging.Logger;
 import uk.gov.companieshouse.logging.LoggerFactory;
 
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.APPLICATION_NAMESPACE;
+import static uk.gov.companieshouse.accounts.association.AccountsAssociationServiceApplication.APPLICATION_NAMESPACE;
 
 public class UnauthorisedRuntimeException extends RuntimeException {
 

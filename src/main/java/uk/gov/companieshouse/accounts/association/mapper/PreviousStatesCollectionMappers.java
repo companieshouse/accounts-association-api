@@ -16,7 +16,7 @@ public class PreviousStatesCollectionMappers {
 
     private final PreviousStatesMapper previousStatesMapper;
 
-    private static final String endpointUri = "/associations/%s/previous-states?page_index=%d&items_per_page=%d";
+    private static final String ENDPOINT_URI = "/associations/%s/previous-states?page_index=%d&items_per_page=%d";
 
     public PreviousStatesCollectionMappers( final PreviousStatesMapper previousStatesMapper ) {
         this.previousStatesMapper = previousStatesMapper;
@@ -32,8 +32,8 @@ public class PreviousStatesCollectionMappers {
                     .totalResults( totalResults )
                     .totalPages( totalPages )
                     .links( new Links()
-                            .self( String.format( endpointUri, associationId, pageIndex, itemsPerPage ) )
-                            .next( pageIndex + 1 < totalPages ? String.format( endpointUri, associationId, pageIndex + 1, itemsPerPage ) : "" ) );
+                            .self( String.format(ENDPOINT_URI, associationId, pageIndex, itemsPerPage ) )
+                            .next( pageIndex + 1 < totalPages ? String.format(ENDPOINT_URI, associationId, pageIndex + 1, itemsPerPage ) : "" ) );
         };
     }
 

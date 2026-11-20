@@ -4,9 +4,6 @@ public class EmailData {
     private String to;
     private String subject;
 
-    public EmailData() {
-    }
-
     public String getTo() {
         return this.to;
     }

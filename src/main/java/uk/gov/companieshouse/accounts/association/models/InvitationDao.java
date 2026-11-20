@@ -1,6 +1,6 @@
 package uk.gov.companieshouse.accounts.association.models;
 
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
+import static uk.gov.companieshouse.accounts.association.models.Constants.DAYS_SINCE_INVITE_TILL_EXPIRES;
 
 import java.time.LocalDateTime;
 import org.springframework.data.mongodb.core.mapping.Field;
