@@ -95,7 +95,7 @@ class UserCompanyInvitationsTest extends BaseMongoIntegration {
     private final ComparisonUtils comparisonUtils = new ComparisonUtils();
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         mockers = new Mockers(null, emailClient, companyService, usersService);
     }
 
@@ -538,7 +538,7 @@ class UserCompanyInvitationsTest extends BaseMongoIntegration {
     }
 
     @AfterEach
-    public void after() {
+    void after() {
         mongoTemplate.dropCollection(AssociationDao.class);
     }
 

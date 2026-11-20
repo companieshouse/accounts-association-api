@@ -327,7 +327,7 @@ class AssociationsRepositoryTest extends BaseMongoIntegration {
     void updateAssociationWithNullUpdateThrowsIllegalStateException(){
         Assertions.assertThrows( IllegalStateException.class, () -> associationsRepository.updateAssociation( "111", null ) );
     }
-    
+
     @Test
     void updateAssociationPerformsUpdate(){
         associationsRepository.insert( testDataManager.fetchAssociationDaos( "1" ) );
@@ -556,7 +556,7 @@ class AssociationsRepositoryTest extends BaseMongoIntegration {
 
 
     @AfterEach
-    public void after() {
+    void after() {
         mongoTemplate.dropCollection(AssociationDao.class);
     }
 }
