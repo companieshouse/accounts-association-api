@@ -9,7 +9,7 @@ import uk.gov.companieshouse.accounts.association.models.email.data.RemovalOfOwn
 
 @ExtendWith(MockitoExtension.class)
 @Tag("unit-test")
-public class RemovalOfOwnMigratedEmailBuilderTest {
+class RemovalOfOwnMigratedEmailBuilderTest {
 
     @Test
     void buildInstantiatesEmailData() {

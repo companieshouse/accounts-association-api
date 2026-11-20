@@ -102,7 +102,7 @@ class UserCompanyAssociationsTest extends BaseMongoIntegration {
 
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         mockers = new Mockers(null, emailClient, companyService, usersService);
     }
 
@@ -610,7 +610,7 @@ class UserCompanyAssociationsTest extends BaseMongoIntegration {
     }
 
     @AfterEach
-    public void after() {
+    void after() {
         mongoTemplate.dropCollection(AssociationDao.class);
     }
 

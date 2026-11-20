@@ -90,7 +90,7 @@ class UserCompanyInvitationsTest {
     private static final ComparisonUtils comparisonUtils = new ComparisonUtils();
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         mockers = new Mockers( null, null, companyService, usersService );
         mockMvc = MockMvcBuilders.webAppContextSetup( context )
                 .apply( SecurityMockMvcConfigurers.springSecurity() )

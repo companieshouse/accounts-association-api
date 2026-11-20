@@ -26,7 +26,7 @@ public abstract class AssociationsListCompanyMapper extends AssociationMapper {
 
         final var users = usersService.fetchUserDetails( associationsList.stream() );
         final var associations = associationsList.map( associationDao -> {
-            final var user = Objects.isNull( associationDao.getUserId() ) ? null : users.getOrDefault( associationDao.getUserId(), null );
+            final var user = Objects.isNull( associationDao.getUserId() ) ? null : users.getOrDefault( associationDao.getUserId(), toUnresolvedUser( associationDao.getUserId(), associationDao.getUserEmail() ) );
             return daoToDto( associationDao, user, company );
         } );
 
