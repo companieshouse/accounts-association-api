@@ -10,7 +10,7 @@ import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGE
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getEricIdentity;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getUser;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
+import static uk.gov.companieshouse.accounts.association.models.Constants.DAYS_SINCE_INVITE_TILL_EXPIRES;
 import static uk.gov.companieshouse.accounts.association.utils.UserUtil.mapToDisplayValue;
 import static uk.gov.companieshouse.api.accounts.associations.model.Association.StatusEnum.CONFIRMED;
 

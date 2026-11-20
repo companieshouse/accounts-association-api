@@ -40,6 +40,8 @@ class AssociationMapperTest {
 
     private AssociationMapper associationMapper;
 
+    private AssociationDaoMapper associationDaoMapper;
+
     private Mockers mockers;
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
@@ -52,21 +54,20 @@ class AssociationMapperTest {
 
     @BeforeEach
     void setup() {
-        associationMapper = new AssociationMapperImpl();
-        associationMapper.usersService = usersService;
-        associationMapper.companyService = companyService;
+        associationDaoMapper = new AssociationDaoMapperImpl();
+        associationMapper = new AssociationMapper( usersService, companyService, associationDaoMapper );
         mockers = new Mockers(  null, null, companyService, usersService );
     }
 
     @Test
     void localDateTimeToOffsetDateTimeWithNullReturnsNull(){
-        Assertions.assertNull( associationMapper.localDateTimeToOffsetDateTime( null ) );
+        Assertions.assertNull( associationDaoMapper.localDateTimeToOffsetDateTime( null ) );
     }
 
     @Test
     void localDateTimeToOffsetDateTimeReturnsCorrectTimestamp(){
         final var inputDate = LocalDateTime.now();
-        final var outputDate = associationMapper.localDateTimeToOffsetDateTime( inputDate );
+        final var outputDate = associationDaoMapper.localDateTimeToOffsetDateTime( inputDate );
         Assertions.assertEquals( localDateTimeToNormalisedString( inputDate ), reduceTimestampResolution( outputDate.toString() ) );
     }
 

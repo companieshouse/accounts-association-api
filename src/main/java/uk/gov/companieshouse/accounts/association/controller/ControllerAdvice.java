@@ -3,7 +3,7 @@ package uk.gov.companieshouse.accounts.association.controller;
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.ParsingUtil.parseJsonFrom;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.APPLICATION_NAMESPACE;
+import static uk.gov.companieshouse.accounts.association.AccountsAssociationServiceApplication.APPLICATION_NAMESPACE;
 import static uk.gov.companieshouse.service.rest.err.Err.invalidBodyBuilderWithLocation;
 import static uk.gov.companieshouse.service.rest.err.Err.serviceErrBuilder;
 

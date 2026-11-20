@@ -2,26 +2,30 @@ package uk.gov.companieshouse.accounts.association.mapper;
 
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
-import static uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil.DAYS_SINCE_INVITE_TILL_EXPIRES;
+import static uk.gov.companieshouse.accounts.association.models.Constants.DAYS_SINCE_INVITE_TILL_EXPIRES;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Context;
-import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.InvitationDao;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
 import uk.gov.companieshouse.api.accounts.associations.model.Invitation;
 
-@Mapper( componentModel = "spring" )
-public abstract class InvitationMapper {
+@Component
+public class InvitationMapper {
 
-    @Autowired
-    private UsersService usersService;
+    private final UsersService usersService;
+    private final InvitationDaoMapper invitationDaoMapper;
+
+    public InvitationMapper( final UsersService usersService, final InvitationDaoMapper invitationDaoMapper ) {
+        this.usersService = usersService;
+        this.invitationDaoMapper = invitationDaoMapper;
+    }
 
     @AfterMapping
     protected void replaceUserIdWithUserEmail( @MappingTarget final Invitation invitation ){
@@ -47,6 +51,9 @@ public abstract class InvitationMapper {
         invitation.setAssociationId( associationId );
     }
 
-    public abstract Invitation daoToDto( final InvitationDao invitation, @Context final String associationId );
+    public Invitation daoToDto( final InvitationDao invitation, final String associationId ) {
+        // MapStruct invokes this component's enrichment callbacks through the mapping context.
+        return invitationDaoMapper.daoToDto( invitation, associationId, this );
+    }
 
 }

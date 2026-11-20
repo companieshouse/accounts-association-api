@@ -41,9 +41,8 @@ class AssociationListCompanyMapperTest {
 
     @BeforeEach
     void setup(){
-        associationsListCompanyMapper = new AssociationsListCompanyMapperImpl();
-        associationsListCompanyMapper.usersService = usersService;
-        associationsListCompanyMapper.companyService = companyService;
+        final var associationMapper = new AssociationMapper( usersService, companyService, new AssociationDaoMapperImpl() );
+        associationsListCompanyMapper = new AssociationsListCompanyMapper( usersService, associationMapper );
     }
 
     @Test

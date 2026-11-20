@@ -23,7 +23,6 @@ import uk.gov.companieshouse.accounts.association.service.AssociationsService;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
 import uk.gov.companieshouse.accounts.association.service.EmailService;
 import uk.gov.companieshouse.accounts.association.service.UsersService;
-import uk.gov.companieshouse.accounts.association.utils.StaticPropertyUtil;
 import uk.gov.companieshouse.api.accounts.associations.model.InvitationsList;
 import uk.gov.companieshouse.api.accounts.associations.model.Links;
 
@@ -65,9 +64,6 @@ class UserCompanyInvitationsTest {
 
     @Autowired
     private WebApplicationContext context;
-
-    @MockitoBean
-    private StaticPropertyUtil staticPropertyUtil;
 
     @MockitoBean
     private UsersService usersService;

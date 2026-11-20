@@ -5,19 +5,14 @@ import static uk.gov.companieshouse.accounts.association.models.Constants.DEFAUL
 import static uk.gov.companieshouse.accounts.association.utils.LoggingUtil.LOGGER;
 import static uk.gov.companieshouse.accounts.association.utils.RequestContextUtil.getXRequestId;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Context;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import uk.gov.companieshouse.accounts.association.exceptions.NotFoundRuntimeException;
 import uk.gov.companieshouse.accounts.association.models.AssociationDao;
 import uk.gov.companieshouse.accounts.association.service.CompanyService;
@@ -27,17 +22,18 @@ import uk.gov.companieshouse.api.accounts.associations.model.AssociationLinks;
 import uk.gov.companieshouse.api.accounts.user.model.User;
 import uk.gov.companieshouse.api.company.CompanyDetails;
 
-@Mapper( componentModel = "spring" )
-public abstract class AssociationMapper {
+@Component
+public class AssociationMapper {
 
-    @Autowired
-    protected UsersService usersService;
+    private final UsersService usersService;
+    private final CompanyService companyService;
+    private final AssociationDaoMapper associationDaoMapper;
 
-    @Autowired
-    protected CompanyService companyService;
-
-    protected OffsetDateTime localDateTimeToOffsetDateTime( final LocalDateTime localDateTime ) {
-        return Objects.isNull( localDateTime ) ? null : OffsetDateTime.of( localDateTime, ZoneOffset.UTC );
+    public AssociationMapper( final UsersService usersService, final CompanyService companyService,
+                              final AssociationDaoMapper associationDaoMapper ) {
+        this.usersService = usersService;
+        this.companyService = companyService;
+        this.associationDaoMapper = associationDaoMapper;
     }
 
     @AfterMapping
@@ -88,8 +84,9 @@ public abstract class AssociationMapper {
         association.setKind( DEFAULT_KIND );
     }
 
-    @Mapping( target = "status", expression = "java(Association.StatusEnum.fromValue(associationDao.getStatus()))" )
-    @Mapping( target = "approvalRoute", expression = "java(Association.ApprovalRouteEnum.fromValue(associationDao.getApprovalRoute()))" )
-    public abstract Association daoToDto( final AssociationDao associationDao, @Context final User userDetails, @Context final CompanyDetails companyDetails );
+    public Association daoToDto( final AssociationDao associationDao, final User userDetails, final CompanyDetails companyDetails ) {
+        // MapStruct invokes this component's enrichment callbacks through the mapping context.
+        return associationDaoMapper.daoToDto( associationDao, userDetails, companyDetails, this );
+    }
 
 }
