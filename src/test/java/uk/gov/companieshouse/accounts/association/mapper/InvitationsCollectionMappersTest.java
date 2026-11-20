@@ -38,8 +38,7 @@ class InvitationsCollectionMappersTest {
 
     @BeforeEach
     void setup(){
-        final var invitationMapper = new InvitationMapperImpl();
-        ReflectionTestUtils.setField( invitationMapper, "usersService", usersService );
+        final var invitationMapper = new InvitationMapper( usersService, new InvitationDaoMapperImpl() );
         invitationsCollectionMappers = new InvitationsCollectionMappers( invitationMapper );
         mockers = new Mockers( null, null, null, usersService );
     }

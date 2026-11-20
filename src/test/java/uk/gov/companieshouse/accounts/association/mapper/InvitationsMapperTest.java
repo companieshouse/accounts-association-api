@@ -7,7 +7,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.companieshouse.accounts.association.common.Mockers;
@@ -21,8 +20,7 @@ class InvitationsMapperTest {
     @Mock
     private UsersService usersService;
 
-    @InjectMocks
-    private InvitationMapper invitationsMapper = new InvitationMapperImpl();
+    private InvitationMapper invitationsMapper;
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
@@ -30,6 +28,7 @@ class InvitationsMapperTest {
 
     @BeforeEach
     void setup(){
+        invitationsMapper = new InvitationMapper( usersService, new InvitationDaoMapperImpl() );
         mockers = new Mockers( null, null, null, usersService );
     }
 
