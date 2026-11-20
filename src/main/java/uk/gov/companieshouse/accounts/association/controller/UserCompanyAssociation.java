@@ -124,7 +124,7 @@ public class UserCompanyAssociation implements UserCompanyAssociationInterface {
             };
         }
 
-        if(hasCompanyUpgradedAuthTokenPermission()) {
+        if(hasAdminPrivilege(ADMIN_UPDATE_PERMISSION) || hasCompanyUpgradedAuthTokenPermission()) {
             return switch (proposedStatus) {
                 case CONFIRMED -> Optional.of(CONFIRMED)
                         .filter(status -> MIGRATED.equals(oldStatus) || UNAUTHORISED.equals(oldStatus))
