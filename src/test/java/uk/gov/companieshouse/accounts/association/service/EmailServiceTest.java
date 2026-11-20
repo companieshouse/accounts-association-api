@@ -91,7 +91,7 @@ class EmailServiceTest {
     @InjectMocks
     private EmailService emailService;
 
-    private final String COMPANY_INVITATIONS_URL = "http://chs.local/your-companies/company-invitations?mtm_campaign=associations_invite";
+    private static final String COMPANY_INVITATIONS_URL = "http://chs.local/your-companies/company-invitations?mtm_campaign=associations_invite";
 
     private static final TestDataManager testDataManager = TestDataManager.getInstance();
 
