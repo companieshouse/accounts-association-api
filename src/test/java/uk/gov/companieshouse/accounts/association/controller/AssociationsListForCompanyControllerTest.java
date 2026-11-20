@@ -111,7 +111,7 @@ class AssociationsListForCompanyControllerTest {
     private final LocalDateTime now = LocalDateTime.now();
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         this.mockers = new Mockers( null, null, companyService, usersService );
         mockMvc = MockMvcBuilders.webAppContextSetup( context )
                 .apply( SecurityMockMvcConfigurers.springSecurity() )

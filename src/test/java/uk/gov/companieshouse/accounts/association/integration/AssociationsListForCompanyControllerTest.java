@@ -631,7 +631,7 @@ class AssociationsListForCompanyControllerTest extends BaseMongoIntegration {
     }
 
     @AfterEach
-    public void after() {
+    void after() {
         mongoTemplate.dropCollection(AssociationDao.class);
     }
 

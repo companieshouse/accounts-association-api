@@ -88,7 +88,7 @@ class AssociationsServiceTest {
     private static final ComparisonUtils comparisonUtils = new ComparisonUtils();
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         final var previousStatesCollectionMappers = new PreviousStatesCollectionMappers( new PreviousStatesMapperImpl() );
         associationsService = new AssociationsService( associationsRepository, associationsListUserMapper, associationsListCompanyMapper, previousStatesCollectionMappers, invitationsCollectionMappers );
     }
